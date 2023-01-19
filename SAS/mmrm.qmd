@@ -1,0 +1,25 @@
+---
+title: "MMRM in SAS"
+---
+
+# Mixed Models
+
+#### Fitting the MMRM in SAS
+
+In SAS the following code was used (assessments at `avisitn=0` should also be removed from the response variable):
+
+```{r}
+#| eval: false
+#| echo: true
+proc mixed data=adlbh;
+  where base ne . and avisitn not in (., 99);
+  class usubjid trtpn(ref="0") avisitn;
+  by paramcd param;
+  model chg=base trtpn avisitn  trtpn*avisitn / solution cl alpha=0.05 ddfm=KR;
+  repeated avisitn/subject=usubjid type=&covar;
+  lsmeans trtpn * avisitn / diff cl slice=avisitn;
+  lsmeans trtpn / diff cl;
+run;
+```
+
+where the macro variable `covar` could be `UN`, `CS` or `AR(1)`. The results were stored in .csv files that were post-processed in R and compared with the results from R.

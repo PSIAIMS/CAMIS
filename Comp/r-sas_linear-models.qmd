@@ -1,0 +1,41 @@
+---
+title: "R vs SAS Linear Models"
+---
+
+### Matching Contrasts: R and SAS {-}
+
+It is recommended to use the `emmeans` package when attempting to match contrasts between R and SAS.  In SAS, all contrasts must be manually defined, whereas in R, we have many ways to use pre-existing contrast definitions.   The `emmeans` package makes simplifies this process, and provides syntax that is similar to the syntax of SAS.
+
+This is how we would define a contrast in SAS.
+
+```{r, eval=FALSE}
+# In SAS
+proc glm data=work.mycsv;
+   class drug;
+   model post = drug pre / solution;
+   estimate 'C vs A'  drug -1  1 0;
+   estimate 'E vs CA' drug -1 -1 2;
+run;
+```
+
+And this is how we would define the same contrast in R, using the `emmeans` package.
+
+```{r, eval=FALSE}
+lm(formula = post ~ pre + drug, data = df_trial) %>% 
+  emmeans("drug") %>% 
+  contrast(method = list(
+    "C vs A"  = c(-1,  1, 0),
+    "E vs CA" = c(-1, -1, 2)
+  ))
+```
+
+Note, however, that there are some cases where the scale of the parameter estimates between SAS and R is off, though the test statistics and p-values are identical.  In these cases, we can adjust the SAS code to include a divisor.  As far as we can tell, this difference only occurs when using the predefined Base R contrast methods like `contr.helmert`.
+
+```{r, eval=FALSE}
+proc glm data=work.mycsv;
+   class drug;
+   model post = drug pre / solution;
+   estimate 'C vs A'  drug -1  1 0 / divisor = 2;
+   estimate 'E vs CA' drug -1 -1 2 / divisor = 6;
+run;
+```

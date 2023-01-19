@@ -1,0 +1,76 @@
+---
+title: "R vs SAS MMRM"
+---
+
+```{r}
+#| echo: false
+plots <- readRDS("../images/mixed/plots.rds")
+```
+
+### Data
+
+The data used for this comparison was the lab ADaM dataset adlbh.xpt from the Phuse Pilot Study. Results were generated for each lab parameter and time point in the dataset using three different covariance structures, i.e. unstructured, compound symmetry and autoregressive of first order (AR(1)).
+
+### Comparison between SAS and R
+
+With results available for SAS and R model fits, we turn our attention to generating some visual comparisons of the results. Note that here we adopt a Bland-Altman type plot which plots the difference on the y-axis and the average on the x-axis. This offers a way to inspect any bias or relationships with the size of effect and the associated bias.
+
+For the extracted LS-means
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| out.width: "100%"
+plots$lsmeans_bland_alt_emmean$`Unstructured (KR)`
+plots$lsmeans_bland_alt_emmean$`Unstructured (satterthwaite)`
+plots$lsmeans_bland_alt_emmean$`Heterogeneous Compound Symmetry`
+plots$lsmeans_bland_alt_emmean$`Heterogeneous First Order Autoregressive`
+```
+
+and corresponding SEs
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+plots$lsmeans_bland_alt_se$`Unstructured (KR)`
+plots$lsmeans_bland_alt_se$`Unstructured (satterthwaite)`
+plots$lsmeans_bland_alt_se$`Heterogeneous Compound Symmetry`
+plots$lsmeans_bland_alt_se$`Heterogeneous First Order Autoregressive`
+```
+
+For the derived contrasts
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+plots$contrasts_bland_alt_estimate$`Unstructured (KR)`
+plots$contrasts_bland_alt_estimate$`Unstructured (satterthwaite)`
+plots$contrasts_bland_alt_estimate$`Heterogeneous Compound Symmetry`
+plots$contrasts_bland_alt_estimate$`Heterogeneous First Order Autoregressive`
+```
+
+and corresponding 95%CI widths
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+plots$contrasts_bland_alt_ci$`Unstructured (KR)`
+plots$contrasts_bland_alt_ci$`Unstructured (satterthwaite)`
+plots$contrasts_bland_alt_ci$`Heterogeneous Compound Symmetry`
+plots$contrasts_bland_alt_ci$`Heterogeneous First Order Autoregressive`
+```
+
+### Analysis of SAS and R Comparison
+
+Using SAS PROC MIXED and R functions such as gls, lmer, mod_grid, and mod_emm, results were broadly aligned. Results not being exact can be attributed to many factors such as rounding precision, data handling, and many other internal processing nuances. However, Bland-Altman type plots showed small but randomly distributed differences across a broad range of parameters from the input data. Apart from a small subset of the parameters, there were no trends observed which would have suggested systemic differences between the languages. These analyses were based on a single set of data so more research must be done. However, based on comparing R documentation with SAS documentation, as well as the results displayed above in this paper, it is evident that the R and the SAS methods cover do produce similarly valid results for the options which were tested.
+
+### Future work
+
+-   Run SAS code by also removing assessments at `avisitn=0` from the response variable, and using `trtp` (or `trtpn`) and `avisit` (or `avisitn`)
+-   Investigating the differences
+-   Implement `lmer` equivalent to MMRM with compound symmetry
+-   Comparisons for other models, i.e. only random, random and repeated, no repeated
