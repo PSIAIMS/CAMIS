@@ -1,0 +1,14 @@
+{
+  "hash": "1ff816ca3d05ce0135024e59fecc3ca4",
+  "result": {
+    "markdown": "---\ntitle: \"MMRM in R\"\n---\n\n\n### Fitting the MMRM in R\n\n#### Using the `nlme::gls` function\n\nThe code below implements an MMRM fit in R with the `nlme::gls` function.\n\n\n::: {.cell}\n\n```{.r .cell-code}\ngls(model = CHG ~ TRTP + AVISITN + TRTP:AVISITN + AVISITN + BASE,\n    data = data,\n    correlation = corSymm(form = ~1|SUBJID),\n    weights = varIdent(form = ~1|AVISITN),\n    control = glsControl(opt = \"optim\"),\n    method = \"REML\",\n    na.action = \"na.omit\")\n```\n:::\n\n\nhere we can swap out `corSymm` for `corCompSymm` to give the compound symmetry structure or `corCAR1` for autoregressive of first order (AR(1)).\n\n#### Using the `lme4::lmer` function\n\nAn alternative way to fit an MMRM with unstructured covariance matrices is to use the `lme4::lmer` function as described by Daniel Sabanes Bove in his R in Pharma talk from 2020 see [here](https://github.com/rinpharma/2020_presentations/blob/main/talks_folder/2020-Sabanes_Bove-Implementing_MMRM_in_R.pdf). The relevance of this fit is apparent when we consider the availability of the Kenward-Roger's degrees of freedom for the MMRM in R, which at the time of writing, were not yet available for the `nlme::gls` function via the `pbkrtest` package (see [here](https://people.math.aau.dk/~sorenh/software/pbkrtest/#NEWS)).\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlmer(CHG ~ TRTA * VISIT + VISIT + BASE + (0 + VISIT|SUBJID),\n     data = data,\n     control = lmerControl(check.nobs.vs.nRE = \"ignore\"),\n     na.action = na.omit)\n```\n:::\n\n\n#### Extracting effect estimates using `emmeans`\n\nIn order to extract relevant marginal means (LSmeans) and contrasts we can use the `emmeans` package. Below we start by constructing a `ref_grid` used to make explicit just how the predictions are generated across the levels of `TRTP` and `AVISITN`. The `emmeans` function permits various marginal means to be extracted depending on the `formula` provided and the following `pairs()` function call derives relevant contrasts. Note that more control can be obtained by calling the `contrast()` function.\n\n\n::: {.cell}\n\n```{.r .cell-code}\nmod_grid <- ref_grid(model, data = data, mode = \"df.error\")\nmod_emm <- emmeans(mod_grid, ~TRTP * AVISITN, mode = \"df.error\") \npairs(mod_emm) \n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
