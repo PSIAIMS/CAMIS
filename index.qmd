@@ -10,12 +10,39 @@ Several discrepancies have been discovered in statistical analysis results betwe
 
 The goal of this project is to demystify conflict when doing QC and to help ease the transitions to new languages and techniques with comprehensive explanations.
 
-| Methods                      | R                        | SAS                          | Comparison                               |
-|-----------------|-----------------|-----------------|----------------------|
-| Summary Statistics           |                          |                              |                                          |
-| Linear Models                | [R](R/linear-models.qmd) | [SAS](SAS/linear-models.qmd) | [R vs SAS](Comp/r-sas_linear-models.qmd) |
-| Mixed Models                 | [R](R/mmrm.qmd)          | [SAS](SAS/mmrm.qmd)          | [R vs SAS](Comp/r-sas_mmrm.qmd)          |
-| Survival Models              |                          |                              |                                          |
-| Cochran-Mental-Haenszel Test |                          |                              |                                          |
 
-: Table of Contents
+```{r}
+#| include: false
+library(DT)
+library(tidyverse)
+method_tbl <- read_csv("data/stat_method_tbl.csv", show_col_types = FALSE) %>% 
+  pivot_longer(cols = ends_with("links")) %>% 
+  mutate(link_name = str_extract(value, "(?<=^\\[).*(?=\\])"),
+         link_loc = str_extract(value, "(?<=\\().*(?=\\)$)"),
+         link = if_else(!is.na(value), 
+                        paste0('<a href=\"https://psiaims.github.io/CAMIS/',
+                       link_loc,
+                       '.html">',
+                       link_name, 
+                       '</a>'), 
+                       NA_character_)) %>% 
+  select(-value, -link_name, -link_loc) %>% 
+  pivot_wider(names_from = name, values_from = link)
+  
+datatable(data = method_tbl, 
+          rownames = FALSE, 
+          extensions = 'RowGroup', 
+          escape = FALSE,
+          colnames=c("Methods", "R", "SAS", "Comparison"),
+          options = list(
+            rowGroup = list(dataSrc=c(0)),
+            columnDefs = list(list(visible=FALSE, targets=c(0))),
+            paging = FALSE,
+            searching = FALSE
+          )
+)
+```
+
+
+
+
