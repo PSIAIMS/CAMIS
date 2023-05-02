@@ -1,0 +1,160 @@
+---
+title: "R vs SAS - Survival Analysis"
+---
+
+# Comparisons from the example
+
+Comparing the non-stratified model results side-by-side, the CIs for the quartile estimates and landmark estimates are different between R and SAS. HR and CI also have slight differences.
+
+```{r, echo=FALSE, fig.align='center', out.width="75%"}
+knitr::include_graphics("../images/survival/r_sas_default.png")   
+```
+
+## Reasons
+
+The reasons for the differences are because the default methods for handling ties in Cox model and confidence interval calculation in KM estimators in the two languages are different.
+
+1.  Tie handling: R uses "efron" by default, and SAS uses "breslow" by default. However, both options are available in R and SAS. We will see identical HR and CI if we change the default methods.
+
+-   R: change to "breslow"
+
+```{r, eval=FALSE}
+fit.cox <- coxph(Surv(LENFOLY, FSTAT) ~ AFB, ties = "breslow", data = dat)
+```
+
+-   SAS: change to "efron"
+
+```{r, eval=FALSE}
+proc phreg data=dat;
+class afb;
+model lenfol*fstat(0) = afb/rl ties = efron;
+run;
+```
+
+From the arguments of `coxph` in R: There are three possible choices for handling tied event times. The Breslow approximation is the easiest to program and hence became the first option coded for almost all computer routines. It then ended up as the default option when other options were added in order to "maintain backwards compatibility". The Efron option is more accurate if there are a large number of ties, and it is the default option here. In practice the number of ties is usually small, in which case all the methods are statistically indistinguishable.
+
+2.  Confidence interval calculation: R uses "log" by default, and SAS uses "log-log" by default. Again, R and SAS have both options.
+
+-   R: change to "log-log"
+
+```{r, eval=FALSE}
+fit.km <- survfit(Surv(LENFOLY, FSTAT) ~ AFB, conf.type = "log-log", data = dat)
+```
+
+-   SAS: change to "log"
+
+```{r, eval=FALSE}
+proc lifetest data=dat conftype=log;
+time lenfoly*fstat(0);
+strata afb;
+run;
+```
+
+"log-log" prevents the problem of having confidence intervals of \>1 or \<0, which might happen if using "log" transformation. However, both R and SAS will clip the interval at \[0, 1\] and report a bound \>1 as 1 and \<0 as 0.
+
+From a [reference](https://myweb.uiowa.edu/pbreheny/7210/f15/notes/9-10.pdf): The appeal of the log-log interval is clear, but the log-scale interval has the advantage of variance stabilization. As a result, simulation studies have generally found it to have better (closer to nominal) coverage; for this reason, it is the default in the `survival` package.
+
+Now if we change the confidence interval type in SAS to "log" and tie handling to "efron", the results will be identical to the results in R.
+
+```{r, echo=FALSE, fig.align='center', out.width="75%"}
+knitr::include_graphics("../images/survival/r_sas_chg_default.png")   
+```
+
+Below is the side-by-side comparison for stratified analysis with default methods in SAS matched to R's, the results are also identical.
+
+```{r, echo=FALSE, fig.align='center', out.width="75%"}
+knitr::include_graphics("../images/survival/r_sas_stratified.png")   
+```
+
+# Other cases
+
+Now we look at other cases when the data has some special type. Suppose a dataset has 10 observations, and the first 5 are all events, and the last 5 are all censored.
+
+```{r}
+test <- data.frame(time = c(54, 75, 77, 84, 87, 92, 103, 105, 112, 118), 
+                   status = c(1, 1, 1, 1, 1, 0, 0, 0, 0, 0))
+
+kable(test)
+```
+
+## KM estimators
+
+Suppose we are interested to know the 25%, 50% and 75% quartile estimates, and the day 80, 100, and 120 estimates.
+
+Below is the R code:
+
+```{r, eval=FALSE}
+fit.km <- survfit(Surv(time, status) ~ 1, conf.type = "log-log", data = test)
+## quantile estimates
+quantile(fit.km, probs = c(0.25, 0.5, 0.75))
+## landmark estimates at 80, 100, 120-day
+summary(fit.km, times = c(80, 100, 120), extend = T)
+```
+
+Below is the SAS code:
+
+```{r, eval=FALSE}
+proc lifetest data=dat outsurv=_SurvEst timelist= 80 100 120 reduceout stderr; 
+time lenfoly*fstat(0);
+run;
+```
+
+Below is the side-by-side comparison:
+
+```{r, echo=FALSE, fig.align='center', out.width="75%"}
+knitr::include_graphics("../images/survival/r_sas_special.png")   
+```
+
+## Reasons
+
+The reasons for the differences are because:
+
+1.  The kth quantile for a survival curve S(t) is the location at which a horizontal line at height p= 1-k intersects the plot of S(t) as shown in the KM curve below. Since S(t) is a step function, it is possible for the curve to have a horizontal segment at exactly 1-k, in which case the midpoint of the horizontal segment is returned:
+
+    The median is the smallest time which survival estimate is \<= 0.5 --\> `(87+118) / 2 = 102.5`
+
+```{r, echo=FALSE}
+pl <- survminer::ggsurvplot(fit.km, 
+                            conf.int = TRUE,
+                            ggtheme = theme_light()) 
+pl$plot +  geom_hline(yintercept = 0.5, color = "black", linetype = "solid")  
+
+summary(fit.km)
+```
+
+However, SAS searches the smallest time which survival estimate is \< 0.5, which does not exist in this dataset, so it gives "NE".
+
+2.  For the 120-day event-free estimate, 120-day is beyond the maximum observed day, since it is unknown, SAS gives "NE", but R uses the rate at last observed censored date to estimate the 120-day event free rate.
+
+If change the last observation in the dataset to be an event, R and SAS will both give 0 because it is for sure that all subjects did not survive beyond 120 days.
+
+```{r}
+test <- data.frame(time = c(54, 75, 77, 84, 87, 92, 103, 105, 112, 118), 
+                   status = c(1, 1, 1, 1, 1, 0, 0, 0, 0, 1))
+
+kable(test)
+```
+
+```{r, echo=FALSE, fig.align='center', out.width="75%"}
+knitr::include_graphics("../images/survival/r_sas_special_lst.png")   
+```
+
+# References
+
+Breheny P. "Inference for the Kaplan-Meier Estimator." https://myweb.uiowa.edu/pbreheny/7210/f15/notes/9-10.pdf
+
+Breslow, N. E. (1974) "Covariance Analysis of Censored Survival Data." Biometrics 30:89--99.
+
+Efron, B. (1977. "The Efficiency of Cox's Likelihood Function for Censored Data." Journal of the American Statistical Association 72:557--565.
+
+Emmerson J. and Brown J. M. "Understanding Survival Analysis in Clinical Trials." Clinical Onclogy 33:12-14.
+
+Franklin D. "Our Survival Confidence Intervals are not the Same!" PharmaSUG 2014 - Paper SP10. https://www.pharmasug.org/proceedings/2014/SP/PharmaSUG-2014-SP10.pdf
+
+Hertz-Picciotto I. and Rockhill B. (1997) "Validity and efficiency of approximation methods for tied survival times in Cox regression." Biometrics 53:1151-1156.
+
+Hosmer, D.W. and Lemeshow, S. and May, S. (2008) "Applied Survival Analysis: Regression Modeling of Time to Event Data: Second Edition." John Wiley and Sons Inc., New York, NY
+
+[SAS PROC LIFETEST Documentation](https://documentation.sas.com/doc/en/statug/15.2/statug_lifetest_details03.htm)
+
+[SAS PROC PHREG Documentation](https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_phreg_toc.htm)
