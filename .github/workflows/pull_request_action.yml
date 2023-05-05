@@ -9,11 +9,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      RENV_PATHS_ROOT: ~/.local/share/renv
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install Quarto CLI
-        uses: quarto-dev/quarto-actions/install-quarto@v1
+        uses: quarto-dev/quarto-actions/setup@v2
 
       - name: Install libcurl
         run: |
@@ -30,10 +31,19 @@ jobs:
         with:
           use-public-rspm: true
 
-      - name: Set up renv
-        uses: r-lib/actions/setup-renv@v2
+      - name: Cache packages
+        uses: actions/cache@v1
         with:
-          cache-version: 2
+          path: ${{ env.RENV_PATHS_ROOT }}
+          key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-renv-
+
+     - name: Restore packages
+       shell: Rscript {0}
+       run: |
+         if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+         renv::restore()
 
       - name: Build site 🔧
         run: |
