@@ -30,10 +30,26 @@ jobs:
         with:
           use-public-rspm: true
 
-      - name: Set up renv
-        uses: r-lib/actions/setup-renv@v2
+      - name: Set RENV_PATHS_ROOT
+        shell: bash
+        run: |
+          echo "RENV_PATHS_ROOT=${{ runner.temp }}/renv" >> $GITHUB_ENV
+
+      - name: Install and activate renv
+        run: |
+          install.packages("renv")
+        shell: Rscript {0}
+        
+      - name: Restore Renv package cache
+        uses: actions/cache@v3
         with:
-          bypass-cache: true
+          path: ${{ env.RENV_PATHS_ROOT }}
+          key: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{inputs.cache-version }}-${{ hashFiles('renv.lock') }}
+          restore-keys: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{inputs.cache-version }}-
+
+      - name: Install renv dependencies
+        run: renv::restore()
+        shell: Rscript {0}
 
       - name: Build site 🔧
         run: |
