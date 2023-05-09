@@ -1,0 +1,58 @@
+---
+title: "Multivariate Analysis of Variance in R"
+---
+
+For a detailed description of MANOVA including assumptions see [Renesh Bedre](https://www.reneshbedre.com/blog/manova.html?utm_content=cmp-true)
+
+**Example 39.6 Multivariate Analysis of Variance** from [SAS MANOVA User Guide](https://support.sas.com/documentation/cdl/en/statug/63033/HTML/default/viewer.htm#statug_glm_sect051.htm)
+
+This example employs multivariate analysis of variance (MANOVA) to measure differences in the chemical characteristics of ancient pottery found at four kiln sites in Great Britain. The data are from Tubb, Parker, and Nickless (1980), as reported in Hand et al. (1994).
+
+For each of 26 samples of pottery, the percentages of oxides of five metals are measured. The following statements create the data set and perform a one-way MANOVA. Additionally, it is of interest to know whether the pottery from one site in Wales (Llanederyn) differs from the samples from other sites.
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(emmeans)
+
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+pottery <- read.csv("../data/manova1.csv")
+pottery
+```
+
+**1 Perform one way MANOVA**
+
+Response ID for ANOVA is order of 1=al, 2=fe, 3=mg, ca, na.
+
+We are testing H0: group mean vectors are the same for all groups or they dont differ significantly vs
+
+H1: At least one of the group mean vectors is different from the rest.
+
+```{r}
+dep_vars <- cbind(pottery$al,pottery$fe,pottery$mg, pottery$ca, pottery$na)
+fit <-manova(dep_vars ~ pottery$site)
+summary.aov(fit)
+
+```
+
+'summary(fit)' outputs the MANOVA testing of an overall site effect.
+
+P\<0.001 suggests there is an overall difference between the chemical composition of samples from different sites.
+
+```{r}
+summary(fit)
+```
+
+**2 Now we test to see if the Llanaderyn site is different to the other sites**
+
+NOTE: interest may now lie in using pre-planned contrast statements to investigate if one site differs when compared to the average of the others. You would imagine this could be done using the 'contrast' function something like the code below, however this result does not match the SAS user guide and so looks to be doing a different analysis. **SUGGEST THIS IS NOT USED UNTIL MORE RESEARCH INTO THIS METHOD CAN BE PERFORMED.** One alternative suggestion is to perform a linear descriminent analysis (LDA).
+
+```{r}
+manova(dep_vars ~ pottery$site) %>% 
+          emmeans("site") %>% 
+     contrast(method=list(
+          "Llanederyn vs other sites"= c("Llanederyn"=-3, "Caldicot"=1, "IslandThorns"=1, "AshleyRails"=1)))
+
+```
+
+NOTE: if you feel you can help with the above discrepancy please contribute to the CAMIS repo by following the instructions on the [contributions page](../contribution.qmd).
