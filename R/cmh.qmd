@@ -1,0 +1,91 @@
+---
+title: "CMH Test"
+---
+
+# Cochran-Mantel-Haenszel Test
+
+The CMH procedure tests for conditional independence in partial contingency tables for a 2 x 2 x K design. However, it can be generalized to tables of X x Y x K dimensions.
+
+## Available R packages
+
+We did not find any R package that delivers all the same measures as SAS at once. Therefore, we tried out multiple packages:
+
+```{r, echo = FALSE, warning=FALSE, message=FALSE}
+library(gt)
+
+
+# table approach inspired by Sharla - https://sharla.party/post/comparing-two-dfs/
+yes <- "\U2705"
+no <- "\U274C"
+
+tribble(
+  ~Package, ~`General Association`, ~`Row Means Differ`, ~`Nonzero Correlation`, ~`M-H Odds Ratio`, ~`Homogeneity Test`, ~Note,
+ "stats::mantelhaen.test()", yes, no, no, yes, no, "Works well for 2x2xK",
+ "vcdExtra::CMHtest()", yes,yes,yes,no,no,"Problems with sparsity, potential bug",
+ "epiDisplay::mhor()", no,no,no,yes,yes,"OR are limited to 2x2xK design") %>%
+  gt::gt()
+```
+
+## Data used
+
+We will use the CDISC Pilot data set, which is publicly available on the PHUSE Test Data Factory repository. We applied very basic filtering conditions upfront (see below) and this data set served as the basis of the examples to follow.
+
+```{r, echo=FALSE}
+# Download CDISC Pilot Dataset
+# Perform filtering
+library(haven)
+data <- read_xpt("https://github.com/phuse-org/TestDataFactory/raw/main/Updated/TDF_ADaM/adcibc.xpt") |> 
+  filter(EFFFL == 'Y' & ITTFL == 'Y', AVISITN == 8 & ANL01FL=='Y') 
+data
+
+```
+
+## Example Code
+
+### Base R 
+
+This is included in a base installation of R, as part of the stats package. Requires inputting data as a *table* or as *vectors*.
+
+```{r}
+mantelhaen.test(x = data$TRTP, y = data$SEX, z = data$AGEGR1)
+```
+
+### vcdExtra
+
+The vcdExtra package provides results for the generalized CMH test, for each of the three model it outputs the Chi-square value and the respective p-values. Flexible data input methods available: *table* or *formula* (aggregated level data in a data frame).
+
+```{r}
+library(vcdExtra)
+# Formula: Freq ~ X + Y | K
+CMHtest(Freq ~ TRTP + SEX | AGEGR1 , data=data, overall=TRUE) 
+```
+
+### epiDisplay
+
+To get the M-H common odds ratio and the homogeneity test, the epiDisplay package can be used.
+
+```{r, eval = FALSE}
+library(epiDisplay) 
+mhor(x,y,k, graph = FALSE)
+```
+
+
+#### Forked Version - Solution for sparse data
+
+To tackle the [issue with sparse data](https://github.com/friendly/vcdExtra/issues/3) it is recommended that a use of `solve()` is replaced with `MASS::ginv`. This was implemented in the forked version of vcdExtra which can be installed from here:
+
+```{r, eval = FALSE}
+devtools::install_github("mstackhouse/vcdExtra")
+```
+
+However, also the forked version for the vcdExtra package works only until a certain level of sparsity. In case of our data, it still works if the data are stratified by the pooled Site ID (SITEGR1 - 11 unique values) whereas using the unpooled Site ID (SITEID - 17 unique values) also throws an error. Note: this version is not up to date and sometimes calculates degrees of freedom incorrectly.
+
+# References
+
+Accessible Summary: https://online.stat.psu.edu/stat504/lesson/4/4.4
+
+An Introduction to Categorical Data Analysis 2nd Edition (Agresti): http://users.stat.ufl.edu/\~aa/
+
+Original Paper 1: https://doi.org/10.2307%2F3001616
+
+Original Paper 2: https://doi.org/10.1093/jnci/22.4.719
