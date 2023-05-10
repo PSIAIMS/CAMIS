@@ -98,18 +98,9 @@ sas_results <- tribble(
 
 
 ```{r}
-library(vcdExtra)
-scenarios <- tribble(
-  ~Scenario, ~X, ~Y, ~K,
-  1, "TRTP",  "SEX", "AGEGR1",
-  3, "TRTP",  "SEX", "RACE",
-  6, "TRTP",  "AVAL", "SEX",
-  9, "TRTP",  "AVAL", "SITEID",
-  10, "AVAL",  "AGEGR1", "TRTP",
-) |> 
-  mutate(formula = paste0("Freq ~ ", X, " + ", Y, " | ", K),
-  )  
+#| echo: false
 
+library(vcdExtra)
 
 s1 <- CMHtest(Freq ~ TRTP + SEX | AGEGR1, data = data, overall = TRUE)$ALL$table
 s3 <- CMHtest(Freq ~ TRTP + SEX | RACE, data = data, overall = TRUE)$ALL$table
@@ -144,18 +135,61 @@ As it can be seen, there are two schemata where R does not provide any results:
 
 
 ```{r, echo = F}
+bind_rows(sas_results, r_results) |>
+  arrange(Scenario) |> 
+  pivot_wider(names_from = lang, values_from = c("Chisq", "Df", "Prob")) |> 
+  gt(
+    groupname_col = "Scenario"
+  ) |> 
+  tab_spanner(
+    label = "Chi-Square",
+    columns = starts_with("Chisq")
+  ) |> 
+  tab_spanner(
+    label = "df",
+    columns = starts_with("Df")
+  ) |> 
+  tab_spanner(
+    label = "p-value",
+    columns = starts_with("Prob")
+  ) |> 
+  cols_label(
+    Chisq_SAS = "SAS",
+    Chisq_R = "R",
+    Df_SAS = "SAS",
+    Df_R = "R", 
+    Prob_SAS = "SAS",
+    Prob_R = "R"
+  ) |>
+  tab_options(row_group.as_column = TRUE) |>
+  tab_footnote(
+    footnote = md("**Reason for NaN in schema 3**: Stratum k = AMERICAN INDIAN OR ALASKA NATIVE can not be compared because there are only values for one treatment and one gender."),
+    cells_row_groups(groups = "3"),
+    placement = "right"
+  ) |> 
+  tab_footnote(
+    footnote = md("**Reason for Error 4:**
+For large sparse table (many strata) CMHTest will occasionally throw an error in solve.default(AVA) because of singularity"),
+cells_row_groups(groups = "9"),
+placement = "right"
+  ) |>
+  opt_footnote_marks(marks = "standard")
+
 
 ```
 
-**Reason for NaN in schema 3**: Stratum k = AMERICAN INDIAN OR ALASKA NATIVE can not be compared because there are only values for one treatment and one gender.\
-**Reason for Error 4:**\
-For large sparse table (many strata) CMHTest will occasionally throw an error in solve.default(AVA) because of singularity
 
 ## Odds Ratio
 
 Only applicable to 2x2xK designs.
 
 ```{r, echo = F}
+sas_odds <- tribble(
+  ~Scenario, ~OR, ~LCL, ~UCL, ~prob, ~lang, 
+  1 , 0.9550959, 0.4865116, 1.874998, NA_real_, "SAS"
+)
+# mantelhaen.test(x=data$TRTP, y=data$Sex, z=data$AGEGR1)	
+
 # readRDS(('cmh/Docu/interim_update','table2.RDS'))
 ```
 
