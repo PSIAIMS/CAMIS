@@ -1,0 +1,52 @@
+---
+title: "McNemar's test in R"
+---
+
+### Performing McNemar's test in R
+
+To demonstrate McNemar's test, data was used concerning the presence or absence of cold symptoms reported by the same children at age 12 and age 14. A total of 2638 participants were involved.
+
+```{r}
+#| echo: false
+#| include: false
+library(knitr)
+
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+
+colds <- 
+  read.csv(
+    file = "../data/colds.csv")
+```
+
+#### Using the `epibasix::mcnemar` function
+
+Testing for a significant difference in cold symptoms between the two ages using the `mcNemar` function from the `epibasix` package can be performed as below. The symptoms for participants at age 12 and age 14 are tabulated and stored as an object, then passed to the `mcNemar` function. A more complete view of the output is achieved by calling the `summary` function.
+
+```{r}
+library(epibasix)
+
+X <- table(colds$age12, colds$age14)
+epi_mcn <- mcNemar(X)
+summary(epi_mcn)
+```
+
+#### Using the `stats::mcnemar.test` function
+
+McNemar's test can also be performed using `stats::mcnemar.test` as shown below, using the same table `X` as in the previous section.
+
+```{r}
+mcnemar.test(X)
+```
+
+The result is shown without continuity correction by specifying `correct=FALSE`.
+
+```{r}
+mcnemar.test(X, correct=FALSE)
+
+```
+
+#### Results
+
+As default, using `summary` with `epibasix::mcNemar` gives additional information to the McNemar's chi-square statistic. This includes a table to view proportions, and odds ratio and risk difference with 95% confidence limits. The result uses Edward's continuity correction without the option to remove this, which is consistent with other functions within the package.
+
+`stats::mcnemar.test` uses a continuity correction as default but does allow for this to be removed. This function does not output any other coefficients for agreement or proportions but (if required) these can be achieved within other functions or packages in R.
