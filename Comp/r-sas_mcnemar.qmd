@@ -7,22 +7,24 @@ title: "R v SAS McNemar's test"
 In R, the `mcNemar` function from the `epibasix` package can be used to perform McNemar's test.
 
 ```{r, eval=FALSE}
-X<-table(data1$before,data1$after)
-summary(mcNemar(X, alpha= 0.05, digits=5))
+X<-table(colds$age12,colds$age14)
+summary(mcNemar(X))
 
 ```
 
 The FREQ procedure can be used in SAS with the AGREE option to run the McNemar test, with OR, and RISKDIFF options stated for production of odds ratios and risk difference. These options were added as `epibasix::mcNemar` outputs the odds ratio and risk difference with confidence limits as default. In contrast to R, SAS outputs the Kappa coefficients with confident limits as default.
 
 ```{r, eval=FALSE}
-proc freq data=data1;
-	tables before*after / agree or riskdiff;
+proc freq data=colds;
+	tables age12*age14 / agree or riskdiff;
 run;
 ```
 
 When calculating the odds ratio and risk difference confidence limits, SAS is not treating the data as matched-pairs. There is advice on the SAS blog and SAS support page to amend this, which requires a lot of additional coding.
 
-R is using Edward's continuity correction with no option to remove this. This is consistent with other functions within the package. The `epibasix` package was categorised as 'High Risk' by the Risk Assessment Shiny App created by R Validation Hub. There is no option to include Edward's continuity correction in SAS but this can be manually coded to agree with R. However, its use is controversial due to being seen as overly conservative.
+R is using Edward's continuity correction with no option to remove this. In contrast, there is no option to include Edward's continuity correction in SAS, but this can be manually coded to agree with R. However, its use is controversial due to being seen as overly conservative.
+
+R's use of the continuity correction is consistent with other functions within the `epibasix` package, which was categorised as 'High Risk' by the Risk Assessment Shiny App created by the R Validation Hub. Risk is quantified by the app through a number of metrics relating to maintenance and community usage. It was found that the author is no longer maintaining the package and there was no documentation available for certain methods used. Therefore, the use of the `epibasix` package is advised against and other packages may be more suitable.
 
 The `mcnemar.test` function in the `stats` package provides the option to remove continuity corrections which results in a match with SAS. This function does not output any other coefficients for agreement/difference in proportions etc. but (if required) these can be achieved within other functions and/or packages.
 
