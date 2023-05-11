@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>CAMIS - Meeting Minutes</title>
+<title>CAMIS - Deriving Quantiles or Percentiles in SAS</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -30,8 +64,6 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<script src="../site_libs/quarto-listing/list.min.js"></script>
-<script src="../site_libs/quarto-listing/quarto-listing.js"></script>
 <script src="../site_libs/quarto-html/quarto.js"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -60,38 +92,7 @@ ul.task-list li input[type="checkbox"] {
     "search-submit-button-title": "Submit"
   }
 }</script>
-<script>
 
-  window.document.addEventListener("DOMContentLoaded", function (_event) {
-    const listingTargetEl = window.document.querySelector('#listing-listing .list');
-    if (!listingTargetEl) {
-      // No listing discovered, do not attach.
-      return; 
-    }
-
-    const options = {
-      valueNames: ['listing-date','listing-title','listing-author','listing-image','listing-description','listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
-      
-      searchColumns: ["listing-date","listing-title","listing-author","listing-image","listing-description","listing-categories"],
-    };
-
-    window['quarto-listings'] = window['quarto-listings'] || {};
-    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
-
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  });
-
-  window.addEventListener('hashchange',() => {
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  })
-  </script>
-
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -126,7 +127,7 @@ ul.task-list li input[type="checkbox"] {
  <span class="menu-text">Contributions</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="../minutes/index.html" rel="" target="" aria-current="page">
+    <a class="nav-link" href="../minutes/index.html" rel="" target="">
  <span class="menu-text">Meeting Minutes</span></a>
   </li>  
   <li class="nav-item">
@@ -141,18 +142,18 @@ ul.task-list li input[type="checkbox"] {
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         
-    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(5)</span></div></div></div>
+    </div>
 <!-- main -->
-<main class="content column-page-left" id="quarto-document-content">
+<main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Meeting Minutes</h1>
+<h1 class="title">Deriving Quantiles or Percentiles in SAS</h1>
 </div>
 
 
@@ -167,142 +168,19 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
+<p>Percentiles can be calculated in SAS using the UNIVARIATE procedure. The procedure has the option <code>PCTLDEF</code> which allows for five different percentile definitions to be used. The default is <code>PCTLDEF=5</code>, which uses the empirical distribution function to find percentiles.</p>
+<p>This is how the 25th and 40th percentiles of <code>aval</code> in the dataset <code>adlb</code> could be calculated, using the default option for <code>PCTLDEF</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>proc univariate data<span class="ot">=</span>adlb;</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  var aval;</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  output out<span class="ot">=</span>stats pctlpts<span class="ot">=</span><span class="dv">25</span> <span class="dv">40</span> pctlpre<span class="ot">=</span>p;</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The <code>pctlpre=p</code> option tells SAS the prefix to use in the output dataset for the percentile results. In the above example, SAS will create a dataset called <code>stats</code>, containing variables <code>p25</code> and <code>p40</code>.</p>
 
 
 
-
-<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
-<div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-listing-date-sort="1681689600000" data-listing-file-modified-sort="1683791393054" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="3">
-<div class="thumbnail">
-<p><a href="../minutes/posts/17apr2023.html"> <div class="listing-item-img-placeholder card-img-top" >&nbsp;</div> </a></p>
-</div>
-<div class="body">
-<a href="../minutes/posts/17apr2023.html">
-<h3 class="no-anchor listing-title">
-White Paper, Website, Launch Plan
-</h3>
-<div class="listing-subtitle">
-
-</div>
-<div class="listing-description">
-<strong>White Paper Update: Min-Hua</strong> PHUSE are doing technical review so hopefully will come back shortly with any…
-</div>
-</a>
-</div>
-<div class="metadata">
-<a href="../minutes/posts/17apr2023.html">
-<div class="listing-date">
-Apr 17, 2023
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="1" data-listing-date-sort="1678665600000" data-listing-file-modified-sort="1683791393054" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="20">
-<div class="thumbnail">
-<p><a href="../minutes/posts/13mar2023.html"> <div class="listing-item-img-placeholder card-img-top" >&nbsp;</div> </a></p>
-</div>
-<div class="body">
-<a href="../minutes/posts/13mar2023.html">
-<h3 class="no-anchor listing-title">
-White Paper, Website, ONCO, Volunteers, Conferences
-</h3>
-<div class="listing-subtitle">
-
-</div>
-<div class="listing-description">
-<strong>White Paper Update: Lyn</strong> Min-Hua is sending the white paper to the PHUSE group lead for review soon just a bit more tidying to do following comments.
-</div>
-</a>
-</div>
-<div class="metadata">
-<a href="../minutes/posts/13mar2023.html">
-<div class="listing-date">
-Mar 13, 2023
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="2" data-listing-date-sort="1676246400000" data-listing-file-modified-sort="1683791393050" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1">
-<div class="thumbnail">
-<p><a href="../minutes/posts/13Feb2023.html"> <div class="listing-item-img-placeholder card-img-top" >&nbsp;</div> </a></p>
-</div>
-<div class="body">
-<a href="../minutes/posts/13Feb2023.html">
-<h3 class="no-anchor listing-title">
-White Paper and Demo of connecting Rstudio with Github repo
-</h3>
-<div class="listing-subtitle">
-
-</div>
-<div class="listing-description">
-Min-Hua went through outstanding comments on the white paper.
-</div>
-</a>
-</div>
-<div class="metadata">
-<a href="../minutes/posts/13Feb2023.html">
-<div class="listing-date">
-Feb 13, 2023
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="3" data-listing-date-sort="1674432000000" data-listing-file-modified-sort="1683791393054" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="4">
-<div class="thumbnail">
-<p><a href="../minutes/posts/23Jan2023.html"> <div class="listing-item-img-placeholder card-img-top" >&nbsp;</div> </a></p>
-</div>
-<div class="body">
-<a href="../minutes/posts/23Jan2023.html">
-<h3 class="no-anchor listing-title">
-New Website Discussion
-</h3>
-<div class="listing-subtitle">
-
-</div>
-<div class="listing-description">
-Repo now live: [https://psiaims.github.io/CAMIS/]
-</div>
-</a>
-</div>
-<div class="metadata">
-<a href="../minutes/posts/23Jan2023.html">
-<div class="listing-date">
-Jan 23, 2023
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="4" data-listing-date-sort="1670803200000" data-listing-file-modified-sort="1683791393050" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="3">
-<div class="thumbnail">
-<p><a href="../minutes/posts/12Dec2022.html"> <div class="listing-item-img-placeholder card-img-top" >&nbsp;</div> </a></p>
-</div>
-<div class="body">
-<a href="../minutes/posts/12Dec2022.html">
-<h3 class="no-anchor listing-title">
-Restart Meeting
-</h3>
-<div class="listing-subtitle">
-
-</div>
-<div class="listing-description">
-
-</div>
-</a>
-</div>
-<div class="metadata">
-<a href="../minutes/posts/12Dec2022.html">
-<div class="listing-date">
-Dec 12, 2022
-</div>
-</a>
-</div>
-</div>
-</div>
-<div class="listing-no-matching d-none">
-No matching items
-</div>
-</div></main> <!-- /main -->
+</main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
   const toggleBodyColorMode = (bsSheetEl) => {
