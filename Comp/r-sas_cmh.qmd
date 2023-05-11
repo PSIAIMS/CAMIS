@@ -188,9 +188,14 @@ sas_odds <- tribble(
   ~Scenario, ~OR, ~LCL, ~UCL, ~prob, ~lang, 
   1 , 0.9550959, 0.4865116, 1.874998, NA_real_, "SAS"
 )
-# mantelhaen.test(x=data$TRTP, y=data$Sex, z=data$AGEGR1)	
 
-# readRDS(('cmh/Docu/interim_update','table2.RDS'))
+freq_dat <- data |> 
+  filter(TRTP != "Xanomeline High Dose") |> 
+  group_by(TRTP , SEX , AGEGR1) |> 
+  dplyr::summarise(Freq = n_distinct(USUBJID)) 
+freq_tabs <- xtabs(Freq ~ TRTP + SEX + AGEGR1, data = freq_dat)
+foo <- mantelhaen.test(freq_tabs)
+
 ```
 
 ## Homogenity Test
@@ -209,7 +214,7 @@ For the generalized version of the cmh test no R package can be recommended so f
 
 # References
 
-Accessible Summary: https://online.stat.psu.edu/stat504/lesson/5/5.4/5.4.5
+Accessible Summary: https://online.stat.psu.edu/stat504/lesson/4/4.4
 
 An Introduction to Categorical Data Analysis 2nd Edition (Agresti): http://users.stat.ufl.edu/\~aa/
 
