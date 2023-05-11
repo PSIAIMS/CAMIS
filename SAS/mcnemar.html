@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>CAMIS - Multivariate Analysis of Variance in R</title>
+<title>CAMIS - McNemar’s test in SAS</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -146,14 +146,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- sidebar -->
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#performing-mcnemars-test-in-sas" id="toc-performing-mcnemars-test-in-sas" class="nav-link active" data-scroll-target="#performing-mcnemars-test-in-sas">Performing McNemar’s test in SAS</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Multivariate Analysis of Variance in R</h1>
+<h1 class="title">McNemar’s test in SAS</h1>
 </div>
 
 
@@ -168,132 +174,34 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<p>For a detailed description of MANOVA including assumptions see <a href="https://www.reneshbedre.com/blog/manova.html?utm_content=cmp-true">Renesh Bedre</a></p>
-<p><strong>Example 39.6 Multivariate Analysis of Variance</strong> from <a href="https://support.sas.com/documentation/cdl/en/statug/63033/HTML/default/viewer.htm#statug_glm_sect051.htm">SAS MANOVA User Guide</a></p>
-<p>This example employs multivariate analysis of variance (MANOVA) to measure differences in the chemical characteristics of ancient pottery found at four kiln sites in Great Britain. The data are from Tubb, Parker, and Nickless (1980), as reported in Hand et al.&nbsp;(1994).</p>
-<p>For each of 26 samples of pottery, the percentages of oxides of five metals are measured. The following statements create the data set and perform a one-way MANOVA. Additionally, it is of interest to know whether the pottery from one site in Wales (Llanederyn) differs from the samples from other sites.</p>
+<section id="performing-mcnemars-test-in-sas" class="level3">
+<h3 class="anchored" data-anchor-id="performing-mcnemars-test-in-sas">Performing McNemar’s test in SAS</h3>
+<p>To demonstrate McNemar’s test in SAS, data concerning the presence or absence of cold symptoms was used. The symptoms were recorded by the same children at the age of 12 and 14. A total of 2638 participants were involved.</p>
+<section id="using-proc-freq" class="level4">
+<h4 class="anchored" data-anchor-id="using-proc-freq">Using PROC FREQ</h4>
+<p>Testing for a significant difference in cold symptoms between ages, using McNemar’s test in SAS, can be performed as below. The AGREE option is stated within the FREQ procedure to produce agreement tests and measures, including McNemar’s test.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
-✔ ggplot2 3.4.0      ✔ purrr   1.0.1 
-✔ tibble  3.1.8      ✔ dplyr   1.0.10
-✔ tidyr   1.3.0      ✔ stringr 1.5.0 
-✔ readr   2.1.3      ✔ forcats 0.5.2 
-── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-✖ dplyr::filter() masks stats::filter()
-✖ dplyr::lag()    masks stats::lag()</code></pre>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>proc freq data<span class="ot">=</span>colds;</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  tables age12<span class="sc">*</span>age14 <span class="sc">/</span> agree;</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knitr)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(emmeans)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span>opts_chunk<span class="sc">$</span><span class="fu">set</span>(<span class="at">echo =</span> <span class="cn">TRUE</span>, <span class="at">cache =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>pottery <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../data/manova1.csv"</span>)</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>pottery</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>           site   al   fe   mg   ca   na
-1    Llanederyn 14.4 7.00 4.30 0.15 0.51
-2    Llanederyn 13.8 7.08 3.43 0.12 0.17
-3    Llanederyn 14.6 7.09 3.88 0.13 0.20
-4    Llanederyn 11.5 6.37 5.64 0.16 0.14
-5    Llanederyn 13.8 7.06 5.34 0.20 0.20
-6    Llanederyn 10.9 6.26 3.47 0.17 0.22
-7    Llanederyn 10.1 4.26 4.26 0.20 0.18
-8    Llanederyn 11.6 5.78 5.91 0.18 0.16
-9    Llanederyn 11.1 5.49 4.52 0.29 0.30
-10   Llanederyn 13.4 6.92 7.23 0.28 0.20
-11   Llanederyn 12.4 6.13 5.69 0.22 0.54
-12   Llanederyn 13.1 6.64 5.51 0.31 0.24
-13   Llanederyn 12.7 6.69 4.45 0.20 0.22
-14   Llanederyn 12.5 6.44 3.94 0.22 0.23
-15     Caldicot 11.8 5.44 3.94 0.30 0.04
-16     Caldicot 11.6 5.39 3.77 0.29 0.06
-17 IslandThorns 18.3 1.28 0.67 0.03 0.03
-18 IslandThorns 15.8 2.39 0.63 0.01 0.04
-19 IslandThorns 18.0 1.50 0.67 0.01 0.06
-20 IslandThorns 18.0 1.88 0.68 0.01 0.04
-21 IslandThorns 20.8 1.51 0.72 0.07 0.10
-22  AshleyRails 17.7 1.12 0.56 0.06 0.06
-23  AshleyRails 18.3 1.14 0.67 0.06 0.05
-24  AshleyRails 16.7 0.92 0.53 0.01 0.05
-25  AshleyRails 14.8 2.74 0.67 0.03 0.05
-26  AshleyRails 19.1 1.64 0.60 0.10 0.03</code></pre>
+</section>
+<section id="results" class="level4">
+<h4 class="anchored" data-anchor-id="results">Results</h4>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/mcnemar/sas-mcnemar.png" class="img-fluid figure-img" style="width:40.0%"></p>
+</figure>
 </div>
 </div>
-<p><strong>1 Perform one way MANOVA</strong></p>
-<p>Response ID for ANOVA is order of 1=al, 2=fe, 3=mg, ca, na.</p>
-<p>We are testing H0: group mean vectors are the same for all groups or they dont differ significantly vs</p>
-<p>H1: At least one of the group mean vectors is different from the rest.</p>
-<div class="cell" data-hash="manova_cache/html/unnamed-chunk-2_2e3e97b35473afb5af74a33d6112b565">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>dep_vars <span class="ot">&lt;-</span> <span class="fu">cbind</span>(pottery<span class="sc">$</span>al,pottery<span class="sc">$</span>fe,pottery<span class="sc">$</span>mg, pottery<span class="sc">$</span>ca, pottery<span class="sc">$</span>na)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span><span class="fu">manova</span>(dep_vars <span class="sc">~</span> pottery<span class="sc">$</span>site)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary.aov</span>(fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code> Response 1 :
-             Df  Sum Sq Mean Sq F value    Pr(&gt;F)    
-pottery$site  3 175.610  58.537  26.669 1.627e-07 ***
-Residuals    22  48.288   2.195                      
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
- Response 2 :
-             Df  Sum Sq Mean Sq F value    Pr(&gt;F)    
-pottery$site  3 134.222  44.741  89.883 1.679e-12 ***
-Residuals    22  10.951   0.498                      
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
- Response 3 :
-             Df Sum Sq Mean Sq F value    Pr(&gt;F)    
-pottery$site  3 103.35  34.450   49.12 6.452e-10 ***
-Residuals    22  15.43   0.701                      
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
- Response 4 :
-             Df   Sum Sq  Mean Sq F value    Pr(&gt;F)    
-pottery$site  3 0.204703 0.068234  29.157 7.546e-08 ***
-Residuals    22 0.051486 0.002340                      
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
- Response 5 :
-             Df  Sum Sq  Mean Sq F value    Pr(&gt;F)    
-pottery$site  3 0.25825 0.086082  9.5026 0.0003209 ***
-Residuals    22 0.19929 0.009059                      
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 </div>
-</div>
-<p>‘summary(fit)’ outputs the MANOVA testing of an overall site effect.</p>
-<p>P&lt;0.001 suggests there is an overall difference between the chemical composition of samples from different sites.</p>
-<div class="cell" data-hash="manova_cache/html/unnamed-chunk-3_f61a1238952e806b5db11f9d92af49fe">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>             Df Pillai approx F num Df den Df    Pr(&gt;F)    
-pottery$site  3 1.5539   4.2984     15     60 2.413e-05 ***
-Residuals    22                                            
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
-</div>
-</div>
-<p><strong>2 Now we test to see if the Llanaderyn site is different to the other sites</strong></p>
-<p>NOTE: interest may now lie in using pre-planned contrast statements to investigate if one site differs when compared to the average of the others. You would imagine this could be done using the ‘contrast’ function something like the code below, however this result does not match the SAS user guide and so looks to be doing a different analysis. <strong>SUGGEST THIS IS NOT USED UNTIL MORE RESEARCH INTO THIS METHOD CAN BE PERFORMED.</strong> One alternative suggestion is to perform a linear descriminent analysis (LDA).</p>
-<div class="cell" data-hash="manova_cache/html/unnamed-chunk-4_7a202e634849fbc16f3684185137cc29">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">manova</span>(dep_vars <span class="sc">~</span> pottery<span class="sc">$</span>site) <span class="sc">%&gt;%</span> </span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>          <span class="fu">emmeans</span>(<span class="st">"site"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>     <span class="fu">contrast</span>(<span class="at">method=</span><span class="fu">list</span>(</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>          <span class="st">"Llanederyn vs other sites"</span><span class="ot">=</span> <span class="fu">c</span>(<span class="st">"Llanederyn"</span><span class="ot">=</span><span class="sc">-</span><span class="dv">3</span>, <span class="st">"Caldicot"</span><span class="ot">=</span><span class="dv">1</span>, <span class="st">"IslandThorns"</span><span class="ot">=</span><span class="dv">1</span>, <span class="st">"AshleyRails"</span><span class="ot">=</span><span class="dv">1</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code> contrast                  estimate    SE df t.ratio p.value
- Llanederyn vs other sites     1.51 0.661 22   2.288  0.0321
-
-Results are averaged over the levels of: rep.meas </code></pre>
-</div>
-</div>
-<p>NOTE: if you feel you can help with the above discrepancy please contribute to the CAMIS repo by following the instructions on the <a href="../contribution.html">contributions page</a>.</p>
+<p>SAS outputs the tabulated data for proportions, the McNemar’s Chi-square statistic, and the Kappa coefficient with 95% confidence limits. There is no continuity correction used and no option to include this.</p>
 
 
+</section>
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
