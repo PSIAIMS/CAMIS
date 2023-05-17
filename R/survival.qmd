@@ -1,0 +1,117 @@
+---
+title: "Survival Analysis Using R"
+---
+
+The most commonly used survival analysis methods in clinical trials include:
+
+-   Kaplan-Meier (KM) estimators: non-parametric statistics utilized for estimating the survival function
+
+-   Log-rank test: a non-parametric test for comparing the survival functions across two or more groups
+
+-   Cox proportional hazards (PH) model: a semi-parametric model often used to assess the relationship between the survival time and explanatory variables
+
+Additionally, other methods for analyzing time-to-event data are available, such as:
+
+-   Parametric survival model
+
+-   Accelerated failure time model
+
+-   Competing risk model
+
+-   Restricted mean survival time
+
+-   Time-dependent Cox model
+
+While these models may be explored in a separate document, this particular document focuses solely on the three most prevalent methods: KM estimators, log-rank test and Cox PH model.
+
+# Analysis of Time-to-event Data
+
+Below is a standard mock-up for survival analysis in clinical trials.
+
+```{r, echo=FALSE, fig.align='center', out.width="75%"}
+knitr::include_graphics("../images/survival/layout.png")   
+```
+
+## Example Data
+
+Data source: https://stats.idre.ucla.edu/sas/seminars/sas-survival/
+
+The data include 500 subjects from the Worcester Heart Attack Study. This study examined several factors, such as age, gender and BMI, that may influence survival time after heart attack. Follow up time for all participants begins at the time of hospital admission after heart attack and ends with death or loss to follow up (censoring). The variables used here are:
+
+-   lenfol: length of followup, terminated either by death or censoring - time variable
+
+-   fstat: loss to followup = 0, death = 1 - censoring variable
+
+-   afb: atrial fibrillation, no = 0, 1 = yes - explanatory variable
+
+-   gender: males = 0, females = 1 - stratification factor
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(haven)
+library(survival)
+library(survminer)
+library(broom)
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+
+dat <- read_sas(file.path("../data/whas500.sas7bdat")) %>%
+  mutate(LENFOLY = round(LENFOL/365.25, 2), ## change follow-up days to years for better visualization
+         AFB = factor(AFB, levels = c(1, 0))) ## change AFB order to use "Yes" as the reference group to be consistent with SAS
+
+```
+
+## The Non-stratified Model
+
+First we try a non-stratified analysis following the mock-up above to describe the association between survival time and afb (atrial fibrillation).
+
+The KM estimators are from `survival::survfit` function, the log-rank test uses `survminer::surv_pvalue`, and Cox PH model is conducted using `survival::coxph` function. Numerous R packages and functions are available for performing survival analysis. The author has selected `survival` and `survminer` for use in this context, but alternative options can also be employed for survival analysis.
+
+### KM estimators
+
+```{r}
+fit.km <- survfit(Surv(LENFOLY, FSTAT) ~ AFB, data = dat)
+
+## quantile estimates
+quantile(fit.km, probs = c(0.25, 0.5, 0.75)) 
+
+## landmark estimates at 1, 3, 5-year
+summary(fit.km, times = c(1, 3, 5)) 
+
+```
+
+### Log-rank test
+
+```{r}
+survminer::surv_pvalue(fit.km, data = dat)
+```
+
+### Cox PH model
+
+```{r}
+fit.cox <- coxph(Surv(LENFOLY, FSTAT) ~ AFB, data = dat)
+fit.cox %>% 
+  tidy(exponentiate = TRUE, conf.int = TRUE, conf.level = 0.95) %>%
+  select(term, estimate, conf.low, conf.high)
+```
+
+## The Stratified Model
+
+In a stratified model, the Kaplan-Meier estimators remain the same as those in the non-stratified model. To implement stratified log-rank tests and Cox proportional hazards models, simply include the strata() function within the model formula.
+
+### Stratified Log-rank test
+
+```{r}
+fit.km.str <- survfit(Surv(LENFOLY, FSTAT) ~ AFB + strata(GENDER), data = dat)
+
+survminer::surv_pvalue(fit.km.str, data = dat)
+```
+
+### Stratified Cox PH model
+
+```{r}
+fit.cox.str <- coxph(Surv(LENFOLY, FSTAT) ~ AFB + strata(GENDER), data = dat)
+fit.cox.str %>% 
+  tidy(exponentiate = TRUE, conf.int = TRUE, conf.level = 0.95) %>%
+  select(term, estimate, conf.low, conf.high)
+```
