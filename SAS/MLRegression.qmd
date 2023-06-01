@@ -1,0 +1,83 @@
+---
+title: "Multiple Linear Regression"
+output: html_document
+date: "2023-04-22"
+---
+Import sas dataset
+proc import out= WORK.htwt 
+            datafile= "C:\Documents and Settings\kwelch\Desktop\b510\htwt.sav" 
+            DBMS=SAV REPLACE;
+run;
+
+title "Descriptive Statistics for HTWT Data Set";
+proc means data=htwt;
+run;
+
+**Output**
+Descriptive Statistics for HTWT Data Set                  
+                             The MEANS Procedure
+
+Variable  Label     N          Mean       Std Dev       Minimum       Maximum
+-----------------------------------------------------------------------------
+AGE       AGE     237    16.4430380     1.8425767    13.9000000    25.0000000
+HEIGHT    HEIGHT  237    61.3645570     3.9454019    50.5000000    72.0000000
+WEIGHT    WEIGHT  237   101.3080169    19.4406980    50.5000000   171.5000000
+----------------------------------------------------------------------------
+
+**Create a new data set with new variables**
+data htwt2;
+  set htwt;
+
+**Create dummy variables for female**
+  if sex="f" then female=1;
+  if sex="m" then female=0; 
+ 
+**Create interaction**
+  fem_age = female * age;  
+run;
+
+title "ANCOVA for Males and Females";
+title2 "Relationship of Height to Age";
+proc reg data=htwt2;
+  where age <=19;
+  model height = female age fem_age / clb;
+quit;
+
+Model: MODEL1
+                                  Dependent Variable: HEIGHT
+
+                            Number of Observations Read         219
+                            Number of Observations Used         219
+
+                                     Analysis of Variance
+
+                                            Sum of           Mean
+        Source                   DF        Squares         Square    F Value    Pr > F
+        Model                     3     1432.63813      477.54604      60.93    <.0001
+        Error                   215     1684.95730        7.83701
+        Corrected Total         218     3117.59543
+
+
+                     Root MSE              2.79947    R-Square     0.4595
+                     Dependent Mean       61.00457    Adj R-Sq     0.4520
+                     Coeff Var             4.58895
+
+We examine the parameter estimates in the output below. 
+
+                                                     Parameter Estimates
+                                Parameter       Standard
+           Variable     DF       Estimate          Error    t Value    Pr > |t|       95% Confidence Limits
+           Intercept     1       28.88281        2.87343      10.05      <.0001       23.21911       34.54650
+           female        1       13.61231        4.01916       3.39      0.0008        5.69031       21.53432
+           AGE           1        2.03130        0.17764      11.44      <.0001        1.68117        2.38144
+           fem_age       1       -0.92943        0.24782      -3.75      0.0002       -1.41791       -0.44096
+
+The model that we are fitting is:
+height=b0 + b1 x female + b2 x age + b3 x fem_age + eij height
+
+b0=28.88
+b1=13.61
+b2=2.03
+b3=-0.92942
+
+
