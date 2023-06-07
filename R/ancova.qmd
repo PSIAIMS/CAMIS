@@ -11,7 +11,8 @@ library(dplyr)
 library(broom)
 library(emmeans)
 library(rstatix)
-library(kable)
+library(gt)
+
 df_sas <- 
   tribble(
     ~drug, ~pre, ~post,
@@ -51,7 +52,7 @@ my_formula <- as.formula(post ~ drug + pre)
 
 ## Introduction
 
-In this example, we're looking at [Analysis of Covariance](https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_glm_examples04.htm). ANCOVA is typically used to analyse treatment differences, to see examples of prediction models go to the simple linear regression page.
+In this example, we're looking at [Analysis of Covariance](https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_glm_examples04.htm). ANCOVA is typically used to analyse treatment differences, to see examples of prediction models go to the [simple linear regression page]("linear-models.qmd").
 
 ## Data Summary
 
@@ -66,8 +67,8 @@ df_sas %>% summary()
 model_ancova <- lm(post ~ drug + pre, data = df_sas)
 model_glance <- model_ancova %>% glance()
 model_tidy   <- model_ancova %>% tidy()
-model_glance %>% kable()
-model_tidy   %>% kable()
+model_glance %>% gt()
+model_tidy   %>% gt()
 ```
 
 ```{r}
@@ -76,7 +77,7 @@ model_table <-
   anova() %>% 
   tidy() %>% 
   add_row(term = "Total", df = sum(.$df), sumsq = sum(.$sumsq))
-model_table %>% kable()
+model_table %>% gt()
 ```
 
 ### Type 1
@@ -85,7 +86,7 @@ model_table %>% kable()
 df_sas %>%
   anova_test(post ~ drug + pre, type = 1, detailed = TRUE) %>% 
   get_anova_table() %>%
-  kable()
+  gt()
 ```
 
 ### Type 2
@@ -94,7 +95,7 @@ df_sas %>%
 df_sas %>% 
   anova_test(post ~ drug + pre, type = 2, detailed = TRUE) %>% 
   get_anova_table() %>% 
-  kable()
+  gt()
 ```
 
 ### Type 3
@@ -103,7 +104,7 @@ df_sas %>%
 df_sas %>%
   anova_test(post ~ drug + pre, type = 3, detailed = TRUE) %>% 
   get_anova_table() %>% 
-  kable()
+  gt()
 ```
 
 ### LS Means
