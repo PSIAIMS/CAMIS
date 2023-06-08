@@ -1,0 +1,115 @@
+---
+title: "Ancova"
+output: html_document
+date: "2023-06-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tibble)
+library(dplyr)
+library(broom)
+library(emmeans)
+library(rstatix)
+library(gt)
+
+df_sas <- 
+  tribble(
+    ~drug, ~pre, ~post,
+      "A",   11,     6,   
+      "A",    8,     0,   
+      "A",    5,     2,   
+      "A",   14,     8,   
+      "A",   19,    11,
+      "A",    6,     4,   
+      "A",   10,    13,   
+      "A",    6,     1,   
+      "A",   11,     8,   
+      "A",    3,     0,
+      "D",    6,     0,   
+      "D",    6,     2,   
+      "D",    7,     3,   
+      "D",    8,     1,   
+      "D",   18,    18,
+      "D",    8,     4,   
+      "D",   19,    14,   
+      "D",    8,     9,   
+      "D",    5,     1,   
+      "D",   15,     9,
+      "F",   16,    13,   
+      "F",   13,    10,   
+      "F",   11,    18,   
+      "F",    9,     5,   
+      "F",   21,    23,
+      "F",   16,    12,   
+      "F",   12,     5,   
+      "F",   12,    16,   
+      "F",    7,     1,   
+      "F",   12,    20) %>% 
+  mutate(drug = factor(drug))
+my_formula <- as.formula(post ~ drug + pre)
+```
+
+## Introduction
+
+In this example, we're looking at [Analysis of Covariance](https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_glm_examples04.htm). ANCOVA is typically used to analyse treatment differences, to see examples of prediction models go to the [simple linear regression page]("linear-models.qmd").
+
+## Data Summary
+
+```{r}
+df_sas %>% glimpse()
+df_sas %>% summary()
+```
+
+## The Model
+
+```{r}
+model_ancova <- lm(post ~ drug + pre, data = df_sas)
+model_glance <- model_ancova %>% glance()
+model_tidy   <- model_ancova %>% tidy()
+model_glance %>% gt()
+model_tidy   %>% gt()
+```
+
+```{r}
+model_table <- 
+  model_ancova %>% 
+  anova() %>% 
+  tidy() %>% 
+  add_row(term = "Total", df = sum(.$df), sumsq = sum(.$sumsq))
+model_table %>% gt()
+```
+
+### Type 1
+
+```{r}
+df_sas %>%
+  anova_test(post ~ drug + pre, type = 1, detailed = TRUE) %>% 
+  get_anova_table() %>%
+  gt()
+```
+
+### Type 2
+
+```{r}
+df_sas %>% 
+  anova_test(post ~ drug + pre, type = 2, detailed = TRUE) %>% 
+  get_anova_table() %>% 
+  gt()
+```
+
+### Type 3
+
+```{r}
+df_sas %>%
+  anova_test(post ~ drug + pre, type = 3, detailed = TRUE) %>% 
+  get_anova_table() %>% 
+  gt()
+```
+
+### LS Means
+
+```{r}
+model_ancova %>% emmeans::lsmeans("drug") %>% emmeans::pwpm(pvals = TRUE, means = TRUE) 
+model_ancova %>% emmeans::lsmeans("drug") %>% plot(comparisons = TRUE)
+```
