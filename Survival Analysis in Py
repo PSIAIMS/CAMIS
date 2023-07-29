@@ -1,0 +1,52 @@
+#SAS code to generate survival analysis data#
+###Cox Model####
+proc phreg data = adtte;
+class trt; 
+model aval*censor(0) = trt/rl ties = efron; 
+strata region; 
+run; 
+#Python Equivalent Code#
+pip install lifelines
+import pandas as pd
+from lifelines import CoxPHFitter
+
+# Assuming you have loaded your data into a DataFrame named 'adtte'
+# Make sure the column names are consistent with the SAS code
+
+# Creating an instance of CoxPHFitter
+cph = CoxPHFitter()
+
+# Fitting the Cox proportional hazards model
+cph.fit(adtte, duration_col='aval', event_col='censor', strata='region', formula='trt', ties='efron')
+
+# Displaying the estimated coefficients
+print("Cox Proportional Hazards Regression Results:")
+print(cph.summary)
+
+# You can also access other statistics such as hazard ratios, p-values, confidence intervals, etc.
+####KM Estimates -CI#####
+proc lifetest data = adtte conftype = log; 
+time aval*censor(0); 
+strata region/group = trt;
+run;
+#Python Code Equivalent#
+pip install lifelines
+import pandas as pd
+from lifelines import KaplanMeierFitter
+from lifelines.statistics import logrank_test
+
+# Assuming you have loaded your data into a DataFrame named 'adtte'
+# Make sure the column names are consistent with the SAS code
+
+# Create Kaplan-Meier survival curves for each treatment group (trt)
+kmf = KaplanMeierFitter()
+for trt, group_data in adtte.groupby('trt'):
+    kmf.fit(group_data['aval'], event_observed=group_data['censor'], label=f'Treatment {trt}')
+    kmf.plot()
+
+# Perform the log-rank test
+results = logrank_test(adtte['aval'], adtte['trt'], event_observed=adtte['censor'], strata=adtte['region'])
+
+# Display the log-rank test results
+print("Log-Rank Test Results:")
+print(results.summary)
