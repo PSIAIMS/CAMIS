@@ -5,9 +5,8 @@ title: "Correlation Analysis Using R"
 ```{r}
 #| echo: FALSE
 #| include: FALSE
-
 library(tidyverse)
-knitr::opts_chunk$set(echo = TRUE)
+library(gt)
 ```
 
 The most commonly used correlation analysis methods in clinical trials include:
@@ -20,13 +19,11 @@ The most commonly used correlation analysis methods in clinical trials include:
 
 -   Chi-Square statistic: association measure for categorical variables comparing observed frequencies with those expected under the assumption of independence
 
--   C-index: concordance coefficient defined as the proportion of concordant pairs divided by the total number of possible evaluation pairs.
-
 # Example Data
 
 Survival in patients with advanced lung cancer from the North Central Cancer Treatment Group. Performance scores rate how well the patient can perform usual daily activities.
 
-Data source: Loprinzi CL. Laurie JA. Wieand HS. Krook JE. Novotny PJ. Kugler JW. Bartel J. Law M. Bateman M. Klatt NE. et al. Prospective evaluation of prognostic variables from patient-completed questionnaires. North Central Cancer Treatment Group. Journal of Clinical Oncology. 12(3):601-7, 1994.
+*Data source:* *Loprinzi CL. Laurie JA. Wieand HS. Krook JE. Novotny PJ. Kugler JW. Bartel J. Law M. Bateman M. Klatt NE. et al. Prospective evaluation of prognostic variables from patient-completed questionnaires. North Central Cancer Treatment Group. Journal of Clinical Oncology. 12(3):601-7, 1994.*
 
 ```{r}
 library(survival) 
@@ -34,7 +31,13 @@ library(survival)
 glimpse(lung)
 ```
 
-# Correlation Analysis of Continuous Data
+# Correlation Analysis for Continuous Data
+
+`cor()` computes the correlation coefficient between vectors `x` and `y`, where `method` chooses which correlation coefficient is to be computed (default: `"pearson"`, `"kendall"`, or `"spearman"`).
+
+`cor.test()` calucalates the test for association between paired samples, using one of Pearson's product moment correlation coefficient, Kendall's $\tau$ or Spearman's $\rho$. Besides the correlation coefficient itself, it provides additional information.
+
+Missing values are assumed to be missing completely at random (MCAR). Different strategies are available, see `?cor` for details.
 
 ## Pearson Correlation
 
@@ -50,6 +53,12 @@ cor.test(x = lung$age, y = lung$meal.cal, method = "spearman")
 
 Note: Exact p-values require unanimous ranks.
 
+## Kendall's rank correlation
+
+```{r}
+cor.test(x = lung$age, y = lung$meal.cal, method = "kendall")
+```
+
 ## Interpretation of correlation coefficients
 
 Correlation coefficient is comprised between -1 and 1:
@@ -59,3 +68,17 @@ Correlation coefficient is comprised between -1 and 1:
 -   $0$ means that there is no association between the two variables
 
 -   $1$ indicates a strong positive correlation
+
+# Correlation Analysis for Categorical Data
+
+Association between ECOG performance score and Karnofsky performance score, both rated by physician (see `?lung` for details).
+
+```{r}
+table(x = lung$ph.ecog, y = lung$ph.karno) 
+```
+
+## Chi-Square statistic
+
+```{r}
+chisq.test(x = lung$ph.ecog, y = lung$ph.karno)
+```
