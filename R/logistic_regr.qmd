@@ -12,8 +12,7 @@ A model of the dependence of binary variables on explanatory variables. The logi
 
 $$
 \text{logit}(\pi_i)= \log\left\{ \frac{\pi_i}{1-\pi_i}\right\} = \beta_0 + \beta x_i, i = 1,\ldots,n 
-$$
-The model is especially useful in case-control studies and leads to the effect of risk factors by odds ratios.
+$$ The model is especially useful in case-control studies and leads to the effect of risk factors by odds ratios.
 
 # Example: Lung Cancer Data
 
@@ -26,7 +25,7 @@ library(survival)
 glimpse(lung)
 ```
 
-We analyze the weight loss in lung cancer patients in dependency of age, sex, ECOG performance score and calories consumed at meals. 
+We analyze the weight loss in lung cancer patients in dependency of age, sex, ECOG performance score and calories consumed at meals.
 
 ```{r}
 lung2 <- survival::lung %>% 
@@ -37,21 +36,28 @@ lung2 <- survival::lung %>%
 
 m1 <- glm(wt_grp ~ age + sex + ph.ecog + meal.cal, data = lung2, family = binomial(link="logit"))
 summary(m1)
+```
 
-# OR and CI
+The model summary contains the parameter estimates $\beta_j$ for each explanatory variable $x_j$, corresponding to the log-odds for the response variable to take the value $1$, conditional on all other explanatory variables remaining constant. For better interpretation, we can exponentiate these estimates, to obtain estimates for the odds instead and provide $95$% confidence intervals:
+
+```{r}
 exp(coef(m1))
 exp(confint(m1))
+```
 
+To compare two logistic models, one tests the difference in residual variances from both models using a $\chi^2$-distribution with a single degree of freedom (here at the $5$% level):
+
+```{r}
 m2 <- glm(wt_grp ~ sex + ph.ecog + meal.cal, data = lung2, family = binomial(link="logit"))
 summary(m2)
 
 anova(m1, m2, test = "Chisq")
+```
 
+Predictions from the model for the log-odds of a patient with new data to experience a weight loss are derived using `predict()`:
+
+```{r}
 # new female, symptomatic but completely ambulatory patient consuming 2500 calories
 new_pt <- data.frame(sex=2, ph.ecog=1, meal.cal=2500)
 predict(m2, new_pt, type = "response")
-
 ```
-
-
-
