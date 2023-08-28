@@ -16,7 +16,7 @@ $$
 \text{log}(E(Y|x))= \beta_0 + \beta' x, \; i = 1,\ldots,n 
 $$
 
--   Quasi-Poisson regression: Poisson model that allows overdispersion, i.e. dispersion parameter is not fixed at one,
+-   Quasi-Poisson regression: Poisson model that allows overdispersion, i.e. dispersion parameter is not fixed at one.
 -   Negative-Binomial regression: popular generalization which loosens the assumption that the variance is equal to the mean made by the Poisson model.
 
 Other models include hurdle or zero-inflated models, if data have more zero observations than expected.
@@ -40,26 +40,48 @@ polyps %>%
   geom_point() + theme_minimal()
 ```
 
+# Model Fit
+
+We fit a generalized linear model for `number` using the Poisson distribution with default log link.
+
 ```{r}
 # Poisson
 m1 <- glm(number ~ treat + age, data = polyps, family = poisson)
 summary(m1)
+```
 
+The parameter estimates are on log-scale. For better interpretation, we can exponentiate these estimates, to obtain estimates and provide $95$% confidence intervals:
+
+```{r}
 # OR and CI
 exp(coef(m1))
 exp(confint(m1))
+```
 
+Predictions for number of colonic polyps given a new 25-year-old patient on either treatment using `predict()`:
+
+```{r}
 # new 25 year old patient
 new_pt <- data.frame(treat = c("drug","placebo"), age=25)
 predict(m1, new_pt, type = "response")
+```
 
+# Modelling Overdispersion
+
+Poisson model assumes that mean and variance are equal, which can be a very restrictive assumption. One option to relax the assumption is adding a overdispersion constant to the relationship, i.e. $\text{Var}(\text{response}) = \phi\cdot \mu$, which results in a quasipoisson model:
+
+```{r}
 # Quasi poisson
 m2 <- glm(number ~ treat + age, data = polyps, family = quasipoisson)
 summary(m2)
+```
 
+Alternatively, we can explicitly model the count data with overdispersion using the negative Binomial model.
+
+```{r}
 # Negative Binomial
 m3 <- MASS::glm.nb(number ~ treat + age, data = polyps)
 summary(m3)
-
-
 ```
+
+Both model result very similar parameter estimates, but vary in estimates for their respective standard deviation.
