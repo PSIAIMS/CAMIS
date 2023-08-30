@@ -1,0 +1,47 @@
+---
+Python log-log with KaplanMeierFitter model
+---
+
+## Import the KaplanMeierFitter from lifelines, logrank_test from lifelines.statistics and pandas library
+import pandas as pd
+from lifelines import KaplanMeierFitter
+from lifelines.statistics import logrank_test
+
+## Data used
+## Creat the dataframe and printing the top rows from data source
+df = pd.read_sas('whas500.sas7bdat')
+df.head()
+
+## Example Code
+## Choose the right columns for analysis
+df = df[["LENFOL", "AFB", "FSTAT"]]
+
+## Change follow-up days to years for better visualization
+df['LENFOL'] = df['LENFOL']/365.25
+df['LENFOL'] = df['LENFOL'].round(decimals = 2)
+
+## Create Kaplan-Meier estimator
+kmf = KaplanMeierFitter()
+
+## Fit Kaplan-Meier estimator to groups
+groups = df['AFB'].unique()
+for group in groups:
+   group_data = df[df['AFB'] == group]
+   kmf.fit(group_data['LENFOL'], event_observed=group_data['FSTAT'], label=group)
+   kmf.plot()
+   
+## Log-rank test
+results = logrank_test(df[df['AFB'] == 1.0 ]['LENFOL'],
+                      df[df['AFB'] == 0.0 ]['LENFOL'],
+                      event_observed_A=df[df['AFB'] == 1.0 ]['FSTAT'],
+                      event_observed_B=df[df['AFB'] == 0.0 ]['FSTAT'])
+
+## Display log-rank test results
+print("Log-Rank Test Results:")
+print("p-value:", results.p_value)
+print("test statistic:", results.test_statistic)
+
+## Calculate log-log confidence interval
+confidence_interval = kmf.confidence_interval_survival_function_
+print("Log-Log Confidence Interval for Group B:")
+print(confidence_interval)
