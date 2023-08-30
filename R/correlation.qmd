@@ -1,0 +1,93 @@
+---
+title: "Correlation Analysis Using R"
+---
+
+```{r}
+#| echo: FALSE
+#| include: FALSE
+library(tidyverse)
+```
+
+The most commonly used correlation analysis methods in clinical trials include:
+
+-   Pearson correlation coefficient: product moment coefficient between two continuous variables, measuring linear associations.
+
+    \
+    $$
+    r = \frac{\sum_{i=1}^n (x_i - m_x)(y_i - m_y)}{\sqrt{\sum_{i=1}^n (x_i - m_x)^2\sum_{i=1}^n (y_i - m_y)^2}},$$
+
+    where $x$ and $y$ are observations from two continuous variables of length $n$ and $m_x$ and $m_y$ are their respective means.
+
+-   Spearman correlation coefficient: rank correlation defined through the scaled sum of the squared values of the difference between ranks of two continuous variables.
+
+    $$
+    \rho = \frac{\sum_{i=1}^n (x'_i - m_{x'})(y'_i - m_{y'})}{\sqrt{\sum_{i=1}^n (x'_i - m_{x'})^2\sum_{i=1}^n(y'_i - m_{y'})^2}},
+    $$
+
+    where $x'$ and $y'$ are the ranks of $x$ and $y$ and $m_{x'}$ and $m_{y'}$ are the mean ranks of $x$ and $y$, respectively.
+
+-   Kendall's rank correlation: rank correlation based on the number of inversions in one ranking as compared with another.
+
+    $$
+    \tau = \frac{n_c - n_d}{\frac{1}{2}\,n\,(n-1)},
+    $$
+
+    where $n_c$ is the total number of concordant pairs, $n_d$ is the total number of disconcordant pairs and $n$ the total size of observations in $x$ and $y$.
+
+Other association measures are available for count data/contingency tables comparing observed frequencies with those expected under the assumption of independence
+
+-   Fisher exact test
+
+-   Chi-Square statistic
+
+# Example: Lung Cancer Data
+
+*Data source:* *Loprinzi CL. Laurie JA. Wieand HS. Krook JE. Novotny PJ. Kugler JW. Bartel J. Law M. Bateman M. Klatt NE. et al. Prospective evaluation of prognostic variables from patient-completed questionnaires. North Central Cancer Treatment Group. Journal of Clinical Oncology. 12(3):601-7, 1994.*
+
+Survival in patients with advanced lung cancer from the North Central Cancer Treatment Group. Performance scores rate how well the patient can perform usual daily activities.
+
+```{r}
+library(survival) 
+
+glimpse(lung)
+```
+
+# Overview
+
+`cor()` computes the correlation coefficient between continuous variables `x` and `y`, where `method` chooses which correlation coefficient is to be computed (default: `"pearson"`, `"kendall"`, or `"spearman"`).
+
+`cor.test()` calulates the test for association between paired samples, using one of Pearson's product moment correlation coefficient, Kendall's $\tau$ or Spearman's $\rho$. Besides the correlation coefficient itself, it provides additional information.
+
+Missing values are assumed to be missing completely at random (MCAR). Different strategies are available, see `?cor` for details.
+
+# Pearson Correlation
+
+```{r}
+cor.test(x = lung$age, y = lung$meal.cal, method = "pearson") 
+```
+
+# Spearman Correlation
+
+```{r}
+cor.test(x = lung$age, y = lung$meal.cal, method = "spearman")
+```
+
+Note: Exact p-values require unanimous ranks.
+
+# Kendall's rank correlation
+
+```{r}
+cor.test(x = lung$age, y = lung$meal.cal, method = "kendall")
+```
+
+# Interpretation of correlation coefficients
+
+Correlation coefficient is comprised between -1 and 1:
+
+-   $-1$ indicates a strong negative correlation
+
+-   $0$ means that there is no association between the two variables
+
+-   $1$ indicates a strong positive correlation
+
+# 
