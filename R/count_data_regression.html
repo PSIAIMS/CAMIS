@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Deriving Quantiles or Percentiles in R vs SAS</title>
+<title>Regression for Count Data</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -94,6 +94,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <link rel="stylesheet" href="../styles.scss">
 </head>
@@ -155,11 +157,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#data" id="toc-data" class="nav-link active" data-scroll-target="#data">Data</a></li>
-  <li><a href="#sas-code" id="toc-sas-code" class="nav-link" data-scroll-target="#sas-code">SAS Code</a></li>
-  <li><a href="#r-code" id="toc-r-code" class="nav-link" data-scroll-target="#r-code">R code</a></li>
-  <li><a href="#comparison" id="toc-comparison" class="nav-link" data-scroll-target="#comparison">Comparison</a></li>
-  <li><a href="#key-references" id="toc-key-references" class="nav-link" data-scroll-target="#key-references">Key references:</a></li>
+  <li><a href="#example-familial-andenomatous-polyposis-data" id="toc-example-familial-andenomatous-polyposis-data" class="nav-link active" data-scroll-target="#example-familial-andenomatous-polyposis-data">Example: Familial Andenomatous Polyposis Data</a></li>
+  <li><a href="#model-fit" id="toc-model-fit" class="nav-link" data-scroll-target="#model-fit">Model Fit</a></li>
+  <li><a href="#modelling-overdispersion" id="toc-modelling-overdispersion" class="nav-link" data-scroll-target="#modelling-overdispersion">Modelling Overdispersion</a></li>
   </ul>
 </nav>
     </div>
@@ -168,7 +168,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Deriving Quantiles or Percentiles in R vs SAS</h1>
+<h1 class="title">Regression for Count Data</h1>
 </div>
 
 
@@ -183,72 +183,180 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<section id="data" class="level3">
-<h3 class="anchored" data-anchor-id="data">Data</h3>
-<p>The following data will be used show the differences between the default percentile definitions used by SAS and R:</p>
+<p>The most commonly used models for count data in clinical trials include:</p>
+<ul>
+<li>Poisson regression: assumes the response variable <span class="math inline">\(Y\)</span> has a Poisson distribution, which is linked using the logarithm with explanatory variables <span class="math inline">\(\bf{x}\)</span>.</li>
+</ul>
+<p><span class="math display">\[
+\text{log}(E(Y|x))= \beta_0 + \beta' x, \; i = 1,\ldots,n
+\]</span></p>
+<ul>
+<li>Quasi-Poisson regression: Poisson model that allows overdispersion, i.e.&nbsp;dispersion parameter is not fixed at one.</li>
+<li>Negative-Binomial regression: popular generalization which loosens the assumption that the variance is equal to the mean made by the Poisson model.</li>
+</ul>
+<p>Other models include hurdle or zero-inflated models, if data have more zero observations than expected.</p>
+<section id="example-familial-andenomatous-polyposis-data" class="level1">
+<h1>Example: Familial Andenomatous Polyposis Data</h1>
+<p><em>Data source: F. M. Giardiello, S. R. Hamilton, A. J. Krush, S. Piantadosi, L. M. Hylind, P. Celano, S. V. Booker, C. R. Robinson and G. J. A. Offerhaus (1993), Treatment of colonic and rectal adenomas with sulindac in familial adenomatous polyposis. New England Journal of Medicine, 328(18), 1313–1316.</em></p>
+<p>Data from a placebo-controlled trial of a non-steroidal anti-inflammatory drug in the treatment of familial andenomatous polyposis (FAP). (see <code>?polyps</code> for details).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dv">10</span>, <span class="dv">20</span>, <span class="dv">30</span>, <span class="dv">40</span>, <span class="dv">150</span>, <span class="dv">160</span>, <span class="dv">170</span>, <span class="dv">180</span>, <span class="dv">190</span>, <span class="dv">200</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">"polyps"</span>, <span class="at">package=</span><span class="st">"HSAUR2"</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(polyps)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 20
+Columns: 3
+$ number &lt;dbl&gt; 63, 2, 28, 17, 61, 1, 7, 15, 44, 25, 3, 28, 10, 40, 33, 46, 50,…
+$ treat  &lt;fct&gt; placebo, drug, placebo, drug, placebo, drug, placebo, placebo, …
+$ age    &lt;dbl&gt; 20, 16, 18, 22, 13, 23, 34, 50, 19, 17, 23, 22, 30, 27, 23, 22,…</code></pre>
 </div>
-</section>
-<section id="sas-code" class="level3">
-<h3 class="anchored" data-anchor-id="sas-code">SAS Code</h3>
-<p>Assuming the data above is stored in the variable <code>aval</code> within the dataset <code>adlb</code>, the 25th and 40th percentiles could be calculated using the following code.</p>
+</div>
+<p>We analyze the number of colonic polyps at 12 months in dependency of treatment and age of the patient.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>proc univariate data<span class="ot">=</span>adlb;</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  var aval;</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  output out<span class="ot">=</span>stats pctlpts<span class="ot">=</span><span class="dv">25</span> <span class="dv">40</span> pctlpre<span class="ot">=</span>p;</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>This procedure creates the dataset <code>stats</code> containing the variables <code>p25</code> and <code>p40</code>.</p>
-<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>polyps <span class="sc">%&gt;%</span> </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> number, <span class="at">x =</span> age, <span class="at">color =</span> treat)) <span class="sc">+</span> </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/summarystats/sas-percentiles-output.jpg" class="img-fluid figure-img" style="width:15.0%"></p>
-</figure>
+<p><img src="count_data_regression_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-</div>
-<p>The procedure has the option <code>PCTLDEF</code> which allows for five different percentile definitions to be used. The default is <code>PCTLDEF=5</code>.</p>
 </section>
-<section id="r-code" class="level3">
-<h3 class="anchored" data-anchor-id="r-code">R code</h3>
-<p>The 25th and 40th percentiles of <code>aval</code> can be calculated using the <code>quantile</code> function.</p>
+<section id="model-fit" class="level1">
+<h1>Model Fit</h1>
+<p>We fit a generalized linear model for <code>number</code> using the Poisson distribution with default log link.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(adlb<span class="sc">$</span>aval, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.25</span>, <span class="fl">0.4</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>This gives the following output.</p>
-<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Poisson</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>m1 <span class="ot">&lt;-</span> <span class="fu">glm</span>(number <span class="sc">~</span> treat <span class="sc">+</span> age, <span class="at">data =</span> polyps, <span class="at">family =</span> poisson)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>  25%   40% 
- 32.5 106.0 </code></pre>
+<pre><code>
+Call:
+glm(formula = number ~ treat + age, family = poisson, data = polyps)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-4.2212  -3.0536  -0.1802   1.4459   5.8301  
+
+Coefficients:
+             Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept)  4.529024   0.146872   30.84  &lt; 2e-16 ***
+treatdrug   -1.359083   0.117643  -11.55  &lt; 2e-16 ***
+age         -0.038830   0.005955   -6.52 7.02e-11 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for poisson family taken to be 1)
+
+    Null deviance: 378.66  on 19  degrees of freedom
+Residual deviance: 179.54  on 17  degrees of freedom
+AIC: 273.88
+
+Number of Fisher Scoring iterations: 5</code></pre>
 </div>
 </div>
-<p>The function has the argument <code>type</code> which allows for nine different percentile definitions to be used. The default is <code>type = 7</code>.</p>
-</section>
-<section id="comparison" class="level3">
-<h3 class="anchored" data-anchor-id="comparison">Comparison</h3>
-<p>The default percentile definition used by the UNIVARIATE procedure in SAS finds the 25th and 40th percentiles to be 30 and 95. The default definition used by R finds these percentiles to be 32.5 and 106.</p>
-<p>It is possible to get the quantile function in R to use the same definition as the default used in SAS, by specifying <code>type=2</code>.</p>
+<p>The parameter estimates are on log-scale. For better interpretation, we can exponentiate these estimates, to obtain estimates and provide <span class="math inline">\(95\)</span>% confidence intervals:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(adlb<span class="sc">$</span>aval, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.25</span>, <span class="fl">0.4</span>), <span class="at">type=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>This gives the following output.</p>
-<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># OR and CI</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">exp</span>(<span class="fu">coef</span>(m1))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>25% 40% 
- 30  95 </code></pre>
+<pre><code>(Intercept)   treatdrug         age 
+ 92.6681047   0.2568961   0.9619140 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">exp</span>(<span class="fu">confint</span>(m1))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Waiting for profiling to be done...</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 2.5 %      97.5 %
+(Intercept) 69.5361752 123.6802476
+treatdrug    0.2028078   0.3218208
+age          0.9505226   0.9729788</code></pre>
 </div>
 </div>
-<p>It is not possible to get the UNIVARIATE procedure in SAS to use the same definition as the default used in R.</p>
-<p>Rick Wicklin provided a <a href="https://blogs.sas.com/content/iml/2017/05/24/definitions-sample-quantiles.html">blog post</a> showing how SAS has built in support for calculations using 5 of the 9 percentile definitions available in R, and also demonstrated how you can use a SAS/IML function to calculate percentiles using the other 4 definitions.</p>
-<p>More information about quantile derivation can be found in the <a href="https://blogs.sas.com/content/iml/2021/07/26/compare-quantiles-sas-r-python.html">SAS blog</a>.</p>
+<p>Predictions for number of colonic polyps given a new 25-year-old patient on either treatment using <code>predict()</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># new 25 year old patient</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>new_pt <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">treat =</span> <span class="fu">c</span>(<span class="st">"drug"</span>,<span class="st">"placebo"</span>), <span class="at">age=</span><span class="dv">25</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">predict</span>(m1, new_pt, <span class="at">type =</span> <span class="st">"response"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        1         2 
+ 9.017654 35.102332 </code></pre>
+</div>
+</div>
 </section>
-<section id="key-references" class="level3">
-<h3 class="anchored" data-anchor-id="key-references">Key references:</h3>
-<p><a href="https://blogs.sas.com/content/iml/2021/07/26/compare-quantiles-sas-r-python.html">Compare the default definitions for sample quantiles in SAS, R, and Python</a></p>
-<p><a href="https://blogs.sas.com/content/iml/2017/05/24/definitions-sample-quantiles.html">Sample quantiles: A comparison of 9 definitions</a></p>
-<p><a href="https://www.jstor.org/stable/2684934">Hyndman, R. J., &amp; Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365.</a></p>
+<section id="modelling-overdispersion" class="level1">
+<h1>Modelling Overdispersion</h1>
+<p>Poisson model assumes that mean and variance are equal, which can be a very restrictive assumption. One option to relax the assumption is adding a overdispersion constant to the relationship, i.e.&nbsp;<span class="math inline">\(\text{Var}(\text{response}) = \phi\cdot \mu\)</span>, which results in a quasipoisson model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Quasi poisson</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>m2 <span class="ot">&lt;-</span> <span class="fu">glm</span>(number <span class="sc">~</span> treat <span class="sc">+</span> age, <span class="at">data =</span> polyps, <span class="at">family =</span> quasipoisson)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+glm(formula = number ~ treat + age, family = quasipoisson, data = polyps)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-4.2212  -3.0536  -0.1802   1.4459   5.8301  
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  4.52902    0.48106   9.415 3.72e-08 ***
+treatdrug   -1.35908    0.38533  -3.527  0.00259 ** 
+age         -0.03883    0.01951  -1.991  0.06284 .  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for quasipoisson family taken to be 10.72805)
+
+    Null deviance: 378.66  on 19  degrees of freedom
+Residual deviance: 179.54  on 17  degrees of freedom
+AIC: NA
+
+Number of Fisher Scoring iterations: 5</code></pre>
+</div>
+</div>
+<p>Alternatively, we can explicitly model the count data with overdispersion using the negative Binomial model. In this case, the overdispersion is a function of both <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\mu^2\)</span>:</p>
+<p><span class="math display">\[
+\text{Var}(\text{response}) = \mu + \kappa\,\mu^2.
+\]</span></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Negative Binomial</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>m3 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">glm.nb</span>(number <span class="sc">~</span> treat <span class="sc">+</span> age, <span class="at">data =</span> polyps)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+MASS::glm.nb(formula = number ~ treat + age, data = polyps, init.theta = 1.719491, 
+    link = log)
+
+Deviance Residuals: 
+     Min        1Q    Median        3Q       Max  
+-1.83270  -1.13898  -0.08851   0.33637   1.89785  
+
+Coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept)  4.52603    0.59466   7.611 2.72e-14 ***
+treatdrug   -1.36812    0.36903  -3.707 0.000209 ***
+age         -0.03856    0.02095  -1.840 0.065751 .  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for Negative Binomial(1.7195) family taken to be 1)
+
+    Null deviance: 36.734  on 19  degrees of freedom
+Residual deviance: 22.002  on 17  degrees of freedom
+AIC: 164.88
+
+Number of Fisher Scoring iterations: 1
+
+              Theta:  1.719 
+          Std. Err.:  0.607 
+
+ 2 x log-likelihood:  -156.880 </code></pre>
+</div>
+</div>
+<p>Both model result very similar parameter estimates, but vary in estimates for their respective standard deviation.</p>
 
 
 </section>

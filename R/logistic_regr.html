@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Deriving Quantiles or Percentiles in R vs SAS</title>
+<title>Logistic Regression</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -94,6 +94,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <link rel="stylesheet" href="../styles.scss">
 </head>
@@ -155,11 +157,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#data" id="toc-data" class="nav-link active" data-scroll-target="#data">Data</a></li>
-  <li><a href="#sas-code" id="toc-sas-code" class="nav-link" data-scroll-target="#sas-code">SAS Code</a></li>
-  <li><a href="#r-code" id="toc-r-code" class="nav-link" data-scroll-target="#r-code">R code</a></li>
-  <li><a href="#comparison" id="toc-comparison" class="nav-link" data-scroll-target="#comparison">Comparison</a></li>
-  <li><a href="#key-references" id="toc-key-references" class="nav-link" data-scroll-target="#key-references">Key references:</a></li>
+  <li><a href="#example-lung-cancer-data" id="toc-example-lung-cancer-data" class="nav-link active" data-scroll-target="#example-lung-cancer-data">Example: Lung Cancer Data</a></li>
+  <li><a href="#model-fit" id="toc-model-fit" class="nav-link" data-scroll-target="#model-fit">Model Fit</a></li>
+  <li><a href="#model-comparison" id="toc-model-comparison" class="nav-link" data-scroll-target="#model-comparison">Model Comparison</a></li>
+  <li><a href="#prediction" id="toc-prediction" class="nav-link" data-scroll-target="#prediction">Prediction</a></li>
   </ul>
 </nav>
     </div>
@@ -168,7 +169,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Deriving Quantiles or Percentiles in R vs SAS</h1>
+<h1 class="title">Logistic Regression</h1>
 </div>
 
 
@@ -183,72 +184,155 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<section id="data" class="level3">
-<h3 class="anchored" data-anchor-id="data">Data</h3>
-<p>The following data will be used show the differences between the default percentile definitions used by SAS and R:</p>
+<p>A model of the dependence of binary variables on explanatory variables. The logit of expectation is explained as linear for of explanatory variables. If we observed <span class="math inline">\((y_i, x_i),\)</span> where <span class="math inline">\(y_i\)</span> is a Bernoulli variable and <span class="math inline">\(x_i\)</span> a vector of explanatory variables, the model for <span class="math inline">\(\pi_i = P(y_i=1)\)</span> is</p>
+<p><span class="math display">\[
+\text{logit}(\pi_i)= \log\left\{ \frac{\pi_i}{1-\pi_i}\right\} = \beta_0 + \beta x_i, i = 1,\ldots,n
+\]</span></p>
+<p>The model is especially useful in case-control studies and leads to the effect of risk factors by odds ratios.</p>
+<section id="example-lung-cancer-data" class="level1">
+<h1>Example: Lung Cancer Data</h1>
+<p><em>Data source: Loprinzi CL. Laurie JA. Wieand HS. Krook JE. Novotny PJ. Kugler JW. Bartel J. Law M. Bateman M. Klatt NE. et al.&nbsp;Prospective evaluation of prognostic variables from patient-completed questionnaires. North Central Cancer Treatment Group. Journal of Clinical Oncology. 12(3):601-7, 1994.</em></p>
+<p>Survival in patients with advanced lung cancer from the North Central Cancer Treatment Group. Performance scores rate how well the patient can perform usual daily activities (see <code>?lung</code> for details).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dv">10</span>, <span class="dv">20</span>, <span class="dv">30</span>, <span class="dv">40</span>, <span class="dv">150</span>, <span class="dv">160</span>, <span class="dv">170</span>, <span class="dv">180</span>, <span class="dv">190</span>, <span class="dv">200</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-</section>
-<section id="sas-code" class="level3">
-<h3 class="anchored" data-anchor-id="sas-code">SAS Code</h3>
-<p>Assuming the data above is stored in the variable <code>aval</code> within the dataset <code>adlb</code>, the 25th and 40th percentiles could be calculated using the following code.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>proc univariate data<span class="ot">=</span>adlb;</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  var aval;</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  output out<span class="ot">=</span>stats pctlpts<span class="ot">=</span><span class="dv">25</span> <span class="dv">40</span> pctlpre<span class="ot">=</span>p;</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>This procedure creates the dataset <code>stats</code> containing the variables <code>p25</code> and <code>p40</code>.</p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/summarystats/sas-percentiles-output.jpg" class="img-fluid figure-img" style="width:15.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>The procedure has the option <code>PCTLDEF</code> which allows for five different percentile definitions to be used. The default is <code>PCTLDEF=5</code>.</p>
-</section>
-<section id="r-code" class="level3">
-<h3 class="anchored" data-anchor-id="r-code">R code</h3>
-<p>The 25th and 40th percentiles of <code>aval</code> can be calculated using the <code>quantile</code> function.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(adlb<span class="sc">$</span>aval, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.25</span>, <span class="fl">0.4</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>This gives the following output.</p>
-<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survival) </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(lung)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>  25%   40% 
- 32.5 106.0 </code></pre>
+<pre><code>Rows: 228
+Columns: 10
+$ inst      &lt;dbl&gt; 3, 3, 3, 5, 1, 12, 7, 11, 1, 7, 6, 16, 11, 21, 12, 1, 22, 16…
+$ time      &lt;dbl&gt; 306, 455, 1010, 210, 883, 1022, 310, 361, 218, 166, 170, 654…
+$ status    &lt;dbl&gt; 2, 2, 1, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, …
+$ age       &lt;dbl&gt; 74, 68, 56, 57, 60, 74, 68, 71, 53, 61, 57, 68, 68, 60, 57, …
+$ sex       &lt;dbl&gt; 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 1, …
+$ ph.ecog   &lt;dbl&gt; 1, 0, 0, 1, 0, 1, 2, 2, 1, 2, 1, 2, 1, NA, 1, 1, 1, 2, 2, 1,…
+$ ph.karno  &lt;dbl&gt; 90, 90, 90, 90, 100, 50, 70, 60, 70, 70, 80, 70, 90, 60, 80,…
+$ pat.karno &lt;dbl&gt; 100, 90, 90, 60, 90, 80, 60, 80, 80, 70, 80, 70, 90, 70, 70,…
+$ meal.cal  &lt;dbl&gt; 1175, 1225, NA, 1150, NA, 513, 384, 538, 825, 271, 1025, NA,…
+$ wt.loss   &lt;dbl&gt; NA, 15, 15, 11, 0, 0, 10, 1, 16, 34, 27, 23, 5, 32, 60, 15, …</code></pre>
 </div>
 </div>
-<p>The function has the argument <code>type</code> which allows for nine different percentile definitions to be used. The default is <code>type = 7</code>.</p>
 </section>
-<section id="comparison" class="level3">
-<h3 class="anchored" data-anchor-id="comparison">Comparison</h3>
-<p>The default percentile definition used by the UNIVARIATE procedure in SAS finds the 25th and 40th percentiles to be 30 and 95. The default definition used by R finds these percentiles to be 32.5 and 106.</p>
-<p>It is possible to get the quantile function in R to use the same definition as the default used in SAS, by specifying <code>type=2</code>.</p>
+<section id="model-fit" class="level1">
+<h1>Model Fit</h1>
+<p>We analyze the weight loss in lung cancer patients in dependency of age, sex, ECOG performance score and calories consumed at meals.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(adlb<span class="sc">$</span>aval, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.25</span>, <span class="fl">0.4</span>), <span class="at">type=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>This gives the following output.</p>
-<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>lung2 <span class="ot">&lt;-</span> survival<span class="sc">::</span>lung <span class="sc">%&gt;%</span> </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">wt_grp =</span> <span class="fu">factor</span>(wt.loss <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"weight loss"</span>, <span class="st">"weight gain"</span>))</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  ) </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>m1 <span class="ot">&lt;-</span> <span class="fu">glm</span>(wt_grp <span class="sc">~</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog <span class="sc">+</span> meal.cal, <span class="at">data =</span> lung2, <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>))</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>25% 40% 
- 30  95 </code></pre>
+<pre><code>
+Call:
+glm(formula = wt_grp ~ age + sex + ph.ecog + meal.cal, family = binomial(link = "logit"), 
+    data = lung2)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-1.9824  -1.2157   0.6688   0.8227   1.4777  
+
+Coefficients:
+              Estimate Std. Error z value Pr(&gt;|z|)  
+(Intercept)  3.2631673  1.6488207   1.979   0.0478 *
+age         -0.0101717  0.0208107  -0.489   0.6250  
+sex         -0.8717357  0.3714042  -2.347   0.0189 *
+ph.ecog      0.4179665  0.2588653   1.615   0.1064  
+meal.cal    -0.0008869  0.0004467  -1.985   0.0471 *
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 202.36  on 169  degrees of freedom
+Residual deviance: 191.50  on 165  degrees of freedom
+  (58 observations deleted due to missingness)
+AIC: 201.5
+
+Number of Fisher Scoring iterations: 4</code></pre>
 </div>
 </div>
-<p>It is not possible to get the UNIVARIATE procedure in SAS to use the same definition as the default used in R.</p>
-<p>Rick Wicklin provided a <a href="https://blogs.sas.com/content/iml/2017/05/24/definitions-sample-quantiles.html">blog post</a> showing how SAS has built in support for calculations using 5 of the 9 percentile definitions available in R, and also demonstrated how you can use a SAS/IML function to calculate percentiles using the other 4 definitions.</p>
-<p>More information about quantile derivation can be found in the <a href="https://blogs.sas.com/content/iml/2021/07/26/compare-quantiles-sas-r-python.html">SAS blog</a>.</p>
+<p>The model summary contains the parameter estimates <span class="math inline">\(\beta_j\)</span> for each explanatory variable <span class="math inline">\(x_j\)</span>, corresponding to the log-odds for the response variable to take the value <span class="math inline">\(1\)</span>, conditional on all other explanatory variables remaining constant. For better interpretation, we can exponentiate these estimates, to obtain estimates for the odds instead and provide <span class="math inline">\(95\)</span>% confidence intervals:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">exp</span>(<span class="fu">coef</span>(m1))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>(Intercept)         age         sex     ph.ecog    meal.cal 
+ 26.1321742   0.9898798   0.4182250   1.5188698   0.9991135 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">exp</span>(<span class="fu">confint</span>(m1))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Waiting for profiling to be done...</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                2.5 %      97.5 %
+(Intercept) 1.0964330 730.3978786
+age         0.9495388   1.0307216
+sex         0.1996925   0.8617165
+ph.ecog     0.9194053   2.5491933
+meal.cal    0.9982107   0.9999837</code></pre>
+</div>
+</div>
 </section>
-<section id="key-references" class="level3">
-<h3 class="anchored" data-anchor-id="key-references">Key references:</h3>
-<p><a href="https://blogs.sas.com/content/iml/2021/07/26/compare-quantiles-sas-r-python.html">Compare the default definitions for sample quantiles in SAS, R, and Python</a></p>
-<p><a href="https://blogs.sas.com/content/iml/2017/05/24/definitions-sample-quantiles.html">Sample quantiles: A comparison of 9 definitions</a></p>
-<p><a href="https://www.jstor.org/stable/2684934">Hyndman, R. J., &amp; Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365.</a></p>
+<section id="model-comparison" class="level1">
+<h1>Model Comparison</h1>
+<p>To compare two logistic models, one tests the difference in residual variances from both models using a <span class="math inline">\(\chi^2\)</span>-distribution with a single degree of freedom (here at the <span class="math inline">\(5\)</span>% level):</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>m2 <span class="ot">&lt;-</span> <span class="fu">glm</span>(wt_grp <span class="sc">~</span> sex <span class="sc">+</span> ph.ecog <span class="sc">+</span> meal.cal, <span class="at">data =</span> lung2, <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>))</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+glm(formula = wt_grp ~ sex + ph.ecog + meal.cal, family = binomial(link = "logit"), 
+    data = lung2)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-1.9952  -1.2055   0.6715   0.8388   1.5185  
+
+Coefficients:
+              Estimate Std. Error z value Pr(&gt;|z|)   
+(Intercept)  2.5606595  0.7976887   3.210  0.00133 **
+sex         -0.8359241  0.3637378  -2.298  0.02155 * 
+ph.ecog      0.3794295  0.2469030   1.537  0.12435   
+meal.cal    -0.0008334  0.0004346  -1.918  0.05517 . 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 202.36  on 169  degrees of freedom
+Residual deviance: 191.74  on 166  degrees of freedom
+  (58 observations deleted due to missingness)
+AIC: 199.74
+
+Number of Fisher Scoring iterations: 4</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">anova</span>(m1, m2, <span class="at">test =</span> <span class="st">"Chisq"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Analysis of Deviance Table
+
+Model 1: wt_grp ~ age + sex + ph.ecog + meal.cal
+Model 2: wt_grp ~ sex + ph.ecog + meal.cal
+  Resid. Df Resid. Dev Df Deviance Pr(&gt;Chi)
+1       165     191.50                     
+2       166     191.75 -1 -0.24046   0.6239</code></pre>
+</div>
+</div>
+</section>
+<section id="prediction" class="level1">
+<h1>Prediction</h1>
+<p>Predictions from the model for the log-odds of a patient with new data to experience a weight loss are derived using <code>predict()</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># new female, symptomatic but completely ambulatory patient consuming 2500 calories</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>new_pt <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">sex=</span><span class="dv">2</span>, <span class="at">ph.ecog=</span><span class="dv">1</span>, <span class="at">meal.cal=</span><span class="dv">2500</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">predict</span>(m2, new_pt, <span class="at">type =</span> <span class="st">"response"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       1 
+0.306767 </code></pre>
+</div>
+</div>
 
 
 </section>

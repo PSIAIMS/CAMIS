@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Deriving Quantiles or Percentiles in R vs SAS</title>
+<title>Correlation Analysis Using R</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -94,6 +94,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <link rel="stylesheet" href="../styles.scss">
 </head>
@@ -155,11 +157,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#data" id="toc-data" class="nav-link active" data-scroll-target="#data">Data</a></li>
-  <li><a href="#sas-code" id="toc-sas-code" class="nav-link" data-scroll-target="#sas-code">SAS Code</a></li>
-  <li><a href="#r-code" id="toc-r-code" class="nav-link" data-scroll-target="#r-code">R code</a></li>
-  <li><a href="#comparison" id="toc-comparison" class="nav-link" data-scroll-target="#comparison">Comparison</a></li>
-  <li><a href="#key-references" id="toc-key-references" class="nav-link" data-scroll-target="#key-references">Key references:</a></li>
+  <li><a href="#example-lung-cancer-data" id="toc-example-lung-cancer-data" class="nav-link active" data-scroll-target="#example-lung-cancer-data">Example: Lung Cancer Data</a></li>
+  <li><a href="#overview" id="toc-overview" class="nav-link" data-scroll-target="#overview">Overview</a></li>
+  <li><a href="#pearson-correlation" id="toc-pearson-correlation" class="nav-link" data-scroll-target="#pearson-correlation">Pearson Correlation</a></li>
+  <li><a href="#spearman-correlation" id="toc-spearman-correlation" class="nav-link" data-scroll-target="#spearman-correlation">Spearman Correlation</a></li>
+  <li><a href="#kendalls-rank-correlation" id="toc-kendalls-rank-correlation" class="nav-link" data-scroll-target="#kendalls-rank-correlation">Kendall’s rank correlation</a></li>
+  <li><a href="#interpretation-of-correlation-coefficients" id="toc-interpretation-of-correlation-coefficients" class="nav-link" data-scroll-target="#interpretation-of-correlation-coefficients">Interpretation of correlation coefficients</a></li>
+  <li><a href="#section" id="toc-section" class="nav-link" data-scroll-target="#section"></a></li>
   </ul>
 </nav>
     </div>
@@ -168,7 +172,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Deriving Quantiles or Percentiles in R vs SAS</h1>
+<h1 class="title">Correlation Analysis Using R</h1>
 </div>
 
 
@@ -183,72 +187,128 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<section id="data" class="level3">
-<h3 class="anchored" data-anchor-id="data">Data</h3>
-<p>The following data will be used show the differences between the default percentile definitions used by SAS and R:</p>
+<p>The most commonly used correlation analysis methods in clinical trials include:</p>
+<ul>
+<li><p>Pearson correlation coefficient: product moment coefficient between two continuous variables, measuring linear associations.</p>
+<p><br>
+<span class="math display">\[
+r = \frac{\sum_{i=1}^n (x_i - m_x)(y_i - m_y)}{\sqrt{\sum_{i=1}^n (x_i - m_x)^2\sum_{i=1}^n (y_i - m_y)^2}},\]</span></p>
+<p>where <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span> are observations from two continuous variables of length <span class="math inline">\(n\)</span> and <span class="math inline">\(m_x\)</span> and <span class="math inline">\(m_y\)</span> are their respective means.</p></li>
+<li><p>Spearman correlation coefficient: rank correlation defined through the scaled sum of the squared values of the difference between ranks of two continuous variables.</p>
+<p><span class="math display">\[
+\rho = \frac{\sum_{i=1}^n (x'_i - m_{x'})(y'_i - m_{y'})}{\sqrt{\sum_{i=1}^n (x'_i - m_{x'})^2\sum_{i=1}^n(y'_i - m_{y'})^2}},
+\]</span></p>
+<p>where <span class="math inline">\(x'\)</span> and <span class="math inline">\(y'\)</span> are the ranks of <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span> and <span class="math inline">\(m_{x'}\)</span> and <span class="math inline">\(m_{y'}\)</span> are the mean ranks of <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span>, respectively.</p></li>
+<li><p>Kendall’s rank correlation: rank correlation based on the number of inversions in one ranking as compared with another.</p>
+<p><span class="math display">\[
+\tau = \frac{n_c - n_d}{\frac{1}{2}\,n\,(n-1)},
+\]</span></p>
+<p>where <span class="math inline">\(n_c\)</span> is the total number of concordant pairs, <span class="math inline">\(n_d\)</span> is the total number of disconcordant pairs and <span class="math inline">\(n\)</span> the total size of observations in <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span>.</p></li>
+</ul>
+<p>Other association measures are available for count data/contingency tables comparing observed frequencies with those expected under the assumption of independence</p>
+<ul>
+<li><p>Fisher exact test</p></li>
+<li><p>Chi-Square statistic</p></li>
+</ul>
+<section id="example-lung-cancer-data" class="level1">
+<h1>Example: Lung Cancer Data</h1>
+<p><em>Data source:</em> <em>Loprinzi CL. Laurie JA. Wieand HS. Krook JE. Novotny PJ. Kugler JW. Bartel J. Law M. Bateman M. Klatt NE. et al.&nbsp;Prospective evaluation of prognostic variables from patient-completed questionnaires. North Central Cancer Treatment Group. Journal of Clinical Oncology. 12(3):601-7, 1994.</em></p>
+<p>Survival in patients with advanced lung cancer from the North Central Cancer Treatment Group. Performance scores rate how well the patient can perform usual daily activities.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dv">10</span>, <span class="dv">20</span>, <span class="dv">30</span>, <span class="dv">40</span>, <span class="dv">150</span>, <span class="dv">160</span>, <span class="dv">170</span>, <span class="dv">180</span>, <span class="dv">190</span>, <span class="dv">200</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-</section>
-<section id="sas-code" class="level3">
-<h3 class="anchored" data-anchor-id="sas-code">SAS Code</h3>
-<p>Assuming the data above is stored in the variable <code>aval</code> within the dataset <code>adlb</code>, the 25th and 40th percentiles could be calculated using the following code.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>proc univariate data<span class="ot">=</span>adlb;</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  var aval;</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  output out<span class="ot">=</span>stats pctlpts<span class="ot">=</span><span class="dv">25</span> <span class="dv">40</span> pctlpre<span class="ot">=</span>p;</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>This procedure creates the dataset <code>stats</code> containing the variables <code>p25</code> and <code>p40</code>.</p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/summarystats/sas-percentiles-output.jpg" class="img-fluid figure-img" style="width:15.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>The procedure has the option <code>PCTLDEF</code> which allows for five different percentile definitions to be used. The default is <code>PCTLDEF=5</code>.</p>
-</section>
-<section id="r-code" class="level3">
-<h3 class="anchored" data-anchor-id="r-code">R code</h3>
-<p>The 25th and 40th percentiles of <code>aval</code> can be calculated using the <code>quantile</code> function.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(adlb<span class="sc">$</span>aval, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.25</span>, <span class="fl">0.4</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>This gives the following output.</p>
-<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survival) </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(lung)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>  25%   40% 
- 32.5 106.0 </code></pre>
+<pre><code>Rows: 228
+Columns: 10
+$ inst      &lt;dbl&gt; 3, 3, 3, 5, 1, 12, 7, 11, 1, 7, 6, 16, 11, 21, 12, 1, 22, 16…
+$ time      &lt;dbl&gt; 306, 455, 1010, 210, 883, 1022, 310, 361, 218, 166, 170, 654…
+$ status    &lt;dbl&gt; 2, 2, 1, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, …
+$ age       &lt;dbl&gt; 74, 68, 56, 57, 60, 74, 68, 71, 53, 61, 57, 68, 68, 60, 57, …
+$ sex       &lt;dbl&gt; 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 1, …
+$ ph.ecog   &lt;dbl&gt; 1, 0, 0, 1, 0, 1, 2, 2, 1, 2, 1, 2, 1, NA, 1, 1, 1, 2, 2, 1,…
+$ ph.karno  &lt;dbl&gt; 90, 90, 90, 90, 100, 50, 70, 60, 70, 70, 80, 70, 90, 60, 80,…
+$ pat.karno &lt;dbl&gt; 100, 90, 90, 60, 90, 80, 60, 80, 80, 70, 80, 70, 90, 70, 70,…
+$ meal.cal  &lt;dbl&gt; 1175, 1225, NA, 1150, NA, 513, 384, 538, 825, 271, 1025, NA,…
+$ wt.loss   &lt;dbl&gt; NA, 15, 15, 11, 0, 0, 10, 1, 16, 34, 27, 23, 5, 32, 60, 15, …</code></pre>
 </div>
 </div>
-<p>The function has the argument <code>type</code> which allows for nine different percentile definitions to be used. The default is <code>type = 7</code>.</p>
 </section>
-<section id="comparison" class="level3">
-<h3 class="anchored" data-anchor-id="comparison">Comparison</h3>
-<p>The default percentile definition used by the UNIVARIATE procedure in SAS finds the 25th and 40th percentiles to be 30 and 95. The default definition used by R finds these percentiles to be 32.5 and 106.</p>
-<p>It is possible to get the quantile function in R to use the same definition as the default used in SAS, by specifying <code>type=2</code>.</p>
+<section id="overview" class="level1">
+<h1>Overview</h1>
+<p><code>cor()</code> computes the correlation coefficient between continuous variables <code>x</code> and <code>y</code>, where <code>method</code> chooses which correlation coefficient is to be computed (default: <code>"pearson"</code>, <code>"kendall"</code>, or <code>"spearman"</code>).</p>
+<p><code>cor.test()</code> calulates the test for association between paired samples, using one of Pearson’s product moment correlation coefficient, Kendall’s <span class="math inline">\(\tau\)</span> or Spearman’s <span class="math inline">\(\rho\)</span>. Besides the correlation coefficient itself, it provides additional information.</p>
+<p>Missing values are assumed to be missing completely at random (MCAR). Different strategies are available, see <code>?cor</code> for details.</p>
+</section>
+<section id="pearson-correlation" class="level1">
+<h1>Pearson Correlation</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(adlb<span class="sc">$</span>aval, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.25</span>, <span class="fl">0.4</span>), <span class="at">type=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>This gives the following output.</p>
-<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(<span class="at">x =</span> lung<span class="sc">$</span>age, <span class="at">y =</span> lung<span class="sc">$</span>meal.cal, <span class="at">method =</span> <span class="st">"pearson"</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>25% 40% 
- 30  95 </code></pre>
+<pre><code>
+    Pearson's product-moment correlation
+
+data:  lung$age and lung$meal.cal
+t = -3.1824, df = 179, p-value = 0.001722
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ -0.3649503 -0.0885415
+sample estimates:
+       cor 
+-0.2314107 </code></pre>
 </div>
 </div>
-<p>It is not possible to get the UNIVARIATE procedure in SAS to use the same definition as the default used in R.</p>
-<p>Rick Wicklin provided a <a href="https://blogs.sas.com/content/iml/2017/05/24/definitions-sample-quantiles.html">blog post</a> showing how SAS has built in support for calculations using 5 of the 9 percentile definitions available in R, and also demonstrated how you can use a SAS/IML function to calculate percentiles using the other 4 definitions.</p>
-<p>More information about quantile derivation can be found in the <a href="https://blogs.sas.com/content/iml/2021/07/26/compare-quantiles-sas-r-python.html">SAS blog</a>.</p>
 </section>
-<section id="key-references" class="level3">
-<h3 class="anchored" data-anchor-id="key-references">Key references:</h3>
-<p><a href="https://blogs.sas.com/content/iml/2021/07/26/compare-quantiles-sas-r-python.html">Compare the default definitions for sample quantiles in SAS, R, and Python</a></p>
-<p><a href="https://blogs.sas.com/content/iml/2017/05/24/definitions-sample-quantiles.html">Sample quantiles: A comparison of 9 definitions</a></p>
-<p><a href="https://www.jstor.org/stable/2684934">Hyndman, R. J., &amp; Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365.</a></p>
+<section id="spearman-correlation" class="level1">
+<h1>Spearman Correlation</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(<span class="at">x =</span> lung<span class="sc">$</span>age, <span class="at">y =</span> lung<span class="sc">$</span>meal.cal, <span class="at">method =</span> <span class="st">"spearman"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in cor.test.default(x = lung$age, y = lung$meal.cal, method =
+"spearman"): Cannot compute exact p-value with ties</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Spearman's rank correlation rho
+
+data:  lung$age and lung$meal.cal
+S = 1193189, p-value = 0.005095
+alternative hypothesis: true rho is not equal to 0
+sample estimates:
+       rho 
+-0.2073639 </code></pre>
+</div>
+</div>
+<p>Note: Exact p-values require unanimous ranks.</p>
+</section>
+<section id="kendalls-rank-correlation" class="level1">
+<h1>Kendall’s rank correlation</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor.test</span>(<span class="at">x =</span> lung<span class="sc">$</span>age, <span class="at">y =</span> lung<span class="sc">$</span>meal.cal, <span class="at">method =</span> <span class="st">"kendall"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Kendall's rank correlation tau
+
+data:  lung$age and lung$meal.cal
+z = -2.7919, p-value = 0.00524
+alternative hypothesis: true tau is not equal to 0
+sample estimates:
+       tau 
+-0.1443877 </code></pre>
+</div>
+</div>
+</section>
+<section id="interpretation-of-correlation-coefficients" class="level1">
+<h1>Interpretation of correlation coefficients</h1>
+<p>Correlation coefficient is comprised between -1 and 1:</p>
+<ul>
+<li><p><span class="math inline">\(-1\)</span> indicates a strong negative correlation</p></li>
+<li><p><span class="math inline">\(0\)</span> means that there is no association between the two variables</p></li>
+<li><p><span class="math inline">\(1\)</span> indicates a strong positive correlation</p></li>
+</ul>
+</section>
+<section id="section" class="level1">
+<h1></h1>
 
 
 </section>

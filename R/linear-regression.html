@@ -21,6 +21,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -62,7 +96,7 @@ ul.task-list li input[type="checkbox"] {
 }</script>
 
 
-<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="../styles.scss">
 </head>
 
 <body class="nav-fixed">
@@ -146,6 +180,53 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>htwt<span class="ot">&lt;-</span><span class="fu">read.csv</span>(<span class="st">"../data/htwt.csv"</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(htwt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      ROW          SEX                 AGE            HEIGHT     
+ Min.   :  1   Length:237         Min.   :13.90   Min.   :50.50  
+ 1st Qu.: 60   Class :character   1st Qu.:14.80   1st Qu.:58.80  
+ Median :119   Mode  :character   Median :16.30   Median :61.50  
+ Mean   :119                      Mean   :16.44   Mean   :61.36  
+ 3rd Qu.:178                      3rd Qu.:17.80   3rd Qu.:64.30  
+ Max.   :237                      Max.   :25.00   Max.   :72.00  
+     WEIGHT     
+ Min.   : 50.5  
+ 1st Qu.: 85.0  
+ Median :101.0  
+ Mean   :101.3  
+ 3rd Qu.:112.0  
+ Max.   :171.5  </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>htwt<span class="sc">$</span>female <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(htwt<span class="sc">$</span>SEX<span class="sc">==</span><span class="st">'f'</span>,<span class="dv">1</span>,<span class="dv">0</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>htwt<span class="sc">$</span>fem_age <span class="ot">&lt;-</span> htwt<span class="sc">$</span>AGE <span class="sc">*</span> htwt<span class="sc">$</span>female</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>regression<span class="ot">&lt;-</span><span class="fu">lm</span>(HEIGHT<span class="sc">~</span>female<span class="sc">+</span>AGE<span class="sc">+</span>fem_age, <span class="at">data=</span>htwt, AGE<span class="sc">&lt;=</span><span class="dv">19</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(regression)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = HEIGHT ~ female + AGE + fem_age, data = htwt, subset = AGE &lt;= 
+    19)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-8.2429 -1.7351  0.0383  1.6518  7.9289 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  28.8828     2.8734  10.052  &lt; 2e-16 ***
+female       13.6123     4.0192   3.387 0.000841 ***
+AGE           2.0313     0.1776  11.435  &lt; 2e-16 ***
+fem_age      -0.9294     0.2478  -3.750 0.000227 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 2.799 on 215 degrees of freedom
+Multiple R-squared:  0.4595,    Adjusted R-squared:  0.452 
+F-statistic: 60.93 on 3 and 215 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
 
 
 

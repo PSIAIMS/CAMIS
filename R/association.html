@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Deriving Quantiles or Percentiles in R vs SAS</title>
+<title>Association Analysis for Count Data Using R</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -94,6 +94,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <link rel="stylesheet" href="../styles.scss">
 </head>
@@ -155,11 +157,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#data" id="toc-data" class="nav-link active" data-scroll-target="#data">Data</a></li>
-  <li><a href="#sas-code" id="toc-sas-code" class="nav-link" data-scroll-target="#sas-code">SAS Code</a></li>
-  <li><a href="#r-code" id="toc-r-code" class="nav-link" data-scroll-target="#r-code">R code</a></li>
-  <li><a href="#comparison" id="toc-comparison" class="nav-link" data-scroll-target="#comparison">Comparison</a></li>
-  <li><a href="#key-references" id="toc-key-references" class="nav-link" data-scroll-target="#key-references">Key references:</a></li>
+  <li><a href="#example-lung-cancer-data" id="toc-example-lung-cancer-data" class="nav-link active" data-scroll-target="#example-lung-cancer-data">Example: Lung Cancer Data</a></li>
+  <li><a href="#times-2-contingency-table" id="toc-times-2-contingency-table" class="nav-link" data-scroll-target="#times-2-contingency-table"><span class="math inline">\(2\times 2\)</span> Contingency Table</a>
+  <ul class="collapse">
+  <li><a href="#chi-squared-test" id="toc-chi-squared-test" class="nav-link" data-scroll-target="#chi-squared-test">Chi-Squared test</a></li>
+  <li><a href="#fisher-exact-test" id="toc-fisher-exact-test" class="nav-link" data-scroll-target="#fisher-exact-test">Fisher Exact Test</a></li>
+  </ul></li>
+  <li><a href="#large-contingency-tables" id="toc-large-contingency-tables" class="nav-link" data-scroll-target="#large-contingency-tables">Large Contingency Tables</a>
+  <ul class="collapse">
+  <li><a href="#chi-squared-test-1" id="toc-chi-squared-test-1" class="nav-link" data-scroll-target="#chi-squared-test-1">Chi-Squared Test</a></li>
+  <li><a href="#fisher-exact-test-1" id="toc-fisher-exact-test-1" class="nav-link" data-scroll-target="#fisher-exact-test-1">Fisher Exact Test</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -168,7 +176,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Deriving Quantiles or Percentiles in R vs SAS</h1>
+<h1 class="title">Association Analysis for Count Data Using R</h1>
 </div>
 
 
@@ -183,74 +191,144 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<section id="data" class="level3">
-<h3 class="anchored" data-anchor-id="data">Data</h3>
-<p>The following data will be used show the differences between the default percentile definitions used by SAS and R:</p>
+<p>The most commonly used association analysis methods for count data/contingency tables compare observed frequencies with those expected under the assumption of independence:</p>
+<p><span class="math display">\[
+X^2 = \sum_{i=1}^k \frac{(x_i-e_i)^2}{e_i},
+\]</span> where <span class="math inline">\(k\)</span> is the number of contingency table cells.</p>
+<ul>
+<li><p>Chi-Squared test: test statistic is approximately equal to the theoretical chi-squared distribution. Chi-squared approximation is suitable when the expected values in all cells of the contingency table are above 5.</p></li>
+<li><p>Fisher exact test: test of independence if cell frequencies are small. Although in practice it is employed for small sample sizes, the test is valid for all sample sizes.</p></li>
+</ul>
+<p>Other measures for the correlation of two continuous variables are:</p>
+<ul>
+<li><p>Pearson correlation coefficient</p></li>
+<li><p>Spearman correlation coefficient</p></li>
+<li><p>Kendall’s rank correlation</p></li>
+</ul>
+<section id="example-lung-cancer-data" class="level1">
+<h1>Example: Lung Cancer Data</h1>
+<p><em>Data source:</em> <em>Loprinzi CL. Laurie JA. Wieand HS. Krook JE. Novotny PJ. Kugler JW. Bartel J. Law M. Bateman M. Klatt NE. et al.&nbsp;Prospective evaluation of prognostic variables from patient-completed questionnaires. North Central Cancer Treatment Group. Journal of Clinical Oncology. 12(3):601-7, 1994.</em></p>
+<p>Survival in patients with advanced lung cancer from the North Central Cancer Treatment Group. Performance scores rate how well the patient can perform usual daily activities.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dv">10</span>, <span class="dv">20</span>, <span class="dv">30</span>, <span class="dv">40</span>, <span class="dv">150</span>, <span class="dv">160</span>, <span class="dv">170</span>, <span class="dv">180</span>, <span class="dv">190</span>, <span class="dv">200</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-</section>
-<section id="sas-code" class="level3">
-<h3 class="anchored" data-anchor-id="sas-code">SAS Code</h3>
-<p>Assuming the data above is stored in the variable <code>aval</code> within the dataset <code>adlb</code>, the 25th and 40th percentiles could be calculated using the following code.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>proc univariate data<span class="ot">=</span>adlb;</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  var aval;</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  output out<span class="ot">=</span>stats pctlpts<span class="ot">=</span><span class="dv">25</span> <span class="dv">40</span> pctlpre<span class="ot">=</span>p;</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>This procedure creates the dataset <code>stats</code> containing the variables <code>p25</code> and <code>p40</code>.</p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/summarystats/sas-percentiles-output.jpg" class="img-fluid figure-img" style="width:15.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>The procedure has the option <code>PCTLDEF</code> which allows for five different percentile definitions to be used. The default is <code>PCTLDEF=5</code>.</p>
-</section>
-<section id="r-code" class="level3">
-<h3 class="anchored" data-anchor-id="r-code">R code</h3>
-<p>The 25th and 40th percentiles of <code>aval</code> can be calculated using the <code>quantile</code> function.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(adlb<span class="sc">$</span>aval, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.25</span>, <span class="fl">0.4</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>This gives the following output.</p>
-<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survival) </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(lung)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>  25%   40% 
- 32.5 106.0 </code></pre>
+<pre><code>Rows: 228
+Columns: 10
+$ inst      &lt;dbl&gt; 3, 3, 3, 5, 1, 12, 7, 11, 1, 7, 6, 16, 11, 21, 12, 1, 22, 16…
+$ time      &lt;dbl&gt; 306, 455, 1010, 210, 883, 1022, 310, 361, 218, 166, 170, 654…
+$ status    &lt;dbl&gt; 2, 2, 1, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, …
+$ age       &lt;dbl&gt; 74, 68, 56, 57, 60, 74, 68, 71, 53, 61, 57, 68, 68, 60, 57, …
+$ sex       &lt;dbl&gt; 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 1, …
+$ ph.ecog   &lt;dbl&gt; 1, 0, 0, 1, 0, 1, 2, 2, 1, 2, 1, 2, 1, NA, 1, 1, 1, 2, 2, 1,…
+$ ph.karno  &lt;dbl&gt; 90, 90, 90, 90, 100, 50, 70, 60, 70, 70, 80, 70, 90, 60, 80,…
+$ pat.karno &lt;dbl&gt; 100, 90, 90, 60, 90, 80, 60, 80, 80, 70, 80, 70, 90, 70, 70,…
+$ meal.cal  &lt;dbl&gt; 1175, 1225, NA, 1150, NA, 513, 384, 538, 825, 271, 1025, NA,…
+$ wt.loss   &lt;dbl&gt; NA, 15, 15, 11, 0, 0, 10, 1, 16, 34, 27, 23, 5, 32, 60, 15, …</code></pre>
 </div>
 </div>
-<p>The function has the argument <code>type</code> which allows for nine different percentile definitions to be used. The default is <code>type = 7</code>.</p>
 </section>
-<section id="comparison" class="level3">
-<h3 class="anchored" data-anchor-id="comparison">Comparison</h3>
-<p>The default percentile definition used by the UNIVARIATE procedure in SAS finds the 25th and 40th percentiles to be 30 and 95. The default definition used by R finds these percentiles to be 32.5 and 106.</p>
-<p>It is possible to get the quantile function in R to use the same definition as the default used in SAS, by specifying <code>type=2</code>.</p>
+<section id="times-2-contingency-table" class="level1">
+<h1><span class="math inline">\(2\times 2\)</span> Contingency Table</h1>
+<p>We analyze the association between ECOG performance score (fully active vs any symptomatic patient) as rated by physician and weight loss (see <code>?lung</code> for details).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(adlb<span class="sc">$</span>aval, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.25</span>, <span class="fl">0.4</span>), <span class="at">type=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>This gives the following output.</p>
-<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>lung2 <span class="ot">&lt;-</span> survival<span class="sc">::</span>lung <span class="sc">%&gt;%</span> </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">ecog_grp =</span> <span class="fu">factor</span>(ph.ecog <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"fully active"</span>, <span class="st">"symptomatic"</span>)), </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">wt_grp =</span> <span class="fu">factor</span>(wt.loss <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"weight loss"</span>, <span class="st">"weight gain"</span>))</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  ) </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>(tab <span class="ot">&lt;-</span> <span class="fu">table</span>(<span class="at">x =</span> lung2<span class="sc">$</span>ecog_grp, <span class="at">y =</span> lung2<span class="sc">$</span>wt_grp))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>25% 40% 
- 30  95 </code></pre>
+<pre><code>              y
+x              weight loss weight gain
+  fully active          22          39
+  symptomatic           39         113</code></pre>
 </div>
 </div>
-<p>It is not possible to get the UNIVARIATE procedure in SAS to use the same definition as the default used in R.</p>
-<p>Rick Wicklin provided a <a href="https://blogs.sas.com/content/iml/2017/05/24/definitions-sample-quantiles.html">blog post</a> showing how SAS has built in support for calculations using 5 of the 9 percentile definitions available in R, and also demonstrated how you can use a SAS/IML function to calculate percentiles using the other 4 definitions.</p>
-<p>More information about quantile derivation can be found in the <a href="https://blogs.sas.com/content/iml/2021/07/26/compare-quantiles-sas-r-python.html">SAS blog</a>.</p>
+<section id="chi-squared-test" class="level2">
+<h2 class="anchored" data-anchor-id="chi-squared-test">Chi-Squared test</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">chisq.test</span>(tab)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Pearson's Chi-squared test with Yates' continuity correction
+
+data:  tab
+X-squared = 1.8261, df = 1, p-value = 0.1766</code></pre>
+</div>
+</div>
 </section>
-<section id="key-references" class="level3">
-<h3 class="anchored" data-anchor-id="key-references">Key references:</h3>
-<p><a href="https://blogs.sas.com/content/iml/2021/07/26/compare-quantiles-sas-r-python.html">Compare the default definitions for sample quantiles in SAS, R, and Python</a></p>
-<p><a href="https://blogs.sas.com/content/iml/2017/05/24/definitions-sample-quantiles.html">Sample quantiles: A comparison of 9 definitions</a></p>
-<p><a href="https://www.jstor.org/stable/2684934">Hyndman, R. J., &amp; Fan, Y. (1996). Sample quantiles in statistical packages. The American Statistician, 50(4), 361-365.</a></p>
+<section id="fisher-exact-test" class="level2">
+<h2 class="anchored" data-anchor-id="fisher-exact-test">Fisher Exact Test</h2>
+<p>For <span class="math inline">\(2 \times 2\)</span> contingency tables, p-values are obtained directly using the hypergeometric distribution.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fisher.test</span>(tab)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Fisher's Exact Test for Count Data
+
+data:  tab
+p-value = 0.135
+alternative hypothesis: true odds ratio is not equal to 1
+95 percent confidence interval:
+ 0.8158882 3.2251299
+sample estimates:
+odds ratio 
+  1.630576 </code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="large-contingency-tables" class="level1">
+<h1>Large Contingency Tables</h1>
+<p>In a second example, we analyze the association between ECOG and Karnofky performance scores, both rated by physician (see <code>?lung</code> for details).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>(tab2 <span class="ot">&lt;-</span> <span class="fu">table</span>(<span class="at">x =</span> lung2<span class="sc">$</span>ph.ecog, <span class="at">y =</span> lung2<span class="sc">$</span>ph.karno))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   y
+x   50 60 70 80 90 100
+  0  0  0  0  3 32  28
+  1  1  2  7 60 42   1
+  2  5 15 25  4  0   0
+  3  0  1  0  0  0   0</code></pre>
+</div>
+</div>
+<section id="chi-squared-test-1" class="level2">
+<h2 class="anchored" data-anchor-id="chi-squared-test-1">Chi-Squared Test</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">chisq.test</span>(tab2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in chisq.test(tab2): Chi-squared approximation may be incorrect</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Pearson's Chi-squared test
+
+data:  tab2
+X-squared = 260.76, df = 15, p-value &lt; 2.2e-16</code></pre>
+</div>
+</div>
+<p>The warning means that the smallest expected frequencies is lower than 5. It is recommended to use the Fisher’s exact test in this case.</p>
+</section>
+<section id="fisher-exact-test-1" class="level2">
+<h2 class="anchored" data-anchor-id="fisher-exact-test-1">Fisher Exact Test</h2>
+<p>For contingency tables larger than <span class="math inline">\(2 \times 2\)</span>, p-values are based on simulations, which might require a lot of time (see <code>?fisher.test</code> for details).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fisher.test</span>(tab2, <span class="at">simulate.p.value=</span><span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Fisher's Exact Test for Count Data with simulated p-value (based on
+    2000 replicates)
+
+data:  tab2
+p-value = 0.0004998
+alternative hypothesis: two.sided</code></pre>
+</div>
+</div>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
