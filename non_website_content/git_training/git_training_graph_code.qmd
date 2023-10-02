@@ -1,0 +1,84 @@
+---
+title: "git training graph code"
+---
+
+
+#@christina: take this for the Week 1 Day 1 graph: we are creating a publication for PLOS One
+#Camille has 2 journals in mind for her submissions,  she reads the specifciations for each and then starts prorgramming.
+#PLOS ONE journal requires a font of: Arial, Times, or Symbol font only in 8-12 point
+#Journal of Statistical Theory and Practice: reccommends using Helvetica or Arial (sans serif fonts).
+
+
+#read in data: survival data and create variables for labels
+
+```{r}
+#| echo: false
+#| include: false
+library(tidyverse)
+library(broom)
+library(knitr)
+library(haven)
+
+surv<-read_sas("../../data/whas500.sas7bdat")%>%
+  mutate(LENFOLY = round(LENFOL/365.25, 2), ## change follow-up days to years for better visualization
+         AFB_C = ifelse(AFB==1, "Active", "Non-Active"),
+         GENDER_C = ifelse(GENDER==1, "Male", "Female"),
+         CVD_C = ifelse(CVD==1, "Yes", "No")) 
+```
+
+#Create a graph of drug response by Presence of absence of cardiovascular disease.
+# This is submitted to PLOS ONE journal on Tuesday.
+```{r}
+  ggplot(data = surv, mapping = aes(x =SYSBP , y =DIASBP )) + 
+  geom_point() + 
+  facet_grid(rows = vars(CVD_C), cols = vars(GENDER_C))+
+
+  labs(title="Diastolic and Systolic Blood Pressure by Gender and Cardiovascular Disease Status",
+       x="Systolic Blood Pressure",
+       y="Diastolic Blood Pressure",
+       caption="Data source: Survival 500 data")+
+  geom_smooth(mapping=aes(group=NA, x=SYSBP, y=DIASBP))+
+  theme(panel.spacing = unit(0.5,"cm",data=NULL),
+        strip.text.x=element_text(size=14, color="red",face="bold.italic"),
+        strip.text.y=element_text(size=7, color="blue",face="bold")
+  )
+
+
+```
+
+# on Wednesday Camille discusses the results with a colleague, they think the results may not be accepted by journal
+# as not novel. Instead they suggest Camille explores the Status of disease being active or non-active.
+# Camille continues to explore the data and makes changes substantial changes to her figure which she
+# thinks looks much prettier !!!  She saves the program and leaves for the weekend
+```{r}
+  ggplot(data = surv, mapping = aes(x =DIASBP , y =SYSBP )) + 
+  geom_point() + 
+  facet_grid(rows = vars(AFB_C), cols = vars(GENDER_C))+
+
+  labs(title="Systolic and Diasolic Blood Pressure by Gender and Disease Status",
+       y="Systolic Blood Pressure",
+       x="Diastolic Blood Pressure",
+       caption="Data source: Survival 500 data")+
+  geom_smooth(mapping=aes(group=NA,  x=DIASBP,y=SYSBP))+
+  theme(panel.spacing = unit(0.5,"cm",data=NULL),
+        strip.text.x=element_text(size=12, color="blue",face="bold.italic"),
+        strip.text.y=element_text(size=12, color="blue",face="bold"),
+        plot.title=element_text(face="italic", color="Blue"),
+        panel.grid.minor=element_line(linetype="solid",color="black"),
+        plot.background=element_rect(fill="#80ff00",color="black")
+  )
+
+```
+
+##  Week 2, Camille gets an email from the publication stressing that she hasn't following the guidance here:
+#https://journals.plos.org/plosone/s/figures
+# All figures much be produced using font sizes between 8 and 12.
+#if she could find her previous code it would be a simple update, however, the code has changed so much
+#it's goign to take her ages to recreate it. 
+
+#PLOS ONE waives all formatting requirements until your manuscript has received a provisional Editorial Accept decision.
+#In order to proceed to publication, your figures must meet the requirements on this page. The more closely your figures #adhere to these specifications, the more quickly your manuscript can be published once accepted.
+#The guidance states to use Arial, Times or Symbol font only in 8-12 point.
+
+# her application is rejected.
+
