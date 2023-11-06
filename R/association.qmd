@@ -1,0 +1,91 @@
+---
+title: "Association Analysis for Count Data Using R"
+---
+
+```{r}
+#| echo: FALSE
+#| include: FALSE
+library(tidyverse)
+```
+
+The most commonly used association analysis methods for count data/contingency tables compare observed frequencies with those expected under the assumption of independence:
+
+$$
+X^2 = \sum_{i=1}^k \frac{(x_i-e_i)^2}{e_i}, 
+$$ where $k$ is the number of contingency table cells.
+
+-   Chi-Squared test: test statistic is approximately equal to the theoretical chi-squared distribution. Chi-squared approximation is suitable when the expected values in all cells of the contingency table are above 5.
+
+-   Fisher exact test: test of independence if cell frequencies are small. Although in practice it is employed for small sample sizes, the test is valid for all sample sizes.
+
+Other measures for the correlation of two continuous variables are:
+
+-   Pearson correlation coefficient
+
+-   Spearman correlation coefficient
+
+-   Kendall's rank correlation
+
+# Example: Lung Cancer Data
+
+*Data source:* *Loprinzi CL. Laurie JA. Wieand HS. Krook JE. Novotny PJ. Kugler JW. Bartel J. Law M. Bateman M. Klatt NE. et al. Prospective evaluation of prognostic variables from patient-completed questionnaires. North Central Cancer Treatment Group. Journal of Clinical Oncology. 12(3):601-7, 1994.*
+
+Survival in patients with advanced lung cancer from the North Central Cancer Treatment Group. Performance scores rate how well the patient can perform usual daily activities.
+
+```{r}
+library(survival) 
+glimpse(lung)
+```
+
+# $2\times 2$ Contingency Table
+
+We analyze the association between ECOG performance score (fully active vs any symptomatic patient) as rated by physician and weight loss (see `?lung` for details).
+
+```{r}
+lung2 <- survival::lung %>% 
+  mutate(
+    ecog_grp = factor(ph.ecog > 0, labels = c("fully active", "symptomatic")), 
+    wt_grp = factor(wt.loss > 0, labels = c("weight loss", "weight gain"))
+  ) 
+
+(tab <- table(x = lung2$ecog_grp, y = lung2$wt_grp))
+
+```
+
+## Chi-Squared test
+
+```{r}
+chisq.test(tab)
+```
+
+## Fisher Exact Test
+
+For $2 \times 2$ contingency tables, p-values are obtained directly using the hypergeometric distribution.
+
+```{r}
+fisher.test(tab)
+```
+
+# Large Contingency Tables
+
+In a second example, we analyze the association between ECOG and Karnofky performance scores, both rated by physician (see `?lung` for details).
+
+```{r}
+(tab2 <- table(x = lung2$ph.ecog, y = lung2$ph.karno))
+```
+
+## Chi-Squared Test
+
+```{r}
+chisq.test(tab2)
+```
+
+The warning means that the smallest expected frequencies is lower than 5. It is recommended to use the Fisher's exact test in this case.
+
+## Fisher Exact Test
+
+For contingency tables larger than $2 \times 2$, p-values are based on simulations, which might require a lot of time (see `?fisher.test` for details).
+
+```{r}
+fisher.test(tab2, simulate.p.value=TRUE)
+```
