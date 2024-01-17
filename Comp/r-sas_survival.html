@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>R vs SAS - Survival Analysis</title>
+<title>R vs SAS - Kaplan Meier and Cox-proportion hazards modelling</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -133,7 +133,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../Conferences.html" rel="" target="">
- <span class="menu-text">Conferences</span></a>
+ <span class="menu-text">Conferences 2024</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="https://phuse.s3.eu-central-1.amazonaws.com/Deliverables/Data+Visualisation+%26+Open+Source+Technology/WP077.pdf" rel="" target="">
@@ -170,14 +170,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#comparisons-from-the-example" id="toc-comparisons-from-the-example" class="nav-link active" data-scroll-target="#comparisons-from-the-example">Comparisons from the example</a>
+  <li><a href="#comparison-of-sas-vs-r" id="toc-comparison-of-sas-vs-r" class="nav-link active" data-scroll-target="#comparison-of-sas-vs-r">Comparison of SAS vs R</a>
   <ul class="collapse">
-  <li><a href="#reasons" id="toc-reasons" class="nav-link" data-scroll-target="#reasons">Reasons</a></li>
+  <li><a href="#reason-1-cox-regression-handling-of-tied-survival-times" id="toc-reason-1-cox-regression-handling-of-tied-survival-times" class="nav-link" data-scroll-target="#reason-1-cox-regression-handling-of-tied-survival-times">Reason 1: Cox Regression Handling of Tied Survival Times</a></li>
+  <li><a href="#reason-2-kaplan-meier-median-survival-confidence-intervals" id="toc-reason-2-kaplan-meier-median-survival-confidence-intervals" class="nav-link" data-scroll-target="#reason-2-kaplan-meier-median-survival-confidence-intervals">Reason 2: Kaplan Meier Median Survival Confidence Intervals</a></li>
   </ul></li>
-  <li><a href="#other-cases" id="toc-other-cases" class="nav-link" data-scroll-target="#other-cases">Other cases</a>
+  <li><a href="#other-cases-where-discrepancies-are-found" id="toc-other-cases-where-discrepancies-are-found" class="nav-link" data-scroll-target="#other-cases-where-discrepancies-are-found">Other Cases Where Discrepancies Are Found</a>
   <ul class="collapse">
-  <li><a href="#km-estimators" id="toc-km-estimators" class="nav-link" data-scroll-target="#km-estimators">KM estimators</a></li>
-  <li><a href="#reasons-1" id="toc-reasons-1" class="nav-link" data-scroll-target="#reasons-1">Reasons</a></li>
+  <li><a href="#differences-observed-in-the-km-estimators" id="toc-differences-observed-in-the-km-estimators" class="nav-link" data-scroll-target="#differences-observed-in-the-km-estimators">Differences Observed in the KM Estimators</a></li>
+  <li><a href="#reasons" id="toc-reasons" class="nav-link" data-scroll-target="#reasons">Reasons</a></li>
   </ul></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
@@ -188,7 +189,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">R vs SAS - Survival Analysis</h1>
+<h1 class="title">R vs SAS - Kaplan Meier and Cox-proportion hazards modelling</h1>
 </div>
 
 
@@ -203,8 +204,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<section id="comparisons-from-the-example" class="level1">
-<h1>Comparisons from the example</h1>
+<section id="comparison-of-sas-vs-r" class="level1">
+<h1>Comparison of SAS vs R</h1>
+<p>Results from the examples shown for R <a href="https://psiaims.github.io/CAMIS/R/survival.html">here</a> and SAS <a href="https://psiaims.github.io/CAMIS/SAS/survival.html">here</a> were compared below.</p>
 <p>Comparing the non-stratified model results side-by-side, the CIs for the quartile estimates and landmark estimates are different between R and SAS. HR and CI also have slight differences.</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
@@ -215,20 +217,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<section id="reasons" class="level2">
-<h2 class="anchored" data-anchor-id="reasons">Reasons</h2>
-<p>The reasons for the differences are because the default methods for handling ties in Cox model and confidence interval calculation in KM estimators in the two languages are different.</p>
-<ol type="1">
-<li>Tie handling: R uses “efron” by default, and SAS uses “breslow” by default. However, both options are available in R and SAS. We will see identical HR and CI if we change the default methods.</li>
-</ol>
+<section id="reason-1-cox-regression-handling-of-tied-survival-times" class="level2">
+<h2 class="anchored" data-anchor-id="reason-1-cox-regression-handling-of-tied-survival-times">Reason 1: Cox Regression Handling of Tied Survival Times</h2>
+<p>The default methods for handling ties in a Cox regression model are different which can lead to a different result for the Hazard ratio and associated confidence interval.</p>
+<p>R uses “efron” by default. SAS uses “breslow” by default. Both R and SAS are able to change these default options. By making the changes to the code below, we can force R to use “breslow” to match SAS, or SAS to use “efron” to match R. When the software use the same methods, then we obtain an identical HR and CI.</p>
 <ul>
-<li>R: change to “breslow”</li>
+<li>R: change method for ties to use “breslow”</li>
 </ul>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>fit.cox <span class="ot">&lt;-</span> <span class="fu">coxph</span>(<span class="fu">Surv</span>(LENFOLY, FSTAT) <span class="sc">~</span> AFB, <span class="at">ties =</span> <span class="st">"breslow"</span>, <span class="at">data =</span> dat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <ul>
-<li>SAS: change to “efron”</li>
+<li>SAS: change method for ties to use “efron”</li>
 </ul>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>proc phreg data<span class="ot">=</span>dat;</span>
@@ -236,10 +236,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>model lenfol<span class="sc">*</span><span class="fu">fstat</span>(<span class="dv">0</span>) <span class="ot">=</span> afb<span class="sc">/</span>rl ties <span class="ot">=</span> efron;</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>From the arguments of <code>coxph</code> in R: There are three possible choices for handling tied event times. The Breslow approximation is the easiest to program and hence became the first option coded for almost all computer routines. It then ended up as the default option when other options were added in order to “maintain backwards compatibility”. The Efron option is more accurate if there are a large number of ties, and it is the default option here. In practice the number of ties is usually small, in which case all the methods are statistically indistinguishable.</p>
-<ol start="2" type="1">
-<li>Confidence interval calculation: R uses “log” by default, and SAS uses “log-log” by default. Again, R and SAS have both options.</li>
-</ol>
+<p>If there are no tied event times, then the methods are equivalent.</p>
+<p>The Breslow approximation is the easiest to program and hence it historically became the first option coded for almost all software. It then ended up as the default option when other options were added in order to maintain “backwards compatibility”. The Efron option is more accurate if there are a large number of ties, and it was therefore selected as the default option in R. In practice the number of ties is usually small, in which case all the methods are statistically indistinguishable.</p>
+<p>From the arguments of <code>coxph</code> in R, there are three possible choices for handling tied event times ‘ties=breslow’, ‘ties=efron’, or ‘ties=’clogit’. This last option is an exact partial likelihood approach. See [here](</p>
+<p>coxph function - RDocumentation) for more detail.</p>
+</section>
+<section id="reason-2-kaplan-meier-median-survival-confidence-intervals" class="level2">
+<h2 class="anchored" data-anchor-id="reason-2-kaplan-meier-median-survival-confidence-intervals">Reason 2: Kaplan Meier Median Survival Confidence Intervals</h2>
+<p>The default methods for calculation of the confidence interval of a KM estimator are different in the two languages (for example, for calculation of the CI associated with the Median Survival estimate, the 25th percentile and the 75th percentile).</p>
+<p>R uses “log” by default, and SAS uses “log-log” by default. As shown below, using ‘conf.type’ option, R can be forced to use the “log-log” method to match SAS. Alternatively, using the ‘conftype=’ option, SAS can be forced to use the “log” method to match R.</p>
 <ul>
 <li>R: change to “log-log”</li>
 </ul>
@@ -279,9 +284,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </section>
 </section>
-<section id="other-cases" class="level1">
-<h1>Other cases</h1>
-<p>Now we look at other cases when the data has some special type. Suppose a dataset has 10 observations, and the first 5 are all events, and the last 5 are all censored.</p>
+<section id="other-cases-where-discrepancies-are-found" class="level1">
+<h1>Other Cases Where Discrepancies Are Found</h1>
+<p>Now we look at other cases when the data has some special type which causes a mismatch between SAS and R. Suppose a dataset has 10 observations, and the first 5 are all events, and the last 5 are all censored.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">time =</span> <span class="fu">c</span>(<span class="dv">54</span>, <span class="dv">75</span>, <span class="dv">77</span>, <span class="dv">84</span>, <span class="dv">87</span>, <span class="dv">92</span>, <span class="dv">103</span>, <span class="dv">105</span>, <span class="dv">112</span>, <span class="dv">118</span>), </span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">status =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>))</span>
@@ -303,8 +308,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 10   118      0</code></pre>
 </div>
 </div>
-<section id="km-estimators" class="level2">
-<h2 class="anchored" data-anchor-id="km-estimators">KM estimators</h2>
+<section id="differences-observed-in-the-km-estimators" class="level2">
+<h2 class="anchored" data-anchor-id="differences-observed-in-the-km-estimators">Differences Observed in the KM Estimators</h2>
 <p>Suppose we are interested to know the 25%, 50% and 75% quartile estimates, and the day 80, 100, and 120 estimates.</p>
 <p>Below is the R code:</p>
 <div class="cell">
@@ -331,13 +336,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </section>
-<section id="reasons-1" class="level2">
-<h2 class="anchored" data-anchor-id="reasons-1">Reasons</h2>
+<section id="reasons" class="level2">
+<h2 class="anchored" data-anchor-id="reasons">Reasons</h2>
 <p>The reasons for the differences are because:</p>
-<ol type="1">
-<li><p>The kth quantile for a survival curve S(t) is the location at which a horizontal line at height p= 1-k intersects the plot of S(t) as shown in the KM curve below. Since S(t) is a step function, it is possible for the curve to have a horizontal segment at exactly 1-k, in which case the midpoint of the horizontal segment is returned:</p>
-<p>The median is the smallest time which survival estimate is &lt;= 0.5 –&gt; <code>(87+118) / 2 = 102.5</code></p></li>
-</ol>
+<p><strong>Reason 1: Survival estimate does not cross the 50% percentile.</strong></p>
+<p>The kth quantile for a survival curve S(t) is the location at which a horizontal line at height p= 1-k intersects the plot of S(t) as shown in the KM curve below. Since S(t) is a step function, it is possible for the curve to have a horizontal segment at exactly 1-k, in which case the midpoint of the horizontal segment is returned.</p>
+<p>For example, using the data above, the survival probability is exactly 0.5 at time=87 and remains at 0.5 until the last censored observation at 118.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/survival/other_diff_km.png" class="img-fluid figure-img" style="width:75.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>When using R, the median is the smallest time which survival estimate is &lt;= 0.5 –&gt; <code>(87+118) / 2 = 102.5.</code> However, SAS searches the smallest time which survival estimate is &lt; 0.5, which does not exist in this dataset, so it gives “NE” (Not evaluable).</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>pl <span class="ot">&lt;-</span> survminer<span class="sc">::</span><span class="fu">ggsurvplot</span>(fit.km, </span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>                            <span class="at">conf.int =</span> <span class="cn">TRUE</span>,</span>
@@ -346,11 +360,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit.km)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>However, SAS searches the smallest time which survival estimate is &lt; 0.5, which does not exist in this dataset, so it gives “NE”.</p>
-<ol start="2" type="1">
-<li>For the 120-day event-free estimate, 120-day is beyond the maximum observed day, since it is unknown, SAS gives “NE”, but R uses the rate at last observed censored date to estimate the 120-day event free rate.</li>
-</ol>
-<p>If change the last observation in the dataset to be an event, R and SAS will both give 0 because it is for sure that all subjects did not survive beyond 120 days.</p>
+<p><strong>Reason 2: Last event censored and prior to the required landmark estimate.</strong></p>
+<p>For the 120-day event-free estimate, SAS considers that 120 days is beyond the maximum observed day in the data (which was a censored event at time =118). Therefore, SAS considers this as Unknown and returns a result of “NE” (Not-evaluable). However, R uses the rate at last observed censored date to estimate the 120-day event free rate. As the event-free estimate at time of the last censored event at 118 was 0.5 (0.184, 0.753), R makes the assumption that this is the best estimate for the event-free rate at Time =120.</p>
+<p>If we change the last observation in the dataset to be an event (instead of censored), R and SAS will both give 0 for the event-free survival estimate, because it is for sure that all subjects did not survive beyond 120 days.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">time =</span> <span class="fu">c</span>(<span class="dv">54</span>, <span class="dv">75</span>, <span class="dv">77</span>, <span class="dv">84</span>, <span class="dv">87</span>, <span class="dv">92</span>, <span class="dv">103</span>, <span class="dv">105</span>, <span class="dv">112</span>, <span class="dv">118</span>), </span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">status =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>))</span>
