@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Survival Analysis Using SAS</title>
+<title>R vs SAS Paired T-Test</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,40 +19,6 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -177,16 +143,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#analysis-of-time-to-event-data" id="toc-analysis-of-time-to-event-data" class="nav-link active" data-scroll-target="#analysis-of-time-to-event-data">Analysis of Time-to-event Data</a>
+  <li><a href="#paired-t-test-comparison" id="toc-paired-t-test-comparison" class="nav-link active" data-scroll-target="#paired-t-test-comparison">Paired t-test Comparison</a>
   <ul class="collapse">
-  <li><a href="#example-data" id="toc-example-data" class="nav-link" data-scroll-target="#example-data">Example Data</a></li>
-  <li><a href="#the-non-stratified-model" id="toc-the-non-stratified-model" class="nav-link" data-scroll-target="#the-non-stratified-model">The Non-stratified Model</a>
+  <li><a href="#comparison-results" id="toc-comparison-results" class="nav-link" data-scroll-target="#comparison-results">Comparison Results</a>
   <ul class="collapse">
-  <li><a href="#km-estimators-and-log-rank-test" id="toc-km-estimators-and-log-rank-test" class="nav-link" data-scroll-target="#km-estimators-and-log-rank-test">KM estimators and log-rank test</a></li>
-  <li><a href="#cox-ph-model" id="toc-cox-ph-model" class="nav-link" data-scroll-target="#cox-ph-model">Cox PH model</a></li>
+  <li><a href="#normal" id="toc-normal" class="nav-link" data-scroll-target="#normal">Normal Data</a></li>
+  <li><a href="#lognormal" id="toc-lognormal" class="nav-link" data-scroll-target="#lognormal">Lognormal Data</a></li>
   </ul></li>
-  <li><a href="#the-stratified-model" id="toc-the-stratified-model" class="nav-link" data-scroll-target="#the-stratified-model">The Stratified Model</a></li>
   </ul></li>
+  <li><a href="#summary-and-recommendation" id="toc-summary-and-recommendation" class="nav-link" data-scroll-target="#summary-and-recommendation">Summary and Recommendation</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 </nav>
     </div>
@@ -195,7 +161,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Survival Analysis Using SAS</h1>
+<h1 class="title">R vs SAS Paired T-Test</h1>
 </div>
 
 
@@ -212,125 +178,106 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>The most commonly used survival analysis methods in clinical trials include:</p>
-<ul>
-<li><p>Kaplan-Meier (KM) estimators: non-parametric statistics utilized for estimating the survival function</p></li>
-<li><p>Log-rank test: a non-parametric test for comparing the survival functions across two or more groups</p></li>
-<li><p>Cox proportional hazards (PH) model: a semi-parametric model often used to assess the relationship between the survival time and explanatory variables</p></li>
-</ul>
-<p>Additionally, other methods for analyzing time-to-event data are available, such as:</p>
-<ul>
-<li><p>Parametric survival model</p></li>
-<li><p>Accelerated failure time model</p></li>
-<li><p>Competing risk model</p></li>
-<li><p>Restricted mean survival time</p></li>
-<li><p>Time-dependent Cox model</p></li>
-</ul>
-<p>While these models may be explored in a separate document, this particular document focuses solely on the three most prevalent methods: KM estimators, log-rank test and Cox PH model.</p>
-<section id="analysis-of-time-to-event-data" class="level1">
-<h1>Analysis of Time-to-event Data</h1>
-<p>Below is a standard mock-up for survival analysis in clinical trials.</p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/survival/layout.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-<section id="example-data" class="level2">
-<h2 class="anchored" data-anchor-id="example-data">Example Data</h2>
-<p>Data source: https://stats.idre.ucla.edu/sas/seminars/sas-survival/</p>
-<p>The data include 500 subjects from the Worcester Heart Attack Study. This study examined several factors, such as age, gender and BMI, that may influence survival time after heart attack. Follow up time for all participants begins at the time of hospital admission after heart attack and ends with death or loss to follow up (censoring). The variables used here are:</p>
-<ul>
-<li><p>lenfol: length of followup, terminated either by death or censoring - time variable</p></li>
-<li><p>fstat: loss to followup = 0, death = 1 - censoring variable</p></li>
-<li><p>afb: atrial fibrillation, no = 0, 1 = yes - explanatory variable</p></li>
-<li><p>gender: males = 0, females = 1 - stratification factor</p></li>
-</ul>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>libname mylib <span class="st">"..\data"</span>;</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>data dat;</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>set mylib.whas500;</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>lenfoly <span class="ot">=</span> <span class="fu">round</span>(lenfol<span class="sc">/</span><span class="fl">365.25</span>, <span class="fl">0.01</span>);  <span class="sc">/</span><span class="er">*</span> change follow<span class="sc">-</span>up days to years <span class="cf">for</span> better visualization<span class="sc">*</span><span class="er">/</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
+<section id="paired-t-test-comparison" class="level1">
+<h1>Paired t-test Comparison</h1>
+<p>The following table shows the types of Paired t-test analysis, the capabilities of each language, and whether or not the results from each language match.</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Analysis</th>
+<th>Supported in R</th>
+<th>Supported in SAS</th>
+<th>Results Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Paired t-test, normal data</td>
+<td><a href="../R/ttest_Paired.html#normal">Yes</a></td>
+<td><a href="../SAS/ttest_Paired.html#normal">Yes</a></td>
+<td><a href="#normal">Yes</a></td>
+<td>In Base R, use <code>paired = TRUE</code> on <code>t.test()</code> function</td>
+</tr>
+<tr class="even">
+<td>Paired t-test, lognormal data</td>
+<td><a href="../R/ttest_Paired.html#lognormal">Maybe</a></td>
+<td><a href="../SAS/ttest_Paired.html#lognormal">Yes</a></td>
+<td><a href="#lognormal">NA</a></td>
+<td>May be supported by <strong>envstats</strong> package</td>
+</tr>
+</tbody>
+</table>
+<section id="comparison-results" class="level2">
+<h2 class="anchored" data-anchor-id="comparison-results">Comparison Results</h2>
+<section id="normal" class="level3">
+<h3 class="anchored" data-anchor-id="normal">Normal Data</h3>
+<p>Here is a table of comparison values between <code>t.test()</code>, <code>proc_ttest()</code>, and SAS <code>PROC TTEST</code>:</p>
+<table class="table">
+<colgroup>
+<col style="width: 28%">
+<col style="width: 14%">
+<col style="width: 20%">
+<col style="width: 17%">
+<col style="width: 10%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Statistic</th>
+<th>t.test()</th>
+<th>proc_ttest()</th>
+<th>PROC TTEST</th>
+<th>Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Degrees of Freedom</td>
+<td>11</td>
+<td>11</td>
+<td>11</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>t value</td>
+<td>-1.089648</td>
+<td>-1.089648</td>
+<td>-1.089648</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>p value</td>
+<td>0.2992</td>
+<td>0.2992</td>
+<td>0.2992</td>
+<td>Yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
 </section>
-<section id="the-non-stratified-model" class="level2">
-<h2 class="anchored" data-anchor-id="the-non-stratified-model">The Non-stratified Model</h2>
-<p>First we try a non-stratified analysis following the mock-up above to describe the association between survival time and afb (atrial fibrillation).</p>
-<p>The KM estimators and log-rank test are from <code>PROC LIFETEST</code>, and Cox PH model is conducted using <code>PROC PHREG</code>.</p>
-<section id="km-estimators-and-log-rank-test" class="level3">
-<h3 class="anchored" data-anchor-id="km-estimators-and-log-rank-test">KM estimators and log-rank test</h3>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>proc lifetest data<span class="ot">=</span>dat outsurv<span class="ot">=</span>_SurvEst timelist<span class="ot">=</span> <span class="dv">1</span> <span class="dv">3</span> <span class="dv">5</span> reduceout stderr; </span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>time lenfoly<span class="sc">*</span><span class="fu">fstat</span>(<span class="dv">0</span>);</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>strata afb;</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>The landmark estimates and quartile estimates for AFB = 0 group are as shown in below:</p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/survival/sas_km_afib0.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>The logrank test result is in below:</p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/survival/sas_logrank.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-</section>
-<section id="cox-ph-model" class="level3">
-<h3 class="anchored" data-anchor-id="cox-ph-model">Cox PH model</h3>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>proc phreg data <span class="ot">=</span> dat;</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>class afb;</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>model lenfol<span class="sc">*</span><span class="fu">fstat</span>(<span class="dv">0</span>) <span class="ot">=</span> afb<span class="sc">/</span>rl;</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>The hazard ratio and confidence intervals are shown as below:</p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/survival/sas_cox.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
-</figure>
-</div>
-</div>
-</div>
+<section id="lognormal" class="level3">
+<h3 class="anchored" data-anchor-id="lognormal">Lognormal Data</h3>
+<p>Since there is currently no known support for lognormal t-test in R, this comparison is not applicable.</p>
 </section>
 </section>
-<section id="the-stratified-model" class="level2">
-<h2 class="anchored" data-anchor-id="the-stratified-model">The Stratified Model</h2>
-<p>In a stratified model, the Kaplan-Meier estimators remain the same as those in the non-stratified model. To implement stratified log-rank tests and Cox proportional hazards models, simply add the <code>STRATA</code> option in both <code>PROC LIFETEST</code> and <code>PROC PHREG</code>.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># KM estimators and log-rank test</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>proc lifetest data<span class="ot">=</span>dat;</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>time lenfoly<span class="sc">*</span><span class="fu">fstat</span>(<span class="dv">0</span>);</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>strata gender<span class="sc">/</span>group <span class="ot">=</span> afb;</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>run;</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Cox PH model</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>proc phreg data<span class="ot">=</span>dat;</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>class afb;</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>model lenfol<span class="sc">*</span><span class="fu">fstat</span>(<span class="dv">0</span>) <span class="ot">=</span> afb<span class="sc">/</span>rl;</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>strata gender;</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
+</section>
+<section id="summary-and-recommendation" class="level1">
+<h1>Summary and Recommendation</h1>
+<p>For normal data, the R paired t-test capabilities are comparable to SAS. Comparison between SAS and R show identical results for the datasets tried. The <strong>procs</strong> package <code>proc_ttest()</code> function is very similar to SAS in the syntax and output produced. <code>proc_ttest()</code> also supports by groups, where <code>t.test()</code> does not.</p>
+<p>For the lognormal version of the t-test, it does not appear to be supported in the <strong>stats</strong> or <strong>procs</strong> package. It may be supported in the <strong>envstats</strong> package. More exploration is needed to determine whether this package will produce the expected results, and whether the results will match SAS.</p>
+</section>
+<section id="references" class="level1">
+<h1>References</h1>
+<p>R <code>t.test()</code> documentation: <a href="https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/t.test" class="uri">https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/t.test</a></p>
+<p>R <code>proc_ttest()</code> documentation: <a href="https://procs.r-sassy.org/reference/proc_ttest.html" class="uri">https://procs.r-sassy.org/reference/proc_ttest.html</a></p>
+<p>SAS <code>PROC TTEST</code> Paired analysis documentation: <a href="https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_ttest_syntax08.htm" class="uri">https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_ttest_syntax08.htm</a></p>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->
