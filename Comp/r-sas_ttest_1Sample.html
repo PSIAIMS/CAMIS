@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Linear Regression</title>
+<title>R vs SAS One Sample T-Test</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,40 +19,6 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -177,8 +143,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#descriptive-statistics" id="toc-descriptive-statistics" class="nav-link active" data-scroll-target="#descriptive-statistics">Descriptive Statistics</a></li>
-  <li><a href="#regression-analysis" id="toc-regression-analysis" class="nav-link" data-scroll-target="#regression-analysis">Regression Analysis</a></li>
+  <li><a href="#one-sample-t-test-comparison" id="toc-one-sample-t-test-comparison" class="nav-link active" data-scroll-target="#one-sample-t-test-comparison">One Sample t-test Comparison</a>
+  <ul class="collapse">
+  <li><a href="#comparison-results" id="toc-comparison-results" class="nav-link" data-scroll-target="#comparison-results">Comparison Results</a>
+  <ul class="collapse">
+  <li><a href="#normal" id="toc-normal" class="nav-link" data-scroll-target="#normal">Normal Data</a></li>
+  <li><a href="#lognormal" id="toc-lognormal" class="nav-link" data-scroll-target="#lognormal">Lognormal Data</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#summary-and-recommendation" id="toc-summary-and-recommendation" class="nav-link" data-scroll-target="#summary-and-recommendation">Summary and Recommendation</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 </nav>
     </div>
@@ -187,7 +161,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Linear Regression</h1>
+<h1 class="title">R vs SAS One Sample T-Test</h1>
 </div>
 
 
@@ -195,12 +169,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="quarto-title-meta">
 
     
-    <div>
-    <div class="quarto-title-meta-heading">Published</div>
-    <div class="quarto-title-meta-contents">
-      <p class="date">6 February, 2024</p>
-    </div>
-  </div>
   
     
   </div>
@@ -210,86 +178,105 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>To demonstrate the use of linear regression we examine a dataset that illustrates the relationship between Height and Weight in a group of 237 teen-aged boys and girls. The dataset is available at (../data/htwt.csv) and is imported to sas using proc import procedure.</p>
-<section id="descriptive-statistics" class="level3">
-<h3 class="anchored" data-anchor-id="descriptive-statistics">Descriptive Statistics</h3>
-<p>The first step is to obtain the simple descriptive statistics for the numeric variables of htwt data, and one-way frequencies for categorical variables. This is accomplished by employing proc means and proc freq procedures There are 237 participants who are from 13.9 to 25 years old. It is a cross-sectional study, with each participant having one observation. We can use this data set to examine the relationship of participants’ height to their age and sex.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>proc means data<span class="ot">=</span>htwt;</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>run;</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                    Descriptive Statistics <span class="cf">for</span> HTWT Data Set                  </span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>                             The MEANS Procedure</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>Variable  Label     N          Mean       Std Dev       Minimum       Maximum</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>AGE       AGE     <span class="dv">237</span>    <span class="fl">16.4430380</span>     <span class="fl">1.8425767</span>    <span class="fl">13.9000000</span>    <span class="fl">25.0000000</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>HEIGHT    HEIGHT  <span class="dv">237</span>    <span class="fl">61.3645570</span>     <span class="fl">3.9454019</span>    <span class="fl">50.5000000</span>    <span class="fl">72.0000000</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>WEIGHT    WEIGHT  <span class="dv">237</span>   <span class="fl">101.3080169</span>    <span class="fl">19.4406980</span>    <span class="fl">50.5000000</span>   <span class="fl">171.5000000</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="sc">----------------------------------------------------------------------------</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>proc freq data<span class="ot">=</span>htwt;</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>tables sex;</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>run;</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    Oneway Frequency Tabulation <span class="cf">for</span> Sex <span class="cf">for</span> HTWT Data Set                    </span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>                    The FREQ Procedure</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>                                      Cumulative    Cumulative</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>SEX         Frequency     Percent     Frequency      Percent</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="sc">-------------------------------------------------------------</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>f           <span class="dv">111</span>           <span class="fl">46.84</span>           <span class="dv">111</span>        <span class="fl">46.84</span></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>m           <span class="dv">126</span>           <span class="fl">53.16</span>           <span class="dv">237</span>       <span class="fl">100.00</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>In order to create a regression model to demonstrate the relationship between age and height for females, we first need to create a flag variable identifying females and an interaction variable between age and female gender flag.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data htwt2;</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  set htwt;</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> sex<span class="ot">=</span><span class="st">"f"</span> then female<span class="ot">=</span><span class="dv">1</span>;</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> sex<span class="ot">=</span><span class="st">"m"</span> then female<span class="ot">=</span><span class="dv">0</span>; </span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="sc">*</span>model to demonstrate interaction between female gender and age;</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  fem_age <span class="ot">=</span> female <span class="sc">*</span> age;  </span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
+<section id="one-sample-t-test-comparison" class="level1">
+<h1>One Sample t-test Comparison</h1>
+<p>The following table shows the types of One Sample t-test analysis, the capabilities of each language, and whether or not the results from each language match.</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Analysis</th>
+<th>Supported in R</th>
+<th>Supported in SAS</th>
+<th>Results Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>One sample t-test, normal data</td>
+<td><a href="../R/ttest_1Sample.html#normal">Yes</a></td>
+<td><a href="../SAS/ttest_1Sample.html#normal">Yes</a></td>
+<td><a href="#normal">Yes</a></td>
+<td>In Base R, use <code>mu</code> parameter on <code>t.test()</code> function to set null hypothesis value</td>
+</tr>
+<tr class="even">
+<td>One sample t-test, lognormal data</td>
+<td><a href="../R/ttest_1Sample.html#lognormal">Maybe</a></td>
+<td><a href="../SAS/ttest_1Sample.html#lognormal">Yes</a></td>
+<td><a href="#lognormal">NA</a></td>
+<td>May be supported by <strong>envstats</strong> package</td>
+</tr>
+</tbody>
+</table>
+<section id="comparison-results" class="level2">
+<h2 class="anchored" data-anchor-id="comparison-results">Comparison Results</h2>
+<section id="normal" class="level3">
+<h3 class="anchored" data-anchor-id="normal">Normal Data</h3>
+<p>Here is a table of comparison values between <code>t.test()</code>, <code>proc_ttest()</code>, and SAS <code>PROC TTEST</code>:</p>
+<table class="table">
+<colgroup>
+<col style="width: 28%">
+<col style="width: 14%">
+<col style="width: 20%">
+<col style="width: 17%">
+<col style="width: 10%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Statistic</th>
+<th>t.test()</th>
+<th>proc_ttest()</th>
+<th>PROC TTEST</th>
+<th>Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Degrees of Freedom</td>
+<td>29</td>
+<td>29</td>
+<td>29</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>t value</td>
+<td>2.364306</td>
+<td>2.364306</td>
+<td>2.364306</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>p value</td>
+<td>0.0249741</td>
+<td>0.0249741</td>
+<td>0.0249741</td>
+<td>Yes</td>
+<td></td>
+</tr>
+</tbody>
+</table>
 </section>
-<section id="regression-analysis" class="level3">
-<h3 class="anchored" data-anchor-id="regression-analysis">Regression Analysis</h3>
-<p>Next, we fit a regression model, representing the relationships between gender, age, height and the interaction variable created in the datastep above. We again use a where statement to restrict the analysis to those who are less than or equal to 19 years old. We use the clb option to get a 95% confidence interval for each of the parameters in the model. The model that we are fitting is <strong><em>height = b0 + b1 x female + b2 x age + b3 x fem_age + e</em></strong></p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>proc reg data<span class="ot">=</span>htwt2;</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  where age <span class="sc">&lt;=</span><span class="dv">19</span>;</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  model height <span class="ot">=</span> female age fem_age <span class="sc">/</span> clb;</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>run; quit;</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                        Number of Observations Read         <span class="dv">219</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                        Number of Observations Used         <span class="dv">219</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>                                 Analysis of Variance</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>                                        Sum of           Mean</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    Source                   DF        Squares         Square    F Value    Pr <span class="sc">&gt;</span> F</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    Model                     <span class="dv">3</span>     <span class="fl">1432.63813</span>      <span class="fl">477.54604</span>      <span class="fl">60.93</span>    <span class="sc">&lt;</span>.<span class="dv">0001</span></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    Error                   <span class="dv">215</span>     <span class="fl">1684.95730</span>        <span class="fl">7.83701</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    Corrected Total         <span class="dv">218</span>     <span class="fl">3117.59543</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>                 Root MSE              <span class="fl">2.79947</span>    R<span class="sc">-</span>Square     <span class="fl">0.4595</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>                 Dependent Mean       <span class="fl">61.00457</span>    Adj R<span class="sc">-</span>Sq     <span class="fl">0.4520</span></span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>                 Coeff Var             <span class="fl">4.58895</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>We examine the parameter estimates in the output below.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>                            Parameter Estimates</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>                            Parameter       Standard</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>       Variable     DF       Estimate          Error    t Value    Pr <span class="sc">&gt;</span> <span class="er">|</span>t<span class="sc">|</span>       <span class="dv">95</span>% Confidence Limits</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>       Intercept     <span class="dv">1</span>       <span class="fl">28.88281</span>        <span class="fl">2.87343</span>      <span class="fl">10.05</span>      <span class="sc">&lt;</span>.<span class="dv">0001</span>       <span class="fl">23.21911</span>       <span class="fl">34.54650</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>       female        <span class="dv">1</span>       <span class="fl">13.61231</span>        <span class="fl">4.01916</span>       <span class="fl">3.39</span>      <span class="fl">0.0008</span>        <span class="fl">5.69031</span>       <span class="fl">21.53432</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>       AGE           <span class="dv">1</span>        <span class="fl">2.03130</span>        <span class="fl">0.17764</span>      <span class="fl">11.44</span>      <span class="sc">&lt;</span>.<span class="dv">0001</span>        <span class="fl">1.68117</span>        <span class="fl">2.38144</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>       fem_age       <span class="dv">1</span>       <span class="sc">-</span><span class="fl">0.92943</span>        <span class="fl">0.24782</span>      <span class="sc">-</span><span class="fl">3.75</span>      <span class="fl">0.0002</span>       <span class="sc">-</span><span class="fl">1.41791</span>       <span class="sc">-</span><span class="fl">0.44096</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>From the parameter estimates table the coefficients b0,b1,b2,b3 are estimated as b0=28.88 b1=13.61 b2=2.03 b3=-0.92942</p>
-<p>The resulting regression model for height, age and gender based on the available data is <strong><em>height=28.88281 + 13.61231 x female + 2.03130 x age -0.92943 x fem_age</em></strong></p>
+<section id="lognormal" class="level3">
+<h3 class="anchored" data-anchor-id="lognormal">Lognormal Data</h3>
+<p>Since there is currently no known support for lognormal t-test in R, this comparison is not applicable.</p>
+</section>
+</section>
+</section>
+<section id="summary-and-recommendation" class="level1">
+<h1>Summary and Recommendation</h1>
+<p>For normal data, the R one sample t-test capabilities are comparable to SAS. Comparison between SAS and R show identical results for the datasets tried. The <strong>procs</strong> package <code>proc_ttest()</code> function is very similar to SAS in the syntax and output produced. <code>proc_ttest()</code> also supports by groups, where <code>t.test()</code> does not.</p>
+<p>For the lognormal version of the t-test, it does not appear to be supported in the <strong>stats</strong> or <strong>procs</strong> package. It may be supported in the <strong>envstats</strong> package. More exploration is needed to determine whether this package will produce the expected results, and whether the results will match SAS.</p>
+<p>Also note that neither <code>t.test()</code> or <code>proc_ttest()</code> supports the “freq” option that is utilized on examples from the SAS documentation. Therefore, this option has been removed from this comparison. In R, the “freq” functionality could be performed by manipulating the data prior to sending to the t-test function.</p>
+</section>
+<section id="references" class="level1">
+<h1>References</h1>
+<p>R <code>t.test()</code> documentation: <a href="https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/t.test" class="uri">https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/t.test</a></p>
+<p>R <code>proc_ttest()</code> documentation: <a href="https://procs.r-sassy.org/reference/proc_ttest.html" class="uri">https://procs.r-sassy.org/reference/proc_ttest.html</a></p>
+<p>SAS <code>PROC TTEST</code> One Sample analysis documentation: <a href="https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_ttest_syntax09.htm" class="uri">https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_ttest_syntax09.htm</a></p>
 
 
 </section>
