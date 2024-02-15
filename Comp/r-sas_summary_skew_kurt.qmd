@@ -1,0 +1,83 @@
+---
+title: "R vs SAS Skewness/Kurtosis"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(procs)
+```
+
+# Skewness Comparison
+
+The following table shows the types of Skewness, the capabilities of each language, and whether or not the results from each language match.  
+
+| Analysis                          | Supported in R                             | Supported in SAS                           | Results Match    | Notes  |
+|-------------|-------------|-------------|-------------|---------------------|
+| Skewness, Type 1 | [Yes](../R/summary_skew_kurt.html#e1071)      | [Yes](../SAS/summary_skew_kurt.html#n)    | [Yes](#skew)   | In **e1071**, use `type = 1`.<br/>In SAS use `vardef = N`. |
+| Skewness, Type 2 | [Yes](../R/summary_skew_kurt.html#e1071) | [Yes](../SAS/summary_skew_kurt.html#df) | [Yes](#skew) | In **e1071**, use `type = 2`.<br/>In SAS use `vardef = DF`.<br/>**procs** and **sasLM** use defaults. |
+| Skewness, Type 3 | [Yes](../R/summary_skew_kurt.html#e1071)      | [No](../SAS/summary_skew_kurt.html#summary)    | [NA](#skew)   | In **e1071**, use `type = 3`.<br/>Not supported in SAS. |
+
+Note that the SAS default is Type 2.
+
+
+# Kurtosis Comparison
+
+The following table shows the types of Kurtosis, the capabilities of each language, and whether or not the results from each language match. 
+
+| Analysis                          | Supported in R                             | Supported in SAS                           | Results Match    | Notes                                                                             |
+|-------------|-------------|-------------|-------------|---------------------|
+| Kurtosis, Type 1 | [Yes](../R/summary_skew_kurt.html#e1071)      | [Yes](../SAS/summary_skew_kurt.html#n)    | [Yes](#kurt)   | In **e1071**, use `type = 1`.<br/>In SAS use `vardef = N`. |
+| Kurtosis, Type 2 | [Yes](../R/summary_skew_kurt.html#e1071) | [Yes](../SAS/summary_skew_kurt.html#df) | [Yes](#kurt) | In **e1071**, use `type = 2`.<br/>In SAS use `vardef = DF`.<br/>**procs** and **sasLM** use defaults. |
+| Kurtosis, Type 3 | [Yes](../R/summary_skew_kurt.html#e1071)      | [No](../SAS/summary_skew_kurt.html#summary)    | [NA](#kurt)   | In **e1071**, use `type = 3`.<br/>Not supported in SAS. |   
+| Kurtosis, Pearson's | [Yes](../R/summary_skew_kurt.html#moments)      | [No](../SAS/summary_skew_kurt.html#summary)    | [NA](#kurt)   | Use **moments** in R.<br/>Not supported in SAS. | 
+
+Note that the SAS default is Type 2.
+
+## Comparison Results
+
+### Skewness {#skew}
+
+Here is a table of Skewness comparison values between the four R packages examined and SAS:
+
+| Statistic          | **e1071**  | **moments** | **procs** | **sasLM** | **SAS** | Match | Notes |
+|--------------------|-----------|--------------|------------|----------|--------|-------|-------|
+| Skewness, Type 1 | 0.9054442 | 0.9054442      | NA         | NA       | 0.9054442 | Yes   |  |
+| Skewness, Type 2 | 1.009318  | NA             | 1.009318   | 1.009318 | 1.0093179 | Yes   | |
+| Skewness, Type 3 | 0.8164261 | NA             | NA         | NA       | NA     | NA   |Type 3 not supported in SAS|
+
+### Kurtosis {#kurt}
+
+Here is a table of Kurtosis comparison values between the four R packages examined and SAS:
+
+| Statistic          | **e1071**  | **moments** | **procs** | **sasLM** | **SAS** | Match | Notes |
+|--------------------|-----------|--------------|------------|----------|--------|-------|-------|
+| Kurtosis, Type 1 | -0.5833411 | NA            | NA         | NA       | -0.5833411 | Yes   |  |
+| Kurtosis, Type 2 | -0.2991564 | NA            | -0.2991564   | -0.2991564 | -0.2991564 | Yes   | |
+| Kurtosis, Type 3 | -0.8948216 | NA            | NA         | NA       | NA     | NA   |Type 3 not supported in SAS|
+| Kurtosis, Pearson's | NA      | 2.416659      | NA         | NA       | NA     | NA   |Pearson's not supported in SAS|
+
+# Summary and Recommendation
+
+SAS uses a "Type 2" Skewness and Kurtosis by default.  The same Type 2 methodology is supported in at least three different R packages: **e1071**, **procs** and **sasLM**.
+To match the SAS default, use one of these three packages.
+
+SAS also supports
+a "Type 1" Skewness and Kurtosis via the `VARDEF = N` option.  This methodology is supported in the **e1071** package.  The **moments** package also supports Type 1 for Skewness.
+
+For a "Type 3" methodology, use the **e1071** package with `type = 3`.  This is the only source of the Type 3 methodology in either SAS or R.
+
+The Pearson's method for Kurtosis is available in the **moments** package.  This package appears to be the only source of the Pearson's Kurtosis.
+
+# References
+
+**e1071** `skewness()`: <https://www.rdocumentation.org/packages/e1071/versions/1.7-14/topics/skewness>
+
+**e1071** `kurtosis()`: <https://www.rdocumentation.org/packages/e1071/versions/1.7-14/topics/kurtosis>
+
+**moments** documentation: <https://cran.r-project.org/web/packages/moments/moments.pdf>
+
+**procs** `proc_means()` documentation: <https://procs.r-sassy.org/reference/proc_means.html>
+
+**sasLM** documentation: <https://cran.r-project.org/web/packages/sasLM/sasLM.pdf>
+
+**SAS** `PROC MEANS`: <https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.5/proc/p0v0y1on1hbxukn0zqgsp5ky8hc0.htm>
