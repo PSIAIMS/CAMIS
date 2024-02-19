@@ -1,0 +1,226 @@
+---
+title: "Python log-log with KaplanMeierFitter model"
+output: html_document
+date: "2024-02-19"
+---
+
+Import the KaplanMeierFitter from lifelines, logrank_test from lifelines.statistics and pandas library
+
+```{python setup, include=FALSE}
+
+import pandas as pd
+from lifelines import KaplanMeierFitter
+from lifelines.statistics import logrank_test
+
+```
+
+## Data used
+
+Creat the dataframe and printing the top rows from data source
+
+```{python}
+
+df = pd.read_sas('/data/whas500.sas7bdat')
+df.head()
+
+```
+## Example Code
+
+Choose the right columns for analysis
+
+```{python}
+
+df = df[["LENFOL", "AFB", "FSTAT"]]
+
+```
+
+Change follow-up days to years for better visualization
+
+```{python}
+
+df['LENFOL'] = df['LENFOL']/365.25
+df['LENFOL'] = df['LENFOL'].round(decimals = 2)
+
+```
+Create Kaplan-Meier estimator
+
+```{python}
+
+kmf = KaplanMeierFitter()
+
+```
+
+Fit Kaplan-Meier estimator to groups
+
+```{python}
+
+groups = df['AFB'].unique()
+for group in groups:
+   group_data = df[df['AFB'] == group]
+   kmf.fit(group_data['LENFOL'], event_observed=group_data['FSTAT'], label=group)
+   kmf.plot()
+   
+```
+
+Log-rank test
+
+```{python}
+
+results = logrank_test(df[df['AFB'] == 1.0 ]['LENFOL'],
+                      df[df['AFB'] == 0.0 ]['LENFOL'],
+                      event_observed_A=df[df['AFB'] == 1.0 ]['FSTAT'],
+                      event_observed_B=df[df['AFB'] == 0.0 ]['FSTAT'])
+                      
+```
+
+Display log-rank test results
+
+```{python}
+
+print("Log-Rank Test Results:")
+print("p-value:", results.p_value)
+print("test statistic:", results.test_statistic)
+
+```
+
+Calculate log-log confidence interval
+
+```{python}
+
+confidence_interval = kmf.confidence_interval_survival_function_
+print("Log-Log Confidence Interval for Group B:")
+print(confidence_interval)
+
+```
+
+# Python Log KaplanMeierFitter
+
+Create of two dataframe when AFB=1.0 and AFB=0.0
+
+```{python}
+
+afb_yes = df[df['AFB'] == 1.0]
+afb_no  = df[df['AFB'] == 0.0]
+
+```
+
+Create Kaplan-Meier estimator
+
+```{python}
+
+kmf_yes = KaplanMeierFitter()
+kmf_no = KaplanMeierFitter()
+
+```
+Fit Kaplan-Meier estimator to data
+
+```{python}
+
+kmf_yes.fit(afb_yes['LENFOL'], event_observed=afb_yes['FSTAT'])
+kmf_no.fit(afb_no['LENFOL'], event_observed=afb_no['FSTAT'])
+
+```
+
+Calculate confidence interval for the survival function
+
+```{python}
+
+confidence_interval_yes = kmf_yes.confidence_interval_survival_function_
+confidence_interval_no = kmf_no.confidence_interval_survival_function_
+
+```
+
+The estimated survival function if AFB=1.0
+```{python}
+
+kmf_yes.survival_function_
+
+```
+
+The estimated survival function if AFB=0.0
+
+```{python}
+
+kmf_no.survival_function_
+
+```
+
+The lower and upper confidence intervals for the survival function when AFB=1.0 and AFB=0.0
+
+```{python}
+
+confidence_interval_yes = kmf_yes.confidence_interval_survival_function_
+confidence_interval_no = kmf_no.confidence_interval_survival_function_
+
+```
+
+Printing the result of confidence intervals for the survival function when AFB=1.0
+
+```{python}
+
+print("Log Transformation of Confidence Interval ABF=Yes:")
+confidence_interval_yes
+
+```
+
+Printing the result of confidence intervals for the survival function when AFB=0.0
+
+```{python}
+
+print("Log Transformation of Confidence Interval ABF=No:")
+confidence_interval_no
+
+```
+
+Predict of the KM_estimate survival at 1,3 and 5 year if AFB=1.0
+
+```{python}
+
+kmf_yes.predict([1,3,5], interpolate = True).round(3)
+
+```
+
+KM_estimate on 1,2,3 quartile if AFB=1.0
+
+```{python}
+
+kmf_yes.percentile([0.25,0.50,0.75])
+
+```
+
+Median of the KM_estimate survival if AFB=1.0
+
+```{python}
+
+kmf_yes.median_survival_time_
+
+```
+
+Predict of the KM_estimate survival at 1,3 and 5 year if AFB=0.0
+
+```{python}
+
+kmf_no.predict([1,3,5], interpolate = True).round(3)
+
+```
+
+KM_estimate on 1,2,3 quartile if AFB=0.0
+
+```{python}
+
+kmf_no.percentile([0.25,0.50,0.75])
+
+```
+
+Median of the KM_estimate survival if AFB=0.0
+
+```{python}
+
+kmf_no.median_survival_time_
+
+```
+
+
+
+
+
