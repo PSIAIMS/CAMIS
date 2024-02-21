@@ -19,7 +19,7 @@ The repository below provides examples of statistical methodology in different s
 #| message : false
 library(gt)
 library(tidyverse)
-method_tbl <- read_csv("data/stat_method_tbl.csv", show_col_types = FALSE) %>% 
+method_tbl <- read_csv("data/stat_method_tbl.csv", show_col_types = FALSE) |> 
   pivot_longer(cols = ends_with("links")) %>% 
   mutate(link_name = str_extract(value, "(?<=^\\[).*(?=\\])"),
          link_loc = str_extract(value, "(?<=\\().*(?=\\)$)"),
@@ -29,20 +29,25 @@ method_tbl <- read_csv("data/stat_method_tbl.csv", show_col_types = FALSE) %>%
                        '.html">',
                        link_name, 
                        '</a>'), 
-                       "")) %>% 
-  select(-value, -link_name, -link_loc) %>% 
-  pivot_wider(names_from = name, values_from = link) %>% 
+                       "")) |> 
+  select(-value, -link_name, -link_loc) |>
+  pivot_wider(names_from = name, values_from = link) |>
   mutate(across(ends_with("links"), ~map(., html)))
 
 
 gt(method_tbl, groupname_col = "method_grp",
-   rowname_col = "method_subgrp") %>% 
-      tab_options(row_group.as_column = TRUE) %>% 
+   rowname_col = "method_subgrp") |> 
+      tab_options(row_group.as_column = TRUE) |>
     cols_label(method_subgrp = "Methods", 
                r_links = "R", 
                sas_links = "SAS", 
-               comparison_links = "Comparison") %>% 
-  tab_stubhead("Methods") %>% 
+               comparison_links = "Comparison") |>
+     cols_width(
+    r_links ~ px(75),
+    sas_links ~ px(75),
+    comparison_links ~ px(75)
+  ) |>
+  tab_stubhead("Methods") |> 
   tab_style(
     style = cell_borders(
       sides = c("left"),
