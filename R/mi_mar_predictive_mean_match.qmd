@@ -1,0 +1,78 @@
+---
+title: "Multiple Imputation: Predictive Mean Matching"
+---
+
+## Overview
+
+Predictive mean matching is a technique for missing value imputation. It calculates the predicted value of the missing variable based on a regression model from complete data, then selects one value (from the observed) that produces the closest prediction. PMM is robust to transformation, less vulnerable to model misspecification. More theoretical details for PMM can be found [here](https://stefvanbuuren.name/fimd/sec-pmm.html).
+
+Assumption for PMM: distribution of missing is the same aas obsereved data of the candidates that produce the closest values to the predicted value by the missing entry.
+
+
+## Available R package
+
+[mice](https://amices.org/mice/index.html) is a powerful R package developed by Stef van Buuren, Karin Groothuis-Oudshoorn and other contributors. 
+
+Implementation of PMM in `mice`:  
+
+* Predictive mean matching, [mice.impute.pmm](https://amices.org/mice/reference/mice.impute.pmm.html)
+* Weighted predictive mean matching, [mice.impute.midastouch](https://amices.org/mice/reference/mice.impute.midastouch.html)
+* Multivariate predictive mean matching, [mice.impute.mpmm](https://amices.org/mice/reference/mice.impute.mpmm.html)
+
+
+
+
+## Example
+
+We use the small dataset `nhanes` included in `mice` package. It has 25 rows, and three out of four variables have missings. 
+
+The original NHANES data is a large national level survey, some are publicly available via R package `nhanes`.
+
+```{r}
+#| label: data
+#| echo: true
+#| eval: true
+
+library(mice)
+
+# load example dataset from mice
+head(nhanes)
+summary(nhanes)
+```
+
+### Impute with PMM
+
+To impute with PMM is straightforward: specify the method, `method = pmm`. 
+
+```{r}
+#| label: impute-pmm
+#| echo: true
+#| eval: true
+imp_pmm <- mice(nhanes, method = 'pmm', m=5, maxit=10)
+imp_pmm
+
+# imputations for bmi
+imp_pmm$imp$bmi
+```
+
+
+An alternative to the standard PMM is `midastouch`.
+
+```{r}
+#| label: impute-pmms
+#| echo: true
+#| eval: true
+
+imp_pmms <- mice(nhanes, method = 'midastouch', m=5, maxit=10)
+imp_pmm
+
+imp_pmms$imp$bmi
+```
+
+
+
+
+# Reference
+
+Stef van Buuren, Karin Groothuis-Oudshoorn (2011). mice: Multivariate Imputation by Chained Equations in R. Journal of Statistical Software, 45(3), 1-67. DOI 10.18637/jss.v045.i03
+
