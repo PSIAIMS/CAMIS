@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>CMH Test</title>
+<title>Multiple Imputaton: Linear Regression</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -184,18 +184,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#cochran-mantel-haenszel-test" id="toc-cochran-mantel-haenszel-test" class="nav-link active" data-scroll-target="#cochran-mantel-haenszel-test">Cochran-Mantel-Haenszel Test</a>
+  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a></li>
+  <li><a href="#imputation-with-mice" id="toc-imputation-with-mice" class="nav-link" data-scroll-target="#imputation-with-mice">Imputation with <code>mice</code></a></li>
+  <li><a href="#example" id="toc-example" class="nav-link" data-scroll-target="#example">Example</a>
   <ul class="collapse">
-  <li><a href="#available-r-packages" id="toc-available-r-packages" class="nav-link" data-scroll-target="#available-r-packages">Available R packages</a></li>
-  <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data used</a></li>
-  <li><a href="#example-code" id="toc-example-code" class="nav-link" data-scroll-target="#example-code">Example Code</a>
-  <ul class="collapse">
-  <li><a href="#base-r" id="toc-base-r" class="nav-link" data-scroll-target="#base-r">Base R</a></li>
-  <li><a href="#vcdextra" id="toc-vcdextra" class="nav-link" data-scroll-target="#vcdextra">vcdExtra</a></li>
-  <li><a href="#epidisplay" id="toc-epidisplay" class="nav-link" data-scroll-target="#epidisplay">epiDisplay</a></li>
+  <li><a href="#regression-without-parameter-uncertainty" id="toc-regression-without-parameter-uncertainty" class="nav-link" data-scroll-target="#regression-without-parameter-uncertainty">Regression without parameter uncertainty</a></li>
+  <li><a href="#other-imputation-by-linear-regression" id="toc-other-imputation-by-linear-regression" class="nav-link" data-scroll-target="#other-imputation-by-linear-regression">Other imputation by linear regression</a></li>
   </ul></li>
-  </ul></li>
-  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">Reference</a></li>
   </ul>
 </nav>
     </div>
@@ -204,7 +200,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">CMH Test</h1>
+<h1 class="title">Multiple Imputaton: Linear Regression</h1>
 </div>
 
 
@@ -221,643 +217,298 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="cochran-mantel-haenszel-test" class="level1">
-<h1>Cochran-Mantel-Haenszel Test</h1>
-<p>The CMH procedure tests for conditional independence in partial contingency tables for a 2 x 2 x K design. However, it can be generalized to tables of X x Y x K dimensions.</p>
-<section id="available-r-packages" class="level2">
-<h2 class="anchored" data-anchor-id="available-r-packages">Available R packages</h2>
-<p>We did not find any R package that delivers all the same measures as SAS at once. Therefore, we tried out multiple packages:</p>
+<section id="overview" class="level2">
+<h2 class="anchored" data-anchor-id="overview">Overview</h2>
+<p>Multiple imputation with regression is one step further from mean imputation (i.e.&nbsp;by a single value: the average of observed). In the case for continuous, normally distributed variable, linear regression can use information from other variables hence <em>could</em> be closer to the true missing values.</p>
+</section>
+<section id="imputation-with-mice" class="level2">
+<h2 class="anchored" data-anchor-id="imputation-with-mice">Imputation with <code>mice</code></h2>
+<p><a href="https://amices.org/mice/index.html">mice</a> is a powerful R package developed by Stef van Buuren, Karin Groothuis-Oudshoorn and other contributors. <strong>Regression methods</strong> (continuous, normal outcome) are implemented in <code>mice</code> with methods starting with <code>norm</code>.</p>
+<ul>
+<li>Linear regression without parameter uncertainty, <a href="https://amices.org/mice/reference/mice.impute.norm.nob.html">mice.impute.norm.nob</a></li>
+<li>Linear regression through prediction, <a href="https://amices.org/mice/reference/mice.impute.norm.predict.html">mice.impute.norm.predict</a></li>
+<li>Bayesian linear regression, <a href="https://amices.org/mice/reference/mice.impute.norm.html">mice.impute.norm</a></li>
+<li>Linear regression bootstrap, <a href="https://amices.org/mice/reference/mice.impute.norm.boot.html">mice.impute.norm.boot</a></li>
+</ul>
+</section>
+<section id="example" class="level2">
+<h2 class="anchored" data-anchor-id="example">Example</h2>
+<p>Here I use the small dataset <code>nhanes</code> included in <code>mice</code> package. It has 25 rows, and three out of four variables have missings.</p>
+<p>The original NHANES data is a large national level survey, some are publicly available via R package <code>nhanes</code>.</p>
 <div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mice)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'mice'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:stats':
+
+    filter</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:base':
+
+    cbind, rbind</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># load example dataset from mice</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(nhanes)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  age  bmi hyp chl
+1   1   NA  NA  NA
+2   2 22.7   1 187
+3   1   NA   1 187
+4   3   NA  NA  NA
+5   1 20.4   1 113
+6   3   NA  NA 184</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(nhanes)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      age            bmi             hyp             chl       
+ Min.   :1.00   Min.   :20.40   Min.   :1.000   Min.   :113.0  
+ 1st Qu.:1.00   1st Qu.:22.65   1st Qu.:1.000   1st Qu.:185.0  
+ Median :2.00   Median :26.75   Median :1.000   Median :187.0  
+ Mean   :1.76   Mean   :26.56   Mean   :1.235   Mean   :191.4  
+ 3rd Qu.:2.00   3rd Qu.:28.93   3rd Qu.:1.000   3rd Qu.:212.0  
+ Max.   :3.00   Max.   :35.30   Max.   :2.000   Max.   :284.0  
+                NA's   :9       NA's   :8       NA's   :10     </code></pre>
+</div>
+</div>
+<p>Examine missing pattern with <code>md.pattern(data)</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 27 missing in total</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co"># by col: 8 for hyp, 9 for bmi, 10 for chl</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co"># by row: n missing numbers</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="fu">md.pattern</span>(nhanes)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
-<div id="hihoooptmf" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#hihoooptmf table {
-  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-#hihoooptmf thead, #hihoooptmf tbody, #hihoooptmf tfoot, #hihoooptmf tr, #hihoooptmf td, #hihoooptmf th {
-  border-style: none;
-}
-
-#hihoooptmf p {
-  margin: 0;
-  padding: 0;
-}
-
-#hihoooptmf .gt_table {
-  display: table;
-  border-collapse: collapse;
-  line-height: normal;
-  margin-left: auto;
-  margin-right: auto;
-  color: #333333;
-  font-size: 16px;
-  font-weight: normal;
-  font-style: normal;
-  background-color: #FFFFFF;
-  width: auto;
-  border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: #A8A8A8;
-  border-right-style: none;
-  border-right-width: 2px;
-  border-right-color: #D3D3D3;
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #A8A8A8;
-  border-left-style: none;
-  border-left-width: 2px;
-  border-left-color: #D3D3D3;
-}
-
-#hihoooptmf .gt_caption {
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-
-#hihoooptmf .gt_title {
-  color: #333333;
-  font-size: 125%;
-  font-weight: initial;
-  padding-top: 4px;
-  padding-bottom: 4px;
-  padding-left: 5px;
-  padding-right: 5px;
-  border-bottom-color: #FFFFFF;
-  border-bottom-width: 0;
-}
-
-#hihoooptmf .gt_subtitle {
-  color: #333333;
-  font-size: 85%;
-  font-weight: initial;
-  padding-top: 3px;
-  padding-bottom: 5px;
-  padding-left: 5px;
-  padding-right: 5px;
-  border-top-color: #FFFFFF;
-  border-top-width: 0;
-}
-
-#hihoooptmf .gt_heading {
-  background-color: #FFFFFF;
-  text-align: center;
-  border-bottom-color: #FFFFFF;
-  border-left-style: none;
-  border-left-width: 1px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 1px;
-  border-right-color: #D3D3D3;
-}
-
-#hihoooptmf .gt_bottom_border {
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-}
-
-#hihoooptmf .gt_col_headings {
-  border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: #D3D3D3;
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  border-left-style: none;
-  border-left-width: 1px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 1px;
-  border-right-color: #D3D3D3;
-}
-
-#hihoooptmf .gt_col_heading {
-  color: #333333;
-  background-color: #FFFFFF;
-  font-size: 100%;
-  font-weight: normal;
-  text-transform: inherit;
-  border-left-style: none;
-  border-left-width: 1px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 1px;
-  border-right-color: #D3D3D3;
-  vertical-align: bottom;
-  padding-top: 5px;
-  padding-bottom: 6px;
-  padding-left: 5px;
-  padding-right: 5px;
-  overflow-x: hidden;
-}
-
-#hihoooptmf .gt_column_spanner_outer {
-  color: #333333;
-  background-color: #FFFFFF;
-  font-size: 100%;
-  font-weight: normal;
-  text-transform: inherit;
-  padding-top: 0;
-  padding-bottom: 0;
-  padding-left: 4px;
-  padding-right: 4px;
-}
-
-#hihoooptmf .gt_column_spanner_outer:first-child {
-  padding-left: 0;
-}
-
-#hihoooptmf .gt_column_spanner_outer:last-child {
-  padding-right: 0;
-}
-
-#hihoooptmf .gt_column_spanner {
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  vertical-align: bottom;
-  padding-top: 5px;
-  padding-bottom: 5px;
-  overflow-x: hidden;
-  display: inline-block;
-  width: 100%;
-}
-
-#hihoooptmf .gt_spanner_row {
-  border-bottom-style: hidden;
-}
-
-#hihoooptmf .gt_group_heading {
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-  color: #333333;
-  background-color: #FFFFFF;
-  font-size: 100%;
-  font-weight: initial;
-  text-transform: inherit;
-  border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: #D3D3D3;
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  border-left-style: none;
-  border-left-width: 1px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 1px;
-  border-right-color: #D3D3D3;
-  vertical-align: middle;
-  text-align: left;
-}
-
-#hihoooptmf .gt_empty_group_heading {
-  padding: 0.5px;
-  color: #333333;
-  background-color: #FFFFFF;
-  font-size: 100%;
-  font-weight: initial;
-  border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: #D3D3D3;
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  vertical-align: middle;
-}
-
-#hihoooptmf .gt_from_md > :first-child {
-  margin-top: 0;
-}
-
-#hihoooptmf .gt_from_md > :last-child {
-  margin-bottom: 0;
-}
-
-#hihoooptmf .gt_row {
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-  margin: 10px;
-  border-top-style: solid;
-  border-top-width: 1px;
-  border-top-color: #D3D3D3;
-  border-left-style: none;
-  border-left-width: 1px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 1px;
-  border-right-color: #D3D3D3;
-  vertical-align: middle;
-  overflow-x: hidden;
-}
-
-#hihoooptmf .gt_stub {
-  color: #333333;
-  background-color: #FFFFFF;
-  font-size: 100%;
-  font-weight: initial;
-  text-transform: inherit;
-  border-right-style: solid;
-  border-right-width: 2px;
-  border-right-color: #D3D3D3;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
-#hihoooptmf .gt_stub_row_group {
-  color: #333333;
-  background-color: #FFFFFF;
-  font-size: 100%;
-  font-weight: initial;
-  text-transform: inherit;
-  border-right-style: solid;
-  border-right-width: 2px;
-  border-right-color: #D3D3D3;
-  padding-left: 5px;
-  padding-right: 5px;
-  vertical-align: top;
-}
-
-#hihoooptmf .gt_row_group_first td {
-  border-top-width: 2px;
-}
-
-#hihoooptmf .gt_row_group_first th {
-  border-top-width: 2px;
-}
-
-#hihoooptmf .gt_summary_row {
-  color: #333333;
-  background-color: #FFFFFF;
-  text-transform: inherit;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
-#hihoooptmf .gt_first_summary_row {
-  border-top-style: solid;
-  border-top-color: #D3D3D3;
-}
-
-#hihoooptmf .gt_first_summary_row.thick {
-  border-top-width: 2px;
-}
-
-#hihoooptmf .gt_last_summary_row {
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-}
-
-#hihoooptmf .gt_grand_summary_row {
-  color: #333333;
-  background-color: #FFFFFF;
-  text-transform: inherit;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
-#hihoooptmf .gt_first_grand_summary_row {
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-  border-top-style: double;
-  border-top-width: 6px;
-  border-top-color: #D3D3D3;
-}
-
-#hihoooptmf .gt_last_grand_summary_row_top {
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-  border-bottom-style: double;
-  border-bottom-width: 6px;
-  border-bottom-color: #D3D3D3;
-}
-
-#hihoooptmf .gt_striped {
-  background-color: rgba(128, 128, 128, 0.05);
-}
-
-#hihoooptmf .gt_table_body {
-  border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: #D3D3D3;
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-}
-
-#hihoooptmf .gt_footnotes {
-  color: #333333;
-  background-color: #FFFFFF;
-  border-bottom-style: none;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  border-left-style: none;
-  border-left-width: 2px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 2px;
-  border-right-color: #D3D3D3;
-}
-
-#hihoooptmf .gt_footnote {
-  margin: 0px;
-  font-size: 90%;
-  padding-top: 4px;
-  padding-bottom: 4px;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
-#hihoooptmf .gt_sourcenotes {
-  color: #333333;
-  background-color: #FFFFFF;
-  border-bottom-style: none;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  border-left-style: none;
-  border-left-width: 2px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 2px;
-  border-right-color: #D3D3D3;
-}
-
-#hihoooptmf .gt_sourcenote {
-  font-size: 90%;
-  padding-top: 4px;
-  padding-bottom: 4px;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
-#hihoooptmf .gt_left {
-  text-align: left;
-}
-
-#hihoooptmf .gt_center {
-  text-align: center;
-}
-
-#hihoooptmf .gt_right {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-#hihoooptmf .gt_font_normal {
-  font-weight: normal;
-}
-
-#hihoooptmf .gt_font_bold {
-  font-weight: bold;
-}
-
-#hihoooptmf .gt_font_italic {
-  font-style: italic;
-}
-
-#hihoooptmf .gt_super {
-  font-size: 65%;
-}
-
-#hihoooptmf .gt_footnote_marks {
-  font-size: 75%;
-  vertical-align: 0.4em;
-  position: initial;
-}
-
-#hihoooptmf .gt_asterisk {
-  font-size: 100%;
-  vertical-align: 0;
-}
-
-#hihoooptmf .gt_indent_1 {
-  text-indent: 5px;
-}
-
-#hihoooptmf .gt_indent_2 {
-  text-indent: 10px;
-}
-
-#hihoooptmf .gt_indent_3 {
-  text-indent: 15px;
-}
-
-#hihoooptmf .gt_indent_4 {
-  text-indent: 20px;
-}
-
-#hihoooptmf .gt_indent_5 {
-  text-indent: 25px;
-}
-</style>
-
-<table class="gt_table table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
-<thead>
-<tr class="header gt_col_headings">
-<th id="Package" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Package</th>
-<th id="General Association" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">General Association</th>
-<th id="Row Means Differ" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Row Means Differ</th>
-<th id="Nonzero Correlation" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Nonzero Correlation</th>
-<th id="M-H Odds Ratio" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">M-H Odds Ratio</th>
-<th id="Homogeneity Test" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Homogeneity Test</th>
-<th id="Note" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Note</th>
-</tr>
-</thead>
-<tbody class="gt_table_body">
-<tr class="odd">
-<td class="gt_row gt_left" headers="Package">stats::mantelhaen.test()</td>
-<td class="gt_row gt_left" headers="General Association">✅</td>
-<td class="gt_row gt_left" headers="Row Means Differ">❌</td>
-<td class="gt_row gt_left" headers="Nonzero Correlation">❌</td>
-<td class="gt_row gt_left" headers="M-H Odds Ratio">✅</td>
-<td class="gt_row gt_left" headers="Homogeneity Test">❌</td>
-<td class="gt_row gt_left" headers="Note">Works well for 2x2xK</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_left" headers="Package">vcdExtra::CMHtest()</td>
-<td class="gt_row gt_left" headers="General Association">✅</td>
-<td class="gt_row gt_left" headers="Row Means Differ">✅</td>
-<td class="gt_row gt_left" headers="Nonzero Correlation">✅</td>
-<td class="gt_row gt_left" headers="M-H Odds Ratio">❌</td>
-<td class="gt_row gt_left" headers="Homogeneity Test">❌</td>
-<td class="gt_row gt_left" headers="Note">Problems with sparsity, potential bug</td>
-</tr>
-<tr class="odd">
-<td class="gt_row gt_left" headers="Package">epiDisplay::mhor()</td>
-<td class="gt_row gt_left" headers="General Association">❌</td>
-<td class="gt_row gt_left" headers="Row Means Differ">❌</td>
-<td class="gt_row gt_left" headers="Nonzero Correlation">❌</td>
-<td class="gt_row gt_left" headers="M-H Odds Ratio">✅</td>
-<td class="gt_row gt_left" headers="Homogeneity Test">✅</td>
-<td class="gt_row gt_left" headers="Note">OR are limited to 2x2xK design</td>
-</tr>
-</tbody>
-</table>
-
+<figure class="figure">
+<p><img src="mi_mar_regression_files/figure-html/missing-pattern-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
 </div>
 </div>
-</div>
-</div>
-</section>
-<section id="data-used" class="level2">
-<h2 class="anchored" data-anchor-id="data-used">Data used</h2>
-<p>We will use the CDISC Pilot data set, which is publicly available on the PHUSE Test Data Factory repository. We applied very basic filtering conditions upfront (see below) and this data set served as the basis of the examples to follow.</p>
-<div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 231 × 36
-   STUDYID SITEID SITEGR1 USUBJID TRTSDT     TRTEDT     TRTP  TRTPN   AGE AGEGR1
-   &lt;chr&gt;   &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt;   &lt;date&gt;     &lt;date&gt;     &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; 
- 1 CDISCP… 701    701     01-701… 2014-01-02 2014-07-02 Plac…     0    63 &lt;65   
- 2 CDISCP… 701    701     01-701… 2012-08-05 2012-09-01 Plac…     0    64 &lt;65   
- 3 CDISCP… 701    701     01-701… 2013-07-19 2014-01-14 Xano…    81    71 65-80 
- 4 CDISCP… 701    701     01-701… 2014-03-18 2014-03-31 Xano…    54    74 65-80 
- 5 CDISCP… 701    701     01-701… 2014-07-01 2014-12-30 Xano…    81    77 65-80 
- 6 CDISCP… 701    701     01-701… 2013-02-12 2013-03-09 Plac…     0    85 &gt;80   
- 7 CDISCP… 701    701     01-701… 2014-01-01 2014-07-09 Xano…    54    68 65-80 
- 8 CDISCP… 701    701     01-701… 2012-09-07 2012-09-16 Xano…    54    81 &gt;80   
- 9 CDISCP… 701    701     01-701… 2012-11-30 2013-01-23 Xano…    54    84 &gt;80   
-10 CDISCP… 701    701     01-701… 2014-03-12 2014-09-09 Plac…     0    52 &lt;65   
-# ℹ 221 more rows
-# ℹ 26 more variables: AGEGR1N &lt;dbl&gt;, RACE &lt;chr&gt;, RACEN &lt;dbl&gt;, SEX &lt;chr&gt;,
-#   ITTFL &lt;chr&gt;, EFFFL &lt;chr&gt;, COMP24FL &lt;chr&gt;, AVISIT &lt;chr&gt;, AVISITN &lt;dbl&gt;,
-#   VISIT &lt;chr&gt;, VISITNUM &lt;dbl&gt;, ADY &lt;dbl&gt;, ADT &lt;date&gt;, PARAMCD &lt;chr&gt;,
-#   PARAM &lt;chr&gt;, PARAMN &lt;dbl&gt;, AVAL &lt;dbl&gt;, ANL01FL &lt;chr&gt;, DTYPE &lt;chr&gt;,
-#   AWRANGE &lt;chr&gt;, AWTARGET &lt;dbl&gt;, AWTDIFF &lt;dbl&gt;, AWLO &lt;dbl&gt;, AWHI &lt;dbl&gt;,
-#   AWU &lt;chr&gt;, QSSEQ &lt;dbl&gt;</code></pre>
+<pre><code>   age hyp bmi chl   
+13   1   1   1   1  0
+3    1   1   1   0  1
+1    1   1   0   1  1
+1    1   0   0   1  2
+7    1   0   0   0  3
+     0   8   9  10 27</code></pre>
 </div>
 </div>
-</section>
-<section id="example-code" class="level2">
-<h2 class="anchored" data-anchor-id="example-code">Example Code</h2>
-<section id="base-r" class="level3">
-<h3 class="anchored" data-anchor-id="base-r">Base R</h3>
-<p>This is included in a base installation of R, as part of the stats package. Requires inputting data as a <em>table</em> or as <em>vectors</em>.</p>
+<section id="regression-without-parameter-uncertainty" class="level3">
+<h3 class="anchored" data-anchor-id="regression-without-parameter-uncertainty">Regression without parameter uncertainty</h3>
+<p>We can generate two imputed datasets by setting <code>m=2</code>.</p>
+<p>There is a certain level of randomness, so would be a good idea to set seed.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mantelhaen.test</span>(<span class="at">x =</span> data<span class="sc">$</span>TRTP, <span class="at">y =</span> data<span class="sc">$</span>SEX, <span class="at">z =</span> data<span class="sc">$</span>AGEGR1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>impr0 <span class="ot">&lt;-</span> <span class="fu">mice</span>(nhanes, <span class="at">method =</span> <span class="st">'norm.nob'</span>, <span class="at">m=</span><span class="dv">2</span>, <span class="at">maxit =</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-    Cochran-Mantel-Haenszel test
-
-data:  data$TRTP and data$SEX and data$AGEGR1
-Cochran-Mantel-Haenszel M^2 = 2.482, df = 2, p-value = 0.2891</code></pre>
+ iter imp variable
+  1   1  bmi  hyp  chl
+  1   2  bmi  hyp  chl</code></pre>
 </div>
-</div>
-</section>
-<section id="vcdextra" class="level3">
-<h3 class="anchored" data-anchor-id="vcdextra">vcdExtra</h3>
-<p>The vcdExtra package provides results for the generalized CMH test, for each of the three model it outputs the Chi-square value and the respective p-values. Flexible data input methods available: <em>table</em> or <em>formula</em> (aggregated level data in a data frame).</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(vcdExtra)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: vcd</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: grid</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: gnm</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'vcdExtra'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:dplyr':
-
-    summarise</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Formula: Freq ~ X + Y | K</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">CMHtest</span>(Freq <span class="sc">~</span> TRTP <span class="sc">+</span> SEX <span class="sc">|</span> AGEGR1 , <span class="at">data=</span>data, <span class="at">overall=</span><span class="cn">TRUE</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>impr0</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>$`AGEGR1:&lt;65`
-Cochran-Mantel-Haenszel Statistics for TRTP by SEX 
-    in stratum AGEGR1:&lt;65 
-
-                 AltHypothesis   Chisq Df    Prob
-cor        Nonzero correlation 0.33168  1 0.56467
-rmeans  Row mean scores differ 1.52821  2 0.46575
-cmeans  Col mean scores differ 0.33168  1 0.56467
-general    General association 1.52821  2 0.46575
-
-
-$`AGEGR1:&gt;80`
-Cochran-Mantel-Haenszel Statistics for TRTP by SEX 
-    in stratum AGEGR1:&gt;80 
-
-                 AltHypothesis   Chisq Df    Prob
-cor        Nonzero correlation 0.39433  1 0.53003
-rmeans  Row mean scores differ 3.80104  2 0.14949
-cmeans  Col mean scores differ 0.39433  1 0.53003
-general    General association 3.80104  2 0.14949
-
-
-$`AGEGR1:65-80`
-Cochran-Mantel-Haenszel Statistics for TRTP by SEX 
-    in stratum AGEGR1:65-80 
-
-                 AltHypothesis   Chisq Df    Prob
-cor        Nonzero correlation 0.52744  1 0.46768
-rmeans  Row mean scores differ 0.62921  2 0.73008
-cmeans  Col mean scores differ 0.52744  1 0.46768
-general    General association 0.62921  2 0.73008
-
-
-$ALL
-Cochran-Mantel-Haenszel Statistics for TRTP by SEX 
-    Overall tests, controlling for all strata 
-
-                 AltHypothesis      Chisq Df    Prob
-cor        Nonzero correlation 0.00086897  1 0.97648
-rmeans  Row mean scores differ      2.482  2 0.28909
-cmeans  Col mean scores differ 0.00086897  1 0.97648
-general    General association      2.482  2 0.28909</code></pre>
+<pre><code>Class: mids
+Number of multiple imputations:  2 
+Imputation methods:
+       age        bmi        hyp        chl 
+        "" "norm.nob" "norm.nob" "norm.nob" 
+PredictorMatrix:
+    age bmi hyp chl
+age   0   1   1   1
+bmi   1   0   1   1
+hyp   1   1   0   1
+chl   1   1   1   0</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>nhanes_impr0 <span class="ot">&lt;-</span> <span class="fu">complete</span>(impr0) <span class="co"># by default, returns the first imputation</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>nhanes_impr0</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   age      bmi       hyp      chl
+1    1 35.53430 1.2503841 256.6153
+2    2 22.70000 1.0000000 187.0000
+3    1 27.31412 1.0000000 187.0000
+4    3 25.31243 2.3880837 267.1435
+5    1 20.40000 1.0000000 113.0000
+6    3 17.94547 1.5855064 184.0000
+7    1 22.50000 1.0000000 118.0000
+8    1 30.10000 1.0000000 187.0000
+9    2 22.00000 1.0000000 238.0000
+10   2 26.99782 1.0810473 206.9927
+11   1 32.71511 0.7819353 213.7222
+12   2 27.65399 0.7904680 209.6716
+13   3 21.70000 1.0000000 206.0000
+14   2 28.70000 2.0000000 204.0000
+15   1 29.60000 1.0000000 252.1596
+16   1 27.47980 0.6071353 145.9557
+17   3 27.20000 2.0000000 284.0000
+18   2 26.30000 2.0000000 199.0000
+19   1 35.30000 1.0000000 218.0000
+20   3 25.50000 2.0000000 245.7884
+21   1 35.12809 0.5807116 232.4652
+22   1 33.20000 1.0000000 229.0000
+23   1 27.50000 1.0000000 131.0000
+24   3 24.90000 1.0000000 268.3929
+25   2 27.40000 1.0000000 186.0000</code></pre>
 </div>
 </div>
-</section>
-<section id="epidisplay" class="level3">
-<h3 class="anchored" data-anchor-id="epidisplay">epiDisplay</h3>
-<p>To get the M-H common odds ratio and the homogeneity test, the epiDisplay package can be used.</p>
+<p>When we have two imputed datasets, we can check the values for each of the variables. For example, extract <code>bmi</code> variable from the imputed data <code>imp</code>,</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(epiDisplay) </span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mhor</span>(x,y,k, <span class="at">graph =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># two imputed datasets (m=2)</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>impr0<span class="sc">$</span>imp<span class="sc">$</span>bmi</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          1        2
+1  35.53430 32.26078
+3  27.31412 22.55473
+4  25.31243 14.90410
+6  17.94547 22.59196
+10 26.99782 25.08534
+11 32.71511 27.71485
+12 27.65399 25.76286
+16 27.47980 30.34985
+21 35.12809 29.89142</code></pre>
 </div>
-<section id="forked-version---solution-for-sparse-data" class="level4">
-<h4 class="anchored" data-anchor-id="forked-version---solution-for-sparse-data">Forked Version - Solution for sparse data</h4>
-<p>To tackle the <a href="https://github.com/friendly/vcdExtra/issues/3">issue with sparse data</a> it is recommended that a use of <code>solve()</code> is replaced with <code>MASS::ginv</code>. This was implemented in the forked version of vcdExtra which can be installed from here:</p>
+</div>
+<p>We can also specify which imputed dataset to use as our complete data. Set index to 0 (<code>action = 0</code>) returns the original dataset with missing values.</p>
+<p>Here we check which of the imputed data is being used as the completed dataset. First take a note of the row IDs (based on <code>bmi</code>, for example). Then we generate completed dataset.</p>
+<ul>
+<li>if no <code>action</code> argument is set, then it returns the first imputation by default</li>
+<li><code>action=0</code> corresponds to the original data with missing values</li>
+</ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">"mstackhouse/vcdExtra"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># check which imputed data is used for the final result, take note of row id</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>id_missing <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="fu">is.na</span>(nhanes<span class="sc">$</span>bmi))</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>id_missing</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1]  1  3  4  6 10 11 12 16 21</code></pre>
 </div>
-<p>However, also the forked version for the vcdExtra package works only until a certain level of sparsity. In case of our data, it still works if the data are stratified by the pooled Site ID (SITEGR1 - 11 unique values) whereas using the unpooled Site ID (SITEID - 17 unique values) also throws an error. Note: this version is not up to date and sometimes calculates degrees of freedom incorrectly.</p>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>nhanes_impr0_action0 <span class="ot">&lt;-</span> <span class="fu">complete</span>(impr0, <span class="at">action =</span> <span class="dv">0</span>) </span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>nhanes_impr0_action0[id_missing, ] <span class="co"># original data with missing bmi</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   age bmi hyp chl
+1    1  NA  NA  NA
+3    1  NA   1 187
+4    3  NA  NA  NA
+6    3  NA  NA 184
+10   2  NA  NA  NA
+11   1  NA  NA  NA
+12   2  NA  NA  NA
+16   1  NA  NA  NA
+21   1  NA  NA  NA</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>nhanes_impr0_action1 <span class="ot">&lt;-</span> <span class="fu">complete</span>(impr0, <span class="at">action =</span> <span class="dv">1</span>) </span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>nhanes_impr0_action1[id_missing, ] <span class="co"># using first imputation</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   age      bmi       hyp      chl
+1    1 35.53430 1.2503841 256.6153
+3    1 27.31412 1.0000000 187.0000
+4    3 25.31243 2.3880837 267.1435
+6    3 17.94547 1.5855064 184.0000
+10   2 26.99782 1.0810473 206.9927
+11   1 32.71511 0.7819353 213.7222
+12   2 27.65399 0.7904680 209.6716
+16   1 27.47980 0.6071353 145.9557
+21   1 35.12809 0.5807116 232.4652</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>nhanes_impr0_action2 <span class="ot">&lt;-</span> <span class="fu">complete</span>(impr0, <span class="at">action =</span> <span class="dv">2</span>) </span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>nhanes_impr0_action2[id_missing, ] <span class="co"># using second imputation</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   age      bmi       hyp      chl
+1    1 32.26078 0.4616324 228.0022
+3    1 22.55473 1.0000000 187.0000
+4    3 14.90410 1.4558818 212.7958
+6    3 22.59196 1.7664882 184.0000
+10   2 25.08534 1.2940549 201.5872
+11   1 27.71485 0.9410698 169.2427
+12   2 25.76286 1.3570093 168.5961
+16   1 30.34985 0.6878971 163.7262
+21   1 29.89142 1.0452062 212.9144</code></pre>
+</div>
+</div>
+</section>
+<section id="other-imputation-by-linear-regression" class="level3">
+<h3 class="anchored" data-anchor-id="other-imputation-by-linear-regression">Other imputation by linear regression</h3>
+<p>Other various of imputaton via linear regression can be implemented simply by changing the method argument.</p>
+<ul>
+<li>Linear regression through prediction, <a href="https://amices.org/mice/reference/mice.impute.norm.predict.html">mice.impute.norm.predict</a></li>
+<li>Bayesian linear regression, <a href="https://amices.org/mice/reference/mice.impute.norm.html">mice.impute.norm</a></li>
+<li>Linear regression bootstrap, <a href="https://amices.org/mice/reference/mice.impute.norm.boot.html">mice.impute.norm.boot</a></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>impr <span class="ot">&lt;-</span> <span class="fu">mice</span>(nhanes, <span class="at">method =</span> <span class="st">'norm.predict'</span>, <span class="at">m=</span><span class="dv">1</span>, <span class="at">maxit=</span><span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+ iter imp variable
+  1   1  bmi  hyp  chl</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>impr<span class="sc">$</span>imp<span class="sc">$</span>bmi</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          1
+1  28.33396
+3  28.33396
+4  22.75613
+6  21.17519
+10 27.19573
+11 29.12443
+12 26.26576
+16 30.28688
+21 28.33396</code></pre>
+</div>
+</div>
+<p>Bayesian linear regression</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>impb <span class="ot">&lt;-</span> <span class="fu">mice</span>(nhanes, <span class="at">method =</span> <span class="st">'norm'</span>, <span class="at">m=</span><span class="dv">1</span>, <span class="at">maxit=</span><span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+ iter imp variable
+  1   1  bmi  hyp  chl</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>impb<span class="sc">$</span>imp<span class="sc">$</span>bmi</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          1
+1  33.82959
+3  28.98754
+4  20.88810
+6  19.11391
+10 27.32990
+11 29.44117
+12 22.68062
+16 32.13267
+21 22.03164</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># nhanes_impb &lt;- complete(impb)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Bootstrap</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>impbt <span class="ot">&lt;-</span> <span class="fu">mice</span>(nhanes, <span class="at">method =</span> <span class="st">'norm.boot'</span>, <span class="at">m=</span><span class="dv">1</span>, <span class="at">maxit=</span><span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+ iter imp variable
+  1   1  bmi  hyp  chl</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>impbt<span class="sc">$</span>imp<span class="sc">$</span>bmi</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          1
+1  24.19248
+3  28.77464
+4  22.42321
+6  23.47542
+10 21.95529
+11 23.12703
+12 25.84230
+16 27.68216
+21 26.43770</code></pre>
+</div>
+</div>
 </section>
 </section>
-</section>
-</section>
-<section id="references" class="level1">
-<h1>References</h1>
-<p>Accessible Summary: https://online.stat.psu.edu/stat504/lesson/4/4.4</p>
-<p>An Introduction to Categorical Data Analysis 2nd Edition (Agresti): http://users.stat.ufl.edu/~aa/</p>
-<p>Original Paper 1: https://doi.org/10.2307%2F3001616</p>
-<p>Original Paper 2: https://doi.org/10.1093/jnci/22.4.719</p>
+<section id="reference" class="level1">
+<h1>Reference</h1>
+<p>Stef van Buuren, Karin Groothuis-Oudshoorn (2011). mice: Multivariate Imputation by Chained Equations in R. Journal of Statistical Software, 45(3), 1-67. DOI 10.18637/jss.v045.i03</p>
 
 
 </section>
