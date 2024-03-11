@@ -1,0 +1,157 @@
+---
+title: "Multiple Imputaton: Linear Regression"
+---
+
+## Overview
+
+Multiple imputation with regression is one step further from mean imputation (i.e. by a single value: the average of observed). In the case for continuous, normally distributed variable, linear regression can use information from other variables hence *could* be closer to the true missing values.
+
+
+## Imputation with `mice`
+
+[mice](https://amices.org/mice/index.html) is a powerful R package developed by Stef van Buuren, Karin Groothuis-Oudshoorn and other contributors. **Regression methods** (continuous, normal outcome) are implemented in `mice` with methods starting with `norm`.
+
+
+* Linear regression without parameter uncertainty, [mice.impute.norm.nob](https://amices.org/mice/reference/mice.impute.norm.nob.html)
+* Linear regression through prediction, [mice.impute.norm.predict](https://amices.org/mice/reference/mice.impute.norm.predict.html)
+* Bayesian linear regression, [mice.impute.norm](https://amices.org/mice/reference/mice.impute.norm.html)
+* Linear regression bootstrap, [mice.impute.norm.boot](https://amices.org/mice/reference/mice.impute.norm.boot.html)
+
+
+## Example
+
+Here I use the small dataset `nhanes` included in `mice` package. It has 25 rows, and three out of four variables have missings. 
+
+The original NHANES data is a large national level survey, some are publicly available via R package `nhanes`.
+
+```{r}
+#| label: data
+#| echo: true
+#| eval: true
+
+library(mice)
+
+# load example dataset from mice
+head(nhanes)
+summary(nhanes)
+```
+
+Examine missing pattern with `md.pattern(data)`.
+
+
+```{r}
+#| label: missing-pattern
+#| echo: true
+#| eval: true
+
+# 27 missing in total
+# by col: 8 for hyp, 9 for bmi, 10 for chl
+# by row: n missing numbers
+
+md.pattern(nhanes)
+```
+
+
+### Regression without parameter uncertainty
+
+We can generate two imputed datasets by setting `m=2`. 
+
+There is a certain level of randomness, so would be a good idea to set seed.
+
+```{r}
+#| label: impute-reg-1
+#| echo: true
+#| eval: true
+
+set.seed(1)
+impr0 <- mice(nhanes, method = 'norm.nob', m=2, maxit = 1)
+impr0
+
+nhanes_impr0 <- complete(impr0) # by default, returns the first imputation
+nhanes_impr0
+```
+When we have two imputed datasets, we can check the values for each of the variables. For example, extract `bmi` variable from the imputed data `imp`,
+
+```{r}
+#| label: impute-reg-2
+#| echo: true
+#| eval: true
+
+# two imputed datasets (m=2)
+impr0$imp$bmi
+```
+
+We can also specify which imputed dataset to use as our complete data. Set index to 0 (`action = 0`) returns the original dataset with missing values.
+
+Here we check which of the imputed data is being used as the completed dataset. First take a note of the row IDs (based on `bmi`, for example). Then we generate completed dataset. 
+
+* if no `action` argument is set, then it returns the first imputation by default
+* `action=0` corresponds to the original data with missing values
+
+```{r}
+#| label: impute-reg-3
+#| echo: true
+#| eval: true
+
+# check which imputed data is used for the final result, take note of row id
+id_missing <- which(is.na(nhanes$bmi))
+id_missing
+
+nhanes_impr0_action0 <- complete(impr0, action = 0) 
+nhanes_impr0_action0[id_missing, ] # original data with missing bmi
+
+nhanes_impr0_action1 <- complete(impr0, action = 1) 
+nhanes_impr0_action1[id_missing, ] # using first imputation
+
+nhanes_impr0_action2 <- complete(impr0, action = 2) 
+nhanes_impr0_action2[id_missing, ] # using second imputation
+```
+
+
+### Other imputation by linear regression
+
+Other various of imputaton via linear regression can be implemented simply by changing the method argument.
+
+* Linear regression through prediction, [mice.impute.norm.predict](https://amices.org/mice/reference/mice.impute.norm.predict.html)
+* Bayesian linear regression, [mice.impute.norm](https://amices.org/mice/reference/mice.impute.norm.html)
+* Linear regression bootstrap, [mice.impute.norm.boot](https://amices.org/mice/reference/mice.impute.norm.boot.html)
+
+```{r}
+#| label: impute-reg-pred
+#| echo: true
+#| eval: true
+impr <- mice(nhanes, method = 'norm.predict', m=1, maxit=1)
+impr$imp$bmi
+```
+
+Bayesian linear regression
+
+```{r}
+#| label: impute-reg-bayes
+#| echo: true
+#| eval: true
+impb <- mice(nhanes, method = 'norm', m=1, maxit=1)
+impb$imp$bmi
+# nhanes_impb <- complete(impb)
+```
+
+Bootstrap
+
+```{r}
+#| label: impute-reg-bt
+#| echo: true
+#| eval: true
+
+impbt <- mice(nhanes, method = 'norm.boot', m=1, maxit=1)
+impbt$imp$bmi
+```
+
+
+
+
+
+
+# Reference
+
+Stef van Buuren, Karin Groothuis-Oudshoorn (2011). mice: Multivariate Imputation by Chained Equations in R. Journal of Statistical Software, 45(3), 1-67. DOI 10.18637/jss.v045.i03
+
