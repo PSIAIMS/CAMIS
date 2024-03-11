@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Independant Two-Sample t-test</title>
+<title>Skewness/Kurtosis</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -101,6 +101,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -184,8 +213,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#data-used" id="toc-data-used" class="nav-link active" data-scroll-target="#data-used">Data Used</a></li>
-  <li><a href="#sas" id="toc-sas" class="nav-link" data-scroll-target="#sas"><strong>Independent Two-Sample t-test in SAS</strong></a></li>
+  <li><a href="#skewness-and-kurtosis-in-r" id="toc-skewness-and-kurtosis-in-r" class="nav-link active" data-scroll-target="#skewness-and-kurtosis-in-r"><strong>Skewness and Kurtosis in R</strong></a>
+  <ul class="collapse">
+  <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data Used</a></li>
+  <li><a href="#package-examination" id="toc-package-examination" class="nav-link" data-scroll-target="#package-examination">Package Examination</a>
+  <ul class="collapse">
+  <li><a href="#e1071" id="toc-e1071" class="nav-link" data-scroll-target="#e1071">e1071 Package</a></li>
+  <li><a href="#moments" id="toc-moments" class="nav-link" data-scroll-target="#moments">Moments Package</a></li>
+  <li><a href="#procs" id="toc-procs" class="nav-link" data-scroll-target="#procs">Procs Package</a></li>
+  <li><a href="#sasLM" id="toc-sasLM" class="nav-link" data-scroll-target="#sasLM">sasLM Package</a></li>
+  </ul></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -194,7 +232,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Independant Two-Sample t-test</h1>
+<h1 class="title">Skewness/Kurtosis</h1>
 </div>
 
 
@@ -211,95 +249,187 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="data-used" class="level3">
-<h3 class="anchored" data-anchor-id="data-used">Data Used</h3>
+<section id="skewness-and-kurtosis-in-r" class="level1">
+<h1><strong>Skewness and Kurtosis in R</strong></h1>
+<p>Skewness measures the the amount of asymmetry in a distribution, while Kurtosis describes the “tailedness” of the curve. These measures are frequently used to assess the normality of the data. There are several methods to calculate these measures. In R, there are at least four different packages that contain functions for Skewness and Kurtosis. This write-up will examine the the following packages: <strong>e1071</strong>, <strong>moments</strong>, <strong>procs</strong>, and <strong>sasLM</strong>.</p>
+<section id="data-used" class="level2">
+<h2 class="anchored" data-anchor-id="data-used">Data Used</h2>
 <p>The following data was used in this example.</p>
-<pre><code>data d1;
-  length trt_grp $ 9;
-  input trt_grp $ WtGain @@;
-  datalines;
-placebo    94 placebo    12 placebo    26 placebo    89 
-placebo    88 placebo    96 placebo    85 placebo   130 
-placebo    75 placebo    54 placebo   112 placebo    69 
-placebo   104 placebo    95 placebo    53 placebo    21 
-treatment  45 treatment  62 treatment  96 treatment 128 
-treatment 120 treatment  99 treatment  28 treatment  50 
-treatment 109 treatment 115 treatment  39 treatment  96 
-treatment  87 treatment 100 treatment  76 treatment  80 
-;
-run;
-</code></pre>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create sample data</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> tibble<span class="sc">::</span><span class="fu">tribble</span>(</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="sc">~</span>team, <span class="sc">~</span>points, <span class="sc">~</span>assists,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"A"</span>, <span class="dv">10</span>, <span class="dv">2</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"A"</span>, <span class="dv">17</span>, <span class="dv">5</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"A"</span>, <span class="dv">17</span>, <span class="dv">6</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">"A"</span>, <span class="dv">18</span>, <span class="dv">3</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">"A"</span>, <span class="dv">15</span>, <span class="dv">0</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="st">"B"</span>, <span class="dv">10</span>, <span class="dv">2</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="st">"B"</span>, <span class="dv">14</span>, <span class="dv">5</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="st">"B"</span>, <span class="dv">13</span>, <span class="dv">4</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="st">"B"</span>, <span class="dv">29</span>, <span class="dv">0</span>,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="st">"B"</span>, <span class="dv">25</span>, <span class="dv">2</span>,</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="st">"C"</span>, <span class="dv">12</span>, <span class="dv">1</span>,</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  <span class="st">"C"</span>, <span class="dv">30</span>, <span class="dv">1</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="st">"C"</span>, <span class="dv">34</span>, <span class="dv">3</span>,</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="st">"C"</span>, <span class="dv">12</span>, <span class="dv">4</span>,</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="st">"C"</span>, <span class="dv">11</span>, <span class="dv">7</span> </span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 </section>
-<section id="sas" class="level3">
-<h3 class="anchored" data-anchor-id="sas"><strong>Independent Two-Sample t-test in SAS</strong></h3>
-<p>The null hypothesis of the Independent Samples t-test is, the means for the two populations are equal.</p>
-<p>In SAS the following code was used to test the mean comparison (mean of Weight Gain) of two independent treatment groups (Treatment and Placebo).</p>
-<p>For this example, we’re testing the significant difference in mean of Weight gain (<em>WtGain</em>) between treatment and placebo (<em>trt_grp</em>) using PROC TTEST procedure in SAS.</p>
+<section id="package-examination" class="level2">
+<h2 class="anchored" data-anchor-id="package-examination">Package Examination</h2>
+<p>Base R and the <strong>stats</strong> package have no native functions for Skewness and Kurtosis. It is therefore necessary to use a packaged function to calculate these statistics. The packages examined use three different methods of calculating Skewness, and four different methods for calculating Kurtosis. Of the available packages, the functions in the <strong>e1071</strong> package provide the most flexibility, and have options for three of the different methodologies.</p>
+<section id="e1071" class="level3">
+<h3 class="anchored" data-anchor-id="e1071">e1071 Package</h3>
+<p>The <strong>e1071</strong> package contains miscellaneous statistical functions from the Probability Theory Group at the Vienna University of Technology. The package includes functions for both Skewness and Kurtosis, and each function has a “type” parameter to specify the method. There are three available methods for Skewness, and three methods for Kurtosis. A portion of the documentation for these functions is included below:</p>
+<section id="skewness" class="level4">
+<h4 class="anchored" data-anchor-id="skewness">Skewness</h4>
+<p>The documentation for the <code>skewness()</code> function describes three types of skewness calculations: Joanes and Gill (1998) discusses three methods for estimating skewness:</p>
+<ul>
+<li>Type 1: This is the typical definition used in many older textbooks</li>
+</ul>
+<p><span class="math display">\[g_1 = m_1/m_2^{3/2}\]</span></p>
+<ul>
+<li><p>Type 2: Used in SAS and SPSS</p>
+<p><span class="math display">\[
+G_1 = g_1\sqrt{n(n-1)}/(n-2)
+\]</span></p></li>
+<li><p>Type 3: Used in MINITAB and BMDP</p>
+<p><span class="math display">\[
+b_1 = m_3/s^3 = g_1((n-1)/n)^{3/2}
+\]</span></p></li>
+</ul>
+<p>All three skewness measures are unbiased under normality</p>
+<p>The three methods are illustrated in the following code:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>  proc ttest data<span class="ot">=</span>d1; </span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>     class trt_grp; </span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>     var WtGain; </span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  run; </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>type1 <span class="ot">&lt;-</span> e1071<span class="sc">::</span><span class="fu">skewness</span>(dat<span class="sc">$</span>points, <span class="at">type =</span> <span class="dv">1</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>stringr<span class="sc">::</span><span class="fu">str_glue</span>(<span class="st">"Skewness - Type 1: {type1}"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Skewness - Type 1: 0.905444204379853</code></pre>
 </div>
-<p>Output:</p>
-<pre><code>             Figure 1: Test results for independent t-test using PROC TTEST in SAS</code></pre>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/ttest/test1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>type2 <span class="ot">&lt;-</span> e1071<span class="sc">::</span><span class="fu">skewness</span>(dat<span class="sc">$</span>points, <span class="at">type =</span> <span class="dv">2</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>stringr<span class="sc">::</span><span class="fu">str_glue</span>(<span class="st">"Skewness - Type 2: {type2}"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Skewness - Type 2: 1.00931792987094</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>type3 <span class="ot">&lt;-</span> e1071<span class="sc">::</span><span class="fu">skewness</span>(dat<span class="sc">$</span>points, <span class="at">type =</span> <span class="dv">3</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>stringr<span class="sc">::</span><span class="fu">str_glue</span>(<span class="st">"Skewness - Type 3: {type3}"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Skewness - Type 3: 0.816426058828937</code></pre>
 </div>
 </div>
-</div>
-<p>Here the t-value is –0.70, degrees of freedom is 30 and P value is 0.4912 which is greater than 0.05, so we accept the null hypothesis that there is no evidence of a significant difference between the means of treatment groups. The mean in placebo group is 75.1875 and mean in Treatment group is 83.1250. The mean difference the treatment groups (Treatment-Placebo) is –7.9375 and the 95% CI for the mean difference is [–31.1984, 15.3234]. The 95% confidence interval includes a treatment difference of 0, which supports the conclusion that the data fail to provide any evidence of a difference between the treatment groups.</p>
-<p>Note: Before entering straight into the t-test we need to check whether the assumptions (like the equality of variance, the observations should be independent, observations should be normally distributed) are met or not. If normality is not satisfied, we may consider using a suitable non-parametric test.</p>
-<ol type="1">
-<li>Normality: You can check for data to be normally distributed by plotting a histogram of the data by treatment. Alternatively, you can use the Shapiro-Wilk test or the Kolmogorov-Smirnov test. If the test is &lt;0.05 and your sample is quite small then this suggests you should not use the t-test. However, if your sample in each treatment group is large (say &gt;30 in each group), then you do not need to rely so heavily on the assumption that the data have an underlying normal distribution in order to apply the two-sample t-test. This is where plotting the data using histograms can help to support investigation into the normality assumption. We have checked the normality of the observations using the code below. Here for both the treatment groups we have P value greater than 0.05 (Shapiro-Wilk test is used), therefore the normality assumption is there for our data.</li>
-</ol>
+<p>The default for the <strong>e1071</strong> <code>skewness()</code> function is Type 3.</p>
+</section>
+<section id="kurtosis" class="level4">
+<h4 class="anchored" data-anchor-id="kurtosis">Kurtosis</h4>
+<p>The documentation for the <code>kurtosis()</code> function describes three types of kurtosis calculations: Joanes and Gill (1998) discuss three methods for estimating kurtosis:</p>
+<ul>
+<li>Type 1: This is the typical definition used in many older textbooks</li>
+</ul>
+<p><span class="math display">\[g_2 = m_4/m_2^{2}-3\]</span></p>
+<ul>
+<li><p>Type 2: Used in SAS and SPSS</p>
+<p><span class="math display">\[G_2 = ((n+1)g_2+6)*\frac{(n-1)}{(n-2)(n-3)}\]</span></p></li>
+<li><p>Type 3: Used in MINITAB and BMDP</p>
+<p><span class="math display">\[b_2 = m_4/s^4-3 = (g_2 + 3)(1-1/n)^2-3\]</span></p></li>
+</ul>
+<p>Only <span class="math inline">\(G_2\)</span> (corresponding to type 2) is unbiased under normality</p>
+<p>The three methods are illustrated in the following code:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>    proc univariate data<span class="ot">=</span>d1 normal;  </span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>      qqplot WtGain; </span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>      by trt_grp; </span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    run; </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Kurtosis - Type 1</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>type1 <span class="ot">&lt;-</span> e1071<span class="sc">::</span><span class="fu">kurtosis</span>(dat<span class="sc">$</span>points, <span class="at">type =</span> <span class="dv">1</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>stringr<span class="sc">::</span><span class="fu">str_glue</span>(<span class="st">"Kurtosis - Type 1: {type1}"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Kurtosis - Type 1: -0.583341077124784</code></pre>
 </div>
-<p>Output:</p>
-<pre><code>        Figure 2: The results of normality test for Treatment group</code></pre>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Kurtosis - Type 2</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>type2 <span class="ot">&lt;-</span> e1071<span class="sc">::</span><span class="fu">kurtosis</span>(dat<span class="sc">$</span>points, <span class="at">type =</span> <span class="dv">2</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>stringr<span class="sc">::</span><span class="fu">str_glue</span>(<span class="st">"Kurtosis - Type 2: {type2}"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Kurtosis - Type 2: -0.299156418435587</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Kurtosis - Type 3</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>type3 <span class="ot">&lt;-</span> e1071<span class="sc">::</span><span class="fu">kurtosis</span>(dat<span class="sc">$</span>points, <span class="at">type =</span> <span class="dv">3</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>stringr<span class="sc">::</span><span class="fu">str_glue</span>(<span class="st">"Kurtosis - Type 3: {type3}"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Kurtosis - Type 3: -0.894821560517589</code></pre>
+</div>
+</div>
+<p>The default for the <strong>e1071</strong> <code>kurtosis()</code> function is Type 3.</p>
+</section>
+</section>
+<section id="moments" class="level3">
+<h3 class="anchored" data-anchor-id="moments">Moments Package</h3>
+<p>The <strong>moments</strong> package is a well-known package with a variety of statistical functions. The package contains functions for both Skewness and Kurtosis. But these functions provide no “type” option. The <code>skewness()</code> function in the <strong>moments</strong> package corresponds to Type 1 above. The <code>kurtosis()</code> function uses a Pearson’s measure of Kurtosis, which corresponds to none of the three types in the <strong>e1071</strong> package.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(moments)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Skewness - Type 1</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  moments<span class="sc">::</span><span class="fu">skewness</span>(dat<span class="sc">$</span>points)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.9054442</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>  <span class="co"># [1] 0.9054442</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Kurtosis - Pearson's measure</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  moments<span class="sc">::</span><span class="fu">kurtosis</span>(dat<span class="sc">$</span>points)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 2.416659</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>  <span class="co"># [1] 2.416659</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Note that neither of the functions from the <strong>moments</strong> package match SAS.</p>
+</section>
+<section id="procs" class="level3">
+<h3 class="anchored" data-anchor-id="procs">Procs Package</h3>
+<p>The <strong>procs</strong> package <code>proc_means()</code> function was written specifically to match SAS, and produces a Type 2 Skewness and Type 2 Kurtosis. This package also produces a data frame output, instead of a scalar value.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(procs)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Skewness and Kurtosis - Type 2 </span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">proc_means</span>(dat, <span class="at">var =</span> points,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>             <span class="at">stats =</span> <span class="fu">v</span>(skew, kurt))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  TYPE FREQ    VAR     SKEW       KURT
+1    0   15 points 1.009318 -0.2991564</code></pre>
+</div>
+</div>
+<p>Viewer Output:</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="../images/ttest/trt_sas.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:30.0%"></p>
+<p><img src="../images/summarystats/procs_skewness_kurtosis.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:30.0%"></p>
 </figure>
 </div>
 </div>
 </div>
-<pre><code>       Figure 3: The results of normality test for Placebo group</code></pre>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/ttest/placb_sas.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:30.0%"></p>
-</figure>
+</section>
+<section id="sasLM" class="level3">
+<h3 class="anchored" data-anchor-id="sasLM">sasLM Package</h3>
+<p>The <strong>sasLM</strong> package was also written specifically to match SAS. The <code>Skewness()</code> function produces a Type 2 Skewness, and the <code>Kurtosis()</code> function a Type 2 Kurtosis.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(sasLM)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Skewness - Type 2</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">Skewness</span>(dat<span class="sc">$</span>points)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1.009318</code></pre>
 </div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>  <span class="co"># [1] 1.009318</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Kurtosis - Type 2</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">Kurtosis</span>(dat<span class="sc">$</span>points)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -0.2991564</code></pre>
 </div>
-</div>
-<ol start="2" type="1">
-<li>Homogeneity of variance (or Equality of variance): Homogeniety of variance will be tested by default in PROC TTEST itself by Folded F-test. In our case the P values is 0.6981 which is greater than 0.05. So we accept the null hypothesis of F-test, i.e.&nbsp;variances are same. Then we will consider the pooled method for t-test. If the F test is statistically significant (p&lt;0.05), then the pooled t-test may give erroneous results. In this instance, if it is believed that the population variances may truly differ, then the Satterthwaite (unequal variances) analysis results should be used. These are provided in the SAS output alongside the Pooled results as default.</li>
-</ol>
-<p>Output:</p>
-<pre><code>                    Figure 4: Folded F-test result in PROC TTEST</code></pre>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/ttest/variance_sas.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:30.0%"></p>
-</figure>
-</div>
-</div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>  <span class="co"># [1] -0.2991564</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
 
+</section>
+</section>
 </section>
 
 </main> <!-- /main -->
