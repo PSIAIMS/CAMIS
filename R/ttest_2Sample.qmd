@@ -1,0 +1,95 @@
+---
+title: "Two Sample t-test"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tibble)
+library(dplyr)
+library(procs)
+```
+
+# **Two Sample t-test in R**
+
+The Two Sample t-test is used to compare two independent samples against each other. In the Two Sample t-test, the mean of the first sample is compared against the mean of the second sample. In R, a Two Sample t-test can be performed using the Base R `t.test()` function from the **stats** package or the `proc_ttest()` function from the **procs** package.
+
+### Data Used
+
+The following data was used in this example.
+
+```{r eval=TRUE, echo = TRUE}
+# Create sample data
+d1 <- tibble::tribble(
+  ~trt_grp,	~WtGain,
+  "placebo",	94, "placebo",	12, "placebo",	26, "placebo",	89,
+  "placebo",	88, "placebo",	96, "placebo",	85, "placebo",	130,
+  "placebo",	75, "placebo",	54, "placebo",	112, "placebo",	69,
+  "placebo",	104, "placebo",	95, "placebo",	53, "placebo",	21,
+  "treatment",	45, "treatment",	62, "treatment",	96, "treatment",	128,
+  "treatment",	120, "treatment",	99, "treatment",	28, "treatment",	50,
+  "treatment",	109, "treatment",	115, "treatment",	39, "treatment",	96,
+  "treatment",	87, "treatment",	100, "treatment",	76, "treatment",	80
+)
+```
+
+## Base R
+
+If we have normalized data, we can use the classic Student's t-test. For a Two sample test where the variances are not equal, we should use the Welch's t-test. Both of those options are available with the Base R `t.test()` function.
+
+### Student's T-Test {#baseS}
+
+#### Code
+
+The following code was used to test the comparison in Base R. By default, the R two sample t-test function assumes the variances in the data are unequal, and uses a Welch's t-test. Therefore, to use a classic Student's t-test with normalized data, we must specify `var.equal = TRUE`.
+Also note that we must separate the single variable into two variables to satisfy the `t.test()` syntax and set `paired = FALSE`.
+
+```{r eval=TRUE, echo = TRUE}
+
+  d1p <- dplyr::filter(d1, trt_grp == 'placebo')
+  d1t <- dplyr::filter(d1, trt_grp == 'treatment')
+
+  # Perform t-test
+  t.test(d1p$WtGain, d1t$WtGain, 
+       var.equal = TRUE, paired = FALSE)
+
+```
+
+### Welch's T-Test {#baseW}
+
+#### Code
+
+The following code was used to test the comparison in Base R using Welch's t-test. Observe that in this case, the `var.equal` parameter is set to FALSE.
+
+```{r eval=TRUE, echo = TRUE}
+
+  d1p <- dplyr::filter(d1, trt_grp == 'placebo')
+  d1t <- dplyr::filter(d1, trt_grp == 'treatment')
+
+  # Perform t-test
+  t.test(d1p$WtGain, d1t$WtGain, 
+       var.equal = FALSE, paired = FALSE)
+
+```
+
+## Procs Package
+
+### Student's T-Test and Welch's T-Test {#procs}
+
+#### Code
+
+The following code from the **procs** package was used to perform a two sample t-test. Note that the `proc_ttest()` function performs both the Student's t-test and Welch's (Satterthwaite) t-test in the same call. The results are displayed on separate rows. This output is similar to SAS.
+
+```{r eval=TRUE, echo = TRUE, message=FALSE, warning=FALSE}
+  library(procs)
+
+  # Perform t-test
+  proc_ttest(d1, var = WtGain,
+             class = trt_grp)
+```
+
+Viewer Output:
+
+```{r, echo=FALSE, fig.align='center', out.width="50%"}
+knitr::include_graphics("../images/ttest/twosample_rtest1.png")
+```
