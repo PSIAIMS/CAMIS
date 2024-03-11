@@ -14,7 +14,7 @@ Who is submitting: Chi Zhang
 
 # Title
 
-Introducing CAMIS: an open-source, community endeavor for Comparing Analysis Method Implementations in Software across pharmaceutical industry
+Introducing CAMIS: an open-source, community endeavor for Comparing Analysis Method Implementations in Software
 
 # Abstract
 
@@ -22,7 +22,7 @@ Introducing CAMIS: an open-source, community endeavor for Comparing Analysis Met
 
 Statisticians using multiple softwares (SAS, R, Python) will have found differences in analysis results that warrant further justification. Whilst some industries may accept results not being the same as long as they are "close", the highly regulated pharmaceutical industry would require an identical match in results. Yet, discrepancies might still occur, and knowing the reasons (different methods, options, algorithms etc) is critical to the modern statistician and subsequent regulatory submissions.
 
-In this talk I will introduce CAMIS: Comparing Analysis Method Implementations in Software (CAMIS). https://psiaims.github.io/CAMIS/ It is a joint-project between PHUSE, the R Validation Hub, PSI AIMS, R consortium and openstatsware. The aim of CAMIS is to investigate and document differences and similarities between different statistical softwares such as SAS and R. We use Quarto and Github to document methods, algorithms and comparisons between softwares through small case studies, and all articles are contributed by the community. In the transition from proprietary to open source technology in the industry, CAMIS can serve as a guidebook to navigate this process.
+In this talk I will introduce CAMIS: Comparing Analysis Method Implementations in Software (CAMIS). https://psiaims.github.io/CAMIS/.  It is a joint-project between PHUSE DVOST, the R Validation Hub, PSI AIMS, R consortium and ASA openstatsware. The aim of CAMIS is to investigate and document differences and similarities between different statistical softwares such as SAS and R. We use Quarto and Github to document methods, algorithms and comparisons between softwares through small case studies, and all articles are contributed by the community. In the transition from proprietary to open source technology in the industry, CAMIS can serve as a guidebook to navigate this process.
 
 #### keywords: cross industry collaboration, multi-lingua, open-source, quarto
 
