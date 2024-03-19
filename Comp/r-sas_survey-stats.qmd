@@ -1,0 +1,154 @@
+---
+title: "R vs SAS Survey Statistics"
+---
+
+This document will compare the survey statistics functionality in SAS (available through the SAS/STAT package) and R (available from the `{survey}` package along with others), highlighting differences in methods and results.
+
+# Basic Statistics on Simple Survey Designs
+
+When calculating basic statistics on simple survey designs (i.e. simple random samples, with no stratification or clustering), the code to calculate means, medians, totals, etc is as follows.
+
+We will use the API datast from the [`{survey}`](https://r-survey.r-forge.r-project.org/survey/html/api.html) package, which contains a variety of datasets based on samples from a main dataset.
+
+```{r}
+#| warning: false
+#| message: false
+library(survey)
+
+# Load example data - academic performance index for californian schools
+data(api)
+
+# View the first few rows of the main dataset
+head(apipop)
+```
+
+If we want to calculate a summary of a dataset which has been obtained from a **s**imple **r**andom **s**ample such as `apisrs`, in SAS, we can do the following (here `total=6194` is obtained from the constant fpc column in the dataset):
+
+```{r}
+#| eval: false
+
+proc surveymeans data=apisrs total=6194;
+    var growth;
+run;
+```
+
+![](/images/survey/surveymeans_output.png){fig-alt="Table of SAS surveymeans output"}
+
+To produce the same results in R, we can create a design object using the `survey::svydesign` function (specifying that there is no PSU using `id = ~1` and the finite population correction using `fpc=~fpc`. This design object can be used by a variety of functions to produce summary statistics, here we use it to calculate the mean and standard error of the `growth` variable. To replicate the full results from SAS we use `confint` to calculate the confidence interval, which must be passed the degrees of freedom from the survey design using `df=degf(srs_design)`:
+
+```{r}
+# The only design element set here is the finite population correction, id ~ 1 specifies no clusters/psu
+srs_design <- svydesign(id = ~1, fpc = ~fpc, data = apisrs)
+
+# Calculate mean and SE of growth. The standard error will be corrected by the finite population correction specified in the design
+srs_means <- svymean(~growth, srs_design)
+
+print(srs_means)
+
+# Use degf() to get the degrees of freedom
+print(confint(srs_means, df=degf(srs_design)))
+```
+
+The results obtained are identical, and are similarly identical for svytota;
+
+Notes on what to change:
+
+## Data Setup:
+
+```{r}
+
+
+```
+
+## Basics
+
+-   Make sure to sWet categorical variables as factor
+
+-   `options(survey.lonely.psu="certainty")` \<- SAS will treat lonely PSUs as certainty, R will fail with them. This is a choise, for compatability use this but consider survey design!. See https://r-survey.r-forge.r-project.org/survey/exmample-lonely.html
+
+-   `confint(x, df = degf(design))` R will default to using df=Inf, which is essentially calculating using a normal distribution rathar than a t distribution. Get the degrees of freedom from a survey design using `degf(svydesign)`
+
+-   Comparison of Balanced Repeated Replication Standard Error Calculation Methods, supposedly some differences here?
+
+Stats: - Set nest=TRUE in svydesign - Set deff="replace" in svyby for svymean
+
+## Modelling:
+
+-   For surveyreg, SEs will be different especially for small samples. Due to different variance estimation methods used. ({survey} uses)
+
+-   used svyglm(formsula, design, family=quasibinomial(link="logit")). Check why - To replicate SAS anova, used code below
+
+-   To get C statistic, has to switch to family=binomial(), and run through some processing. Might not worth be mentioning here, unless I think so...
+
+```{r}
+sas_anova <- function(survey_model) {
+
+    # Get all variables used as effects in the model
+    formula <- survey_model$formula
+    effects <- all.vars(formula)[-1]
+
+    # Pre-allocate stats vector
+    prob_f <- double(length(effects))
+
+    # For all effects
+    for (i in seq_along(effects)) {
+        # Calculate probF
+        term <- as.formula(paste0("~", effects[i]))
+
+        reg_test <- survey::regTermTest(
+            survey_model,
+            test.terms=term,
+            method="Wald",
+            df=NULL,
+            # lrt.approximation="satterthwaite"
+        )
+
+        prob_f[i] <- reg_test$p
+    }
+
+    output <- data.frame(effects, prob_f)
+
+    return(output)
+}
+```
+
+```{r examples}
+
+library(survey)
+
+data_dir <- r"(C:\Users\Michael.Walshe.AMADEUS\OneDrive - Amadeus Software\Books\Sampling Design and Analysis\CSV data sets for SDA 3e)"
+
+agsrs <- read.csv(file.path(data_dir, "agsrs.csv"))
+
+agsrs$sampwt <- 3078 / nrow(agsrs) # This is a SRS, original dataset had N = 3078
+
+agsrs$lt200k <- factor(ifelse(
+  agsrs$acres92 < 200000,
+  1,
+  0
+))
+
+
+dsrs <- svydesign(id = ~1, weights = ~sampwt, fpc=rep(3078, 300), data = agsrs)
+
+smean <- svymean(~acres92+lt200k, dsrs)
+
+
+
+deadtrees <- read.csv(file.path(data_dir, "deadtrees.csv"))
+
+dtree<- svydesign(id = ~1, weight=rep(4,25), fpc=rep(100,25), data = deadtrees)
+myfit1 <- svyglm(field~photo, design=dtree, deff=TRUE)
+svymean(~photo, dtree)
+
+summary(myfit1) # displays regression coefficients
+
+predict(myfit1, newdata=data.frame(photo=10.6))
+
+```
+
+# References:
+
+-   https://journal.r-project.org/archive/2009-2/RJournal_2009-2_Damico.pdf
+-   https://r-survey.r-forge.r-project.org/survey/
+-   Lohr, S.L. (2021). Sampling: Design and Analysis (3rd ed.). Chapman and Hall/CRC. https://doi.org/10.1201/9780429298899
