@@ -7,23 +7,24 @@ This document will compare the survey summary statistics functionality in SAS (a
 
 # Result Comparison
 
-The following table shows different survey summary statistics, the capabilities of each language, and whether or not the results match.
+The following table shows different survey summary statistics, the capabilities of each language, and whether or not the results match. Each analysis also includes calculating the standard error and confidence intervals.
 
-| Analysis                         | Supported in R                                                                               | Supported in SAS                                                                                | Results Match              | Notes                                                                                             |
+| Analysis        | Supported in R                                                                               | Supported in SAS                                                                                | Results Match    | Notes                                                                                             |
 |---------------|---------------|---------------|---------------|---------------|
-| Mean (plus SE and CL)            | [Yes](../R/survey-stats-summary.html#Mean)                                                   | [Yes](../SAS/survey-stats-summary.html#Mean)                                                    | Yes                        | Must specify degrees of freedom in R                                                              |
-| Total (plus SE and CL)           | [Yes](../R/survey-stats-summary.html#Total)                                                  | [Yes](../SAS/survey-stats-summary.html#Total)                                                   | Yes                        | Must specify degrees of freedom in R                                                              |
-| Ratios (plus SE and CL)          | [Yes](../R/survey-stats-summary.html#Ratios)                                                 | [Yes](../SAS/survey-stats-summary.html#Ratios)                                                  | Yes                        | Must specify degrees of freedom in R                                                              |
-| Proportions (plus SE and CL)     | [Yes](../R/survey-stats-summary.html#Proportions)                                            | [Yes](../SAS/survey-stats-summary.html##Proportions)                                            | Yes                        | For confidence limits of proportions near 0 and 1, `survey::svyciprop` can be more accurate in R. |
-| Quantiles (plus SE and CL)       | [Yes](../R/survey-stats-summary.html#Quantiles)                                              | [Yes](../SAS/survey-stats-summary.html#Quantiles)                                               | [No](#Quantiles) | Different methods for calculating quantiles                                                       |
-| Domain Analysis (plus SE and CL) | [Yes](../R/survey-stats-summary.html#Summary%20Statistics%20on%20Complex%20Survey%20Designs) | [Yes](../SAS/survey-stats-summary.html##Summary%20Statistics%20on%20Complex%20Survey%20Designs) | Yes                        |                                                                                                   |
+| Mean            | [Yes](../R/survey-stats-summary.html#Mean)                                                   | [Yes](../SAS/survey-stats-summary.html#Mean)                                                    | Yes              | Must specify degrees of freedom in R for confidence limits                                        |
+| Total           | [Yes](../R/survey-stats-summary.html#Total)                                                  | [Yes](../SAS/survey-stats-summary.html#Total)                                                   | Yes              | Must specify degrees of freedom in R for confidence limits                                        |
+| Ratios          | [Yes](../R/survey-stats-summary.html#Ratios)                                                 | [Yes](../SAS/survey-stats-summary.html#Ratios)                                                  | Yes              | Must specify degrees of freedom in R for confidence limits                                        |
+| Proportions     | [Yes](../R/survey-stats-summary.html#Proportions)                                            | [Yes](../SAS/survey-stats-summary.html##Proportions)                                            | Yes              | For confidence limits of proportions near 0 and 1, `survey::svyciprop` can be more accurate in R. |
+| Quantiles       | [Yes](../R/survey-stats-summary.html#Quantiles)                                              | [Yes](../SAS/survey-stats-summary.html#Quantiles)                                               | [No](#Quantiles) | Different methods for calculating quantiles                                                       |
+| Domain Analysis | [Yes](../R/survey-stats-summary.html#Summary%20Statistics%20on%20Complex%20Survey%20Designs) | [Yes](../SAS/survey-stats-summary.html##Summary%20Statistics%20on%20Complex%20Survey%20Designs) | Yes              |                                                                                                   |
+| Design Effect   | [Yes](../R/survey-stats-summary.html#Summary%20Statistics%20on%20Complex%20Survey%20Designs) | [Yes](../SAS/survey-stats-summary.html##Summary%20Statistics%20on%20Complex%20Survey%20Designs) | Yes              | Set `deff="replace"` in R to match SAS exactly                                                    |
 
-For the full R and SAS code and results, see below:
+For the full R and SAS code and results used for this comparison, see below:
 
-::: {.callout-note collapse="true" appearance="simple" title="Show Code"}
+::: {.callout-note collapse="true" appearance="minimal" title="Show Code"}
 ```{r}
 #| message: false
-#| warning: false
+#| warning: false 
 library(survey)
 
 data("nhanes")
@@ -243,7 +244,7 @@ run;
 
 # Differences
 
-## Quantiles
+## Quantiles {#quantiles}
 
 To demonstrate the differences in calculating quantiles, we will use the `apisrs` dataset from the `survey` package in R [@API_2000].
 
@@ -256,7 +257,9 @@ data("api")
 head(apisrs) |> gt::gt()
 ```
 
-There are large differences when calculating quantiles in SAS vs R. In SAS, PROC SURVEYMEANS will calculate basic quantiles as you request them, using Woodruff's method for intervals and a custom quantile method [@SAS_2018, pp. 9834]. The results do not match any of the available `qrules` or `interval.types` in the R `survey::svyquantile` function.
+In SAS, PROC SURVEYMEANS will calculate quantiles of specific probabilities as you request them, using Woodruff's method for intervals and a custom quantile method [@SAS_2018, pp. 9834]. The quantile method does not match any of the available `qrules` in R, and although the default `interval.types` in the R `survey::svyquantile` function also uses Woddruff's method, it is a different implementation.
+
+The method and results from SAS are as follows:
 
 ``` default
 proc surveymeans data=apisrs total=6194 quantile=(0.025 0.5 0.975);
@@ -285,7 +288,7 @@ run;
  ---------------------------------------------------------------------------------
 ```
 
-If we use the default `qrule="math"`, equivalent to `qrule="hf1"` and matches `type=1` in the `quantile` function for unweighted data, along with the default `interval.type="mean"`, we get the following results:
+If in R we use the default `qrule="math"` (equivalent to `qrule="hf1"` and matches `type=1` in the `quantile` function for unweighted data) along with the default `interval.type="mean"`, we get the following results:
 
 ```{r}
 srs_design <- svydesign(data = apisrs,id = ~1,fpc = ~fpc,)
@@ -299,7 +302,7 @@ svyquantile(
 )
 ```
 
-None of the available `qrule` methods match SAS for the quantile values, so it is recommended to use the default values unless you have need of some of the other properties of different quantile rules. If an exact match to SAS is required, then the `svyquantile` function allows for passing a custom function to the `qrule` argument to define your own method for calculating quantiles. Below is an example that will match SAS:
+Here we can see that the quantiles, confidence intervals, and standard errors do not match SAS. From testing, none of the available `qrule` methods match SAS for the quantile values, so it is recommended to use the default values unless you have need of some of the other properties of different quantile definitions. If an exact match to SAS is required, then the `svyquantile` function allows for passing a custom function to the `qrule` argument to define your own method for calculating quantiles. Below is an example that will match SAS:
 
 ```{r}
 sas_qrule <- function(x, w, p) {
@@ -320,7 +323,6 @@ sas_quants <- svyquantile(
   srs_design,
   quantiles = c(0.025, 0.5, 0.975),
   qrule=sas_qrule,
-  interval.type="xlogit",
   ci=TRUE,
   se=TRUE
 )
@@ -328,7 +330,7 @@ sas_quants <- svyquantile(
 sas_quants
 ```
 
-Note that the confidence intervals still do not match, to match these another custom calculation is required, again based on the formula used in SAS:
+Note that although the quantiles and standard errors match, the confidence intervals still do not match SAS. For this another custom calculation is required, based on the formula used in SAS:
 
 ```{r}
 sas_quantile_confint <- function(newsvyquantile, level=0.05, df=Inf) {
@@ -348,15 +350,21 @@ sas_quantile_confint <- function(newsvyquantile, level=0.05, df=Inf) {
 sas_quantile_confint(sas_quants, df=degf(srs_design))
 ```
 
-# Other considerations
+## Other considerations
 
-Although it was not apparent with the examples used here, if there is only one PSU from a stratum then R will by default error, whereas SAS will treat this as a certainty. This can be changed in R by setting the `options(survey.lonely.psu="certainty") ` to match SAS and have it make no contribution to the variance.
+### Degrees of Freedom
+
+Some of the functions in R require the degrees of freedom to be specified when calculating confidence intervals, otherwise it assumes a normal distribution. This can be done easily by using the `survey::degf` function, which calculates the degrees of freedom for a survey design object.
+
+### Single PSU Strata
+
+Although it was not apparent with the examples used here, if there is only one PSU from a stratum then R will by default error, whereas SAS will remove that stratum from the variance calculation. This can be changed in R by setting the `options(survey.lonely.psu="certainty")` to match SAS and have it make no contribution to the variance.
 
 # Summary and Recommendations
 
-The `{survey}` and the survey procedures in SAS/STAT both provide similar functionality for calculating survey summary statistics. In most cases in both our tests and others, the results are identical ([@2017_YRBS], [@so2020modelling], [@adamico_2009]). Where differences to occur, primarily in calculating quantiles, there are more varied and well-documented methods available in R.
+The `{survey}` package in R and the survey procedures in SAS/STAT both provide similar functionality for calculating survey summary statistics. In most cases in both our tests and others, the results are identical ([@2017_YRBS], [@so2020modelling], [@adamico_2009]). Where differences do occur, primarily in calculating quantiles, the methods in R are more varied and well-documented.
 
-::: {.callout-note collapse=true title="Session Info"}
+::: {.callout-note collapse="true" title="Session Info"}
 ```{r}
 #| echo: false
 si <- sessioninfo::session_info("survey", dependencies = FALSE)
