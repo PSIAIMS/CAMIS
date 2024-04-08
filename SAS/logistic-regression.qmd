@@ -1,0 +1,85 @@
+---
+title: "Logistic Regression"
+output: html_document
+date: last-modified
+date-format: D MMMM, YYYY
+---
+
+To demonstrate the use of logistic regression we examine the same lung dataset as used in the R example [here](../R/logistic_regr.html). We analyze the weight loss in lunch cancer patients in dependency of age, sex, ECOG performance score and calories consumed at meals. Weight is categorized into a binary variable for Loss or Gain.
+
+### Model Fitting Code
+
+We fit 3 models
+
+-   Model 1: Weight Loss (1/0) = Age + Sex + ECOG + Calories
+
+-   Model 2: Weight Loss (1/0) = Sex + ECOG + Calories
+
+-   Model 3: Using backwards selection to compare models with/without age
+
+```{r eval=FALSE}
+
+title1 "Model 1";                                                                                                             
+proc logistic data=lung2;                                                                                                    
+  model  wt_grp = age sex ph_ecog meal_cal;                                                                                    
+run;  
+
+
+Model 1 Results
+                    Analysis of Maximum Likelihood Estimates                 
+
+Parameter   DF     Estimate       Standard Error    Wald Chi-Square  Pr>ChiSq
+-----------------------------------------------------------------------------
+Intercept   1      3.2632         1.6488            3.9168            0.0478
+Age         1     -0.0102         0.0208            0.2389            0.6250
+Sex         1     -0.8717         0.3714            5.5090            0.0189
+ph_ecog     1      0.4180         0.2589            2.6069            0.1064
+meal_cal    1     -0.00089        0.000447          3.9417            0.0471
+----------------------------------------------------------------------------
+
+title1 "Model 2";                                                    
+proc logistic data=lung2;
+model  wt_grp = sex ph_ecog meal_cal;
+run;             
+
+Model 2 Results
+                    Analysis of Maximum Likelihood Estimates                 
+
+Parameter   DF     Estimate       Standard Error    Wald Chi-Square  Pr>ChiSq
+-----------------------------------------------------------------------------
+Intercept   1      2.5607         0.7977           10.3047            0.0013
+Sex         1     -0.8359         0.3637            5.2815            0.0216
+ph_ecog     1      0.3794         0.2469            2.3616            0.1244
+meal_cal    1     -0.00083        0.000435          3.6770            0.0552
+----------------------------------------------------------------------------
+
+
+title1 "Using selection=backward to get model comparison stats"; 
+proc logistic data=lung2;  
+model  wt_grp = age sex ph_ecog meal_cal / selection = backward stop=3; 
+run;   
+
+Step 1: Effect age is removed
+Summary of Backward Elimination
+Step   Effect Removed   DF     Number In     Wald Chi-Square   Pr>ChiSq
+-----------------------------------------------------------------------------
+1      Age              1      3             0.2389            0.6250
+
+Note: The number of effects in the moel has reached STOP=3
+
+Model 3 Results
+                    Analysis of Maximum Likelihood Estimates                 
+
+Parameter   DF     Estimate       Standard Error    Wald Chi-Square  Pr>ChiSq
+-----------------------------------------------------------------------------
+Intercept   1      2.5607         0.7977           10.3047            0.0013
+Sex         1     -0.8359         0.3637            5.2815            0.0216
+ph_ecog     1      0.3794         0.2469            2.3616            0.1244
+meal_cal    1     -0.00083        0.000435          3.6770            0.0552
+----------------------------------------------------------------------------
+
+```
+
+NOTE: the chi-square test summary of backward elimination, p=0.6250 is different
+to the results in R, which gave a difference in deviance of -0.24046, p=0.6239.
+This difference is currently being investigated.
