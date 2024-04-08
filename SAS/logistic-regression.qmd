@@ -5,11 +5,141 @@ date: last-modified
 date-format: D MMMM, YYYY
 ---
 
-To demonstrate the use of logistic regression we examine the same lung dataset as used in the R example [here](../R/logistic_regr.html). We analyze the weight loss in lunch cancer patients in dependency of age, sex, ECOG performance score and calories consumed at meals. Weight is categorized into a binary variable for Loss or Gain.
+For a brief description of what is logistic regression see [here](../R/logistic_regr.html).
 
-### Model Fitting Code
+### Parameterization of model effects (categorical covariates) in SAS
 
-We fit 3 models
+The most common problem when fitting logistic regression in SAS, is getting SAS
+to model the binary variable (events) and any categorical covariates correctly.
+
+There are two procedures which can be used to perform logistic regression in SAS,
+proc logistic, and proc genmod (using dist=bin and link=logit options).
+They obtain the same results when parameterized correctly.
+
+For this example, we will focus on proc logistic but the same concepts apply to
+both procedures.
+
+Let's first look at types of parameterization. 
+
+The default parameterization is PARAM=EFFECT - This is shown as A below for the 
+example of 3 treatments (1, 2, 3)
+
+With this option, the reference parameter (either specified by ref='X' or default -
+which is last value of the variable i.e. treatment 3) is given values of "-1". 
+The design matrix gives you 1 less variable than the  number of parameter levels
+(so that for 3 treatment groups you have x1 and x2 - 2 parameters in the model).
+
+Alternatively, you can use other options:
+PARAM=REF - This is shown as B below - reference parameter values "0", n-1 variables
+PARAM=GLM - This is shown as C below - no reference parameter as such (output
+compares against last value of treatment group), n variables.
+
+```{r, echo=FALSE, fig.align='center', out.width="75%"}
+knitr::include_graphics("../images/logistic_regression/parameterization.png")
+```
+
+Depending on which parameterization you use, you have to interpret those effects
+carefully.  This is also particularly important if you are using any contrast, 
+estimate or lsmestimate statements since the coefficients used for the contrasts
+must be in line with the parameterisation.  
+
+
+General model: Y= α + β1x1 + β2x1 {+β3x3}
+Trt Group   EFFECT (A)         REF (B)        GLM (C)
+--------------------------------------------------------
+1           Y = α - β1 - β2     Y = α         Y = α + β1 
+2           Y = α + β1          Y = α + β1    Y = α + β2
+3           Y = α + β2          Y = α + β2    Y = α + β3
+--------------------------------------------------------
+ 
+Now let's suppose we wanted to compare Treatment groups 2 & 3 vs 1.
+We add response for treatment groups 2 and 3, divide it by 2 and then subtract treatment 1.
+This gives us the difference betweeen the average reponse on 2 and 3, compared to 1.
+(trt 2 + trt3 / 2 ) - trt 1: Using EFFECT (A) parameterization, this becomes
+(α + β1 + α + β2  /2 )  - (α - β1 - β2)
+=α + 0.5 β1 + 0.5 β2  – α + β1 + β2 
+= 1.5 β1 + 1.5 β2
+
+Therefore, to apply this contrast in SAS we would use:
+ PROC LOGISTIC data=dataset;
+    CLASS  trt (ref=“1”); 	      - Note here, default PARAM=EFFECT option is used
+    MODEL resp (event=“Y”) = trt ; 
+    CONTRAST “Active (2 & 3) vs. Placebo (1)” trt 1.5 1.5 / e;
+RUN;
+
+The GLM parameterization can be more intuitive,
+(trt 2 + trt3 / 2 ) - trt 1: Using GLM (C) parameterization, this becomes
+= (α + β2 + α + β3)/2 – (α + β1)
+= α + 0.5 β2 + 0.5 β3  – α – β1
+= 0.5 β2 + 0.5 β3 – β1
+
+PROC LOGISTIC data=dataset;
+    CLASS  trt  /  param=glm;   - Note any reference parameter you specify will be ignored, last is used
+    MODEL resp (event=“Y”) = trt ; 
+    CONTRAST “Active (2 & 3) vs. Placebo (1)” trt 0.5 0.5 -1 / e;
+RUN;
+
+For this reason, it is common to either use the default PARAM=Effect with ref="X" option.
+or to use the param=GLM with no ref="X" option. It is very important to check the
+output design matrix so you know what parameterization and reference groups are being used. 
+
+
+### Ensuring you are modelling the correct Binary event in SAS
+
+With logistic regression, we often want to model the number of "Successes".
+However, by default, SAS sorts alphabetically/numerically and 
+selects the first occurring EVENT as the one it's going to model.
+
+For this reason, it's a common mistake, and we find SAS modelling the number of 
+failures instead of successes.  Very common when your response is: 
+Responder vs Non-responder,  SAS will model the
+Non-responders as 'N' is alphabetically first before 'R'!
+
+For this reason, It is reccomemnded to always use the event="Y" option. 
+
+Options such as ORDER=DATA|FORMATTED|FREQ|INTERNAL as well as descending can be 
+used to ensure the correct levels of classification variables are being modelled.
+As described above, with PARAM=EFFECT you can also specify the reference using 
+the ref="X". 
+
+More detail
+[here](https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_logistic_sect006.htm)
+
+
+### Modelling the lung cancer data
+
+As described above, we can use proc logistic or prog genmod to perform a 
+logistic regression.  Just make sure the parameterization is correct. 
+To demonstrate the use of logistic regression we examine the same lung dataset as used in the R example
+ [here](../R/logistic_regr.html).
+ 
+The following could be used, however, to match R, Sex and ECOG are treated
+as continuous parameters in this example, hence option 3 will be used.
+
+```{r eval=FALSE}
+Option 1
+  proc logistic data=lung2;  
+    class sex (ref="1") ph_ecog (ref="0");
+    model  wt_grp(event="weight_gain") = age sex ph_ecog meal_cal;                                                                                    
+  run;
+
+Option 2
+  proc genmod data=lung;
+    class sex (ref="1") ph_ecog (ref="0");
+    model wt_grp (event="weight_gain") = age sex ph_ecog meal_cal / dist=bin link=logit;
+  run;
+  
+Option 3
+  proc logistic data=lung2;  
+    model  wt_grp(event="weight_gain") = age sex ph_ecog meal_cal;                                                                                    
+  run;
+```
+
+We analyze the weight gain in lung cancer patients in dependency of age, sex, 
+ECOG performance score and calories consumed at meals. Weight is categorized into
+a binary variable for Loss or Gain.  The probability modelled is weight_gain.
+
+We fit 3 models. In 
 
 -   Model 1: Weight Loss (1/0) = Age + Sex + ECOG + Calories
 
@@ -21,9 +151,15 @@ We fit 3 models
 
 title1 "Model 1";                                                                                                             
 proc logistic data=lung2;                                                                                                    
-  model  wt_grp = age sex ph_ecog meal_cal;                                                                                    
+  model  wt_grp (event="weight_gain")  = age sex ph_ecog meal_cal;                                                                                    
 run;  
 
+Response Profile
+Ordered value     wt_grp         Total Frequency
+-----------------------------------------------------------------------------
+1                 weight_gain     122 
+2                 weight_loss     48
+-----------------------------------------------------------------------------
 
 Model 1 Results
                     Analysis of Maximum Likelihood Estimates                 
@@ -37,9 +173,19 @@ ph_ecog     1      0.4180         0.2589            2.6069            0.1064
 meal_cal    1     -0.00089        0.000447          3.9417            0.0471
 ----------------------------------------------------------------------------
 
+Model Fit Statistics
+Criterion   Intercept Only     Intercept and Covariates       
+--------------------------------------------------------
+AIC         204.355            201.505
+SC          207.491            217.184
+-2 Log L    202.355            191.505   
+--------------------------------------------------------
+```
+
+```{r eval=FALSE}
 title1 "Model 2";                                                    
 proc logistic data=lung2;
-model  wt_grp = sex ph_ecog meal_cal;
+model  wt_grp (event="weight_gain") = sex ph_ecog meal_cal;
 run;             
 
 Model 2 Results
@@ -53,20 +199,34 @@ ph_ecog     1      0.3794         0.2469            2.3616            0.1244
 meal_cal    1     -0.00083        0.000435          3.6770            0.0552
 ----------------------------------------------------------------------------
 
+Model Fit Statistics
+Criterion   Intercept Only     Intercept and Covariates       
+--------------------------------------------------------
+AIC         204.355            201.505
+SC          207.491            217.184
+-2 Log L    202.355            191.505   
+--------------------------------------------------------
+```
 
+```{r eval=FALSE}
 title1 "Using selection=backward to get model comparison stats"; 
 proc logistic data=lung2;  
-model  wt_grp = age sex ph_ecog meal_cal / selection = backward stop=3; 
+model  wt_grp (event="weight_gain")  = age sex ph_ecog meal_cal / selection = backward stop=3; 
 run;   
 
 Step 1: Effect age is removed
 Summary of Backward Elimination
 Step   Effect Removed   DF     Number In     Wald Chi-Square   Pr>ChiSq
 -----------------------------------------------------------------------------
-1      Age              1      3             0.2389            0.6250
+1      Age              1      3             0.2389            0.6250   
+-----------------------------------------------------------------------------
+```
 
-Note: The number of effects in the moel has reached STOP=3
+Note: The number of effects in the model has reached STOP=3, (when 3 variables
+remain in the model, it will not proceed to remove any more even if the ones left
+are not significant)
 
+```{r eval=FALSE}
 Model 3 Results
                     Analysis of Maximum Likelihood Estimates                 
 
@@ -77,7 +237,6 @@ Sex         1     -0.8359         0.3637            5.2815            0.0216
 ph_ecog     1      0.3794         0.2469            2.3616            0.1244
 meal_cal    1     -0.00083        0.000435          3.6770            0.0552
 ----------------------------------------------------------------------------
-
 ```
 
 NOTE: the chi-square test summary of backward elimination, p=0.6250 is different
