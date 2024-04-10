@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.553">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Logistic Regression</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../images/logo.png" alt="" class="navbar-logo">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../contribution/contribution.html"> 
+<span class="menu-text">Contribute</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../publication/index.html"> 
+<span class="menu-text">Publications</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-news" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">News</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-news">    
+        <li>
+    <a class="dropdown-item" href="../minutes/index.html">
+ <span class="dropdown-text">Meeting minutes</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../blogs/index.html">
+ <span class="dropdown-text">Blogs</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+          <div class="quarto-navbar-tools">
+    <div class="dropdown">
+      <a href="" title="" id="quarto-navigation-tool-dropdown-0" class="quarto-navigation-tool dropdown-toggle px-1" data-bs-toggle="dropdown" aria-expanded="false" aria-label=""><i class="bi bi-github"></i></a>
+      <ul class="dropdown-menu" aria-labelledby="quarto-navigation-tool-dropdown-0">
+          <li>
+            <a class="dropdown-item quarto-navbar-tools-item" href="https://github.com/PSIAIMS/CAMIS/">
+            Source Code
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item quarto-navbar-tools-item" href="https://github.com/PSIAIMS/CAMIS/issues/">
+            Report a Difference
+            </a>
+          </li>
+      </ul>
+    </div>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#parameterization-of-model-effects-categorical-covariates-in-sas" id="toc-parameterization-of-model-effects-categorical-covariates-in-sas" class="nav-link active" data-scroll-target="#parameterization-of-model-effects-categorical-covariates-in-sas">Parameterization of model effects (categorical covariates) in SAS</a></li>
+  <li><a href="#example-of-deriving-constrat-statements-in-sas" id="toc-example-of-deriving-constrat-statements-in-sas" class="nav-link" data-scroll-target="#example-of-deriving-constrat-statements-in-sas">Example of deriving constrat statements in SAS</a></li>
+  <li><a href="#trt-group-effect-a-ref-b-glm-c" id="toc-trt-group-effect-a-ref-b-glm-c" class="nav-link" data-scroll-target="#trt-group-effect-a-ref-b-glm-c">Trt Group EFFECT (A) REF (B) GLM (C)</a>
+  <ul class="collapse">
+  <li><a href="#ensuring-you-are-modelling-the-correct-binary-event-in-sas" id="toc-ensuring-you-are-modelling-the-correct-binary-event-in-sas" class="nav-link" data-scroll-target="#ensuring-you-are-modelling-the-correct-binary-event-in-sas">Ensuring you are modelling the correct Binary event in SAS</a></li>
+  <li><a href="#modelling-the-lung-cancer-data" id="toc-modelling-the-lung-cancer-data" class="nav-link" data-scroll-target="#modelling-the-lung-cancer-data">Modelling the lung cancer data</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Logistic Regression</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">10 April, 2024</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>For a brief description of what is logistic regression see <a href="../R/logistic_regr.html">here</a>.</p>
+<section id="parameterization-of-model-effects-categorical-covariates-in-sas" class="level3">
+<h3 class="anchored" data-anchor-id="parameterization-of-model-effects-categorical-covariates-in-sas">Parameterization of model effects (categorical covariates) in SAS</h3>
+<p>The most common problem when fitting logistic regression in SAS, is getting SAS to model the binary variable (events) and any categorical covariates correctly.</p>
+<p>There are two procedures which can be used to perform logistic regression in SAS, proc logistic, and proc genmod (using dist=bin and link=logit options). They obtain the same results when parameterized correctly.</p>
+<p>For this example, we will focus on proc logistic but the same concepts apply to both procedures.</p>
+<p>Let’s first look at types of parameterization. Parameterization what SAS does when you include a categorical variable in your model. It codes that variable using new parameters and it fits those into your model.</p>
+<p>The default parameterization is PARAM=EFFECT - This is shown as Example A in the design matrix below for the example of a categorical variable trt - which has 3 treatment levels (Active 1, Active 2, Placebo).</p>
+<p>With the EFFECT option, the reference level (Placebo) is given values of “-1” for both of the x1 and x2 parameters. The design matrix consists of 1 less parameter than the number of levels of your variable (so that for 3 treatment groups you have x1 and x2 - 2 parameters in the model).</p>
+<p>Which reference category is selected is specified either by using the ref=‘X’ option, or the default which would be the last value of the variable i.e.&nbsp;Placebo (as this is last in the alphabet after Active 1 and Active 2).</p>
+<p>Alternatively, you change the parameterization in SAS using the following options: PARAM=REF - This is shown as Example B below - reference parameter values “0”, n-1 variables</p>
+<p>proc logistic data=dataset; CLASS TRTP /PARAM=REF; MODEL resp (event=“Y”) = TRTP ; run;</p>
+<p>PARAM=GLM - This is shown as Example C below - no reference parameter as such (output compares against last value of treatment group), n variables.</p>
+<p>proc logistic data=dataset; CLASS TRTP /PARAM=GLM; MODEL resp (event=“Y”) = TRTP ; run;</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/logistic_regression/parameterization.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Depending on which parameterization you use, you have to interpret those effects carefully. It is also very important to check the reference assigned is the correct one?</p>
+<p>This is also particularly important if you are using any contrast, estimate or lsmestimate statements since the coefficients used for the contrasts must be in line with the parameterization.</p>
+</section>
+<section id="example-of-deriving-constrat-statements-in-sas" class="level3">
+<h3 class="anchored" data-anchor-id="example-of-deriving-constrat-statements-in-sas">Example of deriving constrat statements in SAS</h3>
+<p>The table below shows the how the parameterizations using EFFECT, REF or GLM, translate to the model being fitted.</p>
+<p>General model: Y= α + β1x1 + β2x1 {+β3x3}</p>
+</section>
+<section id="trt-group-effect-a-ref-b-glm-c" class="level2">
+<h2 class="anchored" data-anchor-id="trt-group-effect-a-ref-b-glm-c">Trt Group EFFECT (A) REF (B) GLM (C)</h2>
+<p>Active A Y = α + β1 Y = α + β1 Y = α + β1 Active B Y = α + β2 Y = α + β2 Y = α + β2 Placebo Y = α - β1 - β2 Y = α Y = α + β3 ——————————————————–</p>
+<p>Now let’s suppose we wanted to compare the average of the Active Treatment groups versus the Placebo treatment group. (A+B)/2 compared to Placebo.</p>
+<p><strong>EFFECT (A) parameterization</strong></p>
+<p>((α + β1 + α + β2 ) /2 ) - (α - β1 - β2) =α + 0.5 β1 + 0.5 β2 – α + β1 + β2 = 1.5 β1 + 1.5 β2</p>
+<p>Therefore, to apply this contrast in SAS we would use: PROC LOGISTIC data=dataset; CLASS trt ; -default PARAM=EFFECT option is used so last trt is reference MODEL resp (event=“Y”) = trt ; CONTRAST “Active (A &amp; B) vs.&nbsp;Placebo” trt 1.5 1.5 / e; RUN;</p>
+<p><strong>GLM (C) parameterization</strong></p>
+<p>The GLM parameterization can be more intuitive,</p>
+<p>(trt 2 + trt3 / 2 ) - trt 1: Using GLM (C) parameterization, this becomes = (α + β1 + α + β2)/2 – (α + β3) = α + 0.5 β1 + 0.5 β2 – α – β3 = 0.5 β1 + 0.5 β2 – β3</p>
+<p>PROC LOGISTIC data=dataset; CLASS trt / param=glm; MODEL resp (event=“Y”) = trt ; CONTRAST “Active (2 &amp; 3) vs.&nbsp;Placebo (1)” trt 0.5 0.5 -1 / e; RUN;</p>
+<p>For this reason, it is common to either use the default PARAM=Effect with ref=“X” option. or to use the param=GLM with no ref=“X” option. It is very important to check the output design matrix so you know what parameterization and reference groups are being used.</p>
+<section id="ensuring-you-are-modelling-the-correct-binary-event-in-sas" class="level3">
+<h3 class="anchored" data-anchor-id="ensuring-you-are-modelling-the-correct-binary-event-in-sas">Ensuring you are modelling the correct Binary event in SAS</h3>
+<p>With logistic regression, we often want to model the number of “Successes”. However, by default, SAS sorts alphabetically/numerically and selects the first occurring EVENT alphabetically as the one it’s going to model.</p>
+<p>It’s a common mistake, and we find SAS modelling the number of failures instead of successes. Very common when your response is: ‘Responder’ vs ‘Non-responder’, SAS will model the Non-responders as ‘N’ is alphabetically first before ‘R’!</p>
+<p>For this reason, It is recommended to always use the event=“Y” option.</p>
+<p>Options such as ORDER=DATA|FORMATTED|FREQ|INTERNAL as well as descending can be used to ensure the correct levels of classification variables are being modelled. More detail <a href="https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_logistic_sect006.htm">here</a></p>
+</section>
+<section id="modelling-the-lung-cancer-data" class="level3">
+<h3 class="anchored" data-anchor-id="modelling-the-lung-cancer-data">Modelling the lung cancer data</h3>
+<p>As described above, we can use proc logistic or prog genmod to perform a logistic regression. Just make sure the parameterization is correct. To demonstrate the use of logistic regression we examine the same lung dataset as used in the R example <a href="../R/logistic_regr.html">here</a>.</p>
+<p>The following could be used, however, to match R, Sex and ECOG are treated as continuous parameters in this example, hence option 3 will be used.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>Option <span class="dv">1</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  proc logistic data<span class="ot">=</span>lung2;  </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    class <span class="fu">sex</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="fu">ph_ecog</span> (<span class="at">ref=</span><span class="st">"0"</span>);</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    model  <span class="fu">wt_grp</span>(<span class="at">event=</span><span class="st">"weight_gain"</span>) <span class="ot">=</span> age sex ph_ecog meal_cal;                                                                                    </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  run;</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>Option <span class="dv">2</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  proc genmod data<span class="ot">=</span>lung;</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    class <span class="fu">sex</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="fu">ph_ecog</span> (<span class="at">ref=</span><span class="st">"0"</span>);</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    model <span class="fu">wt_grp</span> (<span class="at">event=</span><span class="st">"weight_gain"</span>) <span class="ot">=</span> age sex ph_ecog meal_cal <span class="sc">/</span> dist<span class="ot">=</span>bin link<span class="ot">=</span>logit;</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  run;</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>Option <span class="dv">3</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  proc logistic data<span class="ot">=</span>lung2;  </span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    model  <span class="fu">wt_grp</span>(<span class="at">event=</span><span class="st">"weight_gain"</span>) <span class="ot">=</span> age sex ph_ecog meal_cal;                                                                                    </span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We analyze the weight gain in lung cancer patients in dependency of age, sex, ECOG performance score and calories consumed at meals. Weight is categorized into a binary variable for Loss or Gain. The probability modelled is weight_gain.</p>
+<p>We fit 3 models. In</p>
+<ul>
+<li><p>Model 1: Weight Loss (1/0) = Age + Sex + ECOG + Calories</p></li>
+<li><p>Model 2: Weight Loss (1/0) = Sex + ECOG + Calories</p></li>
+<li><p>Model 3: Using backwards selection to compare models with/without age</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>title1 <span class="st">"Model 1"</span>;                                                                                                             </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung2;                                                                                                    </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  model  <span class="fu">wt_grp</span> (<span class="at">event=</span><span class="st">"weight_gain"</span>)  <span class="ot">=</span> age sex ph_ecog meal_cal;                                                                                    </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>run;  </span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>Response Profile</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>Ordered value     wt_grp         Total Frequency</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span>                 weight_gain     <span class="dv">122</span> </span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span>                 weight_loss     <span class="dv">48</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>Model <span class="dv">1</span> Results</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>                    Analysis of Maximum Likelihood Estimates                 </span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>Parameter   DF     Estimate       Standard Error    Wald Chi<span class="sc">-</span>Square  Pr<span class="sc">&gt;</span>ChiSq</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>Intercept   <span class="dv">1</span>      <span class="fl">3.2632</span>         <span class="fl">1.6488</span>            <span class="fl">3.9168</span>            <span class="fl">0.0478</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>Age         <span class="dv">1</span>     <span class="sc">-</span><span class="fl">0.0102</span>         <span class="fl">0.0208</span>            <span class="fl">0.2389</span>            <span class="fl">0.6250</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>Sex         <span class="dv">1</span>     <span class="sc">-</span><span class="fl">0.8717</span>         <span class="fl">0.3714</span>            <span class="fl">5.5090</span>            <span class="fl">0.0189</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>ph_ecog     <span class="dv">1</span>      <span class="fl">0.4180</span>         <span class="fl">0.2589</span>            <span class="fl">2.6069</span>            <span class="fl">0.1064</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>meal_cal    <span class="dv">1</span>     <span class="sc">-</span><span class="fl">0.00089</span>        <span class="fl">0.000447</span>          <span class="fl">3.9417</span>            <span class="fl">0.0471</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="sc">----------------------------------------------------------------------------</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>Model Fit Statistics</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>Criterion   Intercept Only     Intercept and Covariates       </span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>AIC         <span class="fl">204.355</span>            <span class="fl">201.505</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>SC          <span class="fl">207.491</span>            <span class="fl">217.184</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="sc">-</span><span class="dv">2</span> Log L    <span class="fl">202.355</span>            <span class="fl">191.505</span>   </span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>title1 <span class="st">"Model 2"</span>;                                                    </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung2;</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>model  <span class="fu">wt_grp</span> (<span class="at">event=</span><span class="st">"weight_gain"</span>) <span class="ot">=</span> sex ph_ecog meal_cal;</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>run;             </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>Model <span class="dv">2</span> Results</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>                    Analysis of Maximum Likelihood Estimates                 </span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>Parameter   DF     Estimate       Standard Error    Wald Chi<span class="sc">-</span>Square  Pr<span class="sc">&gt;</span>ChiSq</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>Intercept   <span class="dv">1</span>      <span class="fl">2.5607</span>         <span class="fl">0.7977</span>           <span class="fl">10.3047</span>            <span class="fl">0.0013</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>Sex         <span class="dv">1</span>     <span class="sc">-</span><span class="fl">0.8359</span>         <span class="fl">0.3637</span>            <span class="fl">5.2815</span>            <span class="fl">0.0216</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>ph_ecog     <span class="dv">1</span>      <span class="fl">0.3794</span>         <span class="fl">0.2469</span>            <span class="fl">2.3616</span>            <span class="fl">0.1244</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>meal_cal    <span class="dv">1</span>     <span class="sc">-</span><span class="fl">0.00083</span>        <span class="fl">0.000435</span>          <span class="fl">3.6770</span>            <span class="fl">0.0552</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="sc">----------------------------------------------------------------------------</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>Model Fit Statistics</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>Criterion   Intercept Only     Intercept and Covariates       </span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>AIC         <span class="fl">204.355</span>            <span class="fl">201.505</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>SC          <span class="fl">207.491</span>            <span class="fl">217.184</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="sc">-</span><span class="dv">2</span> Log L    <span class="fl">202.355</span>            <span class="fl">191.505</span>   </span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>title1 <span class="st">"Using selection=backward to get model comparison stats"</span>; </span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung2;  </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>model  <span class="fu">wt_grp</span> (<span class="at">event=</span><span class="st">"weight_gain"</span>)  <span class="ot">=</span> age sex ph_ecog meal_cal <span class="sc">/</span> selection <span class="ot">=</span> backward stop<span class="ot">=</span><span class="dv">3</span>; </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>run;   </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>Step <span class="dv">1</span><span class="sc">:</span> Effect age is removed</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>Summary of Backward Elimination</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>Step   Effect Removed   DF     Number In     Wald Chi<span class="sc">-</span>Square   Pr<span class="sc">&gt;</span>ChiSq</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span>      Age              <span class="dv">1</span>      <span class="dv">3</span>             <span class="fl">0.2389</span>            <span class="fl">0.6250</span>   </span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Note: The number of effects in the model has reached STOP=3, (when 3 variables remain in the model, it will not proceed to remove any more even if the ones left are not significant)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>Model <span class="dv">3</span> Results</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>                    Analysis of Maximum Likelihood Estimates                 </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>Parameter   DF     Estimate       Standard Error    Wald Chi<span class="sc">-</span>Square  Pr<span class="sc">&gt;</span>ChiSq</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>Intercept   <span class="dv">1</span>      <span class="fl">2.5607</span>         <span class="fl">0.7977</span>           <span class="fl">10.3047</span>            <span class="fl">0.0013</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>Sex         <span class="dv">1</span>     <span class="sc">-</span><span class="fl">0.8359</span>         <span class="fl">0.3637</span>            <span class="fl">5.2815</span>            <span class="fl">0.0216</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>ph_ecog     <span class="dv">1</span>      <span class="fl">0.3794</span>         <span class="fl">0.2469</span>            <span class="fl">2.3616</span>            <span class="fl">0.1244</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>meal_cal    <span class="dv">1</span>     <span class="sc">-</span><span class="fl">0.00083</span>        <span class="fl">0.000435</span>          <span class="fl">3.6770</span>            <span class="fl">0.0552</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="sc">----------------------------------------------------------------------------</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>NOTE: the chi-square test summary of backward elimination, p=0.6250 is different to the results in R, which gave a difference in deviance of -0.24046, p=0.6239. This difference is currently being investigated.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
