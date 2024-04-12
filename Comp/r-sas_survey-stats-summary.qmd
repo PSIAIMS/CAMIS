@@ -1,0 +1,374 @@
+---
+title: "R vs SAS Survey Summary Statistics"
+bibliography: survey-stats-summary.bib
+---
+
+This document will compare the survey summary statistics functionality in SAS (available through SAS/STAT) and R (available from the [`{survey}`](%5B%60%7Bsurvey%7D%60%5D(https://r-survey.r-forge.r-project.org/survey/html/api.html)) package), highlighting differences in methods and results. Only the default Taylor series linearisation method for calculating variances is used in both languages. A more detailed comparison for specific methods and use-cases is available in [@2017_YRBS], [@so2020modelling], or [@adamico_2009]. For a general guide to survey statistics, which has companion guides for both R and SAS, see [@Lohr_2022]
+
+# Result Comparison
+
+The following table shows different survey summary statistics, the capabilities of each language, and whether or not the results match. Each analysis also includes calculating the standard error and confidence intervals.
+
+| Analysis        | Supported in R                                                                               | Supported in SAS                                                                                | Results Match    | Notes                                                                                             |
+|---------------|---------------|---------------|---------------|---------------|
+| Mean            | [Yes](../R/survey-stats-summary.html#Mean)                                                   | [Yes](../SAS/survey-stats-summary.html#Mean)                                                    | Yes              | Must specify degrees of freedom in R for confidence limits                                        |
+| Total           | [Yes](../R/survey-stats-summary.html#Total)                                                  | [Yes](../SAS/survey-stats-summary.html#Total)                                                   | Yes              | Must specify degrees of freedom in R for confidence limits                                        |
+| Ratios          | [Yes](../R/survey-stats-summary.html#Ratios)                                                 | [Yes](../SAS/survey-stats-summary.html#Ratios)                                                  | Yes              | Must specify degrees of freedom in R for confidence limits                                        |
+| Proportions     | [Yes](../R/survey-stats-summary.html#Proportions)                                            | [Yes](../SAS/survey-stats-summary.html##Proportions)                                            | Yes              | For confidence limits of proportions near 0 and 1, `survey::svyciprop` can be more accurate in R. |
+| Quantiles       | [Yes](../R/survey-stats-summary.html#Quantiles)                                              | [Yes](../SAS/survey-stats-summary.html#Quantiles)                                               | [No](#Quantiles) | Different methods for calculating quantiles                                                       |
+| Domain Analysis | [Yes](../R/survey-stats-summary.html#Summary%20Statistics%20on%20Complex%20Survey%20Designs) | [Yes](../SAS/survey-stats-summary.html##Summary%20Statistics%20on%20Complex%20Survey%20Designs) | Yes              |                                                                                                   |
+| Design Effect   | [Yes](../R/survey-stats-summary.html#Summary%20Statistics%20on%20Complex%20Survey%20Designs) | [Yes](../SAS/survey-stats-summary.html##Summary%20Statistics%20on%20Complex%20Survey%20Designs) | Yes              | Set `deff="replace"` in R to match SAS exactly                                                    |
+
+For the full R and SAS code and results used for this comparison, see below:
+
+::: {.callout-note collapse="true" appearance="minimal" title="Show Code"}
+```{r}
+#| message: false
+#| warning: false 
+library(survey)
+
+data("nhanes")
+
+nhanes_design <- svydesign(
+  data = nhanes,
+  id = ~SDMVPSU, # Specify the PSU/cluster column
+  strata = ~SDMVSTRA,  # The stratification column
+  weights = ~WTMEC2YR,  # The weighting column
+  nest = TRUE  # Allows for PSUs with the same name nested within different strata
+)
+
+# Mean of HI_CHOL
+hi_chol_mean <- svymean(~HI_CHOL, nhanes_design, na.rm=TRUE)
+
+# Sum of HI_CHOL
+hi_chol_sum <- svytotal(~HI_CHOL, nhanes_design, na.rm=TRUE)
+
+# Ratio of HI_CHOL / RIAGENDR
+hi_chol_ratio <- svyratio(
+  numerator = ~HI_CHOL,
+  denominator = ~RIAGENDR,
+  nhanes_design,
+  na.rm=TRUE,
+  ci=TRUE,
+  se=TRUE,
+  separate=FALSE
+)
+
+# Proportion of different AGECAT values
+agecat_props <- svymean(~agecat, nhanes_design, na.rm=TRUE)
+
+# Quantiles of HI_CHOL
+hi_chol_quart <- svyquantile(
+  ~HI_CHOL,
+  nhanes_design,
+  quantiles=c(0.025, 0.5, 0.975),
+  na.rm=TRUE,
+  ci=TRUE
+)
+
+# Domain analysis of mean of HI_CHOL by race, with design effect
+hi_chol_mean_by_race <- svyby(~HI_CHOL, ~race, nhanes_design, svymean, na.rm=TRUE, deff="replace")
+
+print(list(
+  "Mean of HI_CHOL" = coef(hi_chol_mean),
+  "SE of Mean HI_CHOL" = SE(hi_chol_mean),
+  "CL of Mean HI_CHOL" = confint(hi_chol_mean, df=degf(nhanes_design)),
+  "Sum of HI_CHOL" = coef(hi_chol_sum),
+  "SE of Sum HI_CHOL" = SE(hi_chol_sum),
+  "CL of Sum HI_CHOL" = confint(hi_chol_sum, df=degf(nhanes_design)),
+  "Ratio of HI_CHOL / RIAGENDR" = coef(hi_chol_ratio),
+  "SE of Ratio HI_CHOL / RIAGENDR" = SE(hi_chol_ratio),
+  "CL of Ratio HI_CHOL / RIAGENDR" = confint(hi_chol_ratio, df=degf(nhanes_design)),
+  "Proportion of AGECAT" = coef(agecat_props),
+  "SE of Proportion AGECAT" = SE(agecat_props),
+  "CL of Proportion AGECAT" = confint(agecat_props, df=degf(nhanes_design)),
+  "Quantiles of HI_CHOL" = coef(hi_chol_quart),
+  "SE of Quantiles HI_CHOL" = SE(hi_chol_quart),
+  "CL of Quantiles HI_CHOL" = confint(hi_chol_quart, df=degf(nhanes_design)),
+  "Mean of HI_CHOL by race" = coef(hi_chol_mean_by_race),
+  "SE of HI_CHOL by race" = SE(hi_chol_mean_by_race),
+  "CL of HI_CHOL by race" = confint(hi_chol_mean_by_race, df=degf(nhanes_design)),
+  "Design Effect of HI_CHOL by race" = hi_chol_mean_by_race$DEff.HI_CHOL
+))
+```
+
+``` default
+* Mean, sum quantile of HI_CHOL;
+proc surveymeans data=nhanes mean sum clm quantile=(0.025 0.5 0.975);
+    cluster SDMVPSU;
+    strata SDMVSTRA;
+    weight WTMEC2YR;
+    var HI_CHOL;
+run;
+
+* Ratio of HI_CHOL / RIAGENDR;
+proc surveymeans data=nhanes;
+    cluster SDMVPSU;
+    strata SDMVSTRA;
+    weight WTMEC2YR;
+    ratio HI_CHOL / RIAGENDR;
+run;
+
+* Proportions of agecat;
+proc surveyfreq data=nhanes;
+    cluster SDMVPSU;
+    strata SDMVSTRA;
+    weight WTMEC2YR;
+    table agecat / cl;
+run;
+
+* Mean and DEFF of HI_CHOL by race;
+proc surveymeans data=nhanes mean deff;
+    cluster SDMVPSU;
+    strata SDMVSTRA;
+    weight WTMEC2YR;
+    domain race;
+    var HI_CHOL;
+run;
+```
+
+```         
+
+                                                 The SURVEYMEANS Procedure
+
+                                                        Data Summary
+
+                                            Number of Strata                  15
+                                            Number of Clusters                31
+                                            Number of Observations          8591
+                                            Sum of Weights             276536446
+
+
+                                                         Statistics
+
+                                Std Error                                                Std Error
+ Variable            Mean         of Mean       95% CL for Mean                Sum          of Sum        95% CL for Sum
+ --------------------------------------------------------------------------------------------------------------------------
+ HI_CHOL         0.112143        0.005446    0.10059829 0.12368762        28635245         2020711    24351529.8 32918960.7
+ --------------------------------------------------------------------------------------------------------------------------
+
+
+                                                         Quantiles
+
+                                                                          Std
+                     Variable       Percentile       Estimate           Error    95% Confidence Limits
+                     ---------------------------------------------------------------------------------
+                     HI_CHOL          2.5                   0        0.024281    -0.0514730 0.05147298
+                                       50 Median            0        0.024281    -0.0514730 0.05147298
+                                     97.5            0.777070        0.024281     0.7255973 0.82854324
+                     ---------------------------------------------------------------------------------
+
+                                                 The SURVEYMEANS Procedure
+
+                                                        Data Summary
+
+                                            Number of Strata                  15
+                                            Number of Clusters                31
+                                            Number of Observations          8591
+                                            Sum of Weights             276536446
+
+
+                                                        Statistics
+
+                                                                    Std Error
+                     Variable               N            Mean         of Mean       95% CL for Mean
+                     ---------------------------------------------------------------------------------
+                     HI_CHOL             7846        0.112143        0.005446    0.10059829 0.12368762
+                     RIAGENDR            8591        1.512019        0.005302    1.50077977 1.52325807
+                     ---------------------------------------------------------------------------------
+
+
+                                                       Ratio Analysis
+
+                                                                              Std
+               Numerator Denominator            N           Ratio           Error        95% CL for Ratio
+               ----------------------------------------------------------------------------------------------
+               HI_CHOL   RIAGENDR            7846        0.074222        0.003715    0.06634722    0.08209696
+               ----------------------------------------------------------------------------------------------
+
+                                                  The SURVEYFREQ Procedure
+
+                                                        Data Summary
+
+                                            Number of Strata                  15
+                                            Number of Clusters                31
+                                            Number of Observations          8591
+                                            Sum of Weights             276536446
+
+
+                                                      Table of agecat
+
+                                        Weighted    Std Err of                Std Err of    95% Confidence Limits
+          agecat         Frequency     Frequency      Wgt Freq     Percent       Percent         for Percent
+          -------------------------------------------------------------------------------------------------------
+          (0,19]              2532      57450307       3043819     20.7749        0.6130     19.4755      22.0744
+          (19,39]             2033      81137975       3692818     29.3408        0.9561     27.3140      31.3676
+          (39,59]             2021      83870623       4853936     30.3290        0.4519     29.3709      31.2870
+          (59,Inf]            2005      54077541       4284296     19.5553        0.8093     17.8398      21.2709
+
+          Total               8591     276536446      13935730    100.0000                                       
+          -------------------------------------------------------------------------------------------------------
+
+                                                 The SURVEYMEANS Procedure
+
+                                                        Data Summary
+
+                                            Number of Strata                  15
+                                            Number of Clusters                31
+                                            Number of Observations          8591
+                                            Sum of Weights             276536446
+
+
+                                                         Statistics
+
+                                                                 Std Error          Design
+                                  Variable            Mean         of Mean          Effect
+                                  --------------------------------------------------------
+                                  HI_CHOL         0.112143        0.005446        2.336725
+                                  --------------------------------------------------------
+
+                                                 The SURVEYMEANS Procedure
+
+                                                 Statistics for race Domains
+
+                                                                         Std Error          Design
+                                  race    Variable            Mean         of Mean          Effect
+                          ------------------------------------------------------------------------
+                                     1    HI_CHOL         0.101492        0.006246        1.082734
+                                     2    HI_CHOL         0.121649        0.006604        1.407822
+                                     3    HI_CHOL         0.078640        0.010385        2.091156
+                                     4    HI_CHOL         0.099679        0.024666        3.098290
+                          ------------------------------------------------------------------------
+```
+:::
+
+# Differences
+
+## Quantiles {#quantiles}
+
+To demonstrate the differences in calculating quantiles, we will use the `apisrs` dataset from the `survey` package in R [@API_2000].
+
+```{r}
+#| message: false
+library(survey)
+
+data("api")
+
+head(apisrs) |> gt::gt()
+```
+
+In SAS, PROC SURVEYMEANS will calculate quantiles of specific probabilities as you request them, using Woodruff's method for intervals and a custom quantile method [@SAS_2018, pp. 9834]. The quantile method does not match any of the available `qrules` in R, and although the default `interval.types` in the R `survey::svyquantile` function also uses Woddruff's method, it is a different implementation.
+
+The method and results from SAS are as follows:
+
+``` default
+proc surveymeans data=apisrs total=6194 quantile=(0.025 0.5 0.975);
+    var growth;
+run;
+```
+
+```         
+                             The SURVEYMEANS Procedure
+
+                                    Data Summary
+
+                        Number of Observations           200
+
+
+
+
+                                     Quantiles
+
+                                                      Std
+ Variable       Percentile       Estimate           Error    95% Confidence Limits
+ ---------------------------------------------------------------------------------
+ growth           2.5          -16.500000        1.755916    -19.962591 -13.037409
+                   50 Median    26.500000        1.924351     22.705263  30.294737
+                 97.5           99.000000       16.133827     67.184794 130.815206
+ ---------------------------------------------------------------------------------
+```
+
+If in R we use the default `qrule="math"` (equivalent to `qrule="hf1"` and matches `type=1` in the `quantile` function for unweighted data) along with the default `interval.type="mean"`, we get the following results:
+
+```{r}
+srs_design <- svydesign(data = apisrs,id = ~1,fpc = ~fpc,)
+
+svyquantile(
+  ~growth,
+  srs_design,
+  quantiles = c(0.025, 0.5, 0.975),
+  ci=TRUE,
+  se=TRUE
+)
+```
+
+Here we can see that the quantiles, confidence intervals, and standard errors do not match SAS. From testing, none of the available `qrule` methods match SAS for the quantile values, so it is recommended to use the default values unless you have need of some of the other properties of different quantile definitions. If an exact match to SAS is required, then the `svyquantile` function allows for passing a custom function to the `qrule` argument to define your own method for calculating quantiles. Below is an example that will match SAS:
+
+```{r}
+sas_qrule <- function(x, w, p) {
+  # Custom qrule to match SAS, based on survey::oldsvyquantile's internal method
+  if (any(is.na(x))) 
+    return(NA * p)
+  w <- rowsum(w, x, reorder = TRUE)
+  x <- sort(unique(x))
+  cum.w <- cumsum(w)/sum(w)
+  cdf <- approxfun(cum.w, x, method = "linear", f = 1, 
+    yleft = min(x), yright = max(x), ties = min)
+  cdf(p)
+}
+
+
+sas_quants <- svyquantile(
+  ~growth,
+  srs_design,
+  quantiles = c(0.025, 0.5, 0.975),
+  qrule=sas_qrule,
+  ci=TRUE,
+  se=TRUE
+)
+
+sas_quants
+```
+
+Note that although the quantiles and standard errors match, the confidence intervals still do not match SAS. For this another custom calculation is required, based on the formula used in SAS:
+
+```{r}
+sas_quantile_confint <- function(newsvyquantile, level=0.05, df=Inf) {
+  q <- coef(newsvyquantile)
+  se <- SE(newsvyquantile)
+  ci <- cbind(
+    q,
+    q + se * qt(level/2, df),
+    q - se * qt(1 - level/2, df),
+    se
+  )
+  colnames(ci) <- c("quantile", paste0("ci.", c(100 * level / 2, 100 * (1 - level / 2))), "se")
+
+  ci
+}
+
+sas_quantile_confint(sas_quants, df=degf(srs_design))
+```
+
+## Other considerations
+
+### Degrees of Freedom
+
+Some of the functions in R require the degrees of freedom to be specified when calculating confidence intervals, otherwise it assumes a normal distribution. This can be done easily by using the `survey::degf` function, which calculates the degrees of freedom for a survey design object.
+
+### Single PSU Strata
+
+Although it was not apparent with the examples used here, if there is only one PSU from a stratum then R will by default error, whereas SAS will remove that stratum from the variance calculation. This can be changed in R by setting the `options(survey.lonely.psu="certainty")` to match SAS and have it make no contribution to the variance.
+
+# Summary and Recommendations
+
+The `{survey}` package in R and the survey procedures in SAS/STAT both provide similar functionality for calculating survey summary statistics. In most cases in both our tests and others, the results are identical ([@2017_YRBS], [@so2020modelling], [@adamico_2009]). Where differences do occur, primarily in calculating quantiles, the methods in R are more varied and well-documented.
+
+::: {.callout-note collapse="true" title="Session Info"}
+```{r}
+#| echo: false
+si <- sessioninfo::session_info("survey", dependencies = FALSE)
+si$external <- structure(list("SAS" = "9.04.01M7P080520"), class = c("external_info", "list"))
+si
+```
+:::
