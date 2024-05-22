@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Linear Regression</title>
+<title>Two Sample t-test</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -180,8 +180,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#descriptive-statistics" id="toc-descriptive-statistics" class="nav-link active" data-scroll-target="#descriptive-statistics">Descriptive Statistics</a></li>
-  <li><a href="#regression-analysis" id="toc-regression-analysis" class="nav-link" data-scroll-target="#regression-analysis">Regression Analysis</a></li>
+  <li><a href="#two-sample-t-test-in-python" id="toc-two-sample-t-test-in-python" class="nav-link active" data-scroll-target="#two-sample-t-test-in-python"><strong>Two Sample t-test in Python</strong></a>
+  <ul class="collapse">
+  <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data Used</a></li>
+  <li><a href="#python" id="toc-python" class="nav-link" data-scroll-target="#python">Python</a>
+  <ul class="collapse">
+  <li><a href="#students-t-test" id="toc-students-t-test" class="nav-link" data-scroll-target="#students-t-test">Student’s T-Test</a></li>
+  <li><a href="#welchs-t-test" id="toc-welchs-t-test" class="nav-link" data-scroll-target="#welchs-t-test">Welch’s T-Test</a></li>
+  </ul></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -190,7 +197,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Linear Regression</h1>
+<h1 class="title">Two Sample t-test</h1>
 </div>
 
 
@@ -198,12 +205,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="quarto-title-meta">
 
     
-    <div>
-    <div class="quarto-title-meta-heading">Published</div>
-    <div class="quarto-title-meta-contents">
-      <p class="date">22 May, 2024</p>
-    </div>
-  </div>
   
     
   </div>
@@ -213,88 +214,77 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>To demonstrate the use of linear regression we examine a dataset that illustrates the relationship between Height and Weight in a group of 237 teen-aged boys and girls. The dataset is available at (../data/htwt.csv) and is imported to sas using proc import procedure.</p>
-<section id="descriptive-statistics" class="level3">
-<h3 class="anchored" data-anchor-id="descriptive-statistics">Descriptive Statistics</h3>
-<p>The first step is to obtain the simple descriptive statistics for the numeric variables of htwt data, and one-way frequencies for categorical variables. This is accomplished by employing proc means and proc freq procedures There are 237 participants who are from 13.9 to 25 years old. It is a cross-sectional study, with each participant having one observation. We can use this data set to examine the relationship of participants’ height to their age and sex.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>proc means data<span class="ot">=</span>htwt;</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>run;</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                    Descriptive Statistics <span class="cf">for</span> HTWT Data Set                  </span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>                             The MEANS Procedure</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>Variable  Label     N          Mean       Std Dev       Minimum       Maximum</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>AGE       AGE     <span class="dv">237</span>    <span class="fl">16.4430380</span>     <span class="fl">1.8425767</span>    <span class="fl">13.9000000</span>    <span class="fl">25.0000000</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>HEIGHT    HEIGHT  <span class="dv">237</span>    <span class="fl">61.3645570</span>     <span class="fl">3.9454019</span>    <span class="fl">50.5000000</span>    <span class="fl">72.0000000</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>WEIGHT    WEIGHT  <span class="dv">237</span>   <span class="fl">101.3080169</span>    <span class="fl">19.4406980</span>    <span class="fl">50.5000000</span>   <span class="fl">171.5000000</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="sc">----------------------------------------------------------------------------</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>proc freq data<span class="ot">=</span>htwt;</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>tables sex;</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>run;</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    Oneway Frequency Tabulation <span class="cf">for</span> Sex <span class="cf">for</span> HTWT Data Set                    </span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>                    The FREQ Procedure</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>                                      Cumulative    Cumulative</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>SEX         Frequency     Percent     Frequency      Percent</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="sc">-------------------------------------------------------------</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>f           <span class="dv">111</span>           <span class="fl">46.84</span>           <span class="dv">111</span>        <span class="fl">46.84</span></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>m           <span class="dv">126</span>           <span class="fl">53.16</span>           <span class="dv">237</span>       <span class="fl">100.00</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>In order to create a regression model to demonstrate the relationship between age and height for females, we first need to create a flag variable identifying females and an interaction variable between age and female gender flag.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data htwt2;</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  set htwt;</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> sex<span class="ot">=</span><span class="st">"f"</span> then female<span class="ot">=</span><span class="dv">1</span>;</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> sex<span class="ot">=</span><span class="st">"m"</span> then female<span class="ot">=</span><span class="dv">0</span>; </span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="sc">*</span>model to demonstrate interaction between female gender and age;</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  fem_age <span class="ot">=</span> female <span class="sc">*</span> age;  </span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="two-sample-t-test-in-python" class="level1">
+<h1><strong>Two Sample t-test in Python</strong></h1>
+<p>The Two Sample t-test is used to compare two independent samples against each other. In the Two Sample t-test, the mean of the first sample is compared against the mean of the second sample. In Python, a Two Sample t-test can be performed using the <strong>stats</strong> package from scipy.</p>
+<section id="data-used" class="level3">
+<h3 class="anchored" data-anchor-id="data-used">Data Used</h3>
+<p>The following data was used in this example.</p>
+<div id="b9e71cbb" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy <span class="im">import</span> stats</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Create sample data</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'trt_grp'</span>: [<span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>],</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'WtGain'</span>: [<span class="dv">94</span>, <span class="dv">12</span>, <span class="dv">26</span>, <span class="dv">89</span>, <span class="dv">88</span>, <span class="dv">96</span>, <span class="dv">85</span>, <span class="dv">130</span>, <span class="dv">75</span>, <span class="dv">54</span>, <span class="dv">112</span>, <span class="dv">69</span>, <span class="dv">104</span>, <span class="dv">95</span>, <span class="dv">53</span>, <span class="dv">21</span>, <span class="dv">45</span>, <span class="dv">62</span>, <span class="dv">96</span>, <span class="dv">128</span>, <span class="dv">120</span>, <span class="dv">99</span>, <span class="dv">28</span>, <span class="dv">50</span>, <span class="dv">109</span>, <span class="dv">115</span>, <span class="dv">39</span>, <span class="dv">96</span>, <span class="dv">87</span>, <span class="dv">100</span>, <span class="dv">76</span>, <span class="dv">80</span>]</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.DataFrame(data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="regression-analysis" class="level3">
-<h3 class="anchored" data-anchor-id="regression-analysis">Regression Analysis</h3>
-<p>Next, we fit a regression model, representing the relationships between gender, age, height and the interaction variable created in the datastep above. We again use a where statement to restrict the analysis to those who are less than or equal to 19 years old. We use the clb option to get a 95% confidence interval for each of the parameters in the model. The model that we are fitting is <strong><em>height = b0 + b1 x female + b2 x age + b3 x fem_age + e</em></strong></p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>proc reg data<span class="ot">=</span>htwt2;</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  where age <span class="sc">&lt;=</span><span class="dv">19</span>;</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  model height <span class="ot">=</span> female age fem_age <span class="sc">/</span> clb;</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>run; quit;</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                        Number of Observations Read         <span class="dv">219</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                        Number of Observations Used         <span class="dv">219</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>                                 Analysis of Variance</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>                                        Sum of           Mean</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    Source                   DF        Squares         Square    F Value    Pr <span class="sc">&gt;</span> F</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    Model                     <span class="dv">3</span>     <span class="fl">1432.63813</span>      <span class="fl">477.54604</span>      <span class="fl">60.93</span>    <span class="sc">&lt;</span>.<span class="dv">0001</span></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    Error                   <span class="dv">215</span>     <span class="fl">1684.95730</span>        <span class="fl">7.83701</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    Corrected Total         <span class="dv">218</span>     <span class="fl">3117.59543</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>                 Root MSE              <span class="fl">2.79947</span>    R<span class="sc">-</span>Square     <span class="fl">0.4595</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>                 Dependent Mean       <span class="fl">61.00457</span>    Adj R<span class="sc">-</span>Sq     <span class="fl">0.4520</span></span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>                 Coeff Var             <span class="fl">4.58895</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="python" class="level2">
+<h2 class="anchored" data-anchor-id="python">Python</h2>
+<p>If we have normalized data, we can use the classic Student’s t-test. For a Two sample test where the variances are not equal, we should use the Welch’s t-test. Both of those options are available in the scipy <strong>stats</strong> package.</p>
+<section id="students-t-test" class="level3">
+<h3 class="anchored" data-anchor-id="students-t-test">Student’s T-Test</h3>
+<section id="code" class="level4">
+<h4 class="anchored" data-anchor-id="code">Code</h4>
+<p>The following code was used to test the comparison in Python. Note that we must separate the single variable into two variables to satisfy the scipy <strong>stats</strong> package syntax.</p>
+<div id="6eb30918" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Separate data into two groups</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>group1 <span class="op">=</span> df[df[<span class="st">'trt_grp'</span>] <span class="op">==</span> <span class="st">'placebo'</span>][<span class="st">'WtGain'</span>]</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>group2 <span class="op">=</span> df[df[<span class="st">'trt_grp'</span>] <span class="op">==</span> <span class="st">'treatment'</span>][<span class="st">'WtGain'</span>]</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform Student's t-test assuming equal variances</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>t_stat, p_value_equal_var <span class="op">=</span> stats.ttest_ind(group1, group2, equal_var<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Student's T-Test assuming equal variances:"</span>)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"T-statistic: </span><span class="sc">{</span>t_stat<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"P-value: </span><span class="sc">{</span>p_value_equal_var<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Student's T-Test assuming equal variances:
+T-statistic: -0.6969002027708538
+P-value: 0.4912306166204561</code></pre>
 </div>
-<p>We examine the parameter estimates in the output below.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>                            Parameter Estimates</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>                            Parameter       Standard</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>       Variable     DF       Estimate          Error    t Value    Pr <span class="sc">&gt;</span> <span class="er">|</span>t<span class="sc">|</span>       <span class="dv">95</span>% Confidence Limits</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>       Intercept     <span class="dv">1</span>       <span class="fl">28.88281</span>        <span class="fl">2.87343</span>      <span class="fl">10.05</span>      <span class="sc">&lt;</span>.<span class="dv">0001</span>       <span class="fl">23.21911</span>       <span class="fl">34.54650</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>       female        <span class="dv">1</span>       <span class="fl">13.61231</span>        <span class="fl">4.01916</span>       <span class="fl">3.39</span>      <span class="fl">0.0008</span>        <span class="fl">5.69031</span>       <span class="fl">21.53432</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>       AGE           <span class="dv">1</span>        <span class="fl">2.03130</span>        <span class="fl">0.17764</span>      <span class="fl">11.44</span>      <span class="sc">&lt;</span>.<span class="dv">0001</span>        <span class="fl">1.68117</span>        <span class="fl">2.38144</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>       fem_age       <span class="dv">1</span>       <span class="sc">-</span><span class="fl">0.92943</span>        <span class="fl">0.24782</span>      <span class="sc">-</span><span class="fl">3.75</span>      <span class="fl">0.0002</span>       <span class="sc">-</span><span class="fl">1.41791</span>       <span class="sc">-</span><span class="fl">0.44096</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>From the parameter estimates table the coefficients b0,b1,b2,b3 are estimated as b0=28.88 b1=13.61 b2=2.03 b3=-0.92942</p>
-<p>The resulting regression model for height, age and gender based on the available data is <strong><em>height=28.88281 + 13.61231 x female + 2.03130 x age -0.92943 x fem_age</em></strong></p>
+</section>
+</section>
+<section id="welchs-t-test" class="level3">
+<h3 class="anchored" data-anchor-id="welchs-t-test">Welch’s T-Test</h3>
+<section id="code-1" class="level4">
+<h4 class="anchored" data-anchor-id="code-1">Code</h4>
+<p>The following code was used to test the comparison in Python using Welch’s t-test.</p>
+<div id="5187f2cf" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform Welch's t-test assuming unequal variances</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>t_stat_welch, p_value_unequal_var <span class="op">=</span> stats.ttest_ind(group1, group2, equal_var<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Welch's T-Test assuming unequal variances:"</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"T-statistic: </span><span class="sc">{</span>t_stat_welch<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"P-value: </span><span class="sc">{</span>p_value_unequal_var<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Welch's T-Test assuming unequal variances:
+T-statistic: -0.6969002027708538
+P-value: 0.4912856152047901</code></pre>
+</div>
+</div>
 
 
+</section>
+</section>
+</section>
 </section>
 
 </main> <!-- /main -->
