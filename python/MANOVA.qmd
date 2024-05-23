@@ -1,0 +1,59 @@
+---
+title: "MANOVA"
+---
+
+### MANOVA in Python
+
+Multivariate analysis of variance **(MANOVA)** is a  statistical technique used to examine group mean difference of several dependent variables at once while accounting for correlations between the variables.By considering multiple dependent variables simultaneously, MANOVA provides a more comprehensive understanding of group differences and patterns. In context of python, statsmodels library can be used to implement MANOVA.  
+
+The **from_formula()** function is the recommended method to specify a model and simplifies testing without needing to manually configure the contrast matrices.
+
+**Example 39.6 Multivariate Analysis of Variance** from [SAS MANOVA User Guide](https://support.sas.com/documentation/cdl/en/statug/63033/HTML/default/viewer.htm#statug_glm_sect051.htm)
+
+This example employs multivariate analysis of variance (MANOVA) to measure differences in the chemical characteristics of ancient pottery found at four kiln sites in Great Britain. The data are from Tubb, Parker, and Nickless (1980), as reported in Hand et al. (1994).
+
+For each of 26 samples of pottery, the percentages of oxides of five metals are measured. The following statements create the data set and invoke the GLM procedure to perform a one-way MANOVA. Additionally, it is of interest to know whether the pottery from one site in Wales (Llanederyn) differs from the samples from other sites; a CONTRAST statement is used to test this hypothesis.
+
+
+```{python}
+
+import pandas as pd
+from statsmodels.multivariate.manova import MANOVA
+
+df= pd.read_csv("../data/manova1.csv")
+df.rename(columns={'al':'Al','fe':'Fe','mg':'Mg','ca ':'Ca','na':'Na'},inplace=True)
+
+manova = MANOVA.from_formula('Al + Fe + Mg + Ca + Na ~ site', data=df)
+result = manova.mv_test()
+print(result)
+```
+
+*Output*:
+
+                   Multivariate linear model
+===============================================================
+                                                               
+---------------------------------------------------------------
+        Intercept         Value  Num DF  Den DF F Value  Pr > F
+---------------------------------------------------------------
+           Wilks' lambda  0.0300 5.0000 18.0000 116.5838 0.0000
+          Pillai's trace  0.9700 5.0000 18.0000 116.5838 0.0000
+  Hotelling-Lawley trace 32.3844 5.0000 18.0000 116.5838 0.0000
+     Roy's greatest root 32.3844 5.0000 18.0000 116.5838 0.0000
+---------------------------------------------------------------
+                                                               
+---------------------------------------------------------------
+          site           Value   Num DF  Den DF F Value  Pr > F
+---------------------------------------------------------------
+          Wilks' lambda  0.0123 15.0000 50.0915  13.0885 0.0000
+         Pillai's trace  1.5539 15.0000 60.0000   4.2984 0.0000
+ Hotelling-Lawley trace 35.4388 15.0000 29.1304  40.5880 0.0000
+    Roy's greatest root 34.1611  5.0000 20.0000 136.6445 0.0000
+===============================================================
+
+
+The Wilki's lambda test evaluates the significance of group difference across several dependent variables. A lower Wilk's Lambda value suggest more evidence of group difference.
+
+The Pillai’s Trace test statistics is statistically significant [Pillai’s Trace = 1.55, F(6, 72) = 4.29, p < 0.001] and indicates that sites has a statistically significant association with all the listed elements.
+
+**NOTE**: if you feel you can help with the above discrepancy please contribute to the CAMIS repo by following the instructions on the [contributions page](../contribution.qmd).
