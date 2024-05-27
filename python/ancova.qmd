@@ -47,7 +47,6 @@ In Python, Ancova can be performed using the [statsmodels](https://www.statsmode
 
 
 ```{python, eval=TRUE, echo=TRUE}
-import pandas as pd
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from tabulate import tabulate
@@ -101,26 +100,25 @@ print(f"Log-likelihood: {log_lik}")
 print(f"AIC (adjusted): {aic_adjusted}")
 print(f"BIC (adjusted): {bic_adjusted}")
 ```
-There are different types of ancova computations. The [statsmodels.stats.ancova.ancova_lm](https://www.statsmodels.org/stable/generated/statsmodels.stats.ancova.ancova_lm.html) function allows the types 1, 2 and 3. 
+There are different types of anova computations. The [statsmodels.stats.anova.anova_lm](https://www.statsmodels.org/stable/generated/statsmodels.stats.anova.anova_lm.html) function allows the types 1, 2 and 3. The code to compute these types is depicted below:
 
 ```{python, eval=TRUE, echo=TRUE}
-from statsmodels.formula.api import ols
-from statsmodels.stats.ancova import ancova_lm
-from tabulate import tabulate
+import statsmodels.formula.api as smf
+import statsmodels.stats.anova as ssa
 
-# Center the predictor for Type III ancova
-df['pre_centered'] = df['pre'] - df['pre'].mean()
+# Center the predictor for Type III anova
+#df['pre_centered'] = df['pre'] - df['pre'].mean()
 
-# # Fit the model for types I and II
-model = ols('post ~ C(drug) + pre', data=df).fit()
+# Fit the model for types I and II anova
+model = smf.ols('post ~ C(drug) + pre', data=df).fit()
 
-# # Perform ancova for types I and II
-ancova_table_type_1 = ancova_lm(model, typ=1)
-ancova_table_type_2 = ancova_lm(model, typ=2)
+# Perform anova for types I and II
+ancova_table_type_1 = ssa.anova_lm(model, typ=1)
+ancova_table_type_2 = ssa.anova_lm(model, typ=2)
 
-# # Fit the model for Type III ancova with centered predictors
-model_type_3 = ols('post ~ C(drug) + pre_centered', data=df).fit()
-ancova_table_type_3 = ancova_lm(model_type_3, typ=3)
+# Fit the model for Type III anova with centered predictors
+model_type_3 = smf.ols('post ~ C(drug) + pre', data=df).fit()
+ancova_table_type_3 = ssa.anova_lm(model_type_3, typ=3)
 
 # Calculate SSd (sum of squares for residuals)
 ssd_type1 = ancova_table_type_1['sum_sq'].loc['Residual']
@@ -168,7 +166,7 @@ ancova_table_type_1 = ancova_table_type_1[ancova_table_type_1['Effect'] != 'Resi
 ancova_table_type_2 = ancova_table_type_2[ancova_table_type_2['Effect'] != 'Residual']
 ancova_table_type_3 = ancova_table_type_3[ancova_table_type_3['Effect'] != 'Residual']
 
-# Select and reorder columns to match desired output
+# Select and reorder columns to match the R output
 ancova_table_type_1 = ancova_table_type_1[['Effect', 'DFn', 'DFd', 'SSn', 'SSd', 'F', 'p', 'p<0.05', 'ges']]
 ancova_table_type_2 = ancova_table_type_2[['Effect', 'DFn', 'DFd', 'SSn', 'SSd', 'F', 'p', 'p<0.05', 'ges']]
 ancova_table_type_3 = ancova_table_type_3[['Effect', 'DFn', 'DFd', 'SSn', 'SSd', 'F', 'p', 'p<0.05', 'ges']]
@@ -186,3 +184,5 @@ print(tabulate(ancova_table_type_2, headers='keys', tablefmt='grid'))
 ```{python, eval=TRUE, echo=TRUE}
 print(tabulate(ancova_table_type_3, headers='keys', tablefmt='grid'))
 ```
+
+Please note that the results are consistent with the results achieved with [R](https://psiaims.github.io/CAMIS/R/ancova.html), except for the first row of the type 3 table featuring the intercept.
