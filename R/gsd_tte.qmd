@@ -1,0 +1,85 @@
+---
+title: "Group-sequential design in R"
+editor_options: 
+  chunk_output_type: console
+---
+
+# Group-sequential design: time to event endpoint
+
+While a group-sequential design (GSD) could be applied for different types of endpoints, here we focus on time to event endpoints.
+
+## Available R packages
+
+The commonly used R packages for power and sample size calculations utilizing a group sequential design are: [gsDesing](https://keaven.github.io/gsDesign/) (also available as a [ShinyApp](https://rinpharma.shinyapps.io/gsdesign/)), [gsDesing2](https://merck.github.io/gsDesign2/), and [rpact](https://www.rpact.org/).
+
+## Design assumptions
+
+Using a toy example, we will assume that a primary objective of a phase III oncology trial is to compare a new therapy to a control in terms of progression-free survival (PFS) as well as overall survival (OS). Note that, in this example we have a family of primary endpoints, and not co-primary endpoints. A GSD will be utilized for both endpoints. PFS will be tested at one interim analysis (IA) for both efficacy and futility, while OS will be tested at two IAs for efficacy only. O'Brein-Fleming spending function will be used for efficacy testing and Hwang-Shih-Decani spending function with $\gamma = 10$ will be used for futility.
+
+Further design assumptions are as follows:
+
+```{r}
+# PFS HR=0.6
+hr1_pfs <- 0.6
+# median PFS of 9.4 months in the control arm
+med_pfs <- 9.4
+# median follow-up of 10 months for PFS
+minfu_pfs <- 10
+# Monthly dropout of 0.019  for PFS
+do_rate_pfs <- 0.019
+# IA timing for PFS is at 75% information fraction
+timing_pfs <- c(0.75, 1)
+# power of 95% for PFS
+power_pfs <- 0.95
+
+
+# OS HR=0.65
+hr1_os <- 0.65
+# median OS of 3 years in the control arm
+med_os <- 12*3
+# median follow-up of 42 months for OS
+minfu_os <- 42
+# Monthly dropout of 0.001  for OS
+do_rate_pfs <- 0.001
+# IA timing for OS is at 60% and 80% information fraction
+timing_os <- c(0.6, 0.8, 1)
+# power of 82% for OS
+power_os <- 0.82
+
+# Enrollment period of 24 months
+enroll_dur <- 24
+# 1:1 randomization ratio
+rand_ratio <- 1
+# alpha level of 1.25% for each endpoint
+alphal <- 0.0125
+```
+
+## Example Code
+
+### Example using gsDesign
+
+-   PFS calculations:
+
+```{r}
+library(gsDesign)
+pfs_gsDesign <- gsSurv(
+  k = length(timing_pfs),
+  timing = timing_pfs,
+  R = enroll_dur, 
+  # gamma = enrollr,
+  eta =  do_rate_pfs, 
+  minfup = minfu_pfs,
+  T = enroll_dur + minfu_pfs, 
+  lambdaC = log(2)/med_pfs,
+  hr = hr1_pfs,
+  beta = 1 - power_pfs,
+  alpha = alphal,
+  sfu = sfLDOF,
+  sfl = sfHSD, 
+  sflpar = -10,
+  test.type = 4
+  )
+
+pfs_gsDesign |>
+  gsBoundSummary()
+```
