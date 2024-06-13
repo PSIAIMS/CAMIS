@@ -1,0 +1,151 @@
+---
+title: "Survey Summary Statistics using R"
+bibliography: ../Comp/survey-stats-summary.bib
+---
+
+When conducting large-scale trials on samples of the population, it can be necessary to use a more complex sampling design than a simple random sample.
+
+-   **Weighting** – If smaller populations are sampled more heavily to increase precision, then it is necessary to weight these observations in the analysis.
+
+-   **Finite population correction** – Larger samples of populations result in lower variability in comparison to smaller samples.
+
+-   **Stratification** – Dividing a population into sub-groups and sampling from each group. This protects from obtaining a very poor sample (e.g. under or over-represented groups), can give samples of a known precision, and gives more precise estimates for population means and totals.
+
+-   **Clustering** – Dividing a population into sub-groups, and only sampling certain groups. This gives a lower precision, however can be much more convenient and cheaper - for example if surveying school children you may only sample a subset of schools to avoid travelling to a school to interview a single child.
+
+All of these designs need to be taken into account when calculating statistics, and when producing models. Only summary statistics are discussed in this document, and variances are calculated using the default Taylor series linearisation methods. For a more detailed introduction to survey statistics in R, see [@Lohr_2022] or [@tlumley_2004].
+
+# Simple Survey Designs
+
+We will use the [API]((https://r-survey.r-forge.r-project.org/survey/html/api.html)) dataset [@API_2000], which contains a number of datasets based on different samples from a dataset of academic performance. Initially we will just cover the methodology with a simple random sample and a finite population correction to demonstrate functionality.
+
+```{r}
+#| message: false
+library(survey)
+
+data("api")
+
+head(apisrs) |> gt::gt()
+```
+
+## Mean
+
+If we want to calculate a mean of a variable in a dataset which has been obtained from a **s**imple **r**andom **s**ample such as `apisrs`, in R we can create a design object using the `survey::svydesign` function (specifying that there is no PSU using `id = ~1` and the finite population correction using `fpc=~fpc`).
+
+```{r}
+srs_design <- svydesign(id = ~1, fpc = ~fpc, data = apisrs)
+```
+
+This design object stores all metadata about the sample alongside the data, and is used by all subsequent functions in the `{survey}` package. To calculate the mean, standard error, and confidence intervals of the `growth` variable, we can use the `survey::svymean` and `confint` functions:
+
+```{r}
+# Calculate mean and SE of growth. The standard error will be corrected by the finite population correction specified in the design
+srs_means <- svymean(~growth, srs_design)
+
+srs_means
+# Use degf() to get the degrees of freedom
+confint(srs_means, df=degf(srs_design))
+```
+
+Note that to obtain correct results, we had to specify the degrees of freedom using the design object.
+
+## Total
+
+Calculating population totals can be done using the `survey::svytotal` function in R.
+
+```{r}
+svytotal(~growth, srs_design)
+```
+
+## Ratios
+
+To perform ratio analysis for means or proportions of analysis variables in R, we can `survey::svyratio`, here requesting that we do not `separate` the ratio estimation per Strata as this design is not stratified.
+
+```{r}
+svy_ratio <- svyratio(
+  ~api00,
+  ~api99,
+  srs_design,
+  se=TRUE,
+  df=degf(srs_design),
+  separate=FALSE
+)
+
+svy_ratio
+confint(svy_ratio, df=degf(srs_design))
+```
+
+## Proportions
+
+To calculate a proportion in R, we use the `svymean` function on a factor or character column:
+
+```{r}
+props <- svymean(~sch.wide, srs_design)
+
+props
+confint(props, df=degf(srs_design))
+```
+
+For proportions close to 0, it can be that `survey::svyciprop` is more accurate at producing confidence intervals than `confint`.
+
+## Quantiles
+
+To calculate quantiles in R, we can use the `survey::svyquantile` function. Note that this function was reworked in version 4.1 of `{survey}`, and prior to this had different arguments and results. The current version of `svyquantile` has an `qrule` which is similar to the `type` argument in `quantile`, and can be used to change how the quantiles are calculated. For more information, see `vignette("qrule", package="survey")`.
+
+```{r}
+svyquantile(
+  ~growth,
+  srs_design,
+  quantiles = c(0.025, 0.5, 0.975),
+  ci=TRUE,
+  se=TRUE
+)
+```
+
+# Summary Statistics on Complex Survey Designs
+
+Much of the previous examples and notes still stand for more complex survey designs, here we will demonstrate using a dataset from NHANES [@NHANES_2010], which uses both stratification and clustering:
+
+```{r}
+#| message: false
+data("nhanes")
+
+head(nhanes) |> gt::gt()
+```
+
+To produce means and standard quartiles for this sample, taking account of sample design, we can use the following:
+
+```{r}
+nhanes_design <- svydesign(
+  data = nhanes,
+  id = ~SDMVPSU, # Specify the PSU/cluster column
+  strata = ~SDMVSTRA,  # The stratification column
+  weights = ~WTMEC2YR,  # The weighting column
+  nest = TRUE  # Allows for PSUs with the same name nested within different strata
+)
+
+svymean(~HI_CHOL, nhanes_design, na.rm=TRUE)
+
+svyquantile(
+  ~HI_CHOL,
+  nhanes_design,
+  quantiles=c(0.25, 0.5, 0.75),
+  na.rm=TRUE,
+  ci=TRUE
+)
+```
+
+In R, we can perform domain estimations of different sub-populations by passing our required survey function to the `svyby` function. `svyby` can also take additional options to pass to the function, for example here we pass `na.rm=TRUE` and `deff=TRUE` to `svymean`:
+
+```{r}
+svyby(~HI_CHOL, ~race, nhanes_design, svymean, na.rm=TRUE, deff=TRUE)
+```
+
+::: {.callout-note collapse="true" title="Session Info"}
+```{r}
+#| echo: false
+si <- sessioninfo::session_info("survey", dependencies = FALSE)
+si$external <- structure(list("SAS" = "9.04.01M7P080520"), class = c("external_info", "list"))
+si
+```
+:::

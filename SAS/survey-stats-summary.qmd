@@ -1,0 +1,296 @@
+---
+title: "Survey Summary Statistics using SAS"
+bibliography: ../Comp/survey-stats-summary.bib
+---
+
+When conducting large-scale trials on samples of the population, it can be necessary to use a more complex sampling design than a simple random sample.
+
+-   **Weighting** – If smaller populations are sampled more heavily to increase precision, then it is necessary to weight these observations in the analysis.
+
+-   **Finite population correction** – Larger samples of populations result in lower variability in comparison to smaller samples.
+
+-   **Stratification** – Dividing a population into sub-groups and sampling from each group. This protects from obtaining a very poor sample (e.g. under or over-represented groups), can give samples of a known precision, and gives more precise estimates for population means and totals.
+
+-   **Clustering** – Dividing a population into sub-groups, and only sampling certain groups. This gives a lower precision, however can be much more convenient and cheaper - for example if surveying school children you may only sample a subset of schools to avoid travelling to a school to interview a single child.
+
+All of these designs need to be taken into account when calculating statistics, and when producing models. Only summary statistics are discussed in this document, and variances are calculated using the default Taylor series linearisation methods. For a more detailed introduction to survey statistics in SAS, see [@Lohr_2022] or [@SAS_2018].
+
+# Simple Survey Designs
+
+We will use the [API]((https://r-survey.r-forge.r-project.org/survey/html/api.html)) dataset [@API_2000], which contains a number of datasets based on different samples from a dataset of academic performance. Initially we will just cover the methodology with a simple random sample and a finite population correction to demonstrate functionality.
+
+```{r}
+#| echo: false
+#| message: false
+library(survey)
+
+# Load example data - academic performance index for californian schools
+data("api")
+
+# View the first few rows of the main dataset
+head(apisrs) |> gt::gt()
+```
+
+## Mean
+
+If we want to calculate a mean of a variable in a dataset which has been obtained from a **s**imple **r**andom **s**ample such as `apisrs`, in SAS we can do the following (*nb. here `total=6194` is obtained from the constant `fpc` column, and provides the finite population correction*):
+
+``` default
+proc surveymeans data=apisrs total=6194 mean;
+    var growth;
+run;
+```
+
+```         
+                             The SURVEYMEANS Procedure
+
+                                    Data Summary
+
+                        Number of Observations           200
+
+
+                                    Statistics
+
+                                                Std Error
+ Variable               N            Mean         of Mean       95% CL for Mean
+ ---------------------------------------------------------------------------------
+ growth               200       31.900000        2.090493    27.7776382 36.0223618
+ ---------------------------------------------------------------------------------
+```
+
+## Total
+
+To calculate population totals, we can request the `sum`. However SAS requires the user to specify the weights, otherwise the totals will be incorrect. These weights in this case are equivalent to the total population size divided by the sample size:
+
+``` default
+data apisrs;
+    set apisrs nobs=n;
+    weight = fpc / n;
+run;
+
+proc surveymeans data=apisrs total=6194 sum;
+    var growth;
+    weight weight;
+run;
+```
+
+```         
+       The SURVEYMEANS Procedure
+
+              Data Summary
+
+  Number of Observations           200
+  Sum of Weights                  6194
+
+
+               Statistics
+
+                               Std Error
+Variable             Sum          of Sum
+----------------------------------------
+growth            197589           12949
+----------------------------------------
+```
+
+## Ratios
+
+To perform ratio analysis for means or proportions of analysis variables in SAS, we can use the following:
+
+``` default
+proc surveymeans data=apisrs total=6194;
+    ratio api00 / api99;
+run;
+```
+
+```         
+                             The SURVEYMEANS Procedure
+
+                                    Data Summary
+
+                        Number of Observations           200
+
+
+                                    Statistics
+
+                                                Std Error
+ Variable               N            Mean         of Mean       95% CL for Mean
+ ---------------------------------------------------------------------------------
+ api00                200      656.585000        9.249722    638.344950 674.825050
+ api99                200      624.685000        9.500304    605.950813 643.419187
+ ---------------------------------------------------------------------------------
+
+
+                                   Ratio Analysis
+
+                                                          Std
+Numerator Denominator            N           Ratio           Error        95% CL for Ratio
+----------------------------------------------------------------------------------------------
+api00     api99                200        1.051066        0.003604    1.04395882    1.05817265
+----------------------------------------------------------------------------------------------
+```
+
+## Proportions
+
+To calculate a proportion in SAS, we use the `PROC SURVEYFREQ`, in the simplest case below:
+
+``` default
+proc surveyfreq data=apisrs total=6194;
+table 'sch.wide'n / cl;
+run;
+```
+
+```         
+                          The SURVEYFREQ Procedure
+
+                                Data Summary
+
+                    Number of Observations           200
+
+
+                             Table of sch.wide
+
+                                       Std Err of    95% Confidence Limits
+ sch.wide     Frequency     Percent       Percent         for Percent
+ -------------------------------------------------------------------------
+ No                  37     18.5000        2.7078     13.1604      23.8396
+ Yes                163     81.5000        2.7078     76.1604      86.8396
+
+ Total              200    100.0000                                       
+```
+
+## Quantiles
+
+To calculate quantiles in SAS, we can use the `quantile` option to request specific quantiles, or can use keywords to request common quantiles (e.g. quartiles or the median). This will use Woodruff's method for confidence intervals, and a custom quantile method [@SAS_2018, pp. 9834].
+
+``` default
+proc surveymeans data=apisrs total=6194 quantile=(0.025 0.5 0.975);
+    var growth;
+run;
+```
+
+```         
+                             The SURVEYMEANS Procedure
+
+                                    Data Summary
+
+                        Number of Observations           200
+
+
+
+
+                                     Quantiles
+
+                                                      Std
+ Variable       Percentile       Estimate           Error    95% Confidence Limits
+ ---------------------------------------------------------------------------------
+ growth           2.5          -16.500000        1.755916    -19.962591 -13.037409
+                   50 Median    26.500000        1.924351     22.705263  30.294737
+                 97.5           99.000000       16.133827     67.184794 130.815206
+ ---------------------------------------------------------------------------------
+```
+
+# Summary Statistics on Complex Survey Designs
+
+Much of the previous examples and notes still stand for more complex survey designs, here we will demonstrate using a dataset from NHANES [@NHANES_2010], which uses both stratification and clustering:
+
+```{r}
+#| echo: false
+data("nhanes")
+
+head(nhanes) |> gt::gt()
+```
+
+To produce means and standard quartiles for this sample, taking account of sample design, we can use the following:
+
+``` default
+proc surveymeans data=nhanes mean quartiles;
+    cluster SDMVPSU;
+    strata SDMVSTRA;
+    weight WTMEC2YR;
+    var HI_CHOL;
+run;
+```
+
+```         
+                             The SURVEYMEANS Procedure
+
+                                    Data Summary
+
+                        Number of Strata                  15
+                        Number of Clusters                31
+                        Number of Observations          8591
+                        Sum of Weights             276536446
+
+
+                                     Statistics
+
+                                                     Std Error
+                      Variable            Mean         of Mean
+                      ----------------------------------------
+                      HI_CHOL         0.112143        0.005446
+                      ----------------------------------------
+
+
+                                     Quantiles
+
+                                                      Std
+ Variable       Percentile       Estimate           Error    95% Confidence Limits
+ ---------------------------------------------------------------------------------
+ HI_CHOL           25 Q1                0        0.024281    -0.0514730 0.05147298
+                   50 Median            0        0.024281    -0.0514730 0.05147298
+                   75 Q3                0        0.024281    -0.0514730 0.05147298
+ ---------------------------------------------------------------------------------
+```
+
+To produce an analysis of separate subpopulations in SAS we can use the `DOMAIN` statement (note: do not use the `BY` statement as it will not give statistically valid analysis), here we also request the design effect:
+
+``` default
+proc surveymeans data=nhanes mean deff;
+    cluster SDMVPSU;
+    strata SDMVSTRA;
+    weight WTMEC2YR;
+    var HI_CHOL;
+    domain race;
+run;
+```
+
+```         
+
+               The SURVEYMEANS Procedure
+
+                      Data Summary
+
+          Number of Strata                  15
+          Number of Clusters                31
+          Number of Observations          8591
+          Sum of Weights             276536446
+
+
+                       Statistics
+
+                               Std Error          Design
+Variable            Mean         of Mean          Effect
+--------------------------------------------------------
+HI_CHOL         0.112143        0.005446        2.336725
+--------------------------------------------------------
+
+               Statistics for race Domains
+
+                                       Std Error          Design
+race    Variable            Mean         of Mean          Effect
+------------------------------------------------------------------------
+   1    HI_CHOL         0.101492        0.006246        1.082734
+   2    HI_CHOL         0.121649        0.006604        1.407822
+   3    HI_CHOL         0.078640        0.010385        2.091156
+   4    HI_CHOL         0.099679        0.024666        3.098290
+------------------------------------------------------------------------
+```
+
+::: {.callout-note collapse="true" title="Session Info"}
+```{r}
+#| echo: false
+si <- sessioninfo::session_info("survey", dependencies = FALSE)
+si$external <- structure(list("SAS" = "9.04.01M7P080520"), class = c("external_info", "list"))
+si
+```
+:::

@@ -1,0 +1,196 @@
+---
+title: "Skewness/Kurtosis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tibble)
+ library(e1071)
+```
+
+# **Skewness and Kurtosis in R**
+
+Skewness measures the the amount of asymmetry in a distribution, while Kurtosis describes the "tailedness" of the curve.
+These measures are frequently used to assess the normality of the data.
+There are several methods to calculate these measures.  In R, there are at least four different packages that contain functions
+for Skewness and Kurtosis.  This write-up will examine the following packages: **e1071**, **moments**, **procs**, 
+and **sasLM**.
+
+## Data Used
+
+The following data was used in this example.
+
+```{r eval=TRUE, echo = TRUE}
+# Create sample data
+dat <- tibble::tribble(
+  ~team, ~points, ~assists,
+  "A", 10, 2,
+  "A", 17, 5,
+  "A", 17, 6,
+  "A", 18, 3,
+  "A", 15, 0,
+  "B", 10, 2,
+  "B", 14, 5,
+  "B", 13, 4,
+  "B", 29, 0,
+  "B", 25, 2,
+  "C", 12, 1,
+  "C", 30, 1,
+  "C", 34, 3,
+  "C", 12, 4,
+  "C", 11, 7 
+)
+```
+
+## Package Examination 
+
+Base R and the **stats** package have no native functions for Skewness and Kurtosis. It is therefore necessary to use a packaged
+function to calculate these statistics. The packages examined use three different methods of calculating Skewness, and four different methods
+for calculating Kurtosis.  Of the available packages, the functions in the **e1071** package provide the most 
+flexibility, and have options for three of the different methodologies.
+
+### e1071 Package {#e1071}
+
+The **e1071** package contains miscellaneous statistical functions from the Probability Theory Group at the Vienna University of Technology.
+The package includes functions for both Skewness and Kurtosis, and each function has a "type" parameter to specify the method.  There are 
+three available methods for Skewness, and three methods for Kurtosis. A portion of the documentation for these functions is included below:
+
+#### Skewness 
+
+The documentation for the `skewness()` function describes three types of skewness calculations:
+Joanes and Gill (1998) discusses three methods for estimating skewness:
+
+-   Type 1: This is the typical definition used in many older textbooks
+
+$$g_1 = m_1/m_2^{3/2}$$
+
+-   Type 2: Used in SAS and SPSS
+
+    $$
+    G_1 = g_1\sqrt{n(n-1)}/(n-2)
+    $$
+
+-   Type 3: Used in MINITAB and BMDP
+
+    $$
+    b_1 = m_3/s^3 = g_1((n-1)/n)^{3/2}
+    $$
+
+All three skewness measures are unbiased under normality. The three methods are illustrated in the following code:
+
+```{r eval=TRUE, echo = TRUE, message=FALSE, warning=FALSE}
+
+
+type1 <- e1071::skewness(dat$points, type = 1)
+stringr::str_glue("Skewness - Type 1: {type1}")
+  
+type2 <- e1071::skewness(dat$points, type = 2)
+stringr::str_glue("Skewness - Type 2: {type2}")
+  
+type3 <- e1071::skewness(dat$points, type = 3)
+stringr::str_glue("Skewness - Type 3: {type3}")
+```
+The default for the **e1071** `skewness()` function is Type 3.
+
+#### Kurtosis
+
+The documentation for the `kurtosis()` function describes three types of kurtosis calculations:
+Joanes and Gill (1998) discuss three methods for estimating kurtosis:
+
+-   Type 1: This is the typical definition used in many older textbooks
+
+$$g_2 = m_4/m_2^{2}-3$$
+
+-   Type 2: Used in SAS and SPSS
+
+    $$G_2 = ((n+1)g_2+6)*\frac{(n-1)}{(n-2)(n-3)}$$
+
+-   Type 3: Used in MINITAB and BMDP
+
+    $$b_2 = m_4/s^4-3 = (g_2 + 3)(1-1/n)^2-3$$
+
+Only $G_2$ (corresponding to type 2) is unbiased under normality. The three methods are illustrated in the following code:
+
+```{r eval=TRUE, echo = TRUE, message=FALSE, warning=FALSE}
+
+
+  # Kurtosis - Type 1
+type1 <- e1071::kurtosis(dat$points, type = 1)
+stringr::str_glue("Kurtosis - Type 1: {type1}")
+  
+# Kurtosis - Type 2
+type2 <- e1071::kurtosis(dat$points, type = 2)
+stringr::str_glue("Kurtosis - Type 2: {type2}")
+  
+# Kurtosis - Type 3
+type3 <- e1071::kurtosis(dat$points, type = 3)
+stringr::str_glue("Kurtosis - Type 3: {type3}")
+```
+The default for the **e1071** `kurtosis()` function is Type 3.
+
+### Moments Package {#moments}
+
+The **moments** package is a well-known package with a variety of statistical functions.  The package contains functions for
+both Skewness and Kurtosis.  But these functions provide no "type" option.  The `skewness()` function in the **moments** package
+corresponds to Type 1 above.  The `kurtosis()` function uses a Pearson's measure of Kurtosis, which corresponds to none of the
+three types in the **e1071** package.
+
+
+```{r eval=TRUE, echo = TRUE, message=FALSE, warning=FALSE}
+
+  library(moments)
+
+  # Skewness - Type 1
+  moments::skewness(dat$points)
+  # [1] 0.9054442
+  
+  # Kurtosis - Pearson's measure
+  moments::kurtosis(dat$points)
+  # [1] 2.416659
+
+```
+Note that neither of the functions from the **moments** package match SAS.
+
+### Procs Package {#procs}
+
+The **procs** package `proc_means()` function was written specifically to match SAS, and produces a Type 2 Skewness and Type 2 Kurtosis.
+This package also produces a data frame output, instead of a scalar value.
+
+```{r eval=TRUE, echo = TRUE, message=FALSE, warning=FALSE}
+
+  library(procs)
+
+  # Skewness and Kurtosis - Type 2 
+  proc_means(dat, var = points,
+             stats = v(skew, kurt))
+
+```
+
+
+Viewer Output:
+
+```{r, echo=FALSE, fig.align='center', out.width="30%"}
+knitr::include_graphics("../images/summarystats/procs_skewness_kurtosis.png")
+```
+
+### sasLM Package {#sasLM}
+
+The **sasLM** package was also written specifically to match SAS.  The `Skewness()` function produces a Type 2 Skewness,
+and the `Kurtosis()` function a Type 2 Kurtosis.
+
+```{r eval=TRUE, echo = TRUE, message=FALSE, warning=FALSE}
+
+  library(sasLM)
+
+  # Skewness - Type 2
+  Skewness(dat$points)
+  # [1] 1.009318
+  
+  # Kurtosis - Type 2
+  Kurtosis(dat$points)
+  # [1] -0.2991564
+
+```
+
+
