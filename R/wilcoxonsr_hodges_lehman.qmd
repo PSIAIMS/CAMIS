@@ -1,0 +1,115 @@
+---
+title: "Wilcoxon signed-rank test"
+---
+
+### **Introduction**
+
+Wilcoxon signed-rank test is a non-parametric test which is sometimes used instead of the paired Student's t-test when assumptions regarding a normal distribution are not valid. It is a rank test, designed for analyzing repeated measures or paired observations by a paired comparison (a type of location test) to assess whether their population means differ. Whilst it does not 'compare' means or medians for a set of paired data, it ranks the results on A and ranks the results on B, then compares if Prob(A\>B) \> Prob(B\>A).
+
+*Ties* are when you have two observations with the same result. For example, in a 2-period cross-over study, you take the difference between result on Treatment A minus result on Treatment B and find that two or more subjects have the same difference.
+
+Additionally, *"0s"* can cause some trouble as well. For example when the difference between result on Treatment A minus result on Treatment B equals 0.
+
+```{r}
+#| echo: false
+#| include: false
+library(tidyverse)
+library(broom)
+library(knitr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(stats)
+library(coin)
+library(DOS2)
+library(MASS)
+
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+
+blood_p <- read.csv("../data/blood_pressure.csv", dec = ".")[1:240,1:5]
+
+```
+
+### Data {.unnumbered}
+
+Analysis will be conducted on the example of anonymized data from 2-period, cross-over study comparing treatments A and B in patients with asthma and acute airway obstruction induced by repeated mannitol challenges.
+
+Wilcoxon signed rank test was applied to analyse the time to return to baseline FEV1 post-mannitol challenge 2. Median difference, p value and 95% CI were provided using the Hodges-Lehmann estimate.
+
+```{r}
+head(blood_p)
+```
+
+### Dataset without ties {.unnumbered}
+
+Let's consider a case where the dataset has no ties.
+
+### Available packages {.unnumbered}
+
+In R Wilcoxon signed rank test can be performed using for example **DOS (version 0.5.2)** or **stats (version 3.6.2)** package.
+
+#### stats {.unnumbered}
+
+Function *wilcox.test* used for Wilcoxon Rank Sum and Signed Rank Tests will be applied. For more information about that function go [here](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/wilcox.test)
+
+We will focus on the below arguments: - alternative - paired - exact - correct - conf.int.
+
+### Examples {.unnumbered}
+
+```{r}
+# Exact 
+stats::wilcox.test(x = blood_p$bp_after, y = blood_p$bp_before, 
+                                   paired = TRUE, 
+                                   conf.int = TRUE, 
+                                   conf.level = 0.9, 
+                                   alterative = "two.sided", 
+                                   exact = TRUE)
+
+# No exact & continuity correction
+stats::wilcox.test(x = blood_p$bp_after, y = blood_p$bp_before, 
+                                   paired = TRUE, 
+                                   conf.int = TRUE, 
+                                   conf.level = 0.9, 
+                                   alterative = "two.sided", 
+                                   exact = FALSE, 
+                                   correct = TRUE)
+
+
+# No exact & No continuity correction
+stats::wilcox.test(x = blood_p$bp_after, y = blood_p$bp_before, 
+                                     paired = TRUE, 
+                                     conf.int = TRUE, 
+                                     conf.level = 0.9, 
+                                     alterative = "two.sided" , 
+                                     exact = FALSE, 
+                                     correct = FALSE)
+
+```
+
+### Important notes on stats:wilcox.test {.unnumbered}
+
+-   By default an exact p-value is computed if the samples size is less than 50 and there are no ties. Otherwise, a normal approximation is used.
+-   If exact p-values are available, an exact confidence interval is obtained by the algorithm described in Bauer (1972), and the Hodges-Lehmann estimator is employed. Otherwise, the returned confidence interval and point estimate are based on normal approximations.
+-   If non-exact p-value is calculated, continuity correction in the normal approximation for the p-value can be applied with *correct* argument.
+-   Statistic V is provided, which is a test statistic based on Sprent (1993) algorithm
+
+#### DOS2 {.unnumbered}
+
+Function *senWilcox* used for Sensitivity Analysis for Wilcoxon's Signed-rank Statistic will be applied. For more information about that function go [here](https://www.rdocumentation.org/packages/DOS/versions/1.0.0/topics/senWilcox)
+
+### Examples {.unnumbered}
+
+```{r}
+DOS2::senWilcox(blood_p$bp_after - blood_p$bp_before, 
+                   gamma = 1, 
+                   conf.int = TRUE, 
+                   alpha = 0.1, 
+                   alternative = "twosided")
+```
+
+### Important notes on DOS2:senWilcox {.unnumbered}
+
+-   Gamma \>= 1 is the value of the sensitivity parameter. If gamma=1, then you are assuming ignorable treatment assignment or equivalently no unmeasured confounding - that is the considered scenario in our example, sensitivity analysis is not performed.
+-   Only p value, estimate and CI are provided
+
+### Coin package - coming soon! {.unnumbered}
