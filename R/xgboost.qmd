@@ -3,10 +3,10 @@ title: "R Template"
 ---
 
 # XGBoost
-XGBoost which stands for eXtreme Gradient Boosting is an efficent implementation of gradient boosting. Gradient boosting is an ensemble technique in machine learning. Unlike traditional models that learn from the data independently, boosting combines the predictions of multiple weak learners to create a single, more accurate strong learner. 
 
-An XGBoost model is based on trees, so we don’t need to do much preprocessing for our data; we don’t need to worry about the factors or centering or scaling our data. 
+XGBoost which stands for eXtreme Gradient Boosting is an efficent implementation of gradient boosting. Gradient boosting is an ensemble technique in machine learning. Unlike traditional models that learn from the data independently, boosting combines the predictions of multiple weak learners to create a single, more accurate strong learner.
 
+An XGBoost model is based on trees, so we don’t need to do much preprocessing for our data; we don’t need to worry about the factors or centering or scaling our data.
 
 ## Available R packages
 
@@ -20,7 +20,7 @@ There are multiple packages that can be used to to implement xgboost in R.
 
 ## Data used
 
-Data used for this example is `birthwt` which is part of the {MASS} package. This data-set considers a number of risk factors associated with birth weight in infants. 
+Data used for this example is `birthwt` which is part of the {MASS} package. This data-set considers a number of risk factors associated with birth weight in infants.
 
 ```{r}
 library(MASS)
@@ -31,22 +31,69 @@ head(birthwt)
 Our modeling goal using the `birthwt` dataset is to predict whether the birth weight is low or not low based on factors such as mother's age, smoking status, and history of hypertension.
 
 ## Example Code
-Use {tidymodels} metadata package to split the data into training and testing data.
+
+Use {tidymodels} metadata package to split the data into training and testing data. For classification, we need to change the Low variable into a factor, since currently coded as an integer (0,1). 
 
 ```{r}
-birthwt <- birthwt
 
-set.seed(123)
+
+birthwt <- 
+  birthwt %>% 
+  mutate(
+    low_f = lvls_revalue(factor(low), c("Not Low", "Low")),
+    smoke_f = lvls_revalue(factor(smoke), c("Non-smoker", "Smoker"))
+  )
 
 
 brthwt_split <- initial_split(birthwt, strata = low)
 brthwt_train <- training(brthwt_split)
 brthwt_test <- testing(brthwt_split)
 
+
 ```
 
-An XGBoost model is based on trees. 
+### Classification
 
-### Example using {package name}
+After creating the data split, we setup the params of the model.
+```{r}
 
-**Optional** if there is more than one package
+xgboost_spec <- 
+  boost_tree(trees = 15) %>% 
+  # This model can be used for classification or regression, so set mode
+  set_mode("classification") %>% 
+  set_engine("xgboost")
+
+xgboost_spec
+
+
+xgboost_cls_fit <- xgboost_spec %>% fit(low_f ~ ., data = brthwt_train)
+xgboost_cls_fit
+
+bind_cols(
+  predict(xgboost_cls_fit, brthwt_test),
+  predict(xgboost_cls_fit, brthwt_test, type = "prob")
+)
+
+
+```
+
+### Regression
+To perform xgboost with regression, when setting up the params of the model, set the mode of xgboost to regression. After that switch and then changing the variable of interest back to an integer, the rest of the code is the same.
+
+```{r}
+xgboost_reg_spec <- 
+  boost_tree(trees = 15) %>% 
+  # This model can be used for classification or regression, so set mode
+  set_mode("regression") %>% 
+  set_engine("xgboost")
+
+xgboost_reg_spec
+
+# For a regression model, the outcome should be `numeric`, not a `factor`.
+xgboost_reg_fit <- xgboost_reg_spec %>% fit(low~ ., data = brthwt_train)
+xgboost_reg_fit 
+
+predict(xgboost_reg_fit , brthwt_test)
+
+
+```
