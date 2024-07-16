@@ -6,15 +6,29 @@ editor_options:
 
 ## Group sequential design: time-to-event endpoint
 
-While a group sequential design (GSD) could be applied for different types of endpoints, here we focus on time-to-event endpoints.
+While a group sequential design (GSD) could be applied for different types
+of endpoints, here we focus on time-to-event endpoints.
 
 ## Available R packages
 
-The commonly used R packages for power and sample size calculations utilizing a GSD are: [gsDesign](https://keaven.github.io/gsDesign/) (also has a [web interface](https://rinpharma.shinyapps.io/gsdesign/)), [gsDesign2](https://merck.github.io/gsDesign2/), and [rpact](https://www.rpact.org/).
+The commonly used R packages for power and sample size calculations
+utilizing a GSD are: [gsDesign](https://keaven.github.io/gsDesign/)
+(also has a [web interface](https://rinpharma.shinyapps.io/gsdesign/)),
+[gsDesign2](https://merck.github.io/gsDesign2/),
+and [rpact](https://www.rpact.org/).
 
 ## Design assumptions
 
-Using a toy example, we will assume that a primary objective of a phase III oncology trial is to compare a new therapy to a control in terms of progression-free survival (PFS) and overall survival (OS). Note that, in this example, we have a family of primary endpoints, i.e., if at least one of the endpoints is successfull, the study will be declared a success. A GSD will be utilized for each endpoint. PFS will be tested at one interim analysis (IA) for both efficacy and non-binding futility, while OS will be tested at two IAs for efficacy only. An O'Brien-Fleming spending function will be used for efficacy testing and a Hwang-Shih-Decani spending function with $\gamma = -10$ will be used for futility.
+Using a toy example, we will assume that a primary objective of a phase III
+oncology trial is to compare a new therapy to a control in terms of
+progression-free survival (PFS) and overall survival (OS).
+Note that, in this example, we have a family of primary endpoints,
+i.e., if at least one of the endpoints is successful, the study will be
+declared a success. A GSD will be utilized for each endpoint.
+PFS will be tested at one interim analysis (IA) for both efficacy and
+non-binding futility, while OS will be tested at two IAs for efficacy only.
+An O'Brien-Fleming spending function will be used for efficacy testing and a
+Hwang-Shih-Decani spending function with $\gamma = -10$ will be used for futility.
 
 Further design assumptions are as follows:
 
@@ -53,13 +67,14 @@ rand_ratio <- 1
 alphal <- 0.0125
 ```
 
-We assume that given the above assumptions, we need to calculate the target number of events for each analysis as well as the total sample size.
+We assume that given the above assumptions, we need to calculate the
+target number of events for each analysis as well as the total sample size.
 
 ## Example code
 
 ### Example using gsDesign
 
--   PFS calculations:
+- PFS calculations:
 
 ```{r}
 #| warning=FALSE,
@@ -88,7 +103,7 @@ pfs_gsDesign <- gsSurv(
 pfs_gsDesign |> gsBoundSummary()
 ```
 
--   OS calculations:
+- OS calculations:
 
 ```{r}
 os_gsDesign <- gsSurv(
@@ -111,7 +126,7 @@ os_gsDesign |> gsBoundSummary()
 
 ### Example using gsDesign2
 
--   PFS calculations:
+- PFS calculations:
 
 ```{r}
 #| warning=FALSE,
@@ -161,7 +176,7 @@ pfs_gsDesign2 |>
   as_gt()
 ```
 
--   OS calculations:
+- OS calculations:
 
 ```{r}
 #| warning=FALSE
@@ -197,7 +212,7 @@ os_gsDesign2 |>
 
 ### Example using rpact
 
--   PFS calculations:
+- PFS calculations:
 
 ```{r}
 #| warning=FALSE,
@@ -231,9 +246,18 @@ pfs_rpact <- getSampleSizeSurvival(
 kable(summary(pfs_rpact))
 ```
 
-Note: the `dropoutRate1`, `dropoutRate2` arguments in `getSampleSizeSurvival()` refer to the % of drop-outs by the `dropoutTime`, while the `eta` argument in `gsDesign::gsSurv()` and the `dropout_rate` value in the `fail_rate` argument in `gsDesign2::gs_design_ahr()` refer to the annual drop-out rate parameter under the exponential distribution. In our example, if $X$ is a drop-out time and $X \sim \text{Exponential} (\lambda)$, we assume that by month 12 the drop-out rate was 20%, which implies: $P(X\le12) = 1 - e^{-12\lambda} = 0.2 \Rightarrow \lambda = 0.019$. Due to the above differences, the value $\lambda = 0.019$ was used in the gsDesign and gsDesign2 example, while 0.2 was used in the rpact example.
+Note: the `dropoutRate1`, `dropoutRate2` arguments in `getSampleSizeSurvival()`
+refer to the % of drop-outs by the `dropoutTime`, while the `eta` argument
+in `gsDesign::gsSurv()` and the `dropout_rate` value in the `fail_rate` argument
+in `gsDesign2::gs_design_ahr()` refer to the annual drop-out rate parameter
+under the exponential distribution.
+In our example, if $X$ is a drop-out time and $X \sim \text{Exponential} (\lambda)$,
+we assume that by month 12 the drop-out rate was 20%, which implies:
+$P(X\le12) = 1 - e^{-12\lambda} = 0.2 \Rightarrow \lambda = 0.019$.
+Due to the above differences, the value $\lambda = 0.019$ was used
+in the gsDesign and gsDesign2 example, while 0.2 was used in the rpact example.
 
--   OS calculations:
+- OS calculations:
 
 ```{r}
 #| warning=FALSE
