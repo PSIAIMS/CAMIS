@@ -1,0 +1,66 @@
+---
+title: "Non-parametric point estimation"
+---
+
+```{r}
+#| echo: FALSE
+#| include: FALSE
+library(tidyverse)
+library(pairwiseCI)
+```
+
+# Introduction
+
+The Hodges-Lehman estimator (Hodges and Lehmann 1962) provides a point estimate which is associated with the Wilcoxon rank sum statistics based on location shift. This is typically used for the 2-sample comparison with small sample size. Note: The Hodges-Lehman estimates the median of the difference and not the difference of the medians. The corresponding distribution-free confidence interval is also based on the Wilcoxon rank sum statistics (Moses).
+
+There are several packages covering this functionality. However, we will focus on the wilcox.test function implemented in R base. The {*pairwiseCI}* package provides further resources to derive various types of confidence intervals for the pairwise comparison case. This package is very flexible and uses the functions of related packages.
+
+*Hodges, J. L. and Lehmann, E. L. (1962) Rank methods for combination of independent experiments in analysis of variance. Annals of Mathematical Statistics, 33, 482-4.*
+
+# Case study
+
+```{r}
+# Hollander-Wolfe-Chicken Example
+x <- c(1.83, 0.50, 1.62, 2.48, 1.68, 1.88, 1.55, 3.06, 1.30)
+y <- c(0.878, 0.647, 0.598, 2.050, 1.060, 1.290, 1.060, 3.140, 1.290)
+
+# Reshaping data
+value <- c(x, y)
+treat<- c(rep("A", length(x)), rep("B", length(y)))
+all <- data.frame(value)
+all$treat <- treat
+```
+
+# Hodges-Lehmann estimate (and confidence interval)
+
+## {base}
+
+The base function provides the Hodges-Lehmann estimate and the Moses confidence interval. The function will provide warnings in case of ties in the data and will not provide the exact confidence interval.
+
+```{r}
+wt <- wilcox.test(x, y, exact = TRUE, conf.int = TRUE)
+
+# Hodges-Lehmann estimator
+wt$estimate
+
+# Moses confidence interval
+wt$conf.int
+```
+
+**Note**: You can process the long format also for *wilcox.test* using the formula structure:
+
+```{r}
+wilcox.test(all$value ~ all$treat, exact = TRUE, conf.int = TRUE)
+```
+
+## {pairwiseCI}
+
+The *pairwiseCI* package requires data to be in a long format to use the formula structure. Via the *control* parameter the direction can be defined. Setting *method* to "HL.diff" provides exact confidence intervals together with the Hodges-Lehmann point estimate.
+
+```{r}
+# pairwiseCI is using the formula structure 
+pairwiseCI(value ~ treat, data = all, 
+           method="HL.diff", control="B",
+           conf.level = .95)
+
+```
