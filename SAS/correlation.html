@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Kruskal Wallis in Python</title>
+<title>Correlation Analysis using SAS</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -195,9 +195,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
-  <li><a href="#implementing-kruskal-wallis-in-python" id="toc-implementing-kruskal-wallis-in-python" class="nav-link" data-scroll-target="#implementing-kruskal-wallis-in-python">Implementing Kruskal-Wallis in Python</a></li>
-  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a></li>
+  <li><a href="#example-lung-cancer-data" id="toc-example-lung-cancer-data" class="nav-link active" data-scroll-target="#example-lung-cancer-data"><strong>Example: Lung Cancer Data</strong></a>
+  <ul class="collapse">
+  <li><a href="#overview" id="toc-overview" class="nav-link" data-scroll-target="#overview">Overview</a></li>
+  <li><a href="#pearson-correlation" id="toc-pearson-correlation" class="nav-link" data-scroll-target="#pearson-correlation"><strong>Pearson Correlation</strong></a></li>
+  <li><a href="#spearman-correlation" id="toc-spearman-correlation" class="nav-link" data-scroll-target="#spearman-correlation"><strong>Spearman Correlation</strong></a></li>
+  <li><a href="#kendalls-rank-correlation" id="toc-kendalls-rank-correlation" class="nav-link" data-scroll-target="#kendalls-rank-correlation">Kendall’s rank correlation</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -206,7 +211,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Kruskal Wallis in Python</h1>
+<h1 class="title">Correlation Analysis using SAS</h1>
 </div>
 
 
@@ -223,79 +228,72 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="introduction" class="level2">
-<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>The Kruskal-Wallis test is a non-parametric equivalent to the one-way ANOVA. For this example, the data used is a subset of the iris dataset, testing for difference in sepal width between species of flower.</p>
-<div id="50317dd0" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the data</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Species'</span>: [<span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>],</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Sepal_Width'</span>: [<span class="fl">3.4</span>, <span class="fl">3.0</span>, <span class="fl">3.4</span>, <span class="fl">3.2</span>, <span class="fl">3.5</span>, <span class="fl">3.1</span>, <span class="fl">2.7</span>, <span class="fl">2.9</span>, <span class="fl">2.7</span>, <span class="fl">2.6</span>, <span class="fl">2.5</span>, <span class="fl">2.5</span>, <span class="fl">3.0</span>, <span class="fl">3.0</span>, <span class="fl">3.1</span>, <span class="fl">3.8</span>, <span class="fl">2.7</span>, <span class="fl">3.3</span>]</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the DataFrame</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>iris_sub <span class="op">=</span> pd.DataFrame(data)</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Print the DataFrame</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(iris_sub)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>       Species  Sepal_Width
-0       setosa          3.4
-1       setosa          3.0
-2       setosa          3.4
-3       setosa          3.2
-4       setosa          3.5
-5       setosa          3.1
-6   versicolor          2.7
-7   versicolor          2.9
-8   versicolor          2.7
-9   versicolor          2.6
-10  versicolor          2.5
-11  versicolor          2.5
-12   virginica          3.0
-13   virginica          3.0
-14   virginica          3.1
-15   virginica          3.8
-16   virginica          2.7
-17   virginica          3.3</code></pre>
+<section id="example-lung-cancer-data" class="level1">
+<h1><strong>Example: Lung Cancer Data</strong></h1>
+<p><em>Data source:</em> <em>Loprinzi CL. Laurie JA. Wieand HS. Krook JE. Novotny PJ. Kugler JW. Bartel J. Law M. Bateman M. Klatt NE. et al.&nbsp;Prospective evaluation of prognostic variables from patient-completed questionnaires. North Central Cancer Treatment Group. Journal of Clinical Oncology. 12(3):601-7, 1994.</em></p>
+<p>Survival in patients with advanced lung cancer from the North Central Cancer Treatment Group. Performance scores rate how well the patient can perform usual daily activities.</p>
+<section id="overview" class="level2">
+<h2 class="anchored" data-anchor-id="overview">Overview</h2>
+<p>The <code>CORR</code> procedure computes Pearson correlation coefficients, three nonparametric measures of association, and the probabilities associated with these statistics. The correlation statistics include the following:</p>
+<ul>
+<li><p>Pearson product-moment correlation</p></li>
+<li><p>Spearman rank-order correlation</p></li>
+<li><p>Kendall’s tau-b coefficient</p></li>
+<li><p>Hoeffding’s measure of dependence, <img src="https://support.sas.com/documentation/cdl/en/procstat/63104/HTML/default/images/procstat_corr0001.png" class="img-fluid" alt=""></p></li>
+<li><p>Pearson, Spearman, and Kendall partial correlation</p></li>
+</ul>
+<p>This program works on the first three correlation coefficients.</p>
+<p><strong>Missing Values</strong></p>
+<p>PROC CORR excludes observations with missing values in the WEIGHT and FREQ variables. By default, PROC CORR uses <strong><em>pairwise deletion</em></strong> when observations contain missing values. PROC CORR includes all nonmissing pairs of values for each pair of variables in the statistical computations. Therefore, the correlation statistics might be based on different numbers of observations.</p>
+<p>If you specify the NOMISS option, PROC CORR uses <strong><em>listwise deletion</em></strong> when a value of the VAR or WITH statement variable is missing. PROC CORR excludes all observations with missing values from the analysis. Therefore, the number of observations for each pair of variables is identical.</p>
+<p>The PARTIAL statement always excludes the observations with missing values by automatically invoking the NOMISS option. With the NOMISS option, the data are processed more efficiently because fewer resources are needed. Also, the resulting correlation matrix is nonnegative definite.</p>
+<p>In contrast, if the data set contains missing values for the analysis variables and the NOMISS option is not specified, the resulting correlation matrix might not be nonnegative definite. This leads to several statistical difficulties if you use the correlations as input to regression or other statistical procedures.</p>
+</section>
+<section id="pearson-correlation" class="level2">
+<h2 class="anchored" data-anchor-id="pearson-correlation"><strong>Pearson Correlation</strong></h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>proc corr data<span class="ot">=</span>lung pearson;</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>var age mealcal;</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/correlation/pearson.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
 </div>
 </section>
-<section id="implementing-kruskal-wallis-in-python" class="level2">
-<h2 class="anchored" data-anchor-id="implementing-kruskal-wallis-in-python">Implementing Kruskal-Wallis in Python</h2>
-<p>The Kruskal-Wallis test can be implemented in Python using the kruskal function from scipy.stats. The null hypothesis is that the samples are from identical populations.</p>
-<div id="47baa349" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.stats <span class="im">import</span> kruskal</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Separate the data for each species</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>setosa_data <span class="op">=</span> iris_sub[iris_sub[<span class="st">'Species'</span>] <span class="op">==</span> <span class="st">'setosa'</span>][<span class="st">'Sepal_Width'</span>]</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>versicolor_data <span class="op">=</span> iris_sub[iris_sub[<span class="st">'Species'</span>] <span class="op">==</span> <span class="st">'versicolor'</span>][<span class="st">'Sepal_Width'</span>]</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>virginica_data <span class="op">=</span> iris_sub[iris_sub[<span class="st">'Species'</span>] <span class="op">==</span> <span class="st">'virginica'</span>][<span class="st">'Sepal_Width'</span>]</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform the Kruskal-Wallis H-test</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>h_statistic, p_value <span class="op">=</span> kruskal(setosa_data, versicolor_data, virginica_data)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the degrees of freedom</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>k <span class="op">=</span> <span class="bu">len</span>(iris_sub[<span class="st">'Species'</span>].unique())</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> k <span class="op">-</span> <span class="dv">1</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"H-statistic:"</span>, h_statistic)</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"p-value:"</span>, p_value)</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Degrees of freedom:"</span>, df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>H-statistic: 10.922233820459285
-p-value: 0.0042488075570347485
-Degrees of freedom: 2</code></pre>
+<section id="spearman-correlation" class="level2">
+<h2 class="anchored" data-anchor-id="spearman-correlation"><strong>Spearman Correlation</strong></h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>proc corr data<span class="ot">=</span>lung spearman; </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>var age mealcal; </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/correlation/spearman.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
 </div>
 </section>
-<section id="results" class="level2">
-<h2 class="anchored" data-anchor-id="results">Results</h2>
-<p>As seen above, Python outputs the Kruskal-Wallis rank sum statistic (10.922), the degrees of freedom (2), and the p-value of the test (0.004249). Therefore, the difference in population medians is statistically significant at the 5% level.</p>
+<section id="kendalls-rank-correlation" class="level2">
+<h2 class="anchored" data-anchor-id="kendalls-rank-correlation">Kendall’s rank correlation</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>proc corr data<span class="ot">=</span>lung kendall;</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>var age mealcal;</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/correlation/kendall.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p><a href="https://support.sas.com/documentation/cdl/en/procstat/63104/HTML/default/viewer.htm#corr_toc.htm">PROC CORR: The CORR Procedure (sas.com)</a></p>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
