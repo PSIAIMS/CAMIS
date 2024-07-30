@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>MANOVA</title>
+<title>Non-parametric point estimation in SAS</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -195,7 +195,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#manova-in-python" id="toc-manova-in-python" class="nav-link active" data-scroll-target="#manova-in-python">MANOVA in Python</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#case-study" id="toc-case-study" class="nav-link" data-scroll-target="#case-study">Case study</a></li>
+  <li><a href="#hodges-lehmann-estimate-and-confidence-interval" id="toc-hodges-lehmann-estimate-and-confidence-interval" class="nav-link" data-scroll-target="#hodges-lehmann-estimate-and-confidence-interval">Hodges-Lehmann estimate and confidence interval</a></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a></li>
   </ul>
 </nav>
     </div>
@@ -204,7 +207,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">MANOVA</h1>
+<h1 class="title">Non-parametric point estimation in SAS</h1>
 </div>
 
 
@@ -221,50 +224,65 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="manova-in-python" class="level3">
-<h3 class="anchored" data-anchor-id="manova-in-python">MANOVA in Python</h3>
-<p>Multivariate analysis of variance <strong>(MANOVA)</strong> is a statistical technique used to examine group mean difference of several dependent variables at once while accounting for correlations between the variables.By considering multiple dependent variables simultaneously, MANOVA provides a more comprehensive understanding of group differences and patterns. In context of python, statsmodels library can be used to implement MANOVA.</p>
-<p>The <strong>from_formula()</strong> function is the recommended method to specify a model and simplifies testing without needing to manually configure the contrast matrices.</p>
-<p><strong>Example 39.6 Multivariate Analysis of Variance</strong> from <a href="https://support.sas.com/documentation/cdl/en/statug/63033/HTML/default/viewer.htm#statug_glm_sect051.htm">SAS MANOVA User Guide</a></p>
-<p>This example employs multivariate analysis of variance (MANOVA) to measure differences in the chemical characteristics of ancient pottery found at four kiln sites in Great Britain. The data are from Tubb, Parker, and Nickless (1980), as reported in Hand et al.&nbsp;(1994).</p>
-<p>For each of 26 samples of pottery, the percentages of oxides of five metals are measured. The following statements create the data set and invoke the GLM procedure to perform a one-way MANOVA. Additionally, it is of interest to know whether the pottery from one site in Wales (Llanederyn) differs from the samples from other sites; a CONTRAST statement is used to test this hypothesis.</p>
-<div id="cc4a36f0" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsmodels.multivariate.manova <span class="im">import</span> MANOVA</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>df<span class="op">=</span> pd.read_csv(<span class="st">"../data/manova1.csv"</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>df.rename(columns<span class="op">=</span>{<span class="st">'al'</span>:<span class="st">'Al'</span>,<span class="st">'fe'</span>:<span class="st">'Fe'</span>,<span class="st">'mg'</span>:<span class="st">'Mg'</span>,<span class="st">'ca '</span>:<span class="st">'Ca'</span>,<span class="st">'na'</span>:<span class="st">'Na'</span>},inplace<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>manova <span class="op">=</span> MANOVA.from_formula(<span class="st">'Al + Fe + Mg + Ca + Na ~ site'</span>, data<span class="op">=</span>df)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> manova.mv_test()</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>                   Multivariate linear model
-===============================================================
-                                                               
----------------------------------------------------------------
-        Intercept         Value  Num DF  Den DF F Value  Pr &gt; F
----------------------------------------------------------------
-           Wilks' lambda  0.0300 5.0000 18.0000 116.5838 0.0000
-          Pillai's trace  0.9700 5.0000 18.0000 116.5838 0.0000
-  Hotelling-Lawley trace 32.3844 5.0000 18.0000 116.5838 0.0000
-     Roy's greatest root 32.3844 5.0000 18.0000 116.5838 0.0000
----------------------------------------------------------------
-                                                               
----------------------------------------------------------------
-          site           Value   Num DF  Den DF F Value  Pr &gt; F
----------------------------------------------------------------
-          Wilks' lambda  0.0123 15.0000 50.0915  13.0885 0.0000
-         Pillai's trace  1.5539 15.0000 60.0000   4.2984 0.0000
- Hotelling-Lawley trace 35.4388 15.0000 29.1304  40.5880 0.0000
-    Roy's greatest root 34.1611  5.0000 20.0000 136.6445 0.0000
-===============================================================
-</code></pre>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>The Hodges-Lehman estimator (Hodges and Lehmann 1962) provides a point estimate which is associated with the Wilcoxon rank sum statistics based on location shift. This is typically used for the 2-sample comparison with small sample size. Note: The Hodges-Lehman estimates the median of the difference and not the difference of the medians. The corresponding distribution-free confidence interval (CI) is also based on the Wilcoxon rank sum statistics (Moses). In addition, exact CIs can be constructed.</p>
+<p>PROC NPAR1WAY provides these estimates in a flexible manner.</p>
+<p><em>Hodges, J. L. and Lehmann, E. L. (1962) Rank methods for combination of independent experiments in analysis of variance. Annals of Mathematical Statistics, 33, 482-4.</em></p>
+</section>
+<section id="case-study" class="level1">
+<h1>Case study</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Hollander-Wolfe-Chicken Example</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>data all ;</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>input group <span class="sc">$</span> value ; </span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>cards ;</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>A <span class="fl">1.83</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>A <span class="fl">0.50</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>A <span class="fl">1.62</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>A <span class="fl">2.48</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>A <span class="fl">1.68</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>A <span class="fl">1.88</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>A <span class="fl">1.55</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>A <span class="fl">3.06</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>A <span class="fl">1.30</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>B <span class="fl">0.878</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>B <span class="fl">0.647</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>B <span class="fl">0.598</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>B <span class="fl">2.050</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>B <span class="fl">1.060</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>B <span class="fl">1.290</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>B <span class="fl">1.060</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>B <span class="fl">3.140</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>B <span class="fl">1.290</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>; </span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>run ;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+</section>
+<section id="hodges-lehmann-estimate-and-confidence-interval" class="level1">
+<h1>Hodges-Lehmann estimate and confidence interval</h1>
+<p>Hodges-Lehmann estimate and Moses confidence interval for the 2-sample case will be generated when putting HL as an option. The direction of the comparison can be controlled via refclass. If the exact confidence interval is required additionally then the exact statement together with the option HL needs to be defined. The Hodges-Lehmann point estimate and confidence interval can be addressed via the HodgesLehmann option under the ODS statement.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>proc npar1way <span class="fu">hl</span> (<span class="at">refclass =</span> <span class="st">"B"</span>) data <span class="ot">=</span> all ;</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>   class group ;</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>   var value ;</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>   exact hl ;</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>   ods select HodgesLehmann ;</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>run ;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>The Wilki’s lambda test evaluates the significance of group difference across several dependent variables. A lower Wilk’s Lambda value suggest more evidence of group difference.</p>
-<p>The Pillai’s Trace test statistics is statistically significant [Pillai’s Trace = 1.55, F(6, 72) = 4.29, p &lt; 0.001] and indicates that sites has a statistically significant association with all the listed elements.</p>
-<p><strong>NOTE</strong>: if you feel you can help with the above discrepancy please contribute to the CAMIS repo by following the instructions on the <a href="../contribution.qmd">contributions page</a>.</p>
+</section>
+<section id="results" class="level1">
+<h1>Results</h1>
+<p>The NPAR1WAY Procedure</p>
+<pre><code>                                           Hodges-Lehmann Estimation                                                
+                                                                                                                    
+                                        Location Shift (A - B)    0.5600                                            
+                                                                                                                    
+                                                                   Interval        Asymptotic                       
+                   Type                 95% Confidence Limits      Midpoint    Standard Error                       
+                                                                                                                    
+                   Asymptotic (Moses)     -0.3700      1.1830        0.4065            0.3962                       
+                   Exact                  -0.2200      1.0820        0.4310                                         </code></pre>
 
 
 </section>

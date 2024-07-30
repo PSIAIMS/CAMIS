@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>MANOVA</title>
+<title>Non-parametric point estimation</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -195,7 +195,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#manova-in-python" id="toc-manova-in-python" class="nav-link active" data-scroll-target="#manova-in-python">MANOVA in Python</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#case-study" id="toc-case-study" class="nav-link" data-scroll-target="#case-study">Case study</a></li>
+  <li><a href="#hodges-lehmann-estimate-and-confidence-interval" id="toc-hodges-lehmann-estimate-and-confidence-interval" class="nav-link" data-scroll-target="#hodges-lehmann-estimate-and-confidence-interval">Hodges-Lehmann estimate (and confidence interval)</a>
+  <ul class="collapse">
+  <li><a href="#base" id="toc-base" class="nav-link" data-scroll-target="#base">{base}</a></li>
+  <li><a href="#pairwiseci" id="toc-pairwiseci" class="nav-link" data-scroll-target="#pairwiseci">{pairwiseCI}</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -204,7 +210,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">MANOVA</h1>
+<h1 class="title">Non-parametric point estimation</h1>
 </div>
 
 
@@ -221,52 +227,104 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="manova-in-python" class="level3">
-<h3 class="anchored" data-anchor-id="manova-in-python">MANOVA in Python</h3>
-<p>Multivariate analysis of variance <strong>(MANOVA)</strong> is a statistical technique used to examine group mean difference of several dependent variables at once while accounting for correlations between the variables.By considering multiple dependent variables simultaneously, MANOVA provides a more comprehensive understanding of group differences and patterns. In context of python, statsmodels library can be used to implement MANOVA.</p>
-<p>The <strong>from_formula()</strong> function is the recommended method to specify a model and simplifies testing without needing to manually configure the contrast matrices.</p>
-<p><strong>Example 39.6 Multivariate Analysis of Variance</strong> from <a href="https://support.sas.com/documentation/cdl/en/statug/63033/HTML/default/viewer.htm#statug_glm_sect051.htm">SAS MANOVA User Guide</a></p>
-<p>This example employs multivariate analysis of variance (MANOVA) to measure differences in the chemical characteristics of ancient pottery found at four kiln sites in Great Britain. The data are from Tubb, Parker, and Nickless (1980), as reported in Hand et al.&nbsp;(1994).</p>
-<p>For each of 26 samples of pottery, the percentages of oxides of five metals are measured. The following statements create the data set and invoke the GLM procedure to perform a one-way MANOVA. Additionally, it is of interest to know whether the pottery from one site in Wales (Llanederyn) differs from the samples from other sites; a CONTRAST statement is used to test this hypothesis.</p>
-<div id="cc4a36f0" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsmodels.multivariate.manova <span class="im">import</span> MANOVA</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>df<span class="op">=</span> pd.read_csv(<span class="st">"../data/manova1.csv"</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>df.rename(columns<span class="op">=</span>{<span class="st">'al'</span>:<span class="st">'Al'</span>,<span class="st">'fe'</span>:<span class="st">'Fe'</span>,<span class="st">'mg'</span>:<span class="st">'Mg'</span>,<span class="st">'ca '</span>:<span class="st">'Ca'</span>,<span class="st">'na'</span>:<span class="st">'Na'</span>},inplace<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>manova <span class="op">=</span> MANOVA.from_formula(<span class="st">'Al + Fe + Mg + Ca + Na ~ site'</span>, data<span class="op">=</span>df)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> manova.mv_test()</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>The Hodges-Lehman estimator (Hodges and Lehmann 1962) provides a point estimate which is associated with the Wilcoxon rank sum statistics based on location shift. This is typically used for the 2-sample comparison with small sample size. Note: The Hodges-Lehman estimates the median of the difference and not the difference of the medians. The corresponding distribution-free confidence interval is also based on the Wilcoxon rank sum statistics (Moses).</p>
+<p>There are several packages covering this functionality. However, we will focus on the wilcox.test function implemented in R base. The {<em>pairwiseCI}</em> package provides further resources to derive various types of confidence intervals for the pairwise comparison case. This package is very flexible and uses the functions of related packages.</p>
+<p><em>Hodges, J. L. and Lehmann, E. L. (1962) Rank methods for combination of independent experiments in analysis of variance. Annals of Mathematical Statistics, 33, 482-4.</em></p>
+</section>
+<section id="case-study" class="level1">
+<h1>Case study</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Hollander-Wolfe-Chicken Example</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">1.83</span>, <span class="fl">0.50</span>, <span class="fl">1.62</span>, <span class="fl">2.48</span>, <span class="fl">1.68</span>, <span class="fl">1.88</span>, <span class="fl">1.55</span>, <span class="fl">3.06</span>, <span class="fl">1.30</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.878</span>, <span class="fl">0.647</span>, <span class="fl">0.598</span>, <span class="fl">2.050</span>, <span class="fl">1.060</span>, <span class="fl">1.290</span>, <span class="fl">1.060</span>, <span class="fl">3.140</span>, <span class="fl">1.290</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Reshaping data</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>value <span class="ot">&lt;-</span> <span class="fu">c</span>(x, y)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>treat<span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="st">"A"</span>, <span class="fu">length</span>(x)), <span class="fu">rep</span>(<span class="st">"B"</span>, <span class="fu">length</span>(y)))</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>all <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(value)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>all<span class="sc">$</span>treat <span class="ot">&lt;-</span> treat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="hodges-lehmann-estimate-and-confidence-interval" class="level1">
+<h1>Hodges-Lehmann estimate (and confidence interval)</h1>
+<section id="base" class="level2">
+<h2 class="anchored" data-anchor-id="base">{base}</h2>
+<p>The base function provides the Hodges-Lehmann estimate and the Moses confidence interval. The function will provide warnings in case of ties in the data and will not provide the exact confidence interval.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>wt <span class="ot">&lt;-</span> <span class="fu">wilcox.test</span>(x, y, <span class="at">exact =</span> <span class="cn">TRUE</span>, <span class="at">conf.int =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in wilcox.test.default(x, y, exact = TRUE, conf.int = TRUE): cannot
+compute exact p-value with ties</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in wilcox.test.default(x, y, exact = TRUE, conf.int = TRUE): cannot
+compute exact confidence intervals with ties</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Hodges-Lehmann estimator</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>wt<span class="sc">$</span>estimate</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>                   Multivariate linear model
-===============================================================
-                                                               
----------------------------------------------------------------
-        Intercept         Value  Num DF  Den DF F Value  Pr &gt; F
----------------------------------------------------------------
-           Wilks' lambda  0.0300 5.0000 18.0000 116.5838 0.0000
-          Pillai's trace  0.9700 5.0000 18.0000 116.5838 0.0000
-  Hotelling-Lawley trace 32.3844 5.0000 18.0000 116.5838 0.0000
-     Roy's greatest root 32.3844 5.0000 18.0000 116.5838 0.0000
----------------------------------------------------------------
-                                                               
----------------------------------------------------------------
-          site           Value   Num DF  Den DF F Value  Pr &gt; F
----------------------------------------------------------------
-          Wilks' lambda  0.0123 15.0000 50.0915  13.0885 0.0000
-         Pillai's trace  1.5539 15.0000 60.0000   4.2984 0.0000
- Hotelling-Lawley trace 35.4388 15.0000 29.1304  40.5880 0.0000
-    Roy's greatest root 34.1611  5.0000 20.0000 136.6445 0.0000
-===============================================================
-</code></pre>
+<pre><code>difference in location 
+             0.5600562 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Moses confidence interval</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>wt<span class="sc">$</span>conf.int</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -0.3699774  1.1829708
+attr(,"conf.level")
+[1] 0.95</code></pre>
 </div>
 </div>
-<p>The Wilki’s lambda test evaluates the significance of group difference across several dependent variables. A lower Wilk’s Lambda value suggest more evidence of group difference.</p>
-<p>The Pillai’s Trace test statistics is statistically significant [Pillai’s Trace = 1.55, F(6, 72) = 4.29, p &lt; 0.001] and indicates that sites has a statistically significant association with all the listed elements.</p>
-<p><strong>NOTE</strong>: if you feel you can help with the above discrepancy please contribute to the CAMIS repo by following the instructions on the <a href="../contribution.qmd">contributions page</a>.</p>
+<p><strong>Note</strong>: You can process the long format also for <em>wilcox.test</em> using the formula structure:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">wilcox.test</span>(all<span class="sc">$</span>value <span class="sc">~</span> all<span class="sc">$</span>treat, <span class="at">exact =</span> <span class="cn">TRUE</span>, <span class="at">conf.int =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in wilcox.test.default(x = DATA[[1L]], y = DATA[[2L]], ...): cannot
+compute exact p-value with ties</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in wilcox.test.default(x = DATA[[1L]], y = DATA[[2L]], ...): cannot
+compute exact confidence intervals with ties</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Wilcoxon rank sum test with continuity correction
+
+data:  all$value by all$treat
+W = 58, p-value = 0.1329
+alternative hypothesis: true location shift is not equal to 0
+95 percent confidence interval:
+ -0.3699774  1.1829708
+sample estimates:
+difference in location 
+             0.5600562 </code></pre>
+</div>
+</div>
+</section>
+<section id="pairwiseci" class="level2">
+<h2 class="anchored" data-anchor-id="pairwiseci">{pairwiseCI}</h2>
+<p>The <em>pairwiseCI</em> package requires data to be in a long format to use the formula structure. Via the <em>control</em> parameter the direction can be defined. Setting <em>method</em> to “HL.diff” provides exact confidence intervals together with the Hodges-Lehmann point estimate.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># pairwiseCI is using the formula structure </span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">pairwiseCI</span>(value <span class="sc">~</span> treat, <span class="at">data =</span> all, </span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>           <span class="at">method=</span><span class="st">"HL.diff"</span>, <span class="at">control=</span><span class="st">"B"</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>           <span class="at">conf.level =</span> .<span class="dv">95</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  
+95 %-confidence intervals 
+ Method:  Difference in location (Hodges-Lehmann estimator) 
+  
+  
+      estimate lower upper
+A - B     0.56 -0.22 1.082
+  
+  </code></pre>
+</div>
+</div>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
