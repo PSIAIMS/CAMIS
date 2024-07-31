@@ -3,6 +3,17 @@ title: "Logistic Regression"
 output: html_document
 ---
 
+# Imports
+```{python}
+#data manipulation
+import pandas as pd
+import numpy as np
+
+#modelling
+import statsmodels.api as sm
+```
+
+
 # Background
 
 A model of the dependence of binary variables on explanatory variables. The logit of expectation is explained as linear for of explanatory variables. If we observed $(y_i, x_i),$ where $y_i$ is a Bernoulli variable and $x_i$ a vector of explanatory variables, the model for $\pi_i = P(y_i=1)$ is
@@ -14,24 +25,73 @@ $$
 The model is especially useful in case-control studies and leads to the effect of risk factors by odds ratios.
 
 # Example : Lung cancer data
-
-
 *Data source: Loprinzi CL. Laurie JA. Wieand HS. Krook JE. Novotny PJ. Kugler JW. Bartel J. Law M. Bateman M. Klatt NE. et al. Prospective evaluation of prognostic variables from patient-completed questionnaires. North Central Cancer Treatment Group. Journal of Clinical Oncology. 12(3):601-7, 1994.*
 
 These data were sourced from the R package {survival} and have been downloaded and stored in the `data` folder.  
 
-
 ```{python}
-import pandas as pd
-# Importing CSV
-lung = pd.read_csv("../data/lung_cancer.csv")
+# importing and prepare
+lung2 = pd.read_csv("../data/lung_cancer.csv")
+
+#create weight loss factor while respecting missing values
+# 1: patients with a weight loss of more than zero
+# 0: patients a weight loss of zero oe less
+lung2["wt_grp"] = np.where(lung2["wt.loss"].isnull(), np.nan, (lung2["wt.loss"] > 0).astype(int))
 ```
 
+# Logistic Regression Modelling
+
+Let's further prepare our data for modelling by selecting the independent and dependent variables. 
+
 ```{python}
-import numpy as np
-from sklearn.datasets import load_iris
-from sklearn.linear_model import LogisticRegression
-x = np.arange(10).reshape(-1, 1)
-y = np.array([0, 0, 0, 0, 1, 1, 1, 1, 1, 1])
-clf = LogisticRegression(random_state=0).fit(x, y)
+x_vars = ["age", "sex", "ph.ecog", "meal.cal"]
+y_var = "wt_grp"
+```
+
+## Statsmodels package
+
+The statsmodels function `sm` requires complete (i.e. no missing values) data so prior to fitting the model we will drop rows with missing values.
+```{python}
+# drop rows with missing values 
+lung2_complete = lung2.dropna(axis=0)
+
+#select variables
+x = lung2_complete[x_vars]
+y = lung2_complete[y_var]
+
+#add constant
+x = sm.add_constant(x)
+
+#fit model
+lr_sm = sm.Logit(y, x).fit() 
+print(lr_sm.summary())
+```
+
+### Model fitting
+To aid intepretation we can display the model coefficients as odds raios:
+```{python}
+print("Odds ratios:")
+print(np.exp(lr_sm.params))
+```
+
+Additionally we can provide the confidence intervals for the odds ratios:
+```{python}
+# get the 5% confidence intervals
+print(np.exp(lr_sm.conf_int(alpha = 0.05)))
+```
+
+### Prediction
+```{python}
+# new female, symptomatic but completely ambulatory patient consuming 2500 calories
+new_pt = pd.DataFrame({
+    "age": [56],
+    "sex": [2],
+    "ph.ecog": [1.00], 
+    "meal.cal": [2500]
+})
+
+# Add intercept term to the new data; for a single row this should be 
+# forced using the `add_constant` command
+new_pt = sm.add_constant(new_pt, has_constant="add")
+print(lr_sm.predict(new_pt))
 ```
