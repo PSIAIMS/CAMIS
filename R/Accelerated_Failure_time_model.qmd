@@ -1,0 +1,83 @@
+---
+title: "Accelerated Failure Time Model"
+format: html
+editor: visual
+---
+
+The accelerated failure model is a survival analysis technique used to model the relationship between the event of interest (e.g., time to failure) and a set of predictor variables. It assumes that the covariates have a multiplicative effect on the hazard (rate of failure) function. In other words, the hazard rate is accelerated or decelerated by a factor that depends on the values of the covariates.
+
+## Mathematical Expression
+
+Mathematically, the AFT model can be expressed as:
+
+$\log(T) = X\beta + \varepsilon$
+
+Where:
+
+-   T is the survival time
+
+-   log(T) is the logarithm of the survival time
+
+-   X is a matrix of predictor variables
+
+-   β is a vector of coefficients representing the effects of the predictor variables on the logarithm of the survival time
+
+-   ε is the error term assumed to follow a certain distribution, such as normal, exponential, weibull or log-normal
+
+## Example of AFT model using "Log-Normal Distribution"
+
+```{r}
+library(survival)
+attach(lung)
+# Fit an AFT model using lognormal distribution
+model_aft <- survreg(Surv(time, status) ~ age + sex + ph.ecog, data = lung, dist = "lognormal")
+# Model summary
+summary(model_aft)
+```
+
+The summary output will provide the estimated coefficients, standard errors, and p-values for each predictor variable.
+
+## Hazard Ratio Calculation
+
+```{r}
+# Compute hazard ratios (exponentiated coefficients)
+hazard_ratios <- exp(coef(model_aft))
+hazard_ratios
+```
+
+## Interpretation
+
+-   For age, hazard ratio $< 1$ indicates that for each one-unit increase in age, the survival time is slowed down by a factor of 0.98 (or a 2% decrease).
+-   For sex, hazard ratio $> 1$ indicates that males have 68% higher hazard rate or accelerated survival time.
+-   A hazard ratio of ph.ecog $< 1$ suggests a 30% lower hazard rate or decelerated survival time associated with ph.ecog.
+
+## Example of AFT model using "Weibull Distribution"
+
+```{r}
+attach(ovarian)
+
+# Fit an AFT model using lognormal distribution
+model_aft_wb <- survreg(Surv(futime, fustat) ~ age + resid.ds + rx, data = ovarian, dist = "weibull")
+# Model summary
+summary(model_aft_wb)
+```
+
+## Hazard Ratio Calculation
+
+```{r}
+# Compute hazard ratios (exponentiated coefficients)
+hazard_ratio <- exp(coef(model_aft_wb))
+hazard_ratio
+```
+
+## Interpretation
+
+-   For age, a hazard ratio of 0.93 indicates that for each one-unit increase in age, the survival time is decelerated by a factor of 0.93(or a 7% decrease)
+
+-   For residual disease status, a hazard ratio of 0.60 suggests that a decrease in residual disease status is associated with a 40% lower hazard rate or decelerated survival time.
+
+-   a hazard ratio of 1.67 suggests a 67% higher hazard rate or accelerated survival time for patients receiving a different type of radiation therapy (rx = 2) compared to the reference group (rx = 1).
+
+## Conclusion
+
+Only the extreme value distribution of error leads to AFT models unlike Cox Ph model where survival times does not follow any specific distribution.
