@@ -78,6 +78,40 @@ hazard_ratio
 
 -   a hazard ratio of 1.67 suggests a 67% higher hazard rate or accelerated survival time for patients receiving a different type of radiation therapy (rx = 2) compared to the reference group (rx = 1).
 
+## Comparison between Cox PH Model & AFT Model with Example
+
+To compare Cox Proportional Hazards(PH) models & Accelerated Failure Time(AFT) models for a lung dataset following steps are performed.
+
+```{r}
+#Fit the Cox PH Hazard Model
+cox_model <- coxph(Surv(time,status)~ age + sex + ph.ecog, data = lung)
+summary(cox_model)
+
+# Fit an AFT model using lognormal distribution
+aft_model <- survreg(Surv(time, status) ~ age + sex + ph.ecog, data = lung, dist = "lognormal")
+summary(aft_model)
+
+#Compare AIC Values
+AIC(cox_model)
+AIC(aft_model)
+
+#Compare Coefficients
+
+cox_model$coefficients
+aft_model$coefficients
+
+```
+
+### Interpretation
+
+-   For age, in the Cox Ph model, the positive coefficient indicates that as the covariate increases, the hazard ( or risk of the event) increases, which implies shorter survival time, where as for AFT model as well, the negetive coefficient indicates that as the covariate increases, the survival time decreases.
+
+-   For sex, in the Cox Ph model, the negetive coefficient indicates that as the covariate decreases, the hazard ( or risk of the event) decreases, which implies longer survival time, where as for AFT model as well, the positive coefficient indicates that as the covariate increases, the survival time increases.
+
+-   For ecog status, in both the model it shows increase of hazard ie shorter survival time.
+
+-   Since AIC value for cox ph model is lower than that of AFT model, hence in this example Cox Ph gives a better fit.
+
 ## Conclusion
 
 Only the extreme value distribution of error leads to AFT models unlike Cox Ph model where survival times does not follow any specific distribution.
