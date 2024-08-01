@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Skewness/Kurtosis</title>
+<title>Logistic Regression</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -224,9 +224,21 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#skewness-and-kurtosis-in-python" id="toc-skewness-and-kurtosis-in-python" class="nav-link active" data-scroll-target="#skewness-and-kurtosis-in-python"><strong>Skewness and Kurtosis in Python</strong></a>
+  <li><a href="#imports" id="toc-imports" class="nav-link active" data-scroll-target="#imports">Imports</a></li>
+  <li><a href="#background" id="toc-background" class="nav-link" data-scroll-target="#background">Background</a></li>
+  <li><a href="#example-lung-cancer-data" id="toc-example-lung-cancer-data" class="nav-link" data-scroll-target="#example-lung-cancer-data">Example : Lung cancer data</a></li>
+  <li><a href="#logistic-regression-modelling" id="toc-logistic-regression-modelling" class="nav-link" data-scroll-target="#logistic-regression-modelling">Logistic Regression Modelling</a>
   <ul class="collapse">
-  <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data Used</a></li>
+  <li><a href="#statsmodels-package" id="toc-statsmodels-package" class="nav-link" data-scroll-target="#statsmodels-package">Statsmodels package</a>
+  <ul class="collapse">
+  <li><a href="#model-fitting" id="toc-model-fitting" class="nav-link" data-scroll-target="#model-fitting">Model fitting</a></li>
+  <li><a href="#prediction" id="toc-prediction" class="nav-link" data-scroll-target="#prediction">Prediction</a></li>
+  </ul></li>
+  <li><a href="#scikit-learn-package" id="toc-scikit-learn-package" class="nav-link" data-scroll-target="#scikit-learn-package">Scikit-learn Package</a>
+  <ul class="collapse">
+  <li><a href="#prediction-1" id="toc-prediction-1" class="nav-link" data-scroll-target="#prediction-1">Prediction</a></li>
+  </ul></li>
+  <li><a href="#conclusions" id="toc-conclusions" class="nav-link" data-scroll-target="#conclusions">Conclusions</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -236,7 +248,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Skewness/Kurtosis</h1>
+<h1 class="title">Logistic Regression</h1>
 </div>
 
 
@@ -253,101 +265,195 @@ window.Quarto = {
 </header>
 
 
-<section id="skewness-and-kurtosis-in-python" class="level1">
-<h1><strong>Skewness and Kurtosis in Python</strong></h1>
-<p>Skewness measures the the amount of asymmetry in a distribution, while Kurtosis describes the “tailedness” of the curve. These measures are frequently used to assess the normality of the data. There are several methods to calculate these measures. In Python, the packages <strong>pandas</strong>, <strong>scipy.stats.skew</strong> and <strong>scipy.stats.kurtosis</strong> can be used.</p>
-<section id="data-used" class="level2">
-<h2 class="anchored" data-anchor-id="data-used">Data Used</h2>
-<div id="f4cd78fe" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.stats <span class="im">import</span> skew, kurtosis</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Create sample data</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'team'</span>: [<span class="st">"A"</span>]<span class="op">*</span><span class="dv">5</span> <span class="op">+</span> [<span class="st">"B"</span>]<span class="op">*</span><span class="dv">5</span> <span class="op">+</span> [<span class="st">"C"</span>]<span class="op">*</span><span class="dv">5</span>,</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'points'</span>: [<span class="dv">10</span>, <span class="dv">17</span>, <span class="dv">17</span>, <span class="dv">18</span>, <span class="dv">15</span>, <span class="dv">10</span>, <span class="dv">14</span>, <span class="dv">13</span>, <span class="dv">29</span>, <span class="dv">25</span>, <span class="dv">12</span>, <span class="dv">30</span>, <span class="dv">34</span>, <span class="dv">12</span>, <span class="dv">11</span>],</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'assists'</span>: [<span class="dv">2</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">3</span>, <span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">5</span>, <span class="dv">4</span>, <span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">7</span>]</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.DataFrame(data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="imports" class="level1">
+<h1>Imports</h1>
+<div id="cdb415e5" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#data manipulation</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#modelling</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> statsmodels.api <span class="im">as</span> sm</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LogisticRegression</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<section id="skewness" class="level4">
-<h4 class="anchored" data-anchor-id="skewness">Skewness</h4>
-<p>Joanes and Gill (1998) discusses three methods for estimating skewness:</p>
-<ul>
-<li>Type 1: This is the typical definition used in many older textbooks</li>
-</ul>
-<p><span class="math display">\[g_1 = m_1/m_2^{3/2}\]</span></p>
-<ul>
-<li><p>Type 2: Used in SAS and SPSS</p>
-<p><span class="math display">\[
-G_1 = g_1\sqrt{n(n-1)}/(n-2)
-\]</span></p></li>
-<li><p>Type 3: Used in MINITAB and BMDP</p>
-<p><span class="math display">\[
-b_1 = m_3/s^3 = g_1((n-1)/n)^{3/2}
-\]</span></p></li>
-</ul>
-<p>All three skewness measures are unbiased under normality. The three methods are illustrated in the following code:</p>
-<div id="660be79e" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Skewness</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>type1_skew <span class="op">=</span> skew(df[<span class="st">'points'</span>])</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>type2_skew <span class="op">=</span> df[<span class="st">'points'</span>].skew()</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>type3_skew <span class="op">=</span> skew(df[<span class="st">'points'</span>]) <span class="op">*</span> ((<span class="bu">len</span>(df[<span class="st">'points'</span>]) <span class="op">-</span> <span class="dv">1</span>) <span class="op">/</span> <span class="bu">len</span>(df[<span class="st">'points'</span>])) <span class="op">**</span> (<span class="dv">3</span><span class="op">/</span><span class="dv">2</span>)</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Skewness - Type 1: </span><span class="sc">{</span>type1_skew<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Skewness - Type 2: </span><span class="sc">{</span>type2_skew<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Skewness - Type 3: </span><span class="sc">{</span>type3_skew<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Skewness - Type 1: 0.9054442043798532
-Skewness - Type 2: 1.0093179298709385
-Skewness - Type 3: 0.816426058828937</code></pre>
-</div>
-</div>
-<p>The default for the <strong>scipy.stats.skew</strong> function is type 1.</p>
 </section>
-<section id="kurtosis" class="level4">
-<h4 class="anchored" data-anchor-id="kurtosis">Kurtosis</h4>
-<p>Joanes and Gill (1998) discuss three methods for estimating kurtosis:</p>
-<ul>
-<li>Type 1: This is the typical definition used in many older textbooks</li>
-</ul>
-<p><span class="math display">\[g_2 = m_4/m_2^{2}-3\]</span></p>
-<ul>
-<li><p>Type 2: Used in SAS and SPSS</p>
-<p><span class="math display">\[G_2 = ((n+1)g_2+6)*\frac{(n-1)}{(n-2)(n-3)}\]</span></p></li>
-<li><p>Type 3: Used in MINITAB and BMDP</p>
-<p><span class="math display">\[b_2 = m_4/s^4-3 = (g_2 + 3)(1-1/n)^2-3\]</span></p></li>
-</ul>
-<p>Only <span class="math inline">\(G_2\)</span> (corresponding to type 2) is unbiased under normality. The three methods are illustrated in the following code:</p>
-<div id="539f4306" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Kurtosis</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>type1_kurt <span class="op">=</span> kurtosis(df[<span class="st">'points'</span>])</span>
+<section id="background" class="level1">
+<h1>Background</h1>
+<p>Logistic regression models the relationship between a binary variable and set of explanatory variables. The logit of expectation is explained as linear for of explanatory variables. If we observed <span class="math inline">\((y_i, x_i),\)</span> where <span class="math inline">\(y_i\)</span> is a Bernoulli variable and <span class="math inline">\(x_i\)</span> a vector of explanatory variables, the model for <span class="math inline">\(\pi_i = P(y_i=1)\)</span> is</p>
+<p><span class="math display">\[
+\text{logit}(\pi_i)= \log\left\{ \frac{\pi_i}{1-\pi_i}\right\} = \beta_0 + \beta x_i, i = 1,\ldots,n
+\]</span></p>
+<p>The model is especially useful in case-control studies and leads to the effect of risk factors by odds ratios.</p>
+</section>
+<section id="example-lung-cancer-data" class="level1">
+<h1>Example : Lung cancer data</h1>
+<p><em>Data source: Loprinzi CL. Laurie JA. Wieand HS. Krook JE. Novotny PJ. Kugler JW. Bartel J. Law M. Bateman M. Klatt NE. et al.&nbsp;Prospective evaluation of prognostic variables from patient-completed questionnaires. North Central Cancer Treatment Group. Journal of Clinical Oncology. 12(3):601-7, 1994.</em></p>
+<p>These data were sourced from the R package {survival} and have been downloaded and stored in the <code>data</code> folder.</p>
+<div id="ea9d7542" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># importing and prepare</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>lung2 <span class="op">=</span> pd.read_csv(<span class="st">"../data/lung_cancer.csv"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">#create weight loss factor while respecting missing values</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 1: patients with a weight loss of more than zero</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 0: patients a weight loss of zero oe less</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>lung2[<span class="st">"wt_grp"</span>] <span class="op">=</span> np.where(lung2[<span class="st">"wt.loss"</span>].isnull(), np.nan, (lung2[<span class="st">"wt.loss"</span>] <span class="op">&gt;</span> <span class="dv">0</span>).astype(<span class="bu">int</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="logistic-regression-modelling" class="level1">
+<h1>Logistic Regression Modelling</h1>
+<p>Let’s further prepare our data for modelling by selecting the explanatory variables and the dependent variable. The Python packages that we are are aware of require complete (i.e.&nbsp;no missing values) data so for convenience of demonstrating these methods we will drop rows with missing values.</p>
+<div id="b58cf7c2" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>x_vars <span class="op">=</span> [<span class="st">"age"</span>, <span class="st">"sex"</span>, <span class="st">"ph.ecog"</span>, <span class="st">"meal.cal"</span>]</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>y_var <span class="op">=</span> <span class="st">"wt_grp"</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># drop rows with missing values </span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>lung2_complete <span class="op">=</span> lung2.dropna(axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">#select variables</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> lung2_complete[x_vars]</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> lung2_complete[y_var]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="statsmodels-package" class="level2">
+<h2 class="anchored" data-anchor-id="statsmodels-package">Statsmodels package</h2>
+<p>We will use the <code>sm.Logit()</code> method to fit our logistic regression model.</p>
+<div id="f2153f8b" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">#intercept column</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>x_sm <span class="op">=</span> sm.add_constant(x)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="bu">len</span>(df[<span class="st">'points'</span>])</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>g2 <span class="op">=</span> kurtosis(df[<span class="st">'points'</span>], fisher<span class="op">=</span><span class="va">True</span>)  <span class="co"># Fisher's kurtosis</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the kurtosis type using the formula G2</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>type2_kurt <span class="op">=</span> ((n <span class="op">+</span> <span class="dv">1</span>) <span class="op">*</span> g2 <span class="op">+</span> <span class="dv">6</span>) <span class="op">*</span> ((n <span class="op">-</span> <span class="dv">1</span>) <span class="op">/</span> ((n <span class="op">-</span> <span class="dv">2</span>) <span class="op">*</span> (n <span class="op">-</span> <span class="dv">3</span>)))</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the kurtosis type using the formula b2</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="bu">len</span>(df[<span class="st">'points'</span>])</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>g2 <span class="op">=</span> kurtosis(df[<span class="st">'points'</span>], fisher<span class="op">=</span><span class="va">True</span>)  <span class="co"># Fisher's kurtosis</span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>type3_kurt <span class="op">=</span> (g2 <span class="op">+</span> <span class="dv">3</span>) <span class="op">*</span> ((<span class="dv">1</span> <span class="op">-</span> <span class="dv">1</span><span class="op">/</span>n) <span class="op">**</span> <span class="dv">2</span>) <span class="op">-</span> <span class="dv">3</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Kurtosis - Type 1: </span><span class="sc">{</span>type1_kurt<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Kurtosis - Type 2: </span><span class="sc">{</span>type2_kurt<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Kurtosis - Type 3: </span><span class="sc">{</span>type3_kurt<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">#fit model</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>lr_sm <span class="op">=</span> sm.Logit(y, x_sm).fit() </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(lr_sm.summary())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Kurtosis - Type 1: -0.5833410771247833
-Kurtosis - Type 2: -0.2991564184355863
-Kurtosis - Type 3: -0.8948215605175891</code></pre>
+<pre><code>Optimization terminated successfully.
+         Current function value: 0.568825
+         Iterations 5
+                           Logit Regression Results                           
+==============================================================================
+Dep. Variable:                 wt_grp   No. Observations:                  167
+Model:                          Logit   Df Residuals:                      162
+Method:                           MLE   Df Model:                            4
+Date:                Thu, 01 Aug 2024   Pseudo R-squ.:                 0.05169
+Time:                        15:15:12   Log-Likelihood:                -94.994
+converged:                       True   LL-Null:                       -100.17
+Covariance Type:            nonrobust   LLR p-value:                   0.03484
+==============================================================================
+                 coef    std err          z      P&gt;|z|      [0.025      0.975]
+------------------------------------------------------------------------------
+const          3.3576      1.654      2.029      0.042       0.115       6.600
+age           -0.0126      0.021     -0.598      0.550      -0.054       0.029
+sex           -0.8645      0.371     -2.328      0.020      -1.592      -0.137
+ph.ecog        0.4182      0.263      1.592      0.111      -0.097       0.933
+meal.cal      -0.0009      0.000     -1.932      0.053      -0.002    1.27e-05
+==============================================================================</code></pre>
 </div>
 </div>
-<p>The default for the <strong>scipy.stats.kurtosis</strong> function is type 1.</p>
-
-
+<section id="model-fitting" class="level3">
+<h3 class="anchored" data-anchor-id="model-fitting">Model fitting</h3>
+<p>In addition to the information contained in the summary, we can display the model coefficients as odds ratios:</p>
+<div id="6d788ed2" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Odds ratios for statsmodels logistic regression:"</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.exp(lr_sm.params))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Odds ratios for statsmodels logistic regression:
+const       28.719651
+age          0.987467
+sex          0.421266
+ph.ecog      1.519198
+meal.cal     0.999140
+dtype: float64</code></pre>
+</div>
+</div>
+<p>We can also provide the 5% confidence intervals for the odds ratios:</p>
+<div id="daabcb11" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"CI at 5</span><span class="sc">% f</span><span class="st">or statsmodels logistic regression:"</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.exp(lr_sm.conf_int(alpha <span class="op">=</span> <span class="fl">0.05</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>CI at 5% for statsmodels logistic regression:
+                 0           1
+const     1.121742  735.301118
+age       0.947449    1.029175
+sex       0.203432    0.872354
+ph.ecog   0.907984    2.541852
+meal.cal  0.998269    1.000013</code></pre>
+</div>
+</div>
 </section>
+<section id="prediction" class="level3">
+<h3 class="anchored" data-anchor-id="prediction">Prediction</h3>
+<p>Let’s use our trained model to make a weight loss prediction about a new patient.</p>
+<div id="f7c99fe7" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># new female, symptomatic but completely ambulatory patient consuming 2500 calories</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>new_pt <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"age"</span>: [<span class="dv">56</span>],</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"sex"</span>: [<span class="dv">2</span>],</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"ph.ecog"</span>: [<span class="fl">1.00</span>], </span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"meal.cal"</span>: [<span class="dv">2500</span>]</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Add intercept term to the new data; for a single row this should be </span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co"># forced using the `add_constant` command</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>new_pt_sm <span class="op">=</span> sm.add_constant(new_pt, has_constant<span class="op">=</span><span class="st">"add"</span>)</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Probability of weight loss using the statsmodels package:"</span>)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(lr_sm.predict(new_pt_sm))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Probability of weight loss using the statsmodels package:
+0    0.308057
+dtype: float64</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="scikit-learn-package" class="level2">
+<h2 class="anchored" data-anchor-id="scikit-learn-package">Scikit-learn Package</h2>
+<p>The <code>scikit-learn</code> package is a popular package for machine learning and predictive modelling.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>It’s important to note that l2 regularisation is applied by default in the <code>scikit-learn</code> implementation of logistic regression. More recent releases of this package include an option to have no regularisation penalty.</p>
+</div>
+</div>
+<div id="d60742f6" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>lr_sk <span class="op">=</span> LogisticRegression(penalty<span class="op">=</span><span class="va">None</span>).fit(x, y)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Unlike the <code>statsmodels</code> approach <code>scikit-learn</code> doesn’t have a summary method for the model but you can extract some of the model parameters as follows:</p>
+<div id="a396481c" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Intercept for scikit learn logistic regression:"</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(lr_sk.intercept_)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Odds ratios for scikit learn logistic regression:"</span>)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.exp(lr_sk.coef_))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Intercept for scikit learn logistic regression:
+[3.35756405]
+Odds ratios for scikit learn logistic regression:
+[[0.98746739 0.42126736 1.51919379 0.99914048]]</code></pre>
+</div>
+</div>
+<p>However, obtaining the confidence intervals and other metrics is not directly supported in <code>scikit-learn</code>.</p>
+<section id="prediction-1" class="level3">
+<h3 class="anchored" data-anchor-id="prediction-1">Prediction</h3>
+<p>Using the same new patient example we can use our logistic regression model to make a prediction. The <code>predict_proba</code> method is used to return the probability for each class. If you are interested in viewing the prediction for <code>y = 1</code>, i.e.&nbsp;the probability of weight loss then you can select the second probability as shown:</p>
+<div id="0489a251" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Probability of weight loss using the scikit-learn package:"</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(lr_sk.predict_proba(new_pt)[:,<span class="dv">1</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Probability of weight loss using the scikit-learn package:
+[0.30805813]</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="conclusions" class="level2">
+<h2 class="anchored" data-anchor-id="conclusions">Conclusions</h2>
+<p>There are two main ways to fit a logistic regression using python. Each of these packages have their advantages with <code>statsmodel</code> geared more towards model and coefficient interpretation in low dimensional data settings and in contrast the <code>scikit-learn</code> implementation more appropriate for use cases focused on prediction with more complex, higher dimensional data.</p>
+
+
 </section>
 </section>
 
