@@ -10,7 +10,7 @@ The accelerated failure time model is a parametric survival analysis technique u
 
 Mathematically, the AFT model can be expressed as:
 
-$\log(T) = X\beta + \varepsilon$
+$\log(T) = X\beta + \sigma\varepsilon$
 
 Where:
 
@@ -22,7 +22,9 @@ Where:
 
 -   β is a vector of coefficients representing the effects of the predictor variables on the logarithm of the survival time
 
--   ε is the error term assumed to follow a certain distribution, such as normal, exponential, weibull or log-normal
+-   σ is a scaler quantity
+
+-   ε is the error term assumed to follow a specific distribution that depends on the assumed parametric form of the survival time.
 
 ## Example of AFT model using "Log-Normal Distribution"
 
@@ -37,7 +39,7 @@ summary(model_aft)
 
 The summary output will provide the estimated coefficients, standard errors, and p-values for each predictor variable.
 
-## Hazard Ratio Calculation
+## Acceleration Ratio Calculation
 
 ```{r}
 # Compute hazard ratios (exponentiated coefficients)
@@ -78,40 +80,6 @@ hazard_ratio
 
 -   a hazard ratio of 1.67 suggests a 67% higher hazard rate or accelerated survival time for patients receiving a different type of radiation therapy (rx = 2) compared to the reference group (rx = 1).
 
-## Comparison between Cox PH Model & AFT Model with Example
-
-To compare Cox Proportional Hazards(PH) models & Accelerated Failure Time(AFT) models for a lung dataset following steps are performed.
-
-```{r}
-#Fit the Cox PH Hazard Model
-cox_model <- coxph(Surv(time,status)~ age + sex + ph.ecog, data = lung)
-summary(cox_model)
-
-# Fit an AFT model using lognormal distribution
-aft_model <- survreg(Surv(time, status) ~ age + sex + ph.ecog, data = lung, dist = "lognormal")
-summary(aft_model)
-
-#Compare AIC Values
-AIC(cox_model)
-AIC(aft_model)
-
-#Compare Coefficients
-
-cox_model$coefficients
-aft_model$coefficients
-
-```
-
-### Interpretation
-
--   For age, in the Cox Ph model, the positive coefficient indicates that as the covariate increases, the hazard ( or risk of the event) increases, which implies shorter survival time, where as for AFT model as well, the negetive coefficient indicates that as the covariate increases, the survival time decreases.
-
--   For sex, in the Cox Ph model, the negetive coefficient indicates that as the covariate decreases, the hazard ( or risk of the event) decreases, which implies longer survival time, where as for AFT model as well, the positive coefficient indicates that as the covariate increases, the survival time increases.
-
--   For ecog status, in both the model it shows increase of hazard ie shorter survival time.
-
--   Since AIC value for cox ph model is lower than that of AFT model, hence in this example Cox Ph gives a better fit.
-
 ## Conclusion
 
-Only the extreme value distribution of error leads to AFT models unlike Cox Ph model where survival times does not follow any specific distribution.
+In AFT models unlike Cox Ph model ,survival times follow assumed parametric distribution(e.g. extreme value distribution for Weibull, logistic distribution for log-logistic, standard normal for log-normal).
