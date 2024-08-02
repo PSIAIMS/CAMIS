@@ -79,17 +79,20 @@ library(beeca) # for covariate adjustment
 
 We use the `lung` dataset provided with {survival} R package. Initial data preparation involves generating a new binary outcome based on the weight change.
 
- lung2 <- survival::lung %>% 
+```{r}
+# the lung dataset is available in ./data/lung_cancer.csv
+lung2 <- survival::lung %>% 
   mutate(
     wt_grp = factor(wt.loss > 0, labels = c("weight loss", "weight gain"))
   ) 
 glimpse(lung2)
+```
 
 ### g-computation
 
 We use the `trial01` dataset provided with {beeca} R package. Initial data preparation involves setting the treatment indicator as a categorical variable and removing any incomplete cases.
 
-```{r comparison}
+```{r}
 data("trial01")
 
 trial01$trtp <- factor(trial01$trtp) ## set treatment to a factor
@@ -141,7 +144,7 @@ cbind(est = coef(m1),
 ### `PROC LOGISTIC` in SAS (without firth option)
 
 ```{sas, eval = FALSE}
-PROC LOGISTIC DATA=WORK.IMPORT;
+PROC LOGISTIC DATA=LUNG2; # import lung
 	MODEL WT_GRP(EVENT="weight_gain") = AGE SEX PH_ECOG MEAL_CAL;
 	ods output ESTIMATEs=estimates;
 run;
@@ -220,7 +223,7 @@ cbind(est = coef(firth_mod),
 -   `XCONV` specifies relative parameter convergence criterion, which should correspond to the `xconv` in `logistf` function in R. We specify `XCONV = 0.00000001` so it should be consistent with the R code above.
 
 ```{sas, eval = FALSE}
-PROC LOGISTIC DATA=WORK.IMPORT;
+PROC LOGISTIC DATA=LUNG2;
 	MODEL WT_GRP(EVENT="weight gain") = AGE SEX PH_ECOG MEAL_CAL / firth clodds=PL clparm=PL xconv = 0.00000001;
 	ods output ESTIMATEs=estimates;
 run;
