@@ -50,11 +50,17 @@ data bw;
 run;
 ```
 
-2.  **Perform the Mann-Whitney U Test**: Use the PROC NPAR1WAY procedure to perform the test. The wilcoxon option specifies that you want to perform the Wilcoxon rank-sum test.
+2.  **Perform the Mann-Whitney U Test**: Use the PROC NPAR1WAY procedure to perform the test. The wilcoxon option specifies that you want to perform the Wilcoxon rank-sum test. When computing the asymptotic Wilcoxon two-sample test, PROC NPAR1WAY uses a continuity correction by default. If specify the CORRECT=NO option in the PROC NPAR1WAY statement, the procedure does not use a continuity correction.
 
 ``` sas
-/* Perform Mann-Whitney U test */
+/* Perform Mann-Whitney U test - with continuity correction by default*/
 proc npar1way data=BW wilcoxon;
+    class grp;
+    var bw;
+run;
+
+/* Perform Mann-Whitney U test - without continuity correction*/
+proc npar1way data=BW wilcoxon CORRECT=NO;
     class grp;
     var bw;
 run;
@@ -62,9 +68,13 @@ run;
 
 ## Results
 
+### Mann-Whitney U test - with continuity correction by default
+
 ![](/images/ranksum/ranksum.png)
 
 As seen above, SAS outputs a table of Wilcoxon Scores for birth weight by non-smoker and smoker: the number (N); the sum of scores; the expected sum of scores under the null hypothesis; the standard deviation under the null hypothesis, and the observed mean score. The table also includes a footnote to specify that ties were handled by using the average score.
+
+SAS also outputs a table of Wilcoxon Two-sample Test. This table includes a footnote to specify that a continuiity correction of 0.5 is used.
 
 **Statistic**: 150.5000
 
@@ -82,6 +92,15 @@ The t-distribution approximations provide similar p-values, indicating the robus
 
 Since the p-values (both one-tailed and two-tailed) are less than the common significance level (e.g., 0.05), we can reject the null hypothesis. This means there is a significant difference between the two groups (ns and s) for the variable BW.
 
+### Mann-Whitney U test - without continuity correction
+
+![](/images/ranksum/ranksum2.png)
+
+As seen above, Wilcoxon Two-Sample Test results are changed because No continuity correction is used.
+
 # References
 
 [SAS Help Center: TWOSAMPLEWILCOXON Statement](https://documentation.sas.com/doc/en/statug/15.2/statug_power_syntax112.htm)
+[SAS Help Center: Overview: NPAR1WAY Procedure](https://documentation.sas.com/doc/en/statug/15.2/statug_npar1way_overview.htm)
+
+*Data source: Table 30.4, Kirkwood BR. and Sterne JAC. Essentials of medical statistics. Second Edition. ISBN 978-0-86542-871-3*
