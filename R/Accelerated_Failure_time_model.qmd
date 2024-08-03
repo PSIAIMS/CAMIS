@@ -4,7 +4,7 @@ format: html
 editor: visual
 ---
 
-The accelerated failure time model is a parametric survival analysis technique used to model the relationship between the time to event of interest (e.g., time to failure) and a set of predictor variables. It assumes that the covariates have a multiplicative effect on the time to the event. In other words, the time to event is accelerated or decelerated by a factor that depends on the values of the covariates.
+The accelerated failure model is a survival analysis technique used to model the relationship between the event of interest (e.g., time to failure) and a set of predictor variables. It assumes that the covariates have a multiplicative effect on the hazard (rate of failure) function. In other words, the hazard rate is accelerated or decelerated by a factor that depends on the values of the covariates.
 
 ## Mathematical Expression
 
@@ -53,6 +53,29 @@ hazard_ratios
 -   For sex, hazard ratio $> 1$ indicates that males have 68% higher hazard rate or accelerated survival time.
 -   A hazard ratio of ph.ecog $< 1$ suggests a 30% lower hazard rate or decelerated survival time associated with ph.ecog.
 
+## Plotting AFT Model Graphically
+
+```{r}
+suppressPackageStartupMessages({
+library(survival)
+library(survminer)
+library(ggplot2)
+})
+
+# Fit the AFT model on the lung dataset
+aft_model <- survreg(Surv(time, status) ~ age + sex + ph.ecog, data = lung, dist = "lognormal")
+
+# Create a new data frame with predicted survival times
+df <- data.frame(time = lung$time, age = lung$age, sex = lung$sex, ph.ecog = lung$ph.ecog, status=lung$status)
+df$surv_times <- predict(aft_model, newdata = df)
+
+# Plot the survival curves based on the AFT model
+ggsurvplot(survfit(Surv(surv_times, status) ~ 1, data = df),
+           data = df, xlab = "Time", ylab = "Survival Probability")
+```
+
+The survival curve plotted based on the AFT model for the lung dataset provides valuable insights into the estimated survival probabilities over time. The curve illustrates how the probability of survival changes as time progresses.
+
 ## Example of AFT model using "Weibull Distribution"
 
 ```{r}
@@ -64,7 +87,7 @@ model_aft_wb <- survreg(Surv(futime, fustat) ~ age + resid.ds + rx, data = ovari
 summary(model_aft_wb)
 ```
 
-## Hazard Ratio Calculation
+## Acceleration Factor Calculation
 
 ```{r}
 # Compute hazard ratios (exponentiated coefficients)
@@ -79,6 +102,31 @@ hazard_ratio
 -   For residual disease status, a hazard ratio of 0.60 suggests that a decrease in residual disease status is associated with a 40% lower hazard rate or decelerated survival time.
 
 -   a hazard ratio of 1.67 suggests a 67% higher hazard rate or accelerated survival time for patients receiving a different type of radiation therapy (rx = 2) compared to the reference group (rx = 1).
+
+## Survival Curve Plotting on 'Ovarian' Dataset
+
+```{r}
+
+# Fit the AFT model (weibull distribution) on your data
+model_aft <- survreg(Surv(futime, fustat) ~ age + resid.ds + rx, data = ovarian, dist = "weibull")
+
+# Create survival curves for different levels of predictor variables
+plot_data <- with(ovarian, data.frame(age = seq(min(age), max(age), length.out = 100),
+                                      resid.ds = mean(resid.ds),
+                                      rx = mean(rx)))
+
+# Predict survival times based on the AFT model
+plot_data$survival <- predict(model_aft, newdata = plot_data)
+
+# Plot the survival curves
+ggplot(plot_data, aes(x = age, y = survival, color = factor(rx), linetype = factor(rx))) +
+  geom_line() +
+  labs(x = "Age", y = "Survival Probability", color = "Radiation Therapy", linetype = "Radiation Therapy") +
+  scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
+  scale_color_manual(values = c("blue", "red", "green"))
+```
+
+The survival curve plotted based on the AFT model for the ovarian dataset how the probability of survival changes as age increases.
 
 ## Conclusion
 
