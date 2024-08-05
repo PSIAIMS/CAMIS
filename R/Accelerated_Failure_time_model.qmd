@@ -1,0 +1,131 @@
+---
+title: "Accelerated Failure Time Model"
+format: html
+editor: visual
+---
+
+The accelerated failure time model is a parametric survival analysis technique used to model the relationship between the time to event of interest (e.g., time to failure) and a set of predictor variables. It assumes that the covariates have a multiplicative effect on the time to the event. In other words, the time to event is accelerated or decelerated by a factor that depends on the values of the covariates.This differs from the Cox proportional hazards model, which assumes that covariates have a multiplicative effect on the hazard rate, not the time to the event.
+
+## Mathematical Expression
+
+Mathematically, the AFT model can be expressed as:
+
+$\log(T) = X\beta + \sigma\varepsilon$
+
+Where:
+
+-   T is the survival time
+
+-   log(T) is the logarithm of the survival time
+
+-   X is a matrix of predictor variables
+
+-   β is a vector of coefficients representing the effects of the predictor variables on the logarithm of the survival time
+
+-   σ is a scaler quantity representing the scale parameter, which influences the variability of the error term ε in the model.
+
+-   ε is the error term assumed to follow a specific distribution (e.g., normal distribution for log-normal, extreme value distribution for Weibull) that corresponds to the chosen parametric form of the model.
+
+## Example of AFT model using "Log-Normal Distribution"
+
+```{r}
+library(survival)
+attach(lung)
+# Fit an AFT model using lognormal distribution
+model_aft <- survreg(Surv(time, status) ~ age + sex + ph.ecog, data = lung, dist = "lognormal")
+# Model summary
+summary(model_aft)
+```
+
+The summary output will provide the estimated coefficients, standard errors, and p-values for each predictor variable.
+
+## Acceleration Factor Calculation
+
+```{r}
+# Compute acceleration factor (exponentiated coefficients)
+acceleration_factor <- exp(coef(model_aft))
+acceleration_factor
+```
+
+## Interpretation
+
+-   For age,acceleration factor $< 1$ indicates that for each one-unit increase in age, the survival time is slowed down by a factor of 0.98 (or a 2% decreasein survival time).
+-   For sex, acceleration factor $> 1$ indicates that males have 68% accelerated survival time.
+-   An acceleration factor of ph.ecog $< 1$ suggests a 30% decelerated survival time associated with ph.ecog.
+
+## Plotting AFT Model Graphically
+
+```{r}
+suppressPackageStartupMessages({
+library(survival)
+library(survminer)
+library(ggplot2)
+})
+
+# Fit the AFT model on the lung dataset
+aft_model <- survreg(Surv(time, status) ~ age + sex + ph.ecog, data = lung, dist = "lognormal")
+
+# Create a new data frame with predicted survival times
+df <- data.frame(time = lung$time, age = lung$age, sex = lung$sex, ph.ecog = lung$ph.ecog, status=lung$status)
+df$surv_times <- predict(aft_model, newdata = df)
+
+# Plot the survival curves based on the AFT model
+ggsurvplot(survfit(Surv(surv_times, status) ~ 1, data = df),
+           data = df, xlab = "Time", ylab = "Survival Probability")
+```
+
+The survival curve plotted based on the AFT model for the lung dataset illustrates how the probability of survival changes as time progresses, showing the impact of different covariate levels on survival probabilities.
+
+## Example of AFT model using "Weibull Distribution"
+
+```{r}
+# Fit an AFT model using weibull distribution
+model_aft_wb <- survreg(Surv(futime, fustat) ~ age + resid.ds + rx, data = ovarian, dist = "weibull")
+# Model summary
+summary(model_aft_wb)
+```
+
+## Acceleration Factor Calculation
+
+```{r}
+# Compute acceleration factor (exponentiated coefficients)
+acceleration_factor_wb <- exp(coef(model_aft_wb))
+acceleration_factor_wb
+```
+
+## Interpretation
+
+-   For age, an acceleration factor of 0.93 indicates that for each one-unit increase in age, the survival time is decelerated by a factor of 0.93(or a 7% decrease in the survival time)
+
+-   For residual disease status, an acceleration factor of 0.60 suggests that a decrease in residual disease status is associated with a 40% decelerated survival time.
+
+-   an acceleration factor of 1.67 suggests a 67% accelerated survival time for patients receiving a different type of radiation therapy (rx = 2) compared to the reference group (rx = 1).
+
+## Survival Curve Plotting on 'Ovarian' Dataset
+
+```{r}
+
+# Fit the AFT model (weibull distribution) on your data
+model_aft <- survreg(Surv(futime, fustat) ~ age + resid.ds + rx, data = ovarian, dist = "weibull")
+
+# Create survival curves for different levels of predictor variables
+plot_data <- with(ovarian, data.frame(age = seq(min(age), max(age), length.out = 100),
+                                      resid.ds = mean(resid.ds),
+                                      rx = mean(rx)))
+
+# Predict survival times based on the AFT model
+plot_data$survival <- predict(model_aft, newdata = plot_data)
+
+# Plot the survival curves
+ggplot(plot_data, aes(x = age, y = survival, color = factor(rx), linetype = factor(rx))) +
+  geom_line() +
+  labs(x = "Age", y = "Survival Probability", color = "Radiation Therapy", linetype = "Radiation Therapy") +
+  scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
+  scale_color_manual(values = c("blue", "red", "green"))
+```
+
+The survival curve plotted based on the AFT model for the ovarian dataset how the probability of survival changes as age increases.
+
+## Conclusion
+
+In AFT models, unlike Cox proportional hazards models, survival times follow an assumed parametric distribution (e.g., Weibull, log-logistic, log-normal), directly modelling the effect of covariates on the time scale.
