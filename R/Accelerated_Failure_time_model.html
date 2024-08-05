@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Summary statistics</title>
+<title>Accelerated Failure Time Model</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -101,6 +101,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -190,15 +219,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#mathematical-expression" id="toc-mathematical-expression" class="nav-link active" data-scroll-target="#mathematical-expression">Mathematical Expression</a></li>
+  <li><a href="#example-of-aft-model-using-log-normal-distribution" id="toc-example-of-aft-model-using-log-normal-distribution" class="nav-link" data-scroll-target="#example-of-aft-model-using-log-normal-distribution">Example of AFT model using “Log-Normal Distribution”</a></li>
+  <li><a href="#acceleration-factor-calculation" id="toc-acceleration-factor-calculation" class="nav-link" data-scroll-target="#acceleration-factor-calculation">Acceleration Factor Calculation</a></li>
+  <li><a href="#interpretation" id="toc-interpretation" class="nav-link" data-scroll-target="#interpretation">Interpretation</a></li>
+  <li><a href="#plotting-aft-model-graphically" id="toc-plotting-aft-model-graphically" class="nav-link" data-scroll-target="#plotting-aft-model-graphically">Plotting AFT Model Graphically</a></li>
+  <li><a href="#example-of-aft-model-using-weibull-distribution" id="toc-example-of-aft-model-using-weibull-distribution" class="nav-link" data-scroll-target="#example-of-aft-model-using-weibull-distribution">Example of AFT model using “Weibull Distribution”</a></li>
+  <li><a href="#acceleration-factor-calculation-1" id="toc-acceleration-factor-calculation-1" class="nav-link" data-scroll-target="#acceleration-factor-calculation-1">Acceleration Factor Calculation</a></li>
+  <li><a href="#interpretation-1" id="toc-interpretation-1" class="nav-link" data-scroll-target="#interpretation-1">Interpretation</a></li>
+  <li><a href="#survival-curve-plotting-on-ovarian-dataset" id="toc-survival-curve-plotting-on-ovarian-dataset" class="nav-link" data-scroll-target="#survival-curve-plotting-on-ovarian-dataset">Survival Curve Plotting on ‘Ovarian’ Dataset</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Summary statistics</h1>
+<h1 class="title">Accelerated Failure Time Model</h1>
 </div>
 
 
@@ -215,27 +259,187 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>The <strong>numpy.percentile()</strong> function is useful to determine the <em>n<sup>th</sup>-percentile</em> for the given array of data. It returns an array with percentile values or a scalar along the specified axis. The function accepts the following parameters:</p>
-<p>1.<em>array</em>: The array of data whose percentile needs to be calculated.</p>
-<p>2.<em>percentile</em>: Denotes the percentile that needs to be computed.</p>
-<p>3.<em>axis</em> (optional): Denotes the axis along which the percentile is calculated. By default, a flattened array is used.</p>
-<p>4.<em>out</em> (optional): An alternate output array where we can place the result.</p>
-<p>5.<em>overwrite_input</em> (optional): Used to modify the input array.</p>
-<p>6.<em>keepdims</em> (optional): Creates reduced axes with dimensions of one size.</p>
-<div id="d0aa0fff" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>sample_data<span class="op">=</span>[<span class="dv">12</span>, <span class="dv">25</span>, <span class="dv">16</span>, <span class="dv">50</span>, <span class="dv">34</span>, <span class="dv">29</span>, <span class="dv">60</span>, <span class="dv">86</span>, <span class="dv">52</span>, <span class="dv">39</span>, <span class="dv">41</span>]</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>percentile <span class="op">=</span> np.percentile(sample_data,<span class="dv">75</span>)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(percentile)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The accelerated failure time model is a parametric survival analysis technique used to model the relationship between the time to event of interest (e.g., time to failure) and a set of predictor variables. It assumes that the covariates have a multiplicative effect on the time to the event. In other words, the time to event is accelerated or decelerated by a factor that depends on the values of the covariates.This differs from the Cox proportional hazards model, which assumes that covariates have a multiplicative effect on the hazard rate, not the time to the event.</p>
+<section id="mathematical-expression" class="level2">
+<h2 class="anchored" data-anchor-id="mathematical-expression">Mathematical Expression</h2>
+<p>Mathematically, the AFT model can be expressed as:</p>
+<p><span class="math inline">\(\log(T) = X\beta + \sigma\varepsilon\)</span></p>
+<p>Where:</p>
+<ul>
+<li><p>T is the survival time</p></li>
+<li><p>log(T) is the logarithm of the survival time</p></li>
+<li><p>X is a matrix of predictor variables</p></li>
+<li><p>β is a vector of coefficients representing the effects of the predictor variables on the logarithm of the survival time</p></li>
+<li><p>σ is a scaler quantity representing the scale parameter, which influences the variability of the error term ε in the model.</p></li>
+<li><p>ε is the error term assumed to follow a specific distribution (e.g., normal distribution for log-normal, extreme value distribution for Weibull) that corresponds to the chosen parametric form of the model.</p></li>
+</ul>
+</section>
+<section id="example-of-aft-model-using-log-normal-distribution" class="level2">
+<h2 class="anchored" data-anchor-id="example-of-aft-model-using-log-normal-distribution">Example of AFT model using “Log-Normal Distribution”</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survival)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">attach</span>(lung)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit an AFT model using lognormal distribution</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>model_aft <span class="ot">&lt;-</span> <span class="fu">survreg</span>(<span class="fu">Surv</span>(time, status) <span class="sc">~</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog, <span class="at">data =</span> lung, <span class="at">dist =</span> <span class="st">"lognormal"</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Model summary</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_aft)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>51.0</code></pre>
+<pre><code>
+Call:
+survreg(formula = Surv(time, status) ~ age + sex + ph.ecog, data = lung, 
+    dist = "lognormal")
+               Value Std. Error     z       p
+(Intercept)  6.49479    0.58276 11.14 &lt; 2e-16
+age         -0.01918    0.00833 -2.30 0.02126
+sex          0.52195    0.15278  3.42 0.00063
+ph.ecog     -0.35557    0.10331 -3.44 0.00058
+Log(scale)   0.02823    0.05596  0.50 0.61391
+
+Scale= 1.03 
+
+Log Normal distribution
+Loglik(model)= -1146.9   Loglik(intercept only)= -1163.2
+    Chisq= 32.59 on 3 degrees of freedom, p= 3.9e-07 
+Number of Newton-Raphson Iterations: 3 
+n=227 (1 observation deleted due to missingness)</code></pre>
 </div>
 </div>
+<p>The summary output will provide the estimated coefficients, standard errors, and p-values for each predictor variable.</p>
+</section>
+<section id="acceleration-factor-calculation" class="level2">
+<h2 class="anchored" data-anchor-id="acceleration-factor-calculation">Acceleration Factor Calculation</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute acceleration factor (exponentiated coefficients)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>acceleration_factor <span class="ot">&lt;-</span> <span class="fu">exp</span>(<span class="fu">coef</span>(model_aft))</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>acceleration_factor</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>(Intercept)         age         sex     ph.ecog 
+661.6830913   0.9810009   1.6853157   0.7007762 </code></pre>
+</div>
+</div>
+</section>
+<section id="interpretation" class="level2">
+<h2 class="anchored" data-anchor-id="interpretation">Interpretation</h2>
+<ul>
+<li>For age,acceleration factor <span class="math inline">\(&lt; 1\)</span> indicates that for each one-unit increase in age, the survival time is slowed down by a factor of 0.98 (or a 2% decreasein survival time).</li>
+<li>For sex, acceleration factor <span class="math inline">\(&gt; 1\)</span> indicates that males have 68% accelerated survival time.</li>
+<li>An acceleration factor of ph.ecog <span class="math inline">\(&lt; 1\)</span> suggests a 30% decelerated survival time associated with ph.ecog.</li>
+</ul>
+</section>
+<section id="plotting-aft-model-graphically" class="level2">
+<h2 class="anchored" data-anchor-id="plotting-aft-model-graphically">Plotting AFT Model Graphically</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">suppressPackageStartupMessages</span>({</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survival)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survminer)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit the AFT model on the lung dataset</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>aft_model <span class="ot">&lt;-</span> <span class="fu">survreg</span>(<span class="fu">Surv</span>(time, status) <span class="sc">~</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog, <span class="at">data =</span> lung, <span class="at">dist =</span> <span class="st">"lognormal"</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a new data frame with predicted survival times</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">time =</span> lung<span class="sc">$</span>time, <span class="at">age =</span> lung<span class="sc">$</span>age, <span class="at">sex =</span> lung<span class="sc">$</span>sex, <span class="at">ph.ecog =</span> lung<span class="sc">$</span>ph.ecog, <span class="at">status=</span>lung<span class="sc">$</span>status)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>surv_times <span class="ot">&lt;-</span> <span class="fu">predict</span>(aft_model, <span class="at">newdata =</span> df)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the survival curves based on the AFT model</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsurvplot</span>(<span class="fu">survfit</span>(<span class="fu">Surv</span>(surv_times, status) <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> df),</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>           <span class="at">data =</span> df, <span class="at">xlab =</span> <span class="st">"Time"</span>, <span class="at">ylab =</span> <span class="st">"Survival Probability"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Accelerated_Failure_time_model_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The survival curve plotted based on the AFT model for the lung dataset illustrates how the probability of survival changes as time progresses, showing the impact of different covariate levels on survival probabilities.</p>
+</section>
+<section id="example-of-aft-model-using-weibull-distribution" class="level2">
+<h2 class="anchored" data-anchor-id="example-of-aft-model-using-weibull-distribution">Example of AFT model using “Weibull Distribution”</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit an AFT model using weibull distribution</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>model_aft_wb <span class="ot">&lt;-</span> <span class="fu">survreg</span>(<span class="fu">Surv</span>(futime, fustat) <span class="sc">~</span> age <span class="sc">+</span> resid.ds <span class="sc">+</span> rx, <span class="at">data =</span> ovarian, <span class="at">dist =</span> <span class="st">"weibull"</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Model summary</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_aft_wb)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+survreg(formula = Surv(futime, fustat) ~ age + resid.ds + rx, 
+    data = ovarian, dist = "weibull")
+              Value Std. Error     z      p
+(Intercept) 10.5634     1.3810  7.65  2e-14
+age         -0.0661     0.0190 -3.48 0.0005
+resid.ds    -0.5002     0.3799 -1.32 0.1879
+rx           0.5152     0.3236  1.59 0.1114
+Log(scale)  -0.6577     0.2384 -2.76 0.0058
+
+Scale= 0.518 
+
+Weibull distribution
+Loglik(model)= -87.9   Loglik(intercept only)= -98
+    Chisq= 20.17 on 3 degrees of freedom, p= 0.00016 
+Number of Newton-Raphson Iterations: 6 
+n= 26 </code></pre>
+</div>
+</div>
+</section>
+<section id="acceleration-factor-calculation-1" class="level2">
+<h2 class="anchored" data-anchor-id="acceleration-factor-calculation-1">Acceleration Factor Calculation</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute acceleration factor (exponentiated coefficients)</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>acceleration_factor_wb <span class="ot">&lt;-</span> <span class="fu">exp</span>(<span class="fu">coef</span>(model_aft_wb))</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>acceleration_factor_wb</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> (Intercept)          age     resid.ds           rx 
+3.869157e+04 9.360366e-01 6.063911e-01 1.673914e+00 </code></pre>
+</div>
+</div>
+</section>
+<section id="interpretation-1" class="level2">
+<h2 class="anchored" data-anchor-id="interpretation-1">Interpretation</h2>
+<ul>
+<li><p>For age, an acceleration factor of 0.93 indicates that for each one-unit increase in age, the survival time is decelerated by a factor of 0.93(or a 7% decrease in the survival time)</p></li>
+<li><p>For residual disease status, an acceleration factor of 0.60 suggests that a decrease in residual disease status is associated with a 40% decelerated survival time.</p></li>
+<li><p>an acceleration factor of 1.67 suggests a 67% accelerated survival time for patients receiving a different type of radiation therapy (rx = 2) compared to the reference group (rx = 1).</p></li>
+</ul>
+</section>
+<section id="survival-curve-plotting-on-ovarian-dataset" class="level2">
+<h2 class="anchored" data-anchor-id="survival-curve-plotting-on-ovarian-dataset">Survival Curve Plotting on ‘Ovarian’ Dataset</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit the AFT model (weibull distribution) on your data</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>model_aft <span class="ot">&lt;-</span> <span class="fu">survreg</span>(<span class="fu">Surv</span>(futime, fustat) <span class="sc">~</span> age <span class="sc">+</span> resid.ds <span class="sc">+</span> rx, <span class="at">data =</span> ovarian, <span class="at">dist =</span> <span class="st">"weibull"</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Create survival curves for different levels of predictor variables</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>plot_data <span class="ot">&lt;-</span> <span class="fu">with</span>(ovarian, <span class="fu">data.frame</span>(<span class="at">age =</span> <span class="fu">seq</span>(<span class="fu">min</span>(age), <span class="fu">max</span>(age), <span class="at">length.out =</span> <span class="dv">100</span>),</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">resid.ds =</span> <span class="fu">mean</span>(resid.ds),</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">rx =</span> <span class="fu">mean</span>(rx)))</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Predict survival times based on the AFT model</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>plot_data<span class="sc">$</span>survival <span class="ot">&lt;-</span> <span class="fu">predict</span>(model_aft, <span class="at">newdata =</span> plot_data)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the survival curves</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plot_data, <span class="fu">aes</span>(<span class="at">x =</span> age, <span class="at">y =</span> survival, <span class="at">color =</span> <span class="fu">factor</span>(rx), <span class="at">linetype =</span> <span class="fu">factor</span>(rx))) <span class="sc">+</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Age"</span>, <span class="at">y =</span> <span class="st">"Survival Probability"</span>, <span class="at">color =</span> <span class="st">"Radiation Therapy"</span>, <span class="at">linetype =</span> <span class="st">"Radiation Therapy"</span>) <span class="sc">+</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_linetype_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"solid"</span>, <span class="st">"dashed"</span>, <span class="st">"dotted"</span>)) <span class="sc">+</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"blue"</span>, <span class="st">"red"</span>, <span class="st">"green"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Accelerated_Failure_time_model_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The survival curve plotted based on the AFT model for the ovarian dataset how the probability of survival changes as age increases.</p>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>In AFT models, unlike Cox proportional hazards models, survival times follow an assumed parametric distribution (e.g., Weibull, log-logistic, log-normal), directly modelling the effect of covariates on the time scale.</p>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
