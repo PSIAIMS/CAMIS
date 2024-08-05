@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Linear Regression</title>
+<title>ANOVA</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -198,8 +198,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#descriptive-statistics" id="toc-descriptive-statistics" class="nav-link active" data-scroll-target="#descriptive-statistics">Descriptive Statistics</a></li>
-  <li><a href="#regression-analysis" id="toc-regression-analysis" class="nav-link" data-scroll-target="#regression-analysis">Regression Analysis</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#anova-test-in-python" id="toc-anova-test-in-python" class="nav-link" data-scroll-target="#anova-test-in-python">Anova Test in Python</a></li>
   </ul>
 </nav>
     </div>
@@ -208,7 +208,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Linear Regression</h1>
+<h1 class="title">ANOVA</h1>
 </div>
 
 
@@ -225,23 +225,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>To demonstrate the use of linear regression we examine a dataset that illustrates the relationship between Height and Weight in a group of 237 teen-aged boys and girls. The dataset is available <a href="https://github.com/PSIAIMS/CAMIS/blob/3dca6398dca4f242eb0f0c316d7499eaba8adb13/data/htwt.csvhttps://github.com/PSIAIMS/CAMIS/blob/3dca6398dca4f242eb0f0c316d7499eaba8adb13/data/htwt.csv">here</a> and is imported to the workspace.</p>
-<section id="descriptive-statistics" class="level3">
-<h3 class="anchored" data-anchor-id="descriptive-statistics">Descriptive Statistics</h3>
-<p>The first step is to obtain the simple descriptive statistics for the numeric variables of htwt data, and one-way frequencies for categorical variables. This is accomplished by employing summary function. There are 237 participants who are from 13.9 to 25 years old. It is a cross-sectional study, with each participant having one observation. We can use this data set to examine the relationship of participants’ height to their age and sex.</p>
-<div id="cd163361" class="cell" data-execution_count="1">
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>Analysis of VAriance <em>(ANOVA)</em> is a statistical test to measure the difference between means of more than two groups.It is best suited when the data is normally distributed. By partitioning total variance into components, ANOVA unravels relationship between variables and identifies the true source of variation. It can handle multiple factors and their interactions, providing a robust way to better understand intricate relationships.</p>
+</section>
+<section id="anova-test-in-python" class="level2">
+<h2 class="anchored" data-anchor-id="anova-test-in-python">Anova Test in Python</h2>
+<p>To perform a one-way ANOVA test in Python we can use the <strong>f_oneway()</strong> function from SciPy library. Similarly, to perform two-way ANOVA test <strong>anova_lm()</strong> function from the statsmodel library is frequently used.</p>
+<p>For this test, we’ll create a data frame called df_disease taken from the SAS documentation. The corresponding data can be found <a href="https://github.com/PSIAIMS/CAMIS/blob/main/data/sas_disease.csv">here</a>. In this experiment, we are trying to find the impact of different drug and disease group on the <code>stem-length</code></p>
+<div id="02a54465" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> statsmodels.api <span class="im">as</span> sm</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Importing CSV</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>htwt <span class="op">=</span> pd.read_csv(<span class="st">"../data/htwt.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>In order to create a regression model to demonstrate the relationship between age and height for females, we first need to create a flag variable identifying females and an interaction variable between age and female gender flag.</p>
-<div id="686dd9aa" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>htwt[<span class="st">'female'</span>] <span class="op">=</span> (htwt[<span class="st">'SEX'</span>] <span class="op">==</span> <span class="st">'f'</span>).astype(<span class="bu">int</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>htwt[<span class="st">'fem_age'</span>] <span class="op">=</span> htwt[<span class="st">'AGE'</span>] <span class="op">*</span> htwt[<span class="st">'female'</span>]</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>htwt.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="2">
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsmodels.formula.api <span class="im">import</span> ols</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the sample data</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">"../data/sas_disease.csv"</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">#perform two-way ANOVA</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> ols(<span class="st">'y ~ C(drug) + C(disease) + C(drug):C(disease)'</span>, data<span class="op">=</span>df).fit()</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>sm.stats.anova_lm(model, typ<span class="op">=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="1">
 <div>
 
 
@@ -249,65 +253,40 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <thead>
 <tr class="header">
 <th data-quarto-table-cell-role="th"></th>
-<th data-quarto-table-cell-role="th">ROW</th>
-<th data-quarto-table-cell-role="th">SEX</th>
-<th data-quarto-table-cell-role="th">AGE</th>
-<th data-quarto-table-cell-role="th">HEIGHT</th>
-<th data-quarto-table-cell-role="th">WEIGHT</th>
-<th data-quarto-table-cell-role="th">female</th>
-<th data-quarto-table-cell-role="th">fem_age</th>
+<th data-quarto-table-cell-role="th">sum_sq</th>
+<th data-quarto-table-cell-role="th">df</th>
+<th data-quarto-table-cell-role="th">F</th>
+<th data-quarto-table-cell-role="th">PR(&gt;F)</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">0</td>
-<td>1</td>
-<td>f</td>
-<td>14.3</td>
-<td>56.3</td>
-<td>85.0</td>
-<td>1</td>
-<td>14.3</td>
+<td data-quarto-table-cell-role="th">C(drug)</td>
+<td>3063.432863</td>
+<td>3.0</td>
+<td>9.245096</td>
+<td>0.000067</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">1</td>
-<td>2</td>
-<td>f</td>
-<td>15.5</td>
-<td>62.3</td>
-<td>105.0</td>
-<td>1</td>
-<td>15.5</td>
+<td data-quarto-table-cell-role="th">C(disease)</td>
+<td>418.833741</td>
+<td>2.0</td>
+<td>1.895990</td>
+<td>0.161720</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">2</td>
-<td>3</td>
-<td>f</td>
-<td>15.3</td>
-<td>63.3</td>
-<td>108.0</td>
-<td>1</td>
-<td>15.3</td>
+<td data-quarto-table-cell-role="th">C(drug):C(disease)</td>
+<td>707.266259</td>
+<td>6.0</td>
+<td>1.067225</td>
+<td>0.395846</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">3</td>
-<td>4</td>
-<td>f</td>
-<td>16.1</td>
-<td>59.0</td>
-<td>92.0</td>
-<td>1</td>
-<td>16.1</td>
-</tr>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">4</td>
-<td>5</td>
-<td>f</td>
-<td>19.1</td>
-<td>62.5</td>
-<td>112.5</td>
-<td>1</td>
-<td>19.1</td>
+<td data-quarto-table-cell-role="th">Residual</td>
+<td>5080.816667</td>
+<td>46.0</td>
+<td>NaN</td>
+<td>NaN</td>
 </tr>
 </tbody>
 </table>
@@ -315,164 +294,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-</section>
-<section id="regression-analysis" class="level3">
-<h3 class="anchored" data-anchor-id="regression-analysis">Regression Analysis</h3>
-<p>Next, we fit a regression model, representing the relationships between gender, age, height and the interaction variable created in the datastep above. We again use a where statement to restrict the analysis to those who are less than or equal to 19 years old. We use the clb option to get a 95% confidence interval for each of the parameters in the model. The model that we are fitting is <strong><em>height = b0 + b1 x female + b2 x age + b3 x fem_age + e</em></strong></p>
-<div id="ed3af63c" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> htwt[[<span class="st">'female'</span>, <span class="st">'AGE'</span>, <span class="st">'fem_age'</span>]][htwt[<span class="st">'AGE'</span>] <span class="op">&lt;=</span> <span class="dv">19</span>]</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> sm.add_constant(X)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>Y <span class="op">=</span> htwt[<span class="st">'HEIGHT'</span>][htwt[<span class="st">'AGE'</span>] <span class="op">&lt;=</span> <span class="dv">19</span>]</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> sm.OLS(Y, X).fit()</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>model.summary()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="3">
-<table class="simpletable caption-top table table-sm table-striped small" data-quarto-postprocess="true">
-<caption>OLS Regression Results</caption>
-<tbody>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">Dep. Variable:</td>
-<td>HEIGHT</td>
-<td data-quarto-table-cell-role="th">R-squared:</td>
-<td>0.460</td>
-</tr>
-<tr class="even">
-<td data-quarto-table-cell-role="th">Model:</td>
-<td>OLS</td>
-<td data-quarto-table-cell-role="th">Adj. R-squared:</td>
-<td>0.452</td>
-</tr>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">Method:</td>
-<td>Least Squares</td>
-<td data-quarto-table-cell-role="th">F-statistic:</td>
-<td>60.93</td>
-</tr>
-<tr class="even">
-<td data-quarto-table-cell-role="th">Date:</td>
-<td>Mon, 05 Aug 2024</td>
-<td data-quarto-table-cell-role="th">Prob (F-statistic):</td>
-<td>1.50e-28</td>
-</tr>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">Time:</td>
-<td>13:32:46</td>
-<td data-quarto-table-cell-role="th">Log-Likelihood:</td>
-<td>-534.17</td>
-</tr>
-<tr class="even">
-<td data-quarto-table-cell-role="th">No. Observations:</td>
-<td>219</td>
-<td data-quarto-table-cell-role="th">AIC:</td>
-<td>1076.</td>
-</tr>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">Df Residuals:</td>
-<td>215</td>
-<td data-quarto-table-cell-role="th">BIC:</td>
-<td>1090.</td>
-</tr>
-<tr class="even">
-<td data-quarto-table-cell-role="th">Df Model:</td>
-<td>3</td>
-<td data-quarto-table-cell-role="th"></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">Covariance Type:</td>
-<td>nonrobust</td>
-<td data-quarto-table-cell-role="th"></td>
-<td></td>
-</tr>
-</tbody>
-</table>
-
-
-<table class="simpletable caption-top table table-sm table-striped small" data-quarto-postprocess="true">
-<tbody>
-<tr class="odd">
-<td></td>
-<td data-quarto-table-cell-role="th">coef</td>
-<td data-quarto-table-cell-role="th">std err</td>
-<td data-quarto-table-cell-role="th">t</td>
-<td data-quarto-table-cell-role="th">P&gt;|t|</td>
-<td data-quarto-table-cell-role="th">[0.025</td>
-<td data-quarto-table-cell-role="th">0.975]</td>
-</tr>
-<tr class="even">
-<td data-quarto-table-cell-role="th">const</td>
-<td>28.8828</td>
-<td>2.873</td>
-<td>10.052</td>
-<td>0.000</td>
-<td>23.219</td>
-<td>34.547</td>
-</tr>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">female</td>
-<td>13.6123</td>
-<td>4.019</td>
-<td>3.387</td>
-<td>0.001</td>
-<td>5.690</td>
-<td>21.534</td>
-</tr>
-<tr class="even">
-<td data-quarto-table-cell-role="th">AGE</td>
-<td>2.0313</td>
-<td>0.178</td>
-<td>11.435</td>
-<td>0.000</td>
-<td>1.681</td>
-<td>2.381</td>
-</tr>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">fem_age</td>
-<td>-0.9294</td>
-<td>0.248</td>
-<td>-3.750</td>
-<td>0.000</td>
-<td>-1.418</td>
-<td>-0.441</td>
-</tr>
-</tbody>
-</table>
-
-
-<table class="simpletable caption-top table table-sm table-striped small" data-quarto-postprocess="true">
-<tbody>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">Omnibus:</td>
-<td>1.300</td>
-<td data-quarto-table-cell-role="th">Durbin-Watson:</td>
-<td>2.284</td>
-</tr>
-<tr class="even">
-<td data-quarto-table-cell-role="th">Prob(Omnibus):</td>
-<td>0.522</td>
-<td data-quarto-table-cell-role="th">Jarque-Bera (JB):</td>
-<td>0.981</td>
-</tr>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">Skew:</td>
-<td>-0.133</td>
-<td data-quarto-table-cell-role="th">Prob(JB):</td>
-<td>0.612</td>
-</tr>
-<tr class="even">
-<td data-quarto-table-cell-role="th">Kurtosis:</td>
-<td>3.191</td>
-<td data-quarto-table-cell-role="th">Cond. No.</td>
-<td>450.</td>
-</tr>
-</tbody>
-</table>
-<br><br>Notes:<br>[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
-</div>
-</div>
-<p>From the coefficients table b0,b1,b2,b3 are estimated as b0=28.88 b1=13.61 b2=2.03 b3=-0.92942</p>
-<p>The resulting regression model for height, age and gender based on the available data is <strong><em>height=28.8828 + 13.6123 x female + 2.0313 x age -0.9294 x fem_age</em></strong></p>
 
 
 </section>
