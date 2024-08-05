@@ -4,7 +4,7 @@ format: html
 editor: visual
 ---
 
-The accelerated failure model is a survival analysis technique used to model the relationship between the event of interest (e.g., time to failure) and a set of predictor variables. It assumes that the covariates have a multiplicative effect on the hazard (rate of failure) function. In other words, the hazard rate is accelerated or decelerated by a factor that depends on the values of the covariates.
+The accelerated failure model is a survival analysis technique used to model the relationship between the event of interest (e.g., time to failure) and a set of predictor variables. It assumes that the covariates have a multiplicative effect on the hazard (rate of failure) function. In other words, the hazard rate is accelerated or decelerated by a factor that depends on the values of the covariates.This differs from the Cox proportional hazards model, which assumes that covariates have a multiplicative effect on the hazard rate, not the time to the event.
 
 ## Mathematical Expression
 
@@ -22,9 +22,9 @@ Where:
 
 -   β is a vector of coefficients representing the effects of the predictor variables on the logarithm of the survival time
 
--   σ is a scaler quantity
+-   σ is a scaler quantity representing the scale parameter, which influences the variability of the error term ε in the model.
 
--   ε is the error term assumed to follow a specific distribution that depends on the assumed parametric form of the survival time.
+-   ε is the error term assumed to follow a specific distribution (e.g., normal distribution for log-normal, extreme value distribution for Weibull) that corresponds to the chosen parametric form of the model.
 
 ## Example of AFT model using "Log-Normal Distribution"
 
@@ -42,16 +42,16 @@ The summary output will provide the estimated coefficients, standard errors, and
 ## Acceleration Factor Calculation
 
 ```{r}
-# Compute hazard ratios (exponentiated coefficients)
-hazard_ratios <- exp(coef(model_aft))
-hazard_ratios
+# Compute acceleration factor (exponentiated coefficients)
+acceleration_factor <- exp(coef(model_aft))
+acceleration_factor
 ```
 
 ## Interpretation
 
--   For age, hazard ratio $< 1$ indicates that for each one-unit increase in age, the survival time is slowed down by a factor of 0.98 (or a 2% decrease).
--   For sex, hazard ratio $> 1$ indicates that males have 68% higher hazard rate or accelerated survival time.
--   A hazard ratio of ph.ecog $< 1$ suggests a 30% lower hazard rate or decelerated survival time associated with ph.ecog.
+-   For age,acceleration factor $< 1$ indicates that for each one-unit increase in age, the survival time is slowed down by a factor of 0.98 (or a 2% decreasein survival time).
+-   For sex, acceleration factor $> 1$ indicates that males have 68% accelerated survival time.
+-   An acceleration factor of ph.ecog $< 1$ suggests a 30% decelerated survival time associated with ph.ecog.
 
 ## Plotting AFT Model Graphically
 
@@ -74,7 +74,7 @@ ggsurvplot(survfit(Surv(surv_times, status) ~ 1, data = df),
            data = df, xlab = "Time", ylab = "Survival Probability")
 ```
 
-The survival curve plotted based on the AFT model for the lung dataset provides valuable insights into the estimated survival probabilities over time. The curve illustrates how the probability of survival changes as time progresses.
+The survival curve plotted based on the AFT model for the lung dataset illustrates how the probability of survival changes as time progresses, showing the impact of different covariate levels on survival probabilities.
 
 ## Example of AFT model using "Weibull Distribution"
 
@@ -90,18 +90,18 @@ summary(model_aft_wb)
 ## Acceleration Factor Calculation
 
 ```{r}
-# Compute hazard ratios (exponentiated coefficients)
-hazard_ratio <- exp(coef(model_aft_wb))
-hazard_ratio
+# Compute acceleration factor (exponentiated coefficients)
+acceleration_factor_wb <- exp(coef(model_aft_wb))
+acceleration_factor_wb
 ```
 
 ## Interpretation
 
--   For age, a hazard ratio of 0.93 indicates that for each one-unit increase in age, the survival time is decelerated by a factor of 0.93(or a 7% decrease)
+-   For age, an acceleration factor of 0.93 indicates that for each one-unit increase in age, the survival time is decelerated by a factor of 0.93(or a 7% decrease in the survival time)
 
--   For residual disease status, a hazard ratio of 0.60 suggests that a decrease in residual disease status is associated with a 40% lower hazard rate or decelerated survival time.
+-   For residual disease status, an acceleration factor of 0.60 suggests that a decrease in residual disease status is associated with a 40% decelerated survival time.
 
--   a hazard ratio of 1.67 suggests a 67% higher hazard rate or accelerated survival time for patients receiving a different type of radiation therapy (rx = 2) compared to the reference group (rx = 1).
+-   an acceleration factor of 1.67 suggests a 67% accelerated survival time for patients receiving a different type of radiation therapy (rx = 2) compared to the reference group (rx = 1).
 
 ## Survival Curve Plotting on 'Ovarian' Dataset
 
@@ -130,4 +130,4 @@ The survival curve plotted based on the AFT model for the ovarian dataset how th
 
 ## Conclusion
 
-In AFT models unlike Cox Ph model ,survival times follow assumed parametric distribution(e.g. extreme value distribution for Weibull, logistic distribution for log-logistic, standard normal for log-normal).
+In AFT models, unlike Cox proportional hazards models, survival times follow an assumed parametric distribution (e.g., extreme value distribution for Weibull, logistic distribution for log-logistic, standard normal for log-normal), directly modelling the effect of covariates on the time scale.
