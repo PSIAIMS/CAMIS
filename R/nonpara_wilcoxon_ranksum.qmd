@@ -10,13 +10,32 @@ title: "Wilcoxon Rank Sum (Mann Whitney-U) in R"
 
 # Overview
 
- Wilcoxon rank sum test, or equivalently, Mann-Whitney U-test is a rank based non-paramatric method. The aim is to examine the differences between two groups. To be more specific, it tests whether the median difference between pairs is equal to zero. 
+Wilcoxon rank sum test, or equivalently, Mann-Whitney U-test is a rank based non-parametric method. The aim is to compare two independent groups of observations. Under certain scenarios, it can be thought of as a test for median differences, however this is only valid when: 1) both samples are independent and identically distributed (same dispersion, same shape, not necessarily normal) and 2) are symmetric around their medians.
 
- It is the non-parametric equivalent to two-sample t-test, where the two groups are not paired.
+Generally, with two samples of observations (A and B), the test uses the mean of each possible pair of observations in each group (including the pair of each value with itself) to test if the probability that (A\>B) \> probability (B\>A).
 
-## Available R package
+The Wilcoxon rank sum test is often presented alongside a Hodges-Lehmann estimate of the pseudo-median (the median of the Walsh averages), and an associated confidence interval for the pseudo-median.
 
- The `stats` package implements various classic statistical tests, including wilcoxon rank sum test. 
+A tie in the data exists when an observation in group A, has the same result as an observation in group B.
+
+## Useful References
+
+-   [Methods and Formulae](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/nonparametrics/how-to/1-sample-wilcoxon/methods-and-formulas/methods-and-formulas)
+-   [Mann Whitney is not about medians in general](https://github.com/adrianolszewski/Mann-Whitney-is-not-about-medians-in-general)
+-   [Relationship between walsh averages and WRS](https://stats.stackexchange.com/questions/215889/prove-the-relationship-between-walsh-averages-and-wilcoxon-signed-rank-test)
+-   [Hodges Lehmann Problems](https://aakinshin.net/posts/r-hodges-lehmann-problems)
+
+## Available R packages
+
+There are three main implementations of the Wilcoxon rank sum test in R.
+
+-   [stats::wilcox.test](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/wilcox.test)
+
+-   [asht::wmwTest()](https://cran.r-project.org/web/packages/asht/asht.pdf)
+
+-   [coin::wilcox_test()](https://cran.r-project.org/web/packages/coin/coin.pdf)
+
+The `stats` package implements various classic statistical tests, including Wilcoxon rank sum test. Although this is arguably the most commonly applied package, this one does not account for any ties in the data.
 
 ```{r}
 #| eval: false
@@ -25,8 +44,7 @@ title: "Wilcoxon Rank Sum (Mann Whitney-U) in R"
 stats::wilcox.test(x, y, paired = F)
 ```
 
-
-## Example: Birth Weight 
+## Example: Birth Weight
 
 *Data source: Table 30.4, Kirkwood BR. and Sterne JAC. Essentials of medical statistics. Second Edition. ISBN 978-0-86542-871-3*
 
@@ -45,7 +63,7 @@ bw_s <- c(3.18, 2.74, 2.9, 3.27, 3.65,
            3.69, 3.53, 2.38, 2.34)
 ```
 
- Can visualize the data on two histograms. Red lines indicate the location of medians. 
+Can visualize the data on two histograms. Red lines indicate the location of medians.
 
 ```{r}
 #| eval: true
@@ -57,10 +75,9 @@ hist(bw_s, main = 'Birthweight: smokers')
 abline(v = median(bw_s), col = 'red', lwd = 2)
 ```
 
+It is possible to see that for non-smokers, the median birthweight is higher than those of smokers. Now we can formally test it with wilcoxon rank sum test.
 
-It is possible to see that for non-smokers, the median birthweight is higher than those of smokers. Now we can formally test it with wilcoxon rank sum test. 
-
-The default test is two-sided with confidence level of 0.95, and does continuity correction. 
+The default test is two-sided with confidence level of 0.95, and does continuity correction.
 
 ```{r}
 #| eval: true
@@ -68,7 +85,8 @@ The default test is two-sided with confidence level of 0.95, and does continuity
 # default is two sided
 stats::wilcox.test(bw_ns, bw_s, paired = F)
 ```
- We can also carry out a one-sided test, by specifying `alternative = greater` (if the first item is greater than the second). 
+
+We can also carry out a one-sided test, by specifying `alternative = greater` (if the first item is greater than the second).
 
 ```{r}
 #| eval: true
@@ -76,4 +94,3 @@ stats::wilcox.test(bw_ns, bw_s, paired = F)
 # default is two sided
 stats::wilcox.test(bw_ns, bw_s, paired = F, alternative = 'greater')
 ```
-

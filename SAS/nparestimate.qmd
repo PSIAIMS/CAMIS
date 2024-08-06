@@ -1,0 +1,70 @@
+---
+title: "Non-parametric point estimation in SAS"
+---
+
+# Introduction
+
+The Hodges-Lehman estimator (Hodges and Lehmann 1962) provides a point estimate which is associated with the Wilcoxon rank sum statistics based on location shift. This is typically used for the 2-sample comparison with small sample size. Note: The Hodges-Lehman estimates the median of the difference and not the difference of the medians. The corresponding distribution-free confidence interval (CI) is also based on the Wilcoxon rank sum statistics (Moses). In addition, exact CIs can be constructed.
+
+PROC NPAR1WAY provides these estimates in a flexible manner.
+
+*Hodges, J. L. and Lehmann, E. L. (1962) Rank methods for combination of independent experiments in analysis of variance. Annals of Mathematical Statistics, 33, 482-4.*
+
+# Case study
+
+```{r, eval=FALSE}
+# Hollander-Wolfe-Chicken Example
+data all ;
+input group $ value ; 
+cards ;
+A 1.83
+A 0.50
+A 1.62
+A 2.48
+A 1.68
+A 1.88
+A 1.55
+A 3.06
+A 1.30
+B 0.878
+B 0.647
+B 0.598
+B 2.050
+B 1.060
+B 1.290
+B 1.060
+B 3.140
+B 1.290
+; 
+run ;
+
+```
+
+# Hodges-Lehmann estimate and confidence interval
+
+Hodges-Lehmann estimate and Moses confidence interval for the 2-sample case will be generated when putting HL as an option. The direction of the comparison can be controlled via refclass. If the exact confidence interval is required additionally then the exact statement together with the option HL needs to be defined. The Hodges-Lehmann point estimate and confidence interval can be addressed via the HodgesLehmann option under the ODS statement.
+
+```{r, eval=FALSE}
+proc npar1way hl (refclass = "B") data = all ;
+   class group ;
+   var value ;
+   exact hl ;
+   ods select HodgesLehmann ;
+run ;
+```
+
+# Results
+
+The NPAR1WAY Procedure
+
+```         
+                                           Hodges-Lehmann Estimation                                                
+                                                                                                                    
+                                        Location Shift (A - B)    0.5600                                            
+                                                                                                                    
+                                                                   Interval        Asymptotic                       
+                   Type                 95% Confidence Limits      Midpoint    Standard Error                       
+                                                                                                                    
+                   Asymptotic (Moses)     -0.3700      1.1830        0.4065            0.3962                       
+                   Exact                  -0.2200      1.0820        0.4310                                         
+```
