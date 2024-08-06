@@ -1,0 +1,51 @@
+---
+title: "Kruskal Wallis in Python"
+---
+
+## Introduction
+
+The Kruskal-Wallis test is a non-parametric equivalent to the one-way ANOVA. For this example, the data used is a subset of the iris dataset, testing for difference in sepal width between species of flower.
+
+```{python, eval=TRUE, echo=TRUE}
+import pandas as pd
+
+# Define the data
+data = {
+    'Species': ['setosa', 'setosa', 'setosa', 'setosa', 'setosa', 'setosa', 'versicolor', 'versicolor', 'versicolor', 'versicolor', 'versicolor', 'versicolor', 'virginica', 'virginica', 'virginica', 'virginica', 'virginica', 'virginica'],
+    'Sepal_Width': [3.4, 3.0, 3.4, 3.2, 3.5, 3.1, 2.7, 2.9, 2.7, 2.6, 2.5, 2.5, 3.0, 3.0, 3.1, 3.8, 2.7, 3.3]
+}
+
+# Create the DataFrame
+iris_sub = pd.DataFrame(data)
+
+# Print the DataFrame
+print(iris_sub)
+```
+
+## Implementing Kruskal-Wallis in Python
+
+The Kruskal-Wallis test can be implemented in Python using the kruskal function from scipy.stats. The null hypothesis is that the samples are from identical populations.
+
+```{python, eval=TRUE, echo=TRUE}
+from scipy.stats import kruskal
+
+# Separate the data for each species
+setosa_data = iris_sub[iris_sub['Species'] == 'setosa']['Sepal_Width']
+versicolor_data = iris_sub[iris_sub['Species'] == 'versicolor']['Sepal_Width']
+virginica_data = iris_sub[iris_sub['Species'] == 'virginica']['Sepal_Width']
+
+# Perform the Kruskal-Wallis H-test
+h_statistic, p_value = kruskal(setosa_data, versicolor_data, virginica_data)
+
+# Calculate the degrees of freedom
+k = len(iris_sub['Species'].unique())
+df = k - 1
+
+print("H-statistic:", h_statistic)
+print("p-value:", p_value)
+print("Degrees of freedom:", df)
+```
+
+## Results
+
+As seen above, Python outputs the Kruskal-Wallis rank sum statistic (10.922), the degrees of freedom (2), and the p-value of the test (0.004249). Therefore, the difference in population medians is statistically significant at the 5% level.
