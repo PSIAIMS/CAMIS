@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Kruskal Wallis in Python</title>
+<title>Group sequential design in East</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,40 +19,6 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -190,23 +156,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" class="toc-active">
-    <h2 id="toc-title">On this page</h2>
-   
-  <ul>
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
-  <li><a href="#implementing-kruskal-wallis-in-python" id="toc-implementing-kruskal-wallis-in-python" class="nav-link" data-scroll-target="#implementing-kruskal-wallis-in-python">Implementing Kruskal-Wallis in Python</a></li>
-  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a></li>
-  </ul>
-</nav>
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+        
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Kruskal Wallis in Python</h1>
+<h1 class="title">Group sequential design in East</h1>
 </div>
 
 
@@ -223,80 +181,45 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="introduction" class="level2">
-<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>The Kruskal-Wallis test is a non-parametric equivalent to the one-way ANOVA. For this example, the data used is a subset of the iris dataset, testing for difference in sepal width between species of flower.</p>
-<div id="2f7cc8d5" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the data</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Species'</span>: [<span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>],</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Sepal_Width'</span>: [<span class="fl">3.4</span>, <span class="fl">3.0</span>, <span class="fl">3.4</span>, <span class="fl">3.2</span>, <span class="fl">3.5</span>, <span class="fl">3.1</span>, <span class="fl">2.7</span>, <span class="fl">2.9</span>, <span class="fl">2.7</span>, <span class="fl">2.6</span>, <span class="fl">2.5</span>, <span class="fl">2.5</span>, <span class="fl">3.0</span>, <span class="fl">3.0</span>, <span class="fl">3.1</span>, <span class="fl">3.8</span>, <span class="fl">2.7</span>, <span class="fl">3.3</span>]</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the DataFrame</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>iris_sub <span class="op">=</span> pd.DataFrame(data)</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Print the DataFrame</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(iris_sub)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>       Species  Sepal_Width
-0       setosa          3.4
-1       setosa          3.0
-2       setosa          3.4
-3       setosa          3.2
-4       setosa          3.5
-5       setosa          3.1
-6   versicolor          2.7
-7   versicolor          2.9
-8   versicolor          2.7
-9   versicolor          2.6
-10  versicolor          2.5
-11  versicolor          2.5
-12   virginica          3.0
-13   virginica          3.0
-14   virginica          3.1
-15   virginica          3.8
-16   virginica          2.7
-17   virginica          3.3</code></pre>
+<p>“Two Samples”, “Logrank Test Given Accrual Duration and Study Duration” in the Survival library will be used for sample size calculations.</p>
+<p>After selecting the design option, you will initially see tabs: “Test Parameters” and “Accrual/Dropouts”. Once the “Number of Looks” is updated to greater than 1, a “Boundary” tab will appear.</p>
+<p>Below are screenshots of each of the tabs for a group sequential design (GSD) for a progression-free survival (PFS) endpoint, which has one interim analysis for both efficacy and non-binding futility:</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/gsd-tte/test-params-pfs.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
 </div>
 </div>
-</section>
-<section id="implementing-kruskal-wallis-in-python" class="level2">
-<h2 class="anchored" data-anchor-id="implementing-kruskal-wallis-in-python">Implementing Kruskal-Wallis in Python</h2>
-<p>The Kruskal-Wallis test can be implemented in Python using the kruskal function from scipy.stats. The null hypothesis is that the samples are from identical populations.</p>
-<div id="5009ad4f" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.stats <span class="im">import</span> kruskal</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Separate the data for each species</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>setosa_data <span class="op">=</span> iris_sub[iris_sub[<span class="st">'Species'</span>] <span class="op">==</span> <span class="st">'setosa'</span>][<span class="st">'Sepal_Width'</span>]</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>versicolor_data <span class="op">=</span> iris_sub[iris_sub[<span class="st">'Species'</span>] <span class="op">==</span> <span class="st">'versicolor'</span>][<span class="st">'Sepal_Width'</span>]</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>virginica_data <span class="op">=</span> iris_sub[iris_sub[<span class="st">'Species'</span>] <span class="op">==</span> <span class="st">'virginica'</span>][<span class="st">'Sepal_Width'</span>]</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform the Kruskal-Wallis H-test</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>h_statistic, p_value <span class="op">=</span> kruskal(setosa_data, versicolor_data, virginica_data)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the degrees of freedom</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>k <span class="op">=</span> <span class="bu">len</span>(iris_sub[<span class="st">'Species'</span>].unique())</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> k <span class="op">-</span> <span class="dv">1</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"H-statistic:"</span>, h_statistic)</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"p-value:"</span>, p_value)</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Degrees of freedom:"</span>, df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>H-statistic: 10.922233820459285
-p-value: 0.0042488075570347485
-Degrees of freedom: 2</code></pre>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/gsd-tte/bounds-pfs.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
 </div>
 </div>
-</section>
-<section id="results" class="level2">
-<h2 class="anchored" data-anchor-id="results">Results</h2>
-<p>As seen above, Python outputs the Kruskal-Wallis rank sum statistic (10.922), the degrees of freedom (2), and the p-value of the test (0.004249). Therefore, the difference in population medians is statistically significant at the 5% level.</p>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/gsd-tte/accrual-pfs.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The results are as follows:</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/gsd-tte/result-pfs.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The results are generated with East version 6.5.4.6.</p>
 
 
-</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
