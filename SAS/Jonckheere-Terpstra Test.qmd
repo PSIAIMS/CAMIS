@@ -4,55 +4,73 @@ title: "SAS Jonckheere-Terpstra Test"
 
 ------------------------------------------------------------------------
 
-*Italic words are note for you.\
-Your choice to use part or all to fit your topic.*
-
 ## SAS Procedure
 
-Proc Freq ...
+To request Jonckheere-Terpstra test, specify the JT option in the Table statement like below:
 
-*If there is only one available package this can be deleted. Otherwise please make a short list, paragraph or table. If there is a reason to use one package vs another please include it. Please make sure to include what version of the packages you are using*
+Preq; table Var1 \* Var2 / JT; Quit;
+
+The JT option in the TABLES statement provides the Jonckheere-Terpstra test, which is a nonparametric test for ordered differences among classes.
+
+PROC FREQ also provides exact p-values for the Jonckheere-Terpstra test. You can request the exact test by specifying the JT option in the EXACT statement.
 
 ## Data used
 
-```{eval = FALSE}
-data ExData; 
-    input Var1 $ Var2 ...; 
-    datalines; 
-[Data Lines]; 
-run; 
+``` sas
+data breaking;
+input speed distance @@;
+cards;
+20 48
+25 33
+25 59
+25 48
+25 56
+30 60
+30 101
+30 67
+35 85
+35 107
+;
+run;
 ```
 
-```{r}
-exData <- tibble::tribble( 
-  ~Var1, ~Var2, 
-  "val1", 1, 
-  "val2", 2) 
+``` sas
+data contin;
+input group subject response;
+cards;
+0 01 27
+0 02 28
+0 03 27
+0 04 31
+0 05 34
+0 06 32
+1 01 31
+1 02 35
+1 03 34
+1 04 32
+1 05 31
+1 06 33
+2 01 32
+2 02 33
+2 03 30
+2 04 34
+2 05 37
+2 06 36
+3 01 40
+3 02 39
+3 03 41
+3 04 38
+3 05 42
+3 06 43
+;
+run;
 ```
 
-*a sentence or two about the data. Consider using a package like {skimr} to help illustrate the data.*
+## Example Code using
 
-## Example Code using <package name>
+proc freq; table speed\*distance / jt nopercent nocol norow; run;
 
-*Describe more details about the method.\
-If needed, add link to other web page/paper/SAS help methodology page, and list them in reference section.\
-Print key results as needed.\
-Add explanations about code and results as needed.*
-
-## Example Code using <another package name>
-
-*Add if there is more than one package*
-
-## Comparison
-
-*If you are comparing more than one package or between different languages, consider adding in a table to illustrate some of the differences. When comparing between languages it can be nice to have a table with links to the pages with deeper dive of each language for a given method method like this table from the ANCOVA page:*
-
-| Analysis                                      | Supported in R          | Supported in SAS          | Results Match | Notes                                                                                    |
-|---------------|---------------|---------------|---------------|---------------|
-| ANCOVA using general linear model and lsmeans | [Yes](../R/ancova.html) | [Yes](../SAS/ancova.html) | [Yes](#comp)  | `GLM()` function from **sasLM** with `EMEANS=TRUE` is the easiest to use and matches SAS |
-
-*But, even if you are just comparing the difference in same language it can be helpful to have a table with values of interest across different packages. Using dynamic content you can add the values to a table without manually putting in each value.\
-SAS result is very reliable in many cases.*
+proc freq data=contin; tables group\*response/jt; title "Jonckheere-Terpstra Trend Test for Continuous Data"; run;
 
 ## Conclusion
 
