@@ -1,38 +1,74 @@
 ---
-title: "Estimating Cumulative Incidence Function Using R"
+title: "Estimating Cumulative Incidence Functions Using R"
 ---
 
-# Introduction
+## Objective
 
-In this document we investigate how to implement competing risk analysis in R. In particular, we focus on the basic competing risks model where each subject experiences only one of the possible *k* events as depicted in the figure below.
+In this document we present how to estimate cumulative incidence functions (CIFs) for the probability of experiencing a certain event at a given time in a competing risks model in R. We focus on the basic model where each subject experiences only one out of *k* possible events as depicted in the figure below.
 
 ```{r, echo=FALSE, fig.align='center', out.width="25%"}
 knitr::include_graphics("images/survival_competing_risks/cr.jpg")
 ```
 
-## Data used
+In addition, we are interested in R packages and functions that are relatively easy to implement, and provide analyses and results comparable to those given by SAS.
 
-Just a sentence or two about the data. Consider using a package like {skimr} to help illustrate the data.
+## R Packages for Estimating CIFs
 
-## Example Code
+We have identified two packages, one a wrapper of the other, that can be considered "counter-parts" of the SAS procedure LIFETEST, a default choice for estimating CIFs. The two packages are:
 
-### Example using {package name}
+-   `cmprsk` version 2.2-12 (2024-05-14)
+-   `tidycmprsk` version 1.0.0 (2023-10-30).
 
-**Optional** if there is more than one package
+They are tested using R version 4.3.1 (2023-06-16) on platform x86_64-pc-linux-gnu (64-bit).
 
-```{r}
-require(cmprsk)
+### Data used
+
+The bone marrow transplant (BTM) dataset as presented by Guo & So (2018) is used. The dataset has the following variables:
+
+-   `Group` has three levels, indicating three disease groups.
+
+-   `T` is the disease-free survival time in days. A derived variable `TYears = T/365.25` is used in the analysis.
+
+-   `Status` has value 0 if `T` is censored; 1 if `T` is time to relapse; 2 if `T` is time to death.
+
+-   `WaitTime` is the waiting time to transplant in days. A log transformation is applied to stabilize the large variation.
+
+```{r readdata, message=FALSE, warning=FALSE}
+require(dplyr)
+bmt <- read.delim(paste0(getwd(), "/data/bmt.txt")) %>%
+  mutate(Group = factor(Group, 
+                        levels = c(1, 2, 3), 
+                        labels = c('ALL', 'AML-Low Risk', 'AML-High Risk')
+                        ),
+         Status = factor(Status,
+                         levels = c(0, 1, 2),
+                         labels = c('Censored', 'Relapse', 'Death')),
+         TYears = T / 365.25
+         )
 ```
 
-## Comparison
+## Estimating the CIFs
 
-If you are comparing more than one package or between different languages, consider adding in a table to illustrate some of the differences. When comparing between languages it can be nice to have a table with links to the pages with deeper dive of each language for a given method method like this table from the ANCOVA page:
+### CIF Estimates and Gray's Test
 
-| Analysis                                      | Supported in R          | Supported in SAS          | Results Match | Notes                                                                                    |
-|-------------|-------------|-------------|-------------|--------------------|
-| ANCOVA using general linear model and lsmeans | [Yes](../R/ancova.html) | [Yes](../SAS/ancova.html) | [Yes](#comp)  | `GLM()` function from **sasLM** with `EMEANS=TRUE` is the easiest to use and matches SAS |
+```{r}
+bmt.cif <- cmprsk::cuminc(ftime = bmt$TYears, 
+                          fstatus = bmt$Status, 
+                          group = bmt$Group, 
+                          cencode = 'Censored')
+print(bmt.cif, ntp = 4, maxtime = 5)
+cmprsk::timepoints(bmt.cif, c(0.5, 1, 1.5, 2, 4))
+```
 
-But, even if you are just comparing the difference in same language it can be helpful to have a table with values of interest across different packages. Using dynamic content you can add the values to a table without manually putting in each value
+
+The function `cuminc{cmprsk}` does not provide confidence intervals for the estimated CIF. The `tidycmprsk`
+
+estimates the variance of the CIF estimates based on the asymptotic variance of Aalen (1978).
+
+### Confidence Intervals for the Estimated CIF
+
+
+
 
 ## Conclusion
 
@@ -40,4 +76,8 @@ But, even if you are just comparing the difference in same language it can be he
 
 ## Reference
 
-**Optional** add any references you used
+Aalen, O. (1978) Nonparametric estimation of partial transition probabilities in multiple decrement models, ANNALS OF STATISTICS, 6:534-545.
+
+Guo C and So Y. (2018). "Cause-specific analysis of competing risks using the PHREG procedure." In Proceedings of the SAS Global Forum 2018 Conference. Cary, NC: SAS Institute Inc. https://support.sas.com/resources/papers/proceedings18/2159-2018.pdf.
+
+Package 'cmprsk' vignettes: https://cran.r-project.org/web/packages/cmprsk/cmprsk.pdf
