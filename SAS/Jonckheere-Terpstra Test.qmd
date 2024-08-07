@@ -8,7 +8,7 @@ title: "SAS Jonckheere-Terpstra Test"
 
 The Jonckheere-Terpstra (JT) test is a nonparametric method designed to detect ordered differences across categories. It offers an advantageous alternative to more general tests for class differences, such as the Kruskal-Wallis test, particularly when the analysis is conducted using the WILCOXON option within the NPAR1WAY procedure. $^{[1]}$
 
-The JT test is particularly well-suited for dose-response or trend analysis with ordered categorical data, where the objective is to ascertain whether an increment in dosage leads to a corresponding escalation or reduction in the response variable.$^{[2]}$ Unlike other statistical evaluations that might focus on identifying isolated differences between groups, this test is specifically tailored to uncover an overarching trend within the data.
+The JT test is particularly well-suited for dose-response or trend analysis with ordered categorical data, where the objective is to ascertain whether an increment in dosage leads to a corresponding escalation or reduction in the response variable.$^{[2]}$$^{[5]}$ Unlike other statistical evaluations that might focus on identifying isolated differences between groups, this test is specifically tailored to uncover an overarching trend within the data.
 
 ## SAS Procedure
 
@@ -23,20 +23,31 @@ PROC FREQ also provides exact p-values for the Jonckheere-Terpstra test. You can
 ## Data used
 
 ``` sas
-data breaking;
-input speed distance @@;
-cards;
-20 48
-25 33
-25 59
-25 48
-25 56
-30 60
-30 101
-30 67
-35 85
-35 107
+data ICU_Stay;
+    input ICU $ Stay;
+    label Stay = 'Length of Stay in Days';
+    datalines;
+Cardiothoracic 7
+Medical 4
+Cardiothoracic 1
+Medical 7
+Cardiothoracic 2
+Medical 16
+Cardiothoracic 6
+Medical 11
+Cardiothoracic 11
+Medical 21
+Cardiothoracic 8
+Neurosurgical 20
+Neurosurgical 25
+Neurosurgical 13
+Neurosurgical 9
+Neurosurgical 14
+Neurosurgical 11
 ;
+run;
+proc sort data=ICU_Stay;
+    by ICU Stay;
 run;
 ```
 
@@ -74,7 +85,7 @@ run;
 
 ## Example Code using
 
-proc freq; table speed\*distance / **JT** nopercent nocol norow; run;
+proc freq data=ICU_Stay; table ICU\*Stay / JT nopercent nocol norow; run;
 
 proc freq data=contin; tables group\*response/**JT**; title "Jonckheere-Terpstra Trend Test for Continuous Data"; run;
 
@@ -91,3 +102,5 @@ The JT test is particularly useful in scenarios such as dose-response studies in
 \[3\] SAS Institute Inc. (n.d.). FREQ Procedure: Syntax. In SAS/STAT 14.2 User's Guide. Retrieved August 7, 2024, from https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.5/statug/statug_freq_syntax08.htm
 
 \[4\] Park, C., Hsiung, J.-T., Soohoo, M., & Streja, E. (2019). Choosing Wisely: Using the Appropriate Statistical Test for Trend in SAS
+
+\[5\] Bewick V, Cheek L, Ball J. Statistics review 10: Further nonparametric methods. Crit Care. 2004;8(4):R131-R139. doi:10.1186/cc468904. PMCID: PMC468904.[PubMed Central](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC468904/).
