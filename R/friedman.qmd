@@ -1,0 +1,43 @@
+## title: "friedman's test"
+
+### **Getting Started**
+
+Friedman's test is used when you have one within-subjects independent variable with two or more levels and a dependent variable that is not interval and normally distributed (but at least ordinal). To build such unreplicated blocked data, we'll create a data frame called `df_bp` from random number.
+
+```{r}
+#| eval: false
+#| include: false
+library("tidyverse")
+
+```
+
+### Data used {.unnumbered}
+
+`bp` will be the dependent variable. `subjid` serves as block and `time_point` as group.
+
+```{r}
+set.seed(123)
+
+df_bp = data.frame(bp = runif(n = 50, 138, 200)) %>% 
+  mutate(subjid = as.factor(row_number() %% 5),  
+         time_point = as.factor((row_number()-1) %/% 5 + 1))
+
+head(df_bp)
+```
+
+### Friedman's test {.unnumbered}
+
+For this example, we're testing for a significant difference in median `bp` of different time points using `friedman_test()` from package *rstatix*.
+
+```{r}
+#| eval: false
+res.fried <- df_bp %>% 
+  rstatix::friedman_test(bp ~ time_point | subjid)
+res.fried
+```
+
+`friedman_effsize()` can be used to calculated effect size.
+
+```{r}
+df_bp %>% rstatix::friedman_effsize(bp ~ time_point | subjid)
+```
