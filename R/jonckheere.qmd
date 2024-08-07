@@ -1,8 +1,6 @@
 ---
-title: "R Template"
+title: "Jonckheere-Terpstra test"
 ---
-
-# Jonckheere-Terpstra test
 
 ## Available R packages
 
@@ -14,7 +12,7 @@ As far as I know, the following packages are available:
 -   PMCMRplus
 -   fastJT
 
-Due to availability in the company, DescTools is used to compare the results with SAS.
+Due to availability in the company, DescTools version 0.99.55 is used to compare the results with SAS.
 
 ## Data used
 
@@ -27,27 +25,48 @@ The Group indicates a dose of a drug. The scores for Group represent ordering of
 ## Example Code
 
 ```{r}
+rm(list = ls())
+
+library(DescTools)
+library(magrittr)
+library(data.table)
+library(ggplot2)
+
+#
+# Constants
+#
+k_data_file <- "jonck.csv"
+k_seed <- 4989
+k_n_samp <- 10000
+
+#
+# The input dataset is imported.
+#
+inds <- file.path("../data", k_data_file) %>% data.table::fread()
+
+#
+# Analysis
+#
+jt_norm <- DescTools::JonckheereTerpstraTest(
+  value ~ DOSE,
+  alternative = "decreasing",
+  data = inds
+)
+set.seed(k_seed)
+jt_resamp <- DescTools::JonckheereTerpstraTest(
+  value ~ DOSE,
+  alternative = "decreasing",
+  data = inds,
+  nperm = k_n_samp
+)
+set.seed(NULL)
+
+jt_norm
+jt_resamp
+
 
 ```
 
-### Example using
-
-**Optional** if there is more than one package
-
-## Comparison
-
-If you are comparing more than one package or between different languages, consider adding in a table to illustrate some of the differences. When comparing between languages it can be nice to have a table with links to the pages with deeper dive of each language for a given method method like this table from the ANCOVA page:
-
-| Analysis                                      | Supported in R          | Supported in SAS          | Results Match | Notes                                                                                    |
-|---------------|---------------|---------------|---------------|---------------|
-| ANCOVA using general linear model and lsmeans | [Yes](../R/ancova.html) | [Yes](../SAS/ancova.html) | [Yes](#comp)  | `GLM()` function from **sasLM** with `EMEANS=TRUE` is the easiest to use and matches SAS |
-
-But, even if you are just comparing the difference in same language it can be helpful to have a table with values of interest across different packages. Using dynamic content you can add the values to a table without manually putting in each value
-
-## Conclusion
-
-**Optional** add a conclusion
-
 ## Reference
 
-**Optional** add any references you used
+Signorell A (2024). DescTools: Tools for Descriptive Statistics. R package version 0.99.55, https://github.com/AndriSignorell/DescTools/, https://andrisignorell.github.io/DescTools/.
