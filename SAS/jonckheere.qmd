@@ -1,0 +1,46 @@
+---
+title: "Jonckheere-Terpstra test"
+---
+
+## Jonckheere-Terpstra test in SAS
+
+The Jonckheere-Terpstra test can be conducted using the FREQ procedure.
+Specifically, it can be done by setting the jt option in the TABLES statement.
+
+With EXACT statement, the exact version and it Monte Carlo approximation can 
+be also conducted. However, it should be noted that the exact test, i.e., 
+a permuation test takes a long time to compelete the task even for a small 
+dataset.
+
+
+
+## Example Code
+
+```{r eval = FALSE}
+proc datasets lib = work;
+  delete inds / memtype = data;
+run;
+quit;
+
+FILENAME REFFILE '/home/tsumiis1/SandBox/CAMIS/jonck.csv';
+
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=CSV
+	OUT=WORK.inds;
+	GETNAMES=YES;
+RUN;
+
+proc freq data = inds;
+  title "Asymptotic p-value calculation";
+  table DOSE * value / jt;
+  ods output JTTest = o_jt;
+run;
+
+proc freq data = inds;
+  title "Approximation of exact test by resampling";
+  table DOSE * value / jt;
+  exact jt / mc seed = 4989 n = 10000 alpha = 0.05;
+  ods output JTTestMC = o_jt_sim;
+run;
+
+```
