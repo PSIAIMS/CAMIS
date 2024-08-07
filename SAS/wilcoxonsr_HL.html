@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Two Sample t-test</title>
+<title>Wilcoxon signed-rank test in SAS &amp; StatXact</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -195,15 +195,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#two-sample-t-test-in-python" id="toc-two-sample-t-test-in-python" class="nav-link active" data-scroll-target="#two-sample-t-test-in-python"><strong>Two Sample t-test in Python</strong></a>
-  <ul class="collapse">
-  <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data Used</a></li>
-  <li><a href="#python" id="toc-python" class="nav-link" data-scroll-target="#python">Python</a>
-  <ul class="collapse">
-  <li><a href="#students-t-test" id="toc-students-t-test" class="nav-link" data-scroll-target="#students-t-test">Student’s T-Test</a></li>
-  <li><a href="#welchs-t-test" id="toc-welchs-t-test" class="nav-link" data-scroll-target="#welchs-t-test">Welch’s T-Test</a></li>
-  </ul></li>
-  </ul></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><strong>Introduction</strong></a></li>
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
+  <li><a href="#dataset-without-ties-and-n-20" id="toc-dataset-without-ties-and-n-20" class="nav-link" data-scroll-target="#dataset-without-ties-and-n-20">Dataset without ties and N&gt;= 20</a></li>
+  <li><a href="#analysis-in-sas" id="toc-analysis-in-sas" class="nav-link" data-scroll-target="#analysis-in-sas">Analysis in SAS</a></li>
+  <li><a href="#important-notes-on-sas" id="toc-important-notes-on-sas" class="nav-link" data-scroll-target="#important-notes-on-sas">Important notes on SAS</a></li>
   </ul>
 </nav>
     </div>
@@ -212,7 +208,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Two Sample t-test</h1>
+<h1 class="title">Wilcoxon signed-rank test in SAS &amp; StatXact</h1>
 </div>
 
 
@@ -229,77 +225,64 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="two-sample-t-test-in-python" class="level1">
-<h1><strong>Two Sample t-test in Python</strong></h1>
-<p>The Two Sample t-test is used to compare two independent samples against each other. In the Two Sample t-test, the mean of the first sample is compared against the mean of the second sample. In Python, a Two Sample t-test can be performed using the <strong>stats</strong> package from scipy.</p>
-<section id="data-used" class="level3">
-<h3 class="anchored" data-anchor-id="data-used">Data Used</h3>
-<p>The following data was used in this example.</p>
-<div id="6d28e83e" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy <span class="im">import</span> stats</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Create sample data</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'trt_grp'</span>: [<span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'placebo'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>, <span class="st">'treatment'</span>],</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'WtGain'</span>: [<span class="dv">94</span>, <span class="dv">12</span>, <span class="dv">26</span>, <span class="dv">89</span>, <span class="dv">88</span>, <span class="dv">96</span>, <span class="dv">85</span>, <span class="dv">130</span>, <span class="dv">75</span>, <span class="dv">54</span>, <span class="dv">112</span>, <span class="dv">69</span>, <span class="dv">104</span>, <span class="dv">95</span>, <span class="dv">53</span>, <span class="dv">21</span>, <span class="dv">45</span>, <span class="dv">62</span>, <span class="dv">96</span>, <span class="dv">128</span>, <span class="dv">120</span>, <span class="dv">99</span>, <span class="dv">28</span>, <span class="dv">50</span>, <span class="dv">109</span>, <span class="dv">115</span>, <span class="dv">39</span>, <span class="dv">96</span>, <span class="dv">87</span>, <span class="dv">100</span>, <span class="dv">76</span>, <span class="dv">80</span>]</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.DataFrame(data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
+<section id="introduction" class="level3">
+<h3 class="anchored" data-anchor-id="introduction"><strong>Introduction</strong></h3>
+<p>Similarily to what has been presented in R, we will explore the options of Wilcoxon signed-rank test that are avialable in SAS &amp; StatXact.We will consider case with N&gt;=20 or N&lt;20 and without or with ties. For more information how to perform this analysis in R go <a href="../data-info/wilcoxonsr_hodges_lehman.qmd">here</a></p>
 </section>
-<section id="python" class="level2">
-<h2 class="anchored" data-anchor-id="python">Python</h2>
-<p>If we have normalized data, we can use the classic Student’s t-test. For a Two sample test where the variances are not equal, we should use the Welch’s t-test. Both of those options are available in the scipy <strong>stats</strong> package.</p>
-<section id="students-t-test" class="level3">
-<h3 class="anchored" data-anchor-id="students-t-test">Student’s T-Test</h3>
-<section id="code" class="level4">
-<h4 class="anchored" data-anchor-id="code">Code</h4>
-<p>The following code was used to test the comparison in Python. Note that we must separate the single variable into two variables to satisfy the scipy <strong>stats</strong> package syntax.</p>
-<div id="21aeaba5" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Separate data into two groups</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>group1 <span class="op">=</span> df[df[<span class="st">'trt_grp'</span>] <span class="op">==</span> <span class="st">'placebo'</span>][<span class="st">'WtGain'</span>]</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>group2 <span class="op">=</span> df[df[<span class="st">'trt_grp'</span>] <span class="op">==</span> <span class="st">'treatment'</span>][<span class="st">'WtGain'</span>]</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform Student's t-test assuming equal variances</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>t_stat, p_value_equal_var <span class="op">=</span> stats.ttest_ind(group1, group2, equal_var<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Student's T-Test assuming equal variances:"</span>)</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"T-statistic: </span><span class="sc">{</span>t_stat<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"P-value: </span><span class="sc">{</span>p_value_equal_var<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Student's T-Test assuming equal variances:
-T-statistic: -0.6969002027708538
-P-value: 0.4912306166204561</code></pre>
+<section id="data" class="level3 unnumbered">
+<h3 class="unnumbered anchored" data-anchor-id="data">Data</h3>
+<p>Analysis was be conducted on the same example dataset as in R.</p>
+<p>Wilcoxon signed rank test was applied to analyse the time to return to baseline FEV1 post-mannitol challenge 2. This time only median difference and p value were provided due to SAS’ limitations.</p>
+</section>
+<section id="dataset-without-ties-and-n-20" class="level3 unnumbered">
+<h3 class="unnumbered anchored" data-anchor-id="dataset-without-ties-and-n-20">Dataset without ties and N&gt;= 20</h3>
+<p>Let’s consider a case where the dataset has no ties and N (numbr of observations) = 240.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>data TTR;</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    set TTR;</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    diff <span class="ot">=</span> TRT_B <span class="sc">-</span> TRT_A;</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/wilcoxonsr/wsr_data.PNG" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
+</figure>
+</div>
 </div>
 </div>
 </section>
+<section id="analysis-in-sas" class="level3 unnumbered">
+<h3 class="unnumbered anchored" data-anchor-id="analysis-in-sas">Analysis in SAS</h3>
+<p>In SAS Wilcoxon signed-rank test is available using PROC UNIVARIATE.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>proc univariate data<span class="ot">=</span>TTR</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    alpha<span class="ot">=</span><span class="fl">0.1</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">CIquantNORMAL</span> (<span class="at">type=</span>twosided <span class="at">alpha=</span><span class="fl">0.1</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  pctldef <span class="ot">=</span> <span class="dv">2</span>;   </span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    var diff;</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/wilcoxonsr/wsr_240.PNG" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
+</figure>
+</div>
+</div>
+</div>
 </section>
-<section id="welchs-t-test" class="level3">
-<h3 class="anchored" data-anchor-id="welchs-t-test">Welch’s T-Test</h3>
-<section id="code-1" class="level4">
-<h4 class="anchored" data-anchor-id="code-1">Code</h4>
-<p>The following code was used to test the comparison in Python using Welch’s t-test.</p>
-<div id="e91fe157" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform Welch's t-test assuming unequal variances</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>t_stat_welch, p_value_unequal_var <span class="op">=</span> stats.ttest_ind(group1, group2, equal_var<span class="op">=</span><span class="va">False</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Welch's T-Test assuming unequal variances:"</span>)</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"T-statistic: </span><span class="sc">{</span>t_stat_welch<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"P-value: </span><span class="sc">{</span>p_value_unequal_var<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-Welch's T-Test assuming unequal variances:
-T-statistic: -0.6969002027708538
-P-value: 0.4912856152047901</code></pre>
-</div>
-</div>
+<section id="important-notes-on-sas" class="level3 unnumbered">
+<h3 class="unnumbered anchored" data-anchor-id="important-notes-on-sas">Important notes on SAS</h3>
+<ul>
+<li>XXXXX</li>
+<li>BBBBB</li>
+<li></li>
+</ul>
 
 
-</section>
-</section>
-</section>
 </section>
 
 </main> <!-- /main -->
