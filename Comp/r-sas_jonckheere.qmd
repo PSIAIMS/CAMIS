@@ -1,0 +1,60 @@
+---
+title: "R vs SAS on the Jonckheere-Terpstra test"
+---
+
+## Comparison
+
++----------------------------------------------------------------------------+----------------+------------------+--------------------+------------------------------------------------------------+
+| Analysis                                                                   | Supported in R | Supported in SAS | Results Match      | Notes                                                      |
++============================================================================+================+==================+====================+============================================================+
+| Jonckheere-Terpstra test using normal approximation                        | Yes            | Yes              | Partial match      | The test statistics was 184.5 from both languages.         |
+|                                                                            |                |                  |                    |                                                            |
+|                                                                            |                |                  |                    | Regarding the p-value, R yields 0.002655, and SAS 0.002649 |
++----------------------------------------------------------------------------+----------------+------------------+--------------------+------------------------------------------------------------+
+| Jonckheere-Terpstra test using Monte Carlo approximation for an exact test | Yes            | Yes              | Partially matching | The resampling number is 10000.                            |
+|                                                                            |                |                  |                    |                                                            |
+|                                                                            |                |                  |                    | The test statistics was 184.5 from both languages.         |
+|                                                                            |                |                  |                    |                                                            |
+|                                                                            |                |                  |                    | Regarding the p-value, R yields 0.0023, and SAS 0.0016     |
++----------------------------------------------------------------------------+----------------+------------------+--------------------+------------------------------------------------------------+
+
+## Conclusion
+### Results from normal approximation
+For the test using normal approximation, the results look slightly different. 
+The reason for this gap may be either of the following.
+
+- Continuity correction
+- Handling of ties in calculating the variance of the test statistics
+- Numerical integration for normal distribution
+
+Regarding continuity correction, the SAS manual mentions that PROC FREQ does not 
+apply it. The DescTools manual does not mention anything about this point.
+
+Regarding variance of the test statistics, it depends only on the "cell counts" 
+in the context of cross tabulation analysis. From the viewpoint of rank tests,
+it depends on the frequencies of each tie values. However, since the same test 
+statistics value was given by both R and SAS, it is less likely that a gap exists 
+in calculation variance between languages.
+
+Based on consideration above, the gap looks acceptable. However, it should 
+kept in mind that R and SAS may take different approaches in continuity 
+correction.
+
+### Results from Monte Carlo approximation of an exact test
+For the test using simulation, the results also look slightly different. 
+
+As mentioned above, R and SAS may take different approaches in continuity 
+correction and calculation of variance for the test statistics. In addition,
+simulation-based results generally differ between different environments.
+
+The $95 \%$ CI for the approximate p-value given by SAS was $[0.0008, 0.0024]$.
+Since the p-value from R, 0.0023, locates within the CI, this result looks 
+comparable. 
+
+### Overall conclusion
+Overall, the gap between R and SAS is accaptable regarding the Jonckheere-Terpstra 
+test. However, users should know that R and SAS may take different approaches 
+for the following aspects:
+
+- Continuity correction
+- Handling of ties in calculating the variance of the test statistics
