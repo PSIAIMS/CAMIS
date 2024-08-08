@@ -4,20 +4,25 @@ title: "Estimating Cumulative Incidence Functions Using R"
 
 ## Objective
 
-In this document we present how to estimate cumulative incidence functions (CIFs) for the probability of experiencing a certain event at a given time in a competing risks model in R. We focus on the basic model where each subject experiences only one out of *k* possible events as depicted in the figure below.
+In this document we present how to estimate the cumulative incidence function (CIF) in R. We focus on the competing risks model where each subject experiences only one out of *k* possible events as depicted in the figure below.
 
 ```{r, echo=FALSE, fig.align='center', out.width="25%"}
-##knitr::include_graphics(paste0(getwd(), "/images/survival_competing_risks/cr.jpg"))
 knitr::include_graphics("../images/survival_competing_risks/cr.jpg")
 ```
 
-In addition, we are interested in R packages and functions that are relatively easy to implement, and provide analyses and results comparable to those given by SAS.
-
 ## R Packages for Estimating CIFs
 
-The `cmprsk` package (version 2.2-12, release date 2024-05-14) implements the methods described in Gray (1988) and Fine & Gray (1999). These are the the same methods implemented by the SAS procedure LIFETEST, a default choice for estimating CIFs.
+We identify three packages:
 
-The R functions in this document are tested using R version 4.3.1 (2023-06-16) on platform x86_64-pc-linux-gnu (64-bit).
+-   `cmprsk` version 2.2-12, release date 2024-05-14
+
+-   `tidycmprsk` version 1.0.0, release date 2023-10-30
+
+-   `survival` version 3.7-0, release date 2024-06-01
+
+The `cmprsk` package implements the methods described in Gray (1988) for testing CIFs across different groups. The `tidycmprsk` package is a wrapper for `cmprsk`. It uses syntax similar to other survival analysis packages, and also returns `survival` objects. In this document, we illustrate how to use the `tidycmprsk` package for estimating and testing CIFs. More details and other functionalities can be found [here](https://mskcc-epi-bio.github.io/tidycmprsk/ "tidycmprsk").
+
+The `survival` package is a general purpose survival analysis package. Its scope is far beyond the competing risks model. We will demonstrate how to estimate and test the CIFs using this package.
 
 ### Data used
 
@@ -35,47 +40,84 @@ The bone marrow transplant (BTM) dataset as presented by Guo & So (2018) is used
 require(dplyr)
 bmt <- read.delim(file.path("../data/bmt.txt")) %>%
   ##read.delim(paste0(getwd(), "/data/bmt.txt")) %>%
-  mutate(Group = factor(Group, 
-                        levels = c(1, 2, 3), 
-                        labels = c('ALL', 'AML-Low Risk', 'AML-High Risk')
-                        ),
-         Status = factor(Status,
-                         levels = c(0, 1, 2),
-                         labels = c('Censored', 'Relapse', 'Death')),
-         TYears = T / 365.25
-         )
+  mutate(
+    Group = factor(Group, 
+                   levels = c(1, 2, 3), 
+                   labels = c('ALL', 'AML-Low Risk', 'AML-High Risk')
+    ),
+    Status = factor(Status,
+                    levels = c(0, 1, 2),
+                    labels = c('Censored', 'Relapse', 'Death')),
+    TYears = T / 365.25,
+    logWaitTime = log(WaitTime),
+    ID = row_number()
+  )
+```
+
+## Estimating CIFs
+
+### The `tidycmprsk` Package
+
+#### CIF Estimates and Gray's Test
+
+The `cuminc{tidycmprsk}` function uses the same syntax as in many survival analysis packages. Therefore, it follows that censoring needs to be the first level in the event status indicator (here `Status`).
+
+```{r cr.est, message=FALSE, warning=FALSE}
+require(survival)
 require(tidycmprsk)
-require(Surv)
+##
+cif.1 <- cuminc(Surv(TYears, Status) ~ Group, data = bmt) 
+##
+cif.1 %>% 
+  tidy(
+    outcome = c('Death', 'Relapse'),
+    times = c(0.5, 1, 1.5, 2, 3, 4)
+  )
+cif.1 %>% 
+  tbl_cuminc(
+    times = c(0.5, 1, 1.5, 2, 3, 4),
+    outcome = c('Death', 'Relapse')
+  ) %>%
+  add_p()
 ```
 
-## Estimating the CIFs
+Two points to note:
 
-### CIF Estimates and Gray's Test
+1.   The current version of `cmprsk`, and hence `tidycmprsk,` estimates the variance of the CIF estimates asymptotically as in Aalen (1978). There is no option to change it to other methods.
 
-```{r cif.est, message=FALSE}
-bmt.cif <- cmprsk::cuminc(ftime = bmt$TYears, 
-                          fstatus = bmt$Status, 
-                          group = bmt$Group, 
-                          cencode = 'Censored')
-print(bmt.cif)
+2.  `cuminc{tidycmprsk`} offers pointwise CIs for the CIF estimates using the log-log transforms. There is no other options. No CIs are computed for the CIFs by `cuminc{cmprsk}`.
+
+#### CIF Plots
+
+```{r cr.plot, message=FALSE,warning=FALSE}
+require(ggsurvfit)
+cif.1 %>%
+  ggcuminc(outcome = 'Death') +
+  add_confidence_interval() +
+  add_risktable() +
+  xlab('Time (years) to death')
+cif.1 %>%
+  ggcuminc(outcome = 'Relapse') +
+  add_confidence_interval() +
+  add_risktable() +
+  xlab('Time (years) to relapse')
 ```
-### Confidence Intervals for the Estimated CIF
 
-The function `cuminc{cmprsk}` does not provide the pointwise confidence intervals (CIs) for the CIF estimates. Users can calculate these the CIs using any existing methods. For example, the following code can be used to derive the 95% CIs with the log-log transformations (cf. Pintilie (2006)).
+### The `survival` Package
 
-```{r cif.ci, message=FALSE}
-bmt.cif.ALLR <- as.data.frame(bmt.cif$`ALL Relapse`) %>%
-  mutate(ci.low = est^exp(-1 * qnorm(.975) * sqrt(var) / (est * (log(est)))),
-         ci.upp = est^exp( 1 * qnorm(.975) * sqrt(var) / (est * (log(est))))
-         )
+Using the bone marrow transplant example, the following code shows how to estimate the CIF for time to relapse:
+
+```{r surv.est, message=FALSE, warning=FALSE}
+
 ```
 
-Another point to note is that `cuminc{cmprsk}` estimates the variance of the CIF estimates asymptotically as in Aalen (1978). There is no option to change it to other methods. ds
+Using `survfit()`, the variances can only be estimated using the robust sandwich(???) method. The CIs, therefore, are slightly different from that estimated based on Aalen's or the delta method.
 
+## Summary
 
-## Conclusion
+Both `survfit{survival}` and `cuminc{cmprsk}` (and by extension `cuminc{tidycmprsk}`) implement Aalen-Johansen estimator. They result in identical estimates as what SAS PROC LIFETEST produces.
 
-**Optional** add a conclusion
+The results given by `cuminc{tidycmprsk}` are identical to what SAS PROC LIFETEST produces since the same methods are implemented. Certain options in SAS, e.g., the delta method for variance estimation or other ways of calculating the CIs, are not available in `cuminc{tidycmprsk}` at the moment. However, the outputs contain enough information that these options can be manually implemented by users. For example, Pintilie (2006) provides R code for deriving the variances for the estimated CIFs based on the delta method.
 
 ## Reference
 
