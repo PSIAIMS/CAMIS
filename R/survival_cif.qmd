@@ -65,10 +65,26 @@ The `tidycmprsk::cuminc()` function requires a `Surv` object. Therefore, the fir
 ```{r cr.est, message=FALSE, warning=FALSE}
 require(survival)
 require(tidycmprsk)
+require(tidyverse)
 cif.1 <- cuminc(Surv(TYears, Status) ~ Group, data = bmt) 
-cif.1 %>% 
+## table of Gray's test
+glance(cif.1) %>% 
+  pivot_longer(
+    everything(),
+    names_to = c(".value", "outcome_id"),
+    names_pattern = "(.*)_(.*)"
+  )
+## CIF estimates for time to relapse at selected timepoints for 'AML-Low Risk' patients
+tidy(
+  cif.1, times = c(0.5, 1, 1.5, 2, 3)) %>%
+  select(time, outcome, strata, estimate, std.error, conf.low, conf.high) %>% 
+  filter(outcome == 'Relapse' & strata == 'AML-Low Risk') %>%
+  mutate(across(where(is.numeric), ~ round(., digits = 4))
+  )
+## putting all in one table
+cif.1 %>%        
   tbl_cuminc(
-    times = c(0.5, 1, 1.5, 2, 3, 4),
+    times = c(0.5, 1, 1.5, 2, 3),
     outcome = c('Death', 'Relapse')
   ) %>%
   add_p()
@@ -86,12 +102,12 @@ Two points to note:
 require(ggsurvfit)
 cif.1 %>%
   ggcuminc(outcome = 'Death') +
-  add_confidence_interval() +
+  ## add_confidence_interval() +
   add_risktable() +
   xlab('Time (years) to death')
 cif.1 %>%
   ggcuminc(outcome = 'Relapse') +
-  add_confidence_interval() +
+  ## add_confidence_interval() +
   add_risktable() +
   xlab('Time (years) to relapse')
 ```
