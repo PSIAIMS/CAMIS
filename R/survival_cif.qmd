@@ -10,7 +10,7 @@ In this document we present how to estimate the cumulative incidence function (C
 knitr::include_graphics("../images/survival_competing_risks/cr.jpg")
 ```
 
-## R Packages for Estimating CIFs
+## R Packages
 
 We identify three packages:
 
@@ -20,7 +20,7 @@ We identify three packages:
 
 -   `survival` version 3.7-0, release date 2024-06-01
 
-The `cmprsk` package implements the methods described in Gray (1988) for testing CIFs across different groups. The `tidycmprsk` package is a wrapper for `cmprsk`. It uses syntax similar to other survival analysis packages, and also returns `survival` objects. In this document, we illustrate how to use the `tidycmprsk` package for estimating and testing CIFs. More details and other functionalities can be found [here](https://mskcc-epi-bio.github.io/tidycmprsk/ "tidycmprsk").
+The `cmprsk` package implements the methods described in Gray (1988) for testing CIFs across different groups. The `tidycmprsk` package is a wrapper for `cmprsk`. It uses syntax similar to other survival analysis packages, and returns `survival` objects. In this document, we illustrate how to use the `tidycmprsk` package for estimating and testing CIFs. More details and other functionalities can be found [here](https://mskcc-epi-bio.github.io/tidycmprsk/ "tidycmprsk").
 
 The `survival` package is a general purpose survival analysis package. Its scope is far beyond the competing risks model. We will demonstrate how to estimate the CIFs using this package.
 
@@ -39,7 +39,6 @@ The bone marrow transplant (BTM) dataset as presented by Guo & So (2018) is used
 ```{r readdata, message=FALSE, warning=FALSE}
 require(dplyr)
 bmt <- read.delim(file.path("../data/bmt.txt")) %>%
-  ##read.delim(paste0(getwd(), "/data/bmt.txt")) %>%
   mutate(
     Group = factor(Group, 
                    levels = c(1, 2, 3), 
@@ -49,7 +48,6 @@ bmt <- read.delim(file.path("../data/bmt.txt")) %>%
                     levels = c(0, 1, 2),
                     labels = c('Censored', 'Relapse', 'Death')),
     TYears = T / 365.25,
-    logWaitTime = log(WaitTime),
     ID = row_number()
   )
 ```
@@ -66,11 +64,6 @@ The `tidycmprsk::cuminc()` function requires a `Surv` object. Therefore, the fir
 require(survival)
 require(tidycmprsk)
 cif.1 <- cuminc(Surv(TYears, Status) ~ Group, data = bmt) 
-cif.1 %>% 
-  tidy(
-    outcome = c('Death', 'Relapse'),
-    times = c(0.5, 1, 1.5, 2, 3, 4)
-  )
 cif.1 %>% 
   tbl_cuminc(
     times = c(0.5, 1, 1.5, 2, 3, 4),
@@ -126,7 +119,7 @@ A few points to note:
 
 3.  In this example `survfit()` recognizes that the input are in multi-state model format; therefore, it estimates the variances of the CIFs with an infinitesimal jackknife (see Therneau (2024)). The CIs, as a result, are different from that estimated based on Aalen's or the delta method as done in SAS PROC LIFETEST.
 
-4.  The survival package also offers a different syntax for estimating CIFs. Users need to first call `finegray()` separately for each event to reformat the data, then apply `survfit()` for each event. The CIF estimates are identical since the same estimation method is used; the variances are yet different from directly calling `survfit()` with data in multi-state model format.
+4.  The survival package also offers a different syntax for estimating CIFs. Users need to first call `finegray()` separately for each event to reformat the data, then apply `survfit()` for each event. The CIF estimates are identical since the same estimation method is used; the variances can be different from directly calling `survfit()` with data in multi-state model format, since `finegray()` artificially extends the observed time for the competing events (see Therneau (2024)).
 
 #### CIF Plots
 
@@ -144,9 +137,9 @@ Aalen O. (1978). Nonparametric Estimation of Partial Transition Probabilities in
 
 Gray R. (1988). A Class of K-Sample Tests for Comparing the Cumulative Incidence of a Competing Risk, *Annals of Statistics*, 16:1141-1154.
 
-Gray R. (2024). *cmprsk: Subdistribution Analysis of Competing Risks*. <https://cran.r-project.org/web/packages/cmprsk/cmprsk.pdf>
+Gray R. (2024). *cmprsk: Subdistribution Analysis of Competing Risks*. R package version 2.2-12. <https://cran.r-project.org/web/packages/cmprsk/cmprsk.pdf>
 
-Guo C and So Y. (2018). Cause-Specific Analysis of Competing Risks Using the PHREG Procedure. In *Proceedings of the SAS Global Forum 2018 Conference*. Cary, NC: SAS Institute Inc. https://support.sas.com/resources/papers/proceedings18/2159-2018.pdf.
+Guo C and So Y. (2018). Cause-Specific Analysis of Competing Risks Using the PHREG Procedure. In *Proceedings of the SAS Global Forum 2018 Conference*. Cary, NC: SAS Institute Inc. <https://support.sas.com/resources/papers/proceedings18/2159-2018.pdf>.
 
 Pintilie M. (2006). *Competing Risks: A Practical Perspectiv*e. Wiley.\
 <http://dx.doi.org/10.1002/9780470870709>
