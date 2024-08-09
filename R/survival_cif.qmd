@@ -22,7 +22,7 @@ We identify three packages:
 
 The `cmprsk` package implements the methods described in Gray (1988) for testing CIFs across different groups. The `tidycmprsk` package is a wrapper for `cmprsk`. It uses syntax similar to other survival analysis packages, and also returns `survival` objects. In this document, we illustrate how to use the `tidycmprsk` package for estimating and testing CIFs. More details and other functionalities can be found [here](https://mskcc-epi-bio.github.io/tidycmprsk/ "tidycmprsk").
 
-The `survival` package is a general purpose survival analysis package. Its scope is far beyond the competing risks model. We will demonstrate how to estimate and test the CIFs using this package.
+The `survival` package is a general purpose survival analysis package. Its scope is far beyond the competing risks model. We will demonstrate how to estimate the CIFs using this package.
 
 ### Data used
 
@@ -34,7 +34,7 @@ The bone marrow transplant (BTM) dataset as presented by Guo & So (2018) is used
 
 -   `Status` has value 0 if `T` is censored; 1 if `T` is time to relapse; 2 if `T` is time to death.
 
--   `WaitTime` is the waiting time to transplant in days. A log transformation is applied to stabilize the large variation.
+-   `WaitTime` is the waiting time to transplant in days. This variable is not used here.
 
 ```{r readdata, message=FALSE, warning=FALSE}
 require(dplyr)
@@ -60,14 +60,12 @@ bmt <- read.delim(file.path("../data/bmt.txt")) %>%
 
 #### CIF Estimates and Gray's Test
 
-The `cuminc{tidycmprsk}` function uses the same syntax as in many survival analysis packages. Therefore, it follows that censoring needs to be the first level in the event status indicator (here `Status`).
+The `tidycmprsk::cuminc()` function requires a `Surv` object. Therefore, the first level of the event status variable (in this example `Status`) must represent censoring.
 
 ```{r cr.est, message=FALSE, warning=FALSE}
 require(survival)
 require(tidycmprsk)
-##
 cif.1 <- cuminc(Surv(TYears, Status) ~ Group, data = bmt) 
-##
 cif.1 %>% 
   tidy(
     outcome = c('Death', 'Relapse'),
@@ -83,9 +81,9 @@ cif.1 %>%
 
 Two points to note:
 
-1.   The current version of `cmprsk`, and hence `tidycmprsk,` estimates the variance of the CIF estimates asymptotically as in Aalen (1978). There is no option to change it to other methods.
+1.  The current version of `cmprsk`, and hence `tidycmprsk,` estimates the variance of the CIF estimates asymptotically as in Aalen (1978). There is no option to change it to other methods.
 
-2.  `cuminc{tidycmprsk`} offers pointwise CIs for the CIF estimates using the log-log transforms. There is no other options. No CIs are computed for the CIFs by `cuminc{cmprsk}`.
+2.  `tidycmprsk::cuminc()` offers pointwise CIs for the CIF estimates using the log-log transforms. There is no other options.
 
 #### CIF Plots
 
@@ -105,32 +103,54 @@ cif.1 %>%
 
 ### The `survival` Package
 
-Using the bone marrow transplant example, the following code shows how to estimate the CIF for time to relapse:
+#### CIF Estimates
+
+Using the bone marrow transplant example, the following code shows how to estimate the CIF for time to relapse or to death:
 
 ```{r surv.est, message=FALSE, warning=FALSE}
-
+cif.2 <- survfit(Surv(TYears, Status) ~ Group,
+                 data = bmt,
+                 se.fit = TRUE,
+                 conf.type = 'log-log', ## default is 'log'
+                 id = ID,
+                 robust = TRUE ## default for multi-state model
+                 )
+## summary(cif.2)
 ```
 
-Using `survfit()`, the variances can only be estimated using the robust sandwich(???) method. The CIs, therefore, are slightly different from that estimated based on Aalen's or the delta method.
+A few points to note:
+
+1.  `survfit()` returns the probability of being in a state (`pstate`). The CIF is its complement, i.e., `CIF = 1 - pstate`.
+
+2.  Gray's test for testing equality across groups is not performed.
+
+3.  In this example `survfit()` recognizes that the input are in multi-state model format; therefore, it estimates the variances of the CIFs with an infinitesimal jackknife (see Therneau (2024)). The CIs, as a result, are different from that estimated based on Aalen's or the delta method as done in SAS PROC LIFETEST.
+
+4.  The survival package also offers a different syntax for estimating CIFs. Users need to first call `finegray()` separately for each event to reformat the data, then apply `survfit()` for each event. The CIF estimates are identical since the same estimation method is used; the variances are yet different from directly calling `survfit()` with data in multi-state model format.
+
+#### CIF Plots
+
+The same `ggcuminc()` syntax can be applied to the `survfit()` output `cif.2`.
 
 ## Summary
 
-Both `survfit{survival}` and `cuminc{cmprsk}` (and by extension `cuminc{tidycmprsk}`) implement Aalen-Johansen estimator. They result in identical estimates as what SAS PROC LIFETEST produces.
+Both `tidycmprsk::cminc()` (as inherited from `cmprsk::cuminc()`) and `survival::survfit()` implement Aalen-Johansen estimator. For competing risks it reduces to CIF, which has a closed form formulation. The results are identical as produced by SAS PROC LIFETEST.
 
-The results given by `cuminc{tidycmprsk}` are identical to what SAS PROC LIFETEST produces since the same methods are implemented. Certain options in SAS, e.g., the delta method for variance estimation or other ways of calculating the CIs, are not available in `cuminc{tidycmprsk}` at the moment. However, the outputs contain enough information that these options can be manually implemented by users. For example, Pintilie (2006) provides R code for deriving the variances for the estimated CIFs based on the delta method.
+Certain options in SAS, e.g., the delta method for variance estimation or other types of transformation for calculating the CIs, are not available in the current versions of `tidycmprsk::cuminc()` or `survival::survfit()`. However, the outputs from both contain enough information that these options can be manually implemented by users. For example, Pintilie (2006) provides R code for deriving the variances for the estimated CIFs based on the delta method.
 
 ## Reference
 
-Aalen O. (1978). Nonparametric estimation of partial transition probabilities in multiple decrement models, ANNALS OF STATISTICS, 6:534-545.
+Aalen O. (1978). Nonparametric Estimation of Partial Transition Probabilities in Multiple Decrement Models, *Annals of Statistics*, 6:534-545.
 
-Gray R. (1988).
+Gray R. (1988). A Class of K-Sample Tests for Comparing the Cumulative Incidence of a Competing Risk, *Annals of Statistics*, 16:1141-1154.
 
-Guo C and So Y. (2018). "Cause-specific analysis of competing risks using the PHREG procedure." In Proceedings of the SAS Global Forum 2018 Conference. Cary, NC: SAS Institute Inc. https://support.sas.com/resources/papers/proceedings18/2159-2018.pdf.
+Gray R. (2024). *cmprsk: Subdistribution Analysis of Competing Risks*. <https://cran.r-project.org/web/packages/cmprsk/cmprsk.pdf>
 
-Package 'cmprsk' vignettes: https://cran.r-project.org/web/packages/cmprsk/cmprsk.pdf
+Guo C and So Y. (2018). Cause-Specific Analysis of Competing Risks Using the PHREG Procedure. In *Proceedings of the SAS Global Forum 2018 Conference*. Cary, NC: SAS Institute Inc. https://support.sas.com/resources/papers/proceedings18/2159-2018.pdf.
 
-Pintilie M. (2006). [**https://doi.org/10.1002/9780470870709.app2**](https://doi.org/10.1002/9780470870709.app2)
+Pintilie M. (2006). *Competing Risks: A Practical Perspectiv*e. Wiley.\
+<http://dx.doi.org/10.1002/9780470870709>
 
-https://onlinelibrary.wiley.com/doi/10.1002/9780470870709.app2
+Sjoberg D and Fei T. (2023). *tidycmprsk: Competing Risks Estimation*. <https://github.com/MSKCC-Epi-Bio/tidycmprsk>
 
-Sjoberg DD and Fei T. (2023). tidycmprsk: Competing Risks Estimation. https://github.com/MSKCC-Epi-Bio/tidycmprsk
+Therneau T. (2024). *A Package for Survival Analysis in R*. R package version 3.7-0, [https://CRAN.R-project.org/package=survival](https://cran.r-project.org/package=survival).
