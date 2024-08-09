@@ -10,14 +10,61 @@ In this document we present how to estimate the cumulative incidence function (C
 knitr::include_graphics("../images/survival_competing_risks/cr.jpg")
 ```
 
+### Data used
+
+The bone marrow transplant (BTM) dataset as presented by Guo & So (2018) is used. The dataset has the following variables:
+
+-   `Group` has three levels, indicating three disease groups.
+
+-   `T` is the disease-free survival time in days. A derived variable `TYears = T/365.25` is used in the analysis.
+
+-   `Status` has value 0 if `T` is censored; 1 if `T` is time to relapse; 2 if `T` is time to death.
+
+-   `WaitTime` is the waiting time to transplant in days. This variable is not used here.
+
+-   A new variable `ID` is created.
+
+```{r eval=FALSE}
+proc format;
+	value DiseaseGroup 1='ALL'
+	2='AML-Low Risk'
+	3='AML-High Risk';
+	value EventStatus 0='Censored'
+	1='Relapse'
+	3='Death';
+run;
+libname datalib "..\data";
+data bmt;
+	format Group DiseaseGroup.;
+	format Status EventStatus.;
+  set datalib.bmt;
+  TYears = T / 365.25;
+	ID = _n_;
+run;
+```
+
 ## Estimating CIFs in SAS
 
 ```{r eval=FALSE}
-libname lib "..\data";
-data dat;
-  set lib.bmt.txt;
-lenfoly = round(lenfol/365.25, 0.01);  /* change follow-up days to years for better visualization*/
-run;
+ods graphics on;
+proc lifetest data=bmt 
+              plots=cif(test)     /* cif plot with Gray`s test p-value */
+              error=aalen         /* default */ 
+              conftype=loglog     /* default */
+              outcif=cif1 
+              timelist=0.5 1 1.5 2 3; 
+	time Tyears * Status(0) / eventcode=1; 
+	strata Group / order=internal; 
+	format Group DiseaseGroup.;
+run; 
+ods graphics off;
+```
+
+Below are selected outputs for comparison with the R outputs in the companion document.
+
+```{r, echo=FALSE, fig.align='center', out.width="50%"}
+knitr::include_graphics("../images/survival_competing_risks/cifSAS.jpg")
+knitr::include_graphics("../images/survival_competing_risks/cifSAS.jpg")
 ```
 
 ## Reference
