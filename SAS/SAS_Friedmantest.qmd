@@ -1,0 +1,79 @@
+---
+title: "Friedman Chi-Square test using SAS"
+---
+
+# Introduction
+
+The Friedman test is a non-parametric statistical test developed by Milton Friedman similar to the parametric repeated measures ANOVA. It is used to detect differences in groups across multiple blocks. The procedure involves ranking each row (or block) together, then considering the values of ranks by columns. Applicable to complete block designs, it is thus a special case of the Durbin test.
+
+The Friedman test is used for one-way repeated measures analysis of variance by ranks. In its use of ranks it is similar to the Kruskal--Wallis one-way analysis of variance by ranks.
+
+## SAS version
+
+SAS 9.4
+
+## Data used
+
+Simulated dataset of 10 subjects(blocks) with continuous endpoints are generated for single-drug repeated measurements to check whether any significance exists between the responses(y) at different time points(4 time points simulated)(groups). The p-value will indicate whether differences in response for different time points are significant.
+
+## Data source
+
+```{r eval=FALSE}
+data one_way_repeat;
+   do subject = 1 to 10;
+   	do timepoint = 1 to 4;
+      response = round(rand('Uniform',10,50));
+      output;
+	end;
+   end;
+run;
+
+proc print;
+run;
+```
+
+## Overview
+
+The `FREQ` procedure computes CMH statistic, Friedman's test is identical to the ANOVA (row means scores) CMH statistic when the analysis uses rank scores (SCORES=RANK). The TABLES statement creates a three-way table i.e., timepoint and response stratified by subject. The output produces following statistics along with its degrees of freedom and p-value(Prob):
+
+-   Nonzero Correlation
+
+-   Row Mean Scores Differ
+
+The row corresponding to 'Row Mean Scores Differ' gives the required statistic and p-value for Friedman's test.
+
+## Handling missing Values
+
+When the data contains missing response, the procedure discards the corresponding row and calculates the required statistic with a message about number of missing responses below the test statisitc output.
+
+## Example Code for Friedman Chi-square test
+
+```{r eval=FALSE}
+proc freq data=one_way_repeat;
+      tables subject*timepoint*response / 
+             cmh2 scores=rank noprint;
+run;
+```
+
+## Results
+
+```         
+                                               The FREQ Procedure
+
+                                  Summary Statistics for timepoint by response
+                                            Controlling for subject
+
+                           Cochran-Mantel-Haenszel Statistics (Based on Rank Scores)
+
+                        Statistic    Alternative Hypothesis    DF       Value      Prob
+                        ---------------------------------------------------------------
+                            1        Nonzero Correlation        1      0.0276    0.8682
+                            2        Row Mean Scores Differ     3      3.6429    0.3027
+
+
+                                             Total Sample Size = 40
+```
+
+## References
+
+[Examples: FREQ Procedure (sas.com)](https://support.sas.com/documentation/cdl/en/statug/63033/HTML/default/viewer.htm#statug_freq_sect033.htm)
