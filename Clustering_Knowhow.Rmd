@@ -1,7 +1,7 @@
 ---
 title: "Clustering_knowhow"
 author: "Niladri Dasgupta"
-date: "2024-06-07"
+date: "2024-08-12"
 output: html_document
 ---
 
@@ -48,7 +48,7 @@ K means is an iterative clustering algorithm that works in these 5 steps:
 
     ![](images/Clustering/kmeans_2.png)
 
-3. Compute cluster centroids:  The centroid of data points in the orange cluster is shown using the orange cross, and those in the grey cluster using a grey cross.
+3. Compute cluster centroids: Centroids correspond to the arithmetic mean of data points assigned to the cluster. The centroid of data points in the orange cluster is shown using the orange cross, and those in the grey cluster using a grey cross. 
 
     ![](images/Clustering/kmeans_3.png)
 
@@ -64,7 +64,9 @@ K means is an iterative clustering algorithm that works in these 5 steps:
 We will repeat the 4th and 5th steps until no further switching of data points between two clusters for two successive repeats.
 <br>
 
-[**K-Means Clustering in R**]{.underline}
+
+#### K-Means Clustering in R
+
 
 **Step 1: Load packages**
 
@@ -91,7 +93,7 @@ df <- read_csv("data/Mall_Customers.csv")
 str(df)
 ```
 
-dataset consists of 200 customers data with their age, annual income and Spending score    
+dataset consists of 200 customers data with their age, annual income and Spending score.    
 
 
 ```{r}
@@ -114,7 +116,7 @@ head(df1)
 <br>
 
 We have separated the CustomerID and Genre from the dataset. The reason for removing these variables from the cluster dataset as Kmeans can handle only numerical variables.    
-To create cluster with categorical or ordinal variable we can use k-Medoid clustering
+To create cluster with categorical or ordinal variable we can use k-Medoid clustering.
 <br>
 
 ```{r}
@@ -137,10 +139,10 @@ To perform k-means clustering in R we can use the built-in kmeans() function, wh
 
   
 - Centers is the k of K Means.  centers = 5 would results in 5 clusters being created. We need to **predefine the k** before the cluster process starts.   
-- iter.max is the number of times the algorithm will repeat the cluster assignment and moving of centroids.
+- iter.max is the number of times the algorithm will repeat the cluster assignment and update the centers / centroids. Iteration stops after this many iterations even if the convergence criterion is not satisfied
 - nstart is the number of times the initial starting points are re-sampled. 
-In the code, it looks for the initial starting points that have the lowest within sum of squares (withinss).
-That means it tries “nstart” samples, does the cluster assignment for each data point “nstart” times, and picks the centers that have the lowest distance from the data points to the centroids.  With 20 or 25 random starts, you'll generally find the overall best solution unless your sample size is really big
+It means at the initialization of Clusters you need to specify how many clusters you want and the algorithm will randomly find same number of centroids to initialize. nstart gives you an edge to initialize the centroids through re sampling.  
+For example if total number of cluster is 3 and nstart=25 then it extracts 3 sets of data, 25 times, and for each of these times, the algorithm is run (up to iter.max # of iterations) and the cost function (total sum of the squares) is evaluated and finally 3 centroids with lowest cost function are chosen to start the clustering process.
 
 
 To find the best number of clusters/centroids there are two popular methods as shown below.
@@ -151,7 +153,7 @@ It has two parts as explained below-
 
 - WSS: The Within Sum of Squares (WSS) is the sum of distance between the centroids and every other data points within a cluster. Small WSS indicates that every data point is close to its nearest centroids.
 
-- Elbow rule/method: Here we plot out the WSS score against the number of K. Because with the number of K increasing, the wss will always decrease; however, the magnitude of decrease between each k will be diminishing, and the plot will be a curve which looks like an arm that curled up. In this way, we can find out which point falls on the elbow.
+- Elbow rule/method: Here we plot out the WSS score against the number of K. Because with the number of K increasing, the WSS will always decrease; however, the magnitude of decrease between each k will be diminishing, and the plot will be a curve which looks like an arm that curled up. In this way, we can find out which point falls on the elbow.
 
 ```{r}
 set.seed(1)
@@ -184,7 +186,7 @@ fviz_nbclust(df1, kmeans, method = "wss",nstart=25)
 The silhouette coefficient or silhouette score is a measure of how similar a data point is within-cluster (intra-cluster) compared to other clusters (inter-cluster).     
 The Silhouette Coefficient is calculated using the mean *intra-cluster distance (a)* and the *mean nearest-cluster distance (b)* for each sample. The Silhouette Coefficient for a sample is *(b - a) / max(a, b)*
 
-A high average silhouette width indicates a good clustering. The average silhouette method computes the average silhouette of observations for different values of k. The optimal number of clusters k is the one that maximizes the average silhouette over a range of possible values for k.
+Here we will plot the silhouette width/coefficient for different number of clusters and will choose the point where the silhouette width is highest.   
 
 **Points to Remember While Calculating Silhouette Coefficient:**
 
@@ -207,7 +209,7 @@ avg_sil <- sapply(k, silhouette_score)
 plot(k, type='b', avg_sil, xlab='Number of clusters', ylab='Average Silhouette Scores', frame=FALSE)
 ```
 
-The above method of calculating silhouette score using silhouette() and plotting the results states that optimal number of clusters as 5.
+From the above method we can see the silhouette width is highest at cluster 5 so the optimal number of cluster should be 5.
 
 Similar to the elbow method, this process to compute the “average silhoutte method” has been wrapped up in a single function (fviz_nbclust):
 
@@ -227,7 +229,7 @@ Lastly, we can perform k-means clustering on the dataset using the optimal value
 #make this example reproducible
 set.seed(1)
 
-#perform k-means clustering with k = 3 clusters
+#perform k-means clustering with k = 5 clusters
 fit <- kmeans(df1, 5, nstart=25)
 #view results
 fit
@@ -247,13 +249,14 @@ fviz_cluster(fit, data = df1)
 ```{r}
 #Adding the clusters in the main data
 
-df_cluster <- df %>% mutate(cluster=fit$cluster)
+df_cluster <- df %>% 
+  mutate(cluster=fit$cluster)
 
 #Creating Summary of created clusters based on existing variables
 
 df_summary <- df_cluster %>% 
   group_by(cluster) %>% 
-  summarise(avg_age=mean(Age),avg_annual_income=mean(Annual_Income),avg_spending_score=mean(Spending_score))
+  summarise(records=n(),avg_age=mean(Age),avg_annual_income=mean(Annual_Income),avg_spending_score=mean(Spending_score))
 
 print(df_summary)
 ```
