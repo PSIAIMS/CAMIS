@@ -2,13 +2,11 @@
 local({
 
   # the requested version of renv
-  version <- "1.0.7"
+  version <- "1.0.3"
   attr(version, "sha") <- NULL
 
   # the project directory
-  project <- Sys.getenv("RENV_PROJECT")
-  if (!nzchar(project))
-    project <- getwd()
+  project <- getwd()
 
   # use start-up diagnostics if enabled
   diagnostics <- Sys.getenv("RENV_STARTUP_DIAGNOSTICS", unset = "FALSE")
@@ -33,14 +31,6 @@ local({
     if (!is.null(override))
       return(override)
 
-    # if we're being run in a context where R_LIBS is already set,
-    # don't load -- presumably we're being run as a sub-process and
-    # the parent process has already set up library paths for us
-    rcmd <- Sys.getenv("R_CMD", unset = NA)
-    rlibs <- Sys.getenv("R_LIBS", unset = NA)
-    if (!is.na(rlibs) && !is.na(rcmd))
-      return(FALSE)
-
     # next, check environment variables
     # TODO: prefer using the configuration one in the future
     envvars <- c(
@@ -60,21 +50,8 @@ local({
 
   })
 
-  # bail if we're not enabled
-  if (!enabled) {
-
-    # if we're not enabled, we might still need to manually load
-    # the user profile here
-    profile <- Sys.getenv("R_PROFILE_USER", unset = "~/.Rprofile")
-    if (file.exists(profile)) {
-      cfg <- Sys.getenv("RENV_CONFIG_USER_PROFILE", unset = "TRUE")
-      if (tolower(cfg) %in% c("true", "t", "1"))
-        sys.source(profile, envir = globalenv())
-    }
-
+  if (!enabled)
     return(FALSE)
-
-  }
 
   # avoid recursion
   if (identical(getOption("renv.autoloader.running"), TRUE)) {
@@ -128,21 +105,6 @@ local({
   
     tail <- paste(rep.int(suffix, n), collapse = "")
     paste0(prefix, " ", label, " ", tail)
-  
-  }
-  
-  heredoc <- function(text, leave = 0) {
-  
-    # remove leading, trailing whitespace
-    trimmed <- gsub("^\\s*\\n|\\n\\s*$", "", text)
-  
-    # split into lines
-    lines <- strsplit(trimmed, "\n", fixed = TRUE)[[1L]]
-  
-    # compute common indent
-    indent <- regexpr("[^[:space:]]", lines)
-    common <- min(setdiff(indent, -1L)) - leave
-    paste(substring(lines, common), collapse = "\n")
   
   }
   
@@ -648,9 +610,6 @@ local({
   
     # if the user has requested an automatic prefix, generate it
     auto <- Sys.getenv("RENV_PATHS_PREFIX_AUTO", unset = NA)
-    if (is.na(auto) && getRversion() >= "4.4.0")
-      auto <- "TRUE"
-  
     if (auto %in% c("TRUE", "True", "true", "1"))
       return(renv_bootstrap_platform_prefix_auto())
   
@@ -842,23 +801,24 @@ local({
   
     # the loaded version of renv doesn't match the requested version;
     # give the user instructions on how to proceed
-    dev <- identical(description[["RemoteType"]], "github")
-    remote <- if (dev)
+    remote <- if (!is.null(description[["RemoteSha"]])) {
       paste("rstudio/renv", description[["RemoteSha"]], sep = "@")
-    else
+    } else {
       paste("renv", description[["Version"]], sep = "@")
+    }
   
     # display both loaded version + sha if available
     friendly <- renv_bootstrap_version_friendly(
       version = description[["Version"]],
-      sha     = if (dev) description[["RemoteSha"]]
+      sha     = description[["RemoteSha"]]
     )
   
-    fmt <- heredoc("
-      renv %1$s was loaded from project library, but this project is configured to use renv %2$s.
-      - Use `renv::record(\"%3$s\")` to record renv %1$s in the lockfile.
-      - Use `renv::restore(packages = \"renv\")` to install renv %2$s into the project library.
-    ")
+    fmt <- paste(
+      "renv %1$s was loaded from project library, but this project is configured to use renv %2$s.",
+      "- Use `renv::record(\"%3$s\")` to record renv %1$s in the lockfile.",
+      "- Use `renv::restore(packages = \"renv\")` to install renv %2$s into the project library.",
+      sep = "\n"
+    )
     catf(fmt, friendly, renv_bootstrap_version_friendly(version), remote)
   
     FALSE
@@ -1081,7 +1041,7 @@ local({
     # if jsonlite is loaded, use that instead
     if ("jsonlite" %in% loadedNamespaces()) {
   
-      json <- tryCatch(renv_json_read_jsonlite(file, text), error = identity)
+      json <- catch(renv_json_read_jsonlite(file, text))
       if (!inherits(json, "error"))
         return(json)
   
@@ -1090,7 +1050,7 @@ local({
     }
   
     # otherwise, fall back to the default JSON reader
-    json <- tryCatch(renv_json_read_default(file, text), error = identity)
+    json <- catch(renv_json_read_default(file, text))
     if (!inherits(json, "error"))
       return(json)
   
@@ -1103,14 +1063,14 @@ local({
   }
   
   renv_json_read_jsonlite <- function(file = NULL, text = NULL) {
-    text <- paste(text %||% readLines(file, warn = FALSE), collapse = "\n")
+    text <- paste(text %||% read(file), collapse = "\n")
     jsonlite::fromJSON(txt = text, simplifyVector = FALSE)
   }
   
   renv_json_read_default <- function(file = NULL, text = NULL) {
   
     # find strings in the JSON
-    text <- paste(text %||% readLines(file, warn = FALSE), collapse = "\n")
+    text <- paste(text %||% read(file), collapse = "\n")
     pattern <- '["](?:(?:\\\\.)|(?:[^"\\\\]))*?["]'
     locs <- gregexpr(pattern, text, perl = TRUE)[[1]]
   
@@ -1158,14 +1118,14 @@ local({
     map <- as.list(map)
   
     # remap strings in object
-    remapped <- renv_json_read_remap(json, map)
+    remapped <- renv_json_remap(json, map)
   
     # evaluate
     eval(remapped, envir = baseenv())
   
   }
   
-  renv_json_read_remap <- function(json, map) {
+  renv_json_remap <- function(json, map) {
   
     # fix names
     if (!is.null(names(json))) {
@@ -1192,7 +1152,7 @@ local({
     # recurse
     if (is.recursive(json)) {
       for (i in seq_along(json)) {
-        json[i] <- list(renv_json_read_remap(json[[i]], map))
+        json[i] <- list(renv_json_remap(json[[i]], map))
       }
     }
   
