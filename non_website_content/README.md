@@ -1,1 +1,2 @@
-NOTE: If you are currently working on some research to contribute to CAMIS, please ensure you raise an issue and assign yourself, so we avoid 2 people working on the same topic at the same time without collaborating together.
+This folder contains information which does not necessarily form part of the website build.
+Some files on here are cross referenced from the repository such as presentations given at conferences.
