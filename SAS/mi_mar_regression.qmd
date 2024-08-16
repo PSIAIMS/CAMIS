@@ -1,0 +1,100 @@
+------------------------------------------------------------------------
+
+title: "Multiple Imputaton: Linear Regression in SAS"
+
+------------------------------------------------------------------------
+
+## Multiple Imputation
+
+#### Input dataset preparation before multiple imputation
+
+1.  Prepare a subset of the analysis dataset, as PROC MI requires a horizontal, one record per subject data set. More often than not, the data we impute will come from a vertical ADaM BDS data set. So we need to first transpose the aval with the avisitn as ID (assuming avisitn = 1 to 5),creating transposed variable v1-v5.
+
+```         
+data dummy;
+    length USUBJID $4;
+    do i=1 to 10;
+            sex1n=int(ranuni(0)*2);
+        do j=1 to 5;
+            USUBJID=strip(put(1000+i,best.));
+            AVISITN=j;
+            AVAL=round(1+ranuni(0),0.01);
+            if ranuni(0) <0.1 then aval=.;
+            output;
+        end;
+    end;
+    drop i j;
+run;
+proc sort data=dummy; by usubjid sex1n;run;
+proc transpose data=dummy out=dummyt(drop=_name_) prefix=v;
+    by USUBJID sex1n;
+    id avisitn;
+    var aval;
+run;
+proc print data=dummyt(obs=5);
+run;
+```
+
+```{r, echo=FALSE, fig.align='center', out.width="100%"}
+knitr::include_graphics("../images/mi_mar_linear_sas/mi_mar_reg_view_Data.PNG")
+```
+
+#### Check missing data patterns
+
+The pattern can be checked using the following code, missing data pattern could be classified as "Monotone" or "Arbitrary"
+
+```         
+ods select MissPattern;
+proc mi data=dummyt nimpute=0;
+var v1 - v5;
+run;
+```
+
+Obviously the missing pattern is arbitrary and non-monotone missing pattern.
+
+```{r, echo=FALSE, fig.align='center', out.width="100%"}
+knitr::include_graphics("../images/mi_mar_linear_sas/mi_mar_reg_missing_pattern.PNG")
+```
+
+#### FCS Regression for non-monotone missing pattern
+
+```         
+proc mi data=dummyt out=outdata nimpute=10 seed=123;
+  class sex1n;
+  var sex1n v1 - v5;
+  fcs reg (v1-v5 /details);
+run;
+```
+
+-   The `VAR` statement above listing the variables to be analyzed, should match the statistical models for efficacy analysis per SAP, which may include TRTPN, necessary grouping variable (for eg AGEGR1/AGEGR1N), and all outcome variables coming from repeated assessments
+-   `NIMPUTE` : the number of imputations
+-   `SEED` : the seed to begin random number generator
+-   Note that depending on the SAS Proc MI algorithm, if there are more factors, the ordering of factors, for example SEX1N, RACE1N, may have an effect on the generation of the imputed values for the missing values, i.e., different orderings of these factors will generate different imputed values (e.g may happen in case of monotone missing pattern) from PROC MI procedure. The ordering of subjects in the dataset may also have an effect on the generation of the imputed values for the missing values.
+-   The `CLASS` statement specifies the classification variables in the VAR statement.
+-   `FCS` is displayed as the method, if not specified method then MCMC will be the default method.
+-   `REG` is the specified model(Linear regression)
+-   The `DETAILS` option displays the regression coefficients in the regression model used in each imputation.
+
+```{r, echo=FALSE, fig.align='center', out.width="100%"}
+knitr::include_graphics("../images/mi_mar_linear_sas/mi_mar_reg_fcs.PNG")
+```
+
+```{r, echo=FALSE, fig.align='center', out.width="100%"}
+knitr::include_graphics("../images/mi_mar_linear_sas/mi_mar_reg_fcs2.PNG")
+```
+
+#### Monotone Regression for monotone missing pattern
+
+```         
+proc mi data=dummyt out=outdata nimpute=10 seed=123;
+  class sex1n;
+  var sex1n v1 - v5;
+  monotone reg (v1-v5 /details);
+run;
+```
+
+## Reference
+
+-   [User's Guide The MI Procedure](https://support.sas.com/documentation/onlinedoc/stat/141/mi.pdf)
+-   [Multiple Imputation: A Statistical Programming Story](https://www.pharmasug.org/proceedings/2017/SP/PharmaSUG-2017-SP01.pdf)
+-   [Examine patterns of missing data in SAS](https://blogs.sas.com/content/iml/2016/04/18/patterns-of-missing-data-in-sas.html#:~:text=PROC%20MI%20has%20an%20option%20to%20produce%20a,MissPattern%3B%20proc%20mi%20data%20%3DSashelp.Heart%20nimpute%3D%200%20%3B)
