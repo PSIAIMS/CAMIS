@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>R vs SAS CMH</title>
+<title>Survey Summary Statistics using Python</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,7 +20,61 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
-</style>
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
 
 
 <script src="../site_libs/quarto-nav/quarto-nav.js"></script>
@@ -161,22 +215,16 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#cochran-mantel-haenszel-test" id="toc-cochran-mantel-haenszel-test" class="nav-link active" data-scroll-target="#cochran-mantel-haenszel-test">Cochran-Mantel-Haenszel Test</a>
+  <li><a href="#complex-survey-designs" id="toc-complex-survey-designs" class="nav-link active" data-scroll-target="#complex-survey-designs">Complex Survey Designs</a></li>
+  <li><a href="#summary-statistics" id="toc-summary-statistics" class="nav-link" data-scroll-target="#summary-statistics">Summary Statistics</a>
   <ul class="collapse">
-  <li><a href="#naming-convention" id="toc-naming-convention" class="nav-link" data-scroll-target="#naming-convention">Naming Convention</a></li>
-  <li><a href="#scale" id="toc-scale" class="nav-link" data-scroll-target="#scale">Scale</a></li>
+  <li><a href="#mean" id="toc-mean" class="nav-link" data-scroll-target="#mean">Mean</a></li>
+  <li><a href="#total" id="toc-total" class="nav-link" data-scroll-target="#total">Total</a></li>
+  <li><a href="#ratios" id="toc-ratios" class="nav-link" data-scroll-target="#ratios">Ratios</a></li>
+  <li><a href="#proportions" id="toc-proportions" class="nav-link" data-scroll-target="#proportions">Proportions</a></li>
+  <li><a href="#quantiles" id="toc-quantiles" class="nav-link" data-scroll-target="#quantiles">Quantiles</a></li>
+  <li><a href="#domain-estimations" id="toc-domain-estimations" class="nav-link" data-scroll-target="#domain-estimations">Domain Estimations</a></li>
   </ul></li>
-  <li><a href="#testing-strategy" id="toc-testing-strategy" class="nav-link" data-scroll-target="#testing-strategy">Testing Strategy</a>
-  <ul class="collapse">
-  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
-  <li><a href="#schemes" id="toc-schemes" class="nav-link" data-scroll-target="#schemes">Schemes</a></li>
-  </ul></li>
-  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a>
-  <ul class="collapse">
-  <li><a href="#cmh-statistics" id="toc-cmh-statistics" class="nav-link" data-scroll-target="#cmh-statistics">CMH Statistics</a></li>
-  </ul></li>
-  <li><a href="#summary-and-recommendation" id="toc-summary-and-recommendation" class="nav-link" data-scroll-target="#summary-and-recommendation">Summary and Recommendation</a></li>
-  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 </nav>
     </div>
@@ -185,7 +233,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">R vs SAS CMH</h1>
+<h1 class="title">Survey Summary Statistics using Python</h1>
 </div>
 
 
@@ -202,169 +250,37 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="cochran-mantel-haenszel-test" class="level1">
-<h1>Cochran-Mantel-Haenszel Test</h1>
-<p>The CMH procedure tests for conditional independence in partial contingency tables for a 2 x 2 x K design. However, it can be generalized to tables of X x Y x K dimensions.</p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/cmh/img.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="162"></p>
-</figure>
-</div>
-</div>
-</div>
-<section id="naming-convention" class="level2">
-<h2 class="anchored" data-anchor-id="naming-convention">Naming Convention</h2>
-<p>For the remainder of this document, we adopt the following naming convention when referring to variables of a contingency table:</p>
+<p>When conducting large-scale trials on samples of the population, it can be necessary to use a more complex sampling design than a simple random sample.</p>
 <ul>
-<li><p>X = exposure</p></li>
-<li><p>Y = response</p></li>
-<li><p>K = control</p></li>
+<li><p><strong>Weighting</strong> – If smaller populations are sampled more heavily to increase precision, then it is necessary to weight these observations in the analysis.</p></li>
+<li><p><strong>Finite population correction</strong> – Larger samples of populations result in lower variability in comparison to smaller samples.</p></li>
+<li><p><strong>Stratification</strong> – Dividing a population into sub-groups and sampling from each group. This protects from obtaining a very poor sample (e.g.&nbsp;under or over-represented groups), can give samples of a known precision, and gives more precise estimates for population means and totals.</p></li>
+<li><p><strong>Clustering</strong> – Dividing a population into sub-groups, and only sampling certain groups. This gives a lower precision, however can be much more convenient and cheaper - for example if surveying school children you may only sample a subset of schools to avoid travelling to a school to interview a single child.</p></li>
 </ul>
-</section>
-<section id="scale" class="level2">
-<h2 class="anchored" data-anchor-id="scale">Scale</h2>
-<p>The <code>scale</code> of the exposure (X) and response (Y) variables dictate which test statistic is computed for the contingency table. Each test statistic is evaluated on different degrees of freedom (df):</p>
-<ul>
-<li><p><code>General association</code> statistic (X and Y both nominal) results in <code>(X-1) * (Y-1) dfs</code></p></li>
-<li><p><code>Row mean</code> scores statistic (X is nominal and Y is ordinal) results in <code>X-1 dfs</code></p></li>
-<li><p><code>Nonzero correlation</code> statistic (X and Y both ordinal) results in <code>1 df</code></p></li>
-</ul>
-</section>
-</section>
-<section id="testing-strategy" class="level1">
-<h1>Testing Strategy</h1>
-<section id="data" class="level2">
-<h2 class="anchored" data-anchor-id="data">Data</h2>
-<p>To begin investigating the differences in the SAS and R implementations of the CMH test, we decided to use the CDISC Pilot data set, which is publicly available on the PHUSE Test Data Factory repository. We applied very basic filtering conditions upfront (see below) and this data set served as the basis of the examples to follow.</p>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 6 × 36
-  STUDYID  SITEID SITEGR1 USUBJID TRTSDT     TRTEDT     TRTP  TRTPN   AGE AGEGR1
-  &lt;chr&gt;    &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt;   &lt;date&gt;     &lt;date&gt;     &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; 
-1 CDISCPI… 701    701     01-701… 2014-01-02 2014-07-02 Plac…     0    63 &lt;65   
-2 CDISCPI… 701    701     01-701… 2012-08-05 2012-09-01 Plac…     0    64 &lt;65   
-3 CDISCPI… 701    701     01-701… 2013-07-19 2014-01-14 Xano…    81    71 65-80 
-4 CDISCPI… 701    701     01-701… 2014-03-18 2014-03-31 Xano…    54    74 65-80 
-5 CDISCPI… 701    701     01-701… 2014-07-01 2014-12-30 Xano…    81    77 65-80 
-6 CDISCPI… 701    701     01-701… 2013-02-12 2013-03-09 Plac…     0    85 &gt;80   
-# ℹ 26 more variables: AGEGR1N &lt;dbl&gt;, RACE &lt;chr&gt;, RACEN &lt;dbl&gt;, SEX &lt;chr&gt;,
-#   ITTFL &lt;chr&gt;, EFFFL &lt;chr&gt;, COMP24FL &lt;chr&gt;, AVISIT &lt;chr&gt;, AVISITN &lt;dbl&gt;,
-#   VISIT &lt;chr&gt;, VISITNUM &lt;dbl&gt;, ADY &lt;dbl&gt;, ADT &lt;date&gt;, PARAMCD &lt;chr&gt;,
-#   PARAM &lt;chr&gt;, PARAMN &lt;dbl&gt;, AVAL &lt;dbl&gt;, ANL01FL &lt;chr&gt;, DTYPE &lt;chr&gt;,
-#   AWRANGE &lt;chr&gt;, AWTARGET &lt;dbl&gt;, AWTDIFF &lt;dbl&gt;, AWLO &lt;dbl&gt;, AWHI &lt;dbl&gt;,
-#   AWU &lt;chr&gt;, QSSEQ &lt;dbl&gt;</code></pre>
-</div>
-</div>
-</section>
-<section id="schemes" class="level2">
-<h2 class="anchored" data-anchor-id="schemes">Schemes</h2>
-<p>In order to follow a systematic approach to testing, and to cover variations in the CMH test, we considered the traditional 2 x 2 x K design as well as scenarios where the generalized CMH test is employed (e.g.&nbsp;5 x 3 x 3).</p>
-<p>We present 5 archetype test scenarios that illustrate diverging results, possibly related to sparse data and possibly considered edge cases.</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Number</th>
-<th>Schema</th>
-<th>Variables</th>
-<th>Relevant Test</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>1</td>
-<td>2x2x2</td>
-<td>X = TRTP, Y = SEX, K = AGEGR1</td>
-<td>General Association</td>
-<td>TRTP and AGEGR1 were limited to two categories, overall the the groups were rather balanced</td>
-</tr>
-<tr class="even">
-<td>3</td>
-<td>2x2x3</td>
-<td>X = TRTP, Y = SEX, K = RACE</td>
-<td>General Association</td>
-<td>Gives back NaN in R because RACE is very imbalanced</td>
-</tr>
-<tr class="odd">
-<td>6</td>
-<td>2x5x2</td>
-<td>X = TRTP, Y = AVAL, K = SEX</td>
-<td>Row Means</td>
-<td>Compare Row Means results for R and SAS because Y is ordinal</td>
-</tr>
-<tr class="even">
-<td>9</td>
-<td>3x5x17</td>
-<td>X = TRTP, Y = AVAL, K = SITEID</td>
-<td>Row Means</td>
-<td>SITEID has many strata and provokes sparse groups, AVAL is ordinal, therefore row means statistic applies here, R threw an error</td>
-</tr>
-<tr class="odd">
-<td>10</td>
-<td>5x3x3</td>
-<td>X = AVAL, Y = AGEGR1, K = TRTP</td>
-<td>Correlation</td>
-<td>X and Y are ordinal variables and therefore the correlation statistics has to be taken here</td>
-</tr>
-</tbody>
-</table>
-</section>
-</section>
-<section id="results" class="level1">
-<h1>Results</h1>
-<p>Here the results can be seen:</p>
-<section id="cmh-statistics" class="level2">
-<h2 class="anchored" data-anchor-id="cmh-statistics">CMH Statistics</h2>
-<div class="cell">
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: vcd</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: grid</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: gnm</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'vcdExtra'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:dplyr':
-
-    summarise</code></pre>
-</div>
-</div>
-<p>scenarios this is a test</p>
-<p>As it can be seen, there are two schemata where R does not provide any results:</p>
+<p>All of these designs need to be taken into account when calculating statistics, and when producing models. Only summary statistics are discussed in this document, and variances are calculated using Taylor series linearisation methods. For a more detailed introduction to calculating survey statistics using statistical software, see <span class="citation" data-cites="Lohr_2022">(<a href="#ref-Lohr_2022" role="doc-biblioref">Lohr 2022</a>)</span>.</p>
+<p>The ecosystem of survey statistics packages is less mature in Python than in R or SAS, however there is a package that provides a subset of the functionality: <a href="https://samplics-org.github.io/samplics/"><code>samplics</code></a>.</p>
+<section id="complex-survey-designs" class="level1">
+<h1>Complex Survey Designs</h1>
+<p>For R and SAS, we give examples of summary statistics on a simple survey design which just had a finite population correction. Unfortunately, <code>samplics</code> does not have the ability to just use an fpc with no PSU or Strata, so we will instead demonstrate just with a more complete (and realistic) survey design, using the NHANES <span class="citation" data-cites="NHANES_2010">(<a href="#ref-NHANES_2010" role="doc-biblioref"><span>“National Health and Nutrition Examination Survey Data”</span> 2010</a>)</span> dataset:</p>
 <div class="cell">
 <div class="cell-output-display">
-<div id="mgwacotaqd" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#mgwacotaqd table {
+<div id="erznquflap" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#erznquflap table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#mgwacotaqd thead, #mgwacotaqd tbody, #mgwacotaqd tfoot, #mgwacotaqd tr, #mgwacotaqd td, #mgwacotaqd th {
+#erznquflap thead, #erznquflap tbody, #erznquflap tfoot, #erznquflap tr, #erznquflap td, #erznquflap th {
   border-style: none;
 }
 
-#mgwacotaqd p {
+#erznquflap p {
   margin: 0;
   padding: 0;
 }
 
-#mgwacotaqd .gt_table {
+#erznquflap .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -390,12 +306,12 @@ Attaching package: 'vcdExtra'</code></pre>
   border-left-color: #D3D3D3;
 }
 
-#mgwacotaqd .gt_caption {
+#erznquflap .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#mgwacotaqd .gt_title {
+#erznquflap .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -407,7 +323,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-bottom-width: 0;
 }
 
-#mgwacotaqd .gt_subtitle {
+#erznquflap .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -419,7 +335,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-top-width: 0;
 }
 
-#mgwacotaqd .gt_heading {
+#erznquflap .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -431,13 +347,13 @@ Attaching package: 'vcdExtra'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#mgwacotaqd .gt_bottom_border {
+#erznquflap .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#mgwacotaqd .gt_col_headings {
+#erznquflap .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -452,7 +368,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#mgwacotaqd .gt_col_heading {
+#erznquflap .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -472,7 +388,7 @@ Attaching package: 'vcdExtra'</code></pre>
   overflow-x: hidden;
 }
 
-#mgwacotaqd .gt_column_spanner_outer {
+#erznquflap .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -484,15 +400,15 @@ Attaching package: 'vcdExtra'</code></pre>
   padding-right: 4px;
 }
 
-#mgwacotaqd .gt_column_spanner_outer:first-child {
+#erznquflap .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#mgwacotaqd .gt_column_spanner_outer:last-child {
+#erznquflap .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#mgwacotaqd .gt_column_spanner {
+#erznquflap .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -504,11 +420,11 @@ Attaching package: 'vcdExtra'</code></pre>
   width: 100%;
 }
 
-#mgwacotaqd .gt_spanner_row {
+#erznquflap .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#mgwacotaqd .gt_group_heading {
+#erznquflap .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -534,7 +450,7 @@ Attaching package: 'vcdExtra'</code></pre>
   text-align: left;
 }
 
-#mgwacotaqd .gt_empty_group_heading {
+#erznquflap .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -549,15 +465,15 @@ Attaching package: 'vcdExtra'</code></pre>
   vertical-align: middle;
 }
 
-#mgwacotaqd .gt_from_md > :first-child {
+#erznquflap .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#mgwacotaqd .gt_from_md > :last-child {
+#erznquflap .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#mgwacotaqd .gt_row {
+#erznquflap .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -576,7 +492,7 @@ Attaching package: 'vcdExtra'</code></pre>
   overflow-x: hidden;
 }
 
-#mgwacotaqd .gt_stub {
+#erznquflap .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -589,7 +505,7 @@ Attaching package: 'vcdExtra'</code></pre>
   padding-right: 5px;
 }
 
-#mgwacotaqd .gt_stub_row_group {
+#erznquflap .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -603,15 +519,15 @@ Attaching package: 'vcdExtra'</code></pre>
   vertical-align: top;
 }
 
-#mgwacotaqd .gt_row_group_first td {
+#erznquflap .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#mgwacotaqd .gt_row_group_first th {
+#erznquflap .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#mgwacotaqd .gt_summary_row {
+#erznquflap .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -621,16 +537,16 @@ Attaching package: 'vcdExtra'</code></pre>
   padding-right: 5px;
 }
 
-#mgwacotaqd .gt_first_summary_row {
+#erznquflap .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#mgwacotaqd .gt_first_summary_row.thick {
+#erznquflap .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#mgwacotaqd .gt_last_summary_row {
+#erznquflap .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -640,7 +556,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#mgwacotaqd .gt_grand_summary_row {
+#erznquflap .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -650,7 +566,7 @@ Attaching package: 'vcdExtra'</code></pre>
   padding-right: 5px;
 }
 
-#mgwacotaqd .gt_first_grand_summary_row {
+#erznquflap .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -660,7 +576,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-top-color: #D3D3D3;
 }
 
-#mgwacotaqd .gt_last_grand_summary_row_top {
+#erznquflap .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -670,11 +586,11 @@ Attaching package: 'vcdExtra'</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#mgwacotaqd .gt_striped {
+#erznquflap .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#mgwacotaqd .gt_table_body {
+#erznquflap .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -683,7 +599,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#mgwacotaqd .gt_footnotes {
+#erznquflap .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -697,7 +613,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#mgwacotaqd .gt_footnote {
+#erznquflap .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -706,7 +622,7 @@ Attaching package: 'vcdExtra'</code></pre>
   padding-right: 5px;
 }
 
-#mgwacotaqd .gt_sourcenotes {
+#erznquflap .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -720,7 +636,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#mgwacotaqd .gt_sourcenote {
+#erznquflap .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -728,260 +644,327 @@ Attaching package: 'vcdExtra'</code></pre>
   padding-right: 5px;
 }
 
-#mgwacotaqd .gt_left {
+#erznquflap .gt_left {
   text-align: left;
 }
 
-#mgwacotaqd .gt_center {
+#erznquflap .gt_center {
   text-align: center;
 }
 
-#mgwacotaqd .gt_right {
+#erznquflap .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#mgwacotaqd .gt_font_normal {
+#erznquflap .gt_font_normal {
   font-weight: normal;
 }
 
-#mgwacotaqd .gt_font_bold {
+#erznquflap .gt_font_bold {
   font-weight: bold;
 }
 
-#mgwacotaqd .gt_font_italic {
+#erznquflap .gt_font_italic {
   font-style: italic;
 }
 
-#mgwacotaqd .gt_super {
+#erznquflap .gt_super {
   font-size: 65%;
 }
 
-#mgwacotaqd .gt_footnote_marks {
+#erznquflap .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#mgwacotaqd .gt_asterisk {
+#erznquflap .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#mgwacotaqd .gt_indent_1 {
+#erznquflap .gt_indent_1 {
   text-indent: 5px;
 }
 
-#mgwacotaqd .gt_indent_2 {
+#erznquflap .gt_indent_2 {
   text-indent: 10px;
 }
 
-#mgwacotaqd .gt_indent_3 {
+#erznquflap .gt_indent_3 {
   text-indent: 15px;
 }
 
-#mgwacotaqd .gt_indent_4 {
+#erznquflap .gt_indent_4 {
   text-indent: 20px;
 }
 
-#mgwacotaqd .gt_indent_5 {
+#erznquflap .gt_indent_5 {
   text-indent: 25px;
 }
 </style>
 
 <table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
 <thead>
-<tr class="header gt_col_headings gt_spanner_row">
-<th rowspan="2" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col"></th>
-<th rowspan="2" id="Test" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Test</th>
-<th colspan="2" id="Chi-Square" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><span class="gt_column_spanner">Chi-Square</span></th>
-<th colspan="2" id="df" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><span class="gt_column_spanner">df</span></th>
-<th colspan="2" id="p-value" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><span class="gt_column_spanner">p-value</span></th>
-</tr>
-<tr class="odd gt_col_headings">
-<th id="SAS" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">SAS</th>
-<th id="R" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">R</th>
-<th id="SAS" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">SAS</th>
-<th id="R" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">R</th>
-<th id="SAS" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">SAS</th>
-<th id="R" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">R</th>
+<tr class="header gt_col_headings">
+<th id="SDMVPSU" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">SDMVPSU</th>
+<th id="SDMVSTRA" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">SDMVSTRA</th>
+<th id="WTMEC2YR" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">WTMEC2YR</th>
+<th id="HI_CHOL" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">HI_CHOL</th>
+<th id="race" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">race</th>
+<th id="agecat" class="gt_col_heading gt_columns_bottom_border gt_center" data-quarto-table-cell-role="th" scope="col">agecat</th>
+<th id="RIAGENDR" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">RIAGENDR</th>
 </tr>
 </thead>
 <tbody class="gt_table_body">
-<tr class="odd gt_row_group_first">
-<td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="1 stub_1_1 stub_1">1</td>
-<td class="gt_row gt_left" headers="1 stub_1_1 Test">Correlation</td>
-<td class="gt_row gt_right" headers="1 stub_1_1 Chisq_SAS">0.01767040</td>
-<td class="gt_row gt_right" headers="1 stub_1_1 Chisq_R">0.0008689711</td>
-<td class="gt_row gt_right" headers="1 stub_1_1 Df_SAS">1</td>
-<td class="gt_row gt_right" headers="1 stub_1_1 Df_R">1</td>
-<td class="gt_row gt_right" headers="1 stub_1_1 Prob_SAS">0.89424870</td>
-<td class="gt_row gt_right" headers="1 stub_1_1 Prob_R">0.9764831</td>
+<tr class="odd">
+<td class="gt_row gt_right" headers="SDMVPSU">1</td>
+<td class="gt_row gt_right" headers="SDMVSTRA">83</td>
+<td class="gt_row gt_right" headers="WTMEC2YR">81528.77</td>
+<td class="gt_row gt_right" headers="HI_CHOL">0</td>
+<td class="gt_row gt_right" headers="race">2</td>
+<td class="gt_row gt_center" headers="agecat">(19,39]</td>
+<td class="gt_row gt_right" headers="RIAGENDR">1</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="1 Test_2 Test">Row Means</td>
-<td class="gt_row gt_right" headers="1 Test_2 Chisq_SAS">0.01767040</td>
-<td class="gt_row gt_right" headers="1 Test_2 Chisq_R">2.4820278527</td>
-<td class="gt_row gt_right" headers="1 Test_2 Df_SAS">1</td>
-<td class="gt_row gt_right" headers="1 Test_2 Df_R">2</td>
-<td class="gt_row gt_right" headers="1 Test_2 Prob_SAS">0.89424870</td>
-<td class="gt_row gt_right" headers="1 Test_2 Prob_R">0.2890910</td>
+<td class="gt_row gt_right" headers="SDMVPSU">1</td>
+<td class="gt_row gt_right" headers="SDMVSTRA">84</td>
+<td class="gt_row gt_right" headers="WTMEC2YR">14509.28</td>
+<td class="gt_row gt_right" headers="HI_CHOL">0</td>
+<td class="gt_row gt_right" headers="race">3</td>
+<td class="gt_row gt_center" headers="agecat">(0,19]</td>
+<td class="gt_row gt_right" headers="RIAGENDR">1</td>
 </tr>
 <tr class="odd">
-<td class="gt_row gt_left" headers="1 Test_3 Test">General Association</td>
-<td class="gt_row gt_right" headers="1 Test_3 Chisq_SAS">0.01767040</td>
-<td class="gt_row gt_right" headers="1 Test_3 Chisq_R">2.4820278527</td>
-<td class="gt_row gt_right" headers="1 Test_3 Df_SAS">1</td>
-<td class="gt_row gt_right" headers="1 Test_3 Df_R">2</td>
-<td class="gt_row gt_right" headers="1 Test_3 Prob_SAS">0.89424870</td>
-<td class="gt_row gt_right" headers="1 Test_3 Prob_R">0.2890910</td>
-</tr>
-<tr class="even gt_row_group_first">
-<td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="3 stub_1_4 stub_1">3<span class="gt_footnote_marks gt_asterisk" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>*</sup></span></td>
-<td class="gt_row gt_left" headers="3 stub_1_4 Test">Correlation</td>
-<td class="gt_row gt_right" headers="3 stub_1_4 Chisq_SAS">0.00278713</td>
-<td class="gt_row gt_right" headers="3 stub_1_4 Chisq_R">NaN</td>
-<td class="gt_row gt_right" headers="3 stub_1_4 Df_SAS">1</td>
-<td class="gt_row gt_right" headers="3 stub_1_4 Df_R">1</td>
-<td class="gt_row gt_right" headers="3 stub_1_4 Prob_SAS">0.95789662</td>
-<td class="gt_row gt_right" headers="3 stub_1_4 Prob_R">NaN</td>
-</tr>
-<tr class="odd">
-<td class="gt_row gt_left" headers="3 Test_5 Test">Row Means</td>
-<td class="gt_row gt_right" headers="3 Test_5 Chisq_SAS">2.38606985</td>
-<td class="gt_row gt_right" headers="3 Test_5 Chisq_R">NaN</td>
-<td class="gt_row gt_right" headers="3 Test_5 Df_SAS">2</td>
-<td class="gt_row gt_right" headers="3 Test_5 Df_R">2</td>
-<td class="gt_row gt_right" headers="3 Test_5 Prob_SAS">0.30329938</td>
-<td class="gt_row gt_right" headers="3 Test_5 Prob_R">NaN</td>
+<td class="gt_row gt_right" headers="SDMVPSU">2</td>
+<td class="gt_row gt_right" headers="SDMVSTRA">86</td>
+<td class="gt_row gt_right" headers="WTMEC2YR">12041.64</td>
+<td class="gt_row gt_right" headers="HI_CHOL">0</td>
+<td class="gt_row gt_right" headers="race">3</td>
+<td class="gt_row gt_center" headers="agecat">(0,19]</td>
+<td class="gt_row gt_right" headers="RIAGENDR">1</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="3 Test_6 Test">General Association</td>
-<td class="gt_row gt_right" headers="3 Test_6 Chisq_SAS">2.38606985</td>
-<td class="gt_row gt_right" headers="3 Test_6 Chisq_R">NaN</td>
-<td class="gt_row gt_right" headers="3 Test_6 Df_SAS">2</td>
-<td class="gt_row gt_right" headers="3 Test_6 Df_R">2</td>
-<td class="gt_row gt_right" headers="3 Test_6 Prob_SAS">0.30329938</td>
-<td class="gt_row gt_right" headers="3 Test_6 Prob_R">NaN</td>
-</tr>
-<tr class="odd gt_row_group_first">
-<td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="6 stub_1_7 stub_1">6</td>
-<td class="gt_row gt_left" headers="6 stub_1_7 Test">Correlation</td>
-<td class="gt_row gt_right" headers="6 stub_1_7 Chisq_SAS">1.14720000</td>
-<td class="gt_row gt_right" headers="6 stub_1_7 Chisq_R">0.1115439738</td>
-<td class="gt_row gt_right" headers="6 stub_1_7 Df_SAS">1</td>
-<td class="gt_row gt_right" headers="6 stub_1_7 Df_R">1</td>
-<td class="gt_row gt_right" headers="6 stub_1_7 Prob_SAS">0.28410000</td>
-<td class="gt_row gt_right" headers="6 stub_1_7 Prob_R">0.7383931</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_left" headers="6 Test_8 Test">Row Means</td>
-<td class="gt_row gt_right" headers="6 Test_8 Chisq_SAS">1.14720000</td>
-<td class="gt_row gt_right" headers="6 Test_8 Chisq_R">2.6632420358</td>
-<td class="gt_row gt_right" headers="6 Test_8 Df_SAS">1</td>
-<td class="gt_row gt_right" headers="6 Test_8 Df_R">2</td>
-<td class="gt_row gt_right" headers="6 Test_8 Prob_SAS">0.28410000</td>
-<td class="gt_row gt_right" headers="6 Test_8 Prob_R">0.2640489</td>
+<td class="gt_row gt_right" headers="SDMVPSU">2</td>
+<td class="gt_row gt_right" headers="SDMVSTRA">75</td>
+<td class="gt_row gt_right" headers="WTMEC2YR">21000.34</td>
+<td class="gt_row gt_right" headers="HI_CHOL">0</td>
+<td class="gt_row gt_right" headers="race">3</td>
+<td class="gt_row gt_center" headers="agecat">(59,Inf]</td>
+<td class="gt_row gt_right" headers="RIAGENDR">2</td>
 </tr>
 <tr class="odd">
-<td class="gt_row gt_left" headers="6 Test_9 Test">General Association</td>
-<td class="gt_row gt_right" headers="6 Test_9 Chisq_SAS">2.56720000</td>
-<td class="gt_row gt_right" headers="6 Test_9 Chisq_R">6.5238474681</td>
-<td class="gt_row gt_right" headers="6 Test_9 Df_SAS">4</td>
-<td class="gt_row gt_right" headers="6 Test_9 Df_R">8</td>
-<td class="gt_row gt_right" headers="6 Test_9 Prob_SAS">0.63260000</td>
-<td class="gt_row gt_right" headers="6 Test_9 Prob_R">0.5887637</td>
-</tr>
-<tr class="even gt_row_group_first">
-<td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="9 stub_1_10 stub_1">9<span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>†</sup></span></td>
-<td class="gt_row gt_left" headers="9 stub_1_10 Test">Correlation</td>
-<td class="gt_row gt_right" headers="9 stub_1_10 Chisq_SAS">0.08544312</td>
-<td class="gt_row gt_right" headers="9 stub_1_10 Chisq_R">NA</td>
-<td class="gt_row gt_right" headers="9 stub_1_10 Df_SAS">1</td>
-<td class="gt_row gt_right" headers="9 stub_1_10 Df_R">NA</td>
-<td class="gt_row gt_right" headers="9 stub_1_10 Prob_SAS">0.77005225</td>
-<td class="gt_row gt_right" headers="9 stub_1_10 Prob_R">NA</td>
-</tr>
-<tr class="odd">
-<td class="gt_row gt_left" headers="9 Test_11 Test">Row Means</td>
-<td class="gt_row gt_right" headers="9 Test_11 Chisq_SAS">2.47631367</td>
-<td class="gt_row gt_right" headers="9 Test_11 Chisq_R">NA</td>
-<td class="gt_row gt_right" headers="9 Test_11 Df_SAS">2</td>
-<td class="gt_row gt_right" headers="9 Test_11 Df_R">NA</td>
-<td class="gt_row gt_right" headers="9 Test_11 Prob_SAS">0.28991809</td>
-<td class="gt_row gt_right" headers="9 Test_11 Prob_R">NA</td>
+<td class="gt_row gt_right" headers="SDMVPSU">1</td>
+<td class="gt_row gt_right" headers="SDMVSTRA">88</td>
+<td class="gt_row gt_right" headers="WTMEC2YR">22633.58</td>
+<td class="gt_row gt_right" headers="HI_CHOL">0</td>
+<td class="gt_row gt_right" headers="race">1</td>
+<td class="gt_row gt_center" headers="agecat">(19,39]</td>
+<td class="gt_row gt_right" headers="RIAGENDR">1</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="9 Test_12 Test">General Association</td>
-<td class="gt_row gt_right" headers="9 Test_12 Chisq_SAS">7.03387844</td>
-<td class="gt_row gt_right" headers="9 Test_12 Chisq_R">NA</td>
-<td class="gt_row gt_right" headers="9 Test_12 Df_SAS">8</td>
-<td class="gt_row gt_right" headers="9 Test_12 Df_R">NA</td>
-<td class="gt_row gt_right" headers="9 Test_12 Prob_SAS">0.53298189</td>
-<td class="gt_row gt_right" headers="9 Test_12 Prob_R">NA</td>
+<td class="gt_row gt_right" headers="SDMVPSU">2</td>
+<td class="gt_row gt_right" headers="SDMVSTRA">85</td>
+<td class="gt_row gt_right" headers="WTMEC2YR">74112.49</td>
+<td class="gt_row gt_right" headers="HI_CHOL">1</td>
+<td class="gt_row gt_right" headers="race">2</td>
+<td class="gt_row gt_center" headers="agecat">(39,59]</td>
+<td class="gt_row gt_right" headers="RIAGENDR">2</td>
 </tr>
-<tr class="odd gt_row_group_first">
-<td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="10 stub_1_13 stub_1">10</td>
-<td class="gt_row gt_left" headers="10 stub_1_13 Test">Correlation</td>
-<td class="gt_row gt_right" headers="10 stub_1_13 Chisq_SAS">2.73816085</td>
-<td class="gt_row gt_right" headers="10 stub_1_13 Chisq_R">0.8715295423</td>
-<td class="gt_row gt_right" headers="10 stub_1_13 Df_SAS">1</td>
-<td class="gt_row gt_right" headers="10 stub_1_13 Df_R">1</td>
-<td class="gt_row gt_right" headers="10 stub_1_13 Prob_SAS">0.09797747</td>
-<td class="gt_row gt_right" headers="10 stub_1_13 Prob_R">0.3505322</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_left" headers="10 Test_14 Test">Row Means</td>
-<td class="gt_row gt_right" headers="10 Test_14 Chisq_SAS">4.40701092</td>
-<td class="gt_row gt_right" headers="10 Test_14 Chisq_R">3.0445270087</td>
-<td class="gt_row gt_right" headers="10 Test_14 Df_SAS">4</td>
-<td class="gt_row gt_right" headers="10 Test_14 Df_R">4</td>
-<td class="gt_row gt_right" headers="10 Test_14 Prob_SAS">0.35371641</td>
-<td class="gt_row gt_right" headers="10 Test_14 Prob_R">0.5504018</td>
-</tr>
-<tr class="odd">
-<td class="gt_row gt_left" headers="10 Test_15 Test">General Association</td>
-<td class="gt_row gt_right" headers="10 Test_15 Chisq_SAS">5.73053819</td>
-<td class="gt_row gt_right" headers="10 Test_15 Chisq_R">5.7305381934</td>
-<td class="gt_row gt_right" headers="10 Test_15 Df_SAS">8</td>
-<td class="gt_row gt_right" headers="10 Test_15 Df_R">8</td>
-<td class="gt_row gt_right" headers="10 Test_15 Prob_SAS">0.67738613</td>
-<td class="gt_row gt_right" headers="10 Test_15 Prob_R">0.6773861</td>
-</tr>
-</tbody><tfoot class="gt_footnotes">
-<tr class="odd">
-<td colspan="8" class="gt_footnote"><span class="gt_footnote_marks gt_asterisk" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>*</sup></span> <strong>Reason for NaN in schema 3</strong>: Stratum k = AMERICAN INDIAN OR ALASKA NATIVE can not be compared because there are only values for one treatment and one gender.</td>
-</tr>
-<tr class="even">
-<td colspan="8" class="gt_footnote"><span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>†</sup></span> <strong>Reason for Error 4:</strong> For large sparse table (many strata) CMHTest will occasionally throw an error in solve.default(AVA) because of singularity</td>
-</tr>
-</tfoot>
-
+</tbody>
 </table>
 
 </div>
 </div>
 </div>
 </section>
+<section id="summary-statistics" class="level1">
+<h1>Summary Statistics</h1>
+<section id="mean" class="level2">
+<h2 class="anchored" data-anchor-id="mean">Mean</h2>
+<p>If we want to calculate a mean of a variable in a dataset using <code>samplics</code>, we need to create an estimator object using the estimation method we will use - here Taylor Series estimation - and the parameter we are estimating. Then, we can specify the survey design by passing columns which define our strata and PSUs, and a column to estimate:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> samplics <span class="im">import</span> TaylorEstimator</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> samplics.utils.types <span class="im">import</span> PopParam</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>nhanes <span class="op">=</span> pd.read_csv(<span class="st">"../data/nhanes.csv"</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>mean_estimator <span class="op">=</span> TaylorEstimator(PopParam.mean)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>mean_estimator.estimate(</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>nhanes[<span class="st">"HI_CHOL"</span>],</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    samp_weight<span class="op">=</span>nhanes[<span class="st">"WTMEC2YR"</span>],</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    psu<span class="op">=</span>nhanes[<span class="st">"SDMVPSU"</span>],</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    stratum<span class="op">=</span>nhanes[<span class="st">"SDMVSTRA"</span>],</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    remove_nan<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(mean_estimator.to_dataframe())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          _param  _estimate  _stderror      _lci      _uci       _cv
+0  PopParam.mean   0.112143   0.005446  0.100598  0.123688  0.048562</code></pre>
+</div>
+</div>
 </section>
-<section id="summary-and-recommendation" class="level1">
-<h1>Summary and Recommendation</h1>
-<p>Having explored the available R packages to calculate the CMH statistics, using R can only be recommended if the analysis design is equivalent to 2 x 2 x K. Then, the base mantelhaen.test() function as well as the vcdExtra package show reliable results which are equal to the output of the SAS function. The same is true for the common odds ratio even though there is a marked difference in decimals.</p>
-<p>For the generalized version of the cmh test no R package can be recommended so far. SAS and R outputs differ substantially (possibly due to the underlying subroutines or functions) and the vcdExtra package seems to deliver inconsistent results outside the 2 x 2 x K design.</p>
+<section id="total" class="level2">
+<h2 class="anchored" data-anchor-id="total">Total</h2>
+<p>Calculating population totals can be done by changing the <code>TaylorEstimator</code> parameter to <code>PopParam.total</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>total_estimator <span class="op">=</span> TaylorEstimator(PopParam.total)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>total_estimator.estimate(</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>nhanes[<span class="st">"HI_CHOL"</span>],</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    samp_weight<span class="op">=</span>nhanes[<span class="st">"WTMEC2YR"</span>],</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    psu<span class="op">=</span>nhanes[<span class="st">"SDMVPSU"</span>],</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    stratum<span class="op">=</span>nhanes[<span class="st">"SDMVSTRA"</span>],</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    remove_nan<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(total_estimator.to_dataframe())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           _param     _estimate  ...          _uci       _cv
+0  PopParam.total  2.863525e+07  ...  3.291896e+07  0.070567
+
+[1 rows x 6 columns]</code></pre>
+</div>
+</div>
 </section>
-<section id="references" class="level1">
-<h1>References</h1>
-<p>Accessible Summary: <a href="https://online.stat.psu.edu/stat504/lesson/4/4.4" class="uri">https://online.stat.psu.edu/stat504/lesson/4/4.4</a></p>
-<p>An Introduction to Categorical Data Analysis 2nd Edition (Agresti): <a href="http://users.stat.ufl.edu/~aa/" class="uri">http://users.stat.ufl.edu/~aa/</a></p>
-<p>SAS documentation (Specification): <a href="https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.3/statug/statug_freq_examples07.html" class="uri">https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.3/statug/statug_freq_examples07.html</a></p>
-<p>SAS documentation (Theoretical Basis + Formulas): <a href="https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.5/procstat/procstat_freq_details92.html" class="uri">https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.5/procstat/procstat_freq_details92.html</a></p>
-<p>Original Paper 1: <a href="https://doi.org/10.2307%2F3001616" class="uri">https://doi.org/10.2307%2F3001616</a></p>
-<p>Original Paper 2: <a href="https://doi.org/10.1093/jnci/22.4.719" class="uri">https://doi.org/10.1093/jnci/22.4.719</a></p>
+<section id="ratios" class="level2">
+<h2 class="anchored" data-anchor-id="ratios">Ratios</h2>
+<p>Calculating population ratios can be done by changing the <code>TaylorEstimator</code> parameter to <code>PopParam.ratio</code>, and additionally specifying an <code>x</code> parameter in the <code>estimate</code> method:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ratio_estimator <span class="op">=</span> TaylorEstimator(PopParam.ratio)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>ratio_estimator.estimate(</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>nhanes[<span class="st">"HI_CHOL"</span>],</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span>nhanes[<span class="st">"RIAGENDR"</span>],</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    samp_weight<span class="op">=</span>nhanes[<span class="st">"WTMEC2YR"</span>],</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    psu<span class="op">=</span>nhanes[<span class="st">"SDMVPSU"</span>],</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    stratum<span class="op">=</span>nhanes[<span class="st">"SDMVSTRA"</span>],</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    remove_nan<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ratio_estimator.to_dataframe())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           _param  _estimate  _stderror      _lci      _uci       _cv
+0  PopParam.ratio   0.074222   0.003715  0.066347  0.082097  0.050049</code></pre>
+</div>
+</div>
+</section>
+<section id="proportions" class="level2">
+<h2 class="anchored" data-anchor-id="proportions">Proportions</h2>
+<p>Calculating proportions can be done by changing the <code>TaylorEstimator</code> parameter to <code>PopParam.prop</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>prop_estimator <span class="op">=</span> TaylorEstimator(PopParam.prop)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>prop_estimator.estimate(</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>nhanes[<span class="st">"agecat"</span>],</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    samp_weight<span class="op">=</span>nhanes[<span class="st">"WTMEC2YR"</span>],</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    psu<span class="op">=</span>nhanes[<span class="st">"SDMVPSU"</span>],</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    stratum<span class="op">=</span>nhanes[<span class="st">"SDMVSTRA"</span>],</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    remove_nan<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>prop_estimator.to_dataframe()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          _param    _level  _estimate  _stderror      _lci      _uci       _cv
+0  PopParam.prop    (0,19]   0.207749   0.006130  0.195054  0.221044  0.029506
+1  PopParam.prop   (19,39]   0.293408   0.009561  0.273557  0.314077  0.032585
+2  PopParam.prop   (39,59]   0.303290   0.004519  0.293795  0.312955  0.014901
+3  PopParam.prop  (59,Inf]   0.195553   0.008093  0.178965  0.213280  0.041383</code></pre>
+</div>
+</div>
+</section>
+<section id="quantiles" class="level2">
+<h2 class="anchored" data-anchor-id="quantiles">Quantiles</h2>
+<p><code>samplics</code> currently does not have a method to calculate quantiles.</p>
+</section>
+<section id="domain-estimations" class="level2">
+<h2 class="anchored" data-anchor-id="domain-estimations">Domain Estimations</h2>
+<p>We can perform domain estimations of different sub-populations by passing our domain column as a parameter to the <code>estimate</code> method:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>mean_estimator <span class="op">=</span> TaylorEstimator(PopParam.mean)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>mean_estimator.estimate(</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>nhanes[<span class="st">"HI_CHOL"</span>],</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    samp_weight<span class="op">=</span>nhanes[<span class="st">"WTMEC2YR"</span>],</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    psu<span class="op">=</span>nhanes[<span class="st">"SDMVPSU"</span>],</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    stratum<span class="op">=</span>nhanes[<span class="st">"SDMVSTRA"</span>],</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    domain<span class="op">=</span>nhanes[<span class="st">"race"</span>],</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    remove_nan<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>mean_estimator.to_dataframe()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          _param  _domain  _estimate  _stderror      _lci      _uci       _cv
+0  PopParam.mean        1   0.101492   0.006246  0.088251  0.114732  0.061540
+1  PopParam.mean        2   0.121649   0.006604  0.107649  0.135649  0.054288
+2  PopParam.mean        3   0.078640   0.010385  0.056626  0.100655  0.132053
+3  PopParam.mean        4   0.099679   0.024666  0.047389  0.151969  0.247458</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled" title="Session Info">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Session Info
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>─ Session info ───────────────────────────────────────────────────────────────
+ setting  value
+ version  R version 4.4.0 (2024-04-24)
+ os       Ubuntu 22.04.4 LTS
+ system   x86_64, linux-gnu
+ ui       X11
+ language (EN)
+ collate  C.UTF-8
+ ctype    C.UTF-8
+ tz       UTC
+ date     2024-08-19
+ pandoc   3.2 @ /opt/quarto/bin/tools/ (via rmarkdown)
+
+─ Packages ───────────────────────────────────────────────────────────────────
+ ! package * version date (UTC) lib source
+ P survey  * 4.4-2   2024-03-20 [?] RSPM (R 4.4.0)
+
+ [1] /home/runner/work/CAMIS/CAMIS/renv/library/R-4.4/x86_64-pc-linux-gnu
+ [2] /opt/R/4.4.0/lib/R/library
+
+ P ── Loaded and on-disk path mismatch.
+
+──────────────────────────────────────────────────────────────────────────────</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>─ Python configuration ────────────────────────────────────────────────────────
+ Python    3.12.4 (main, Jul 15 2024, 21:50:45) [GCC 11.4.0]
+ samplics  0.4.22</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
 
 
+
+</section>
 </section>
 
-</main> <!-- /main -->
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-Lohr_2022" class="csl-entry" role="listitem">
+Lohr, Sharon L. 2022. <em>Sampling: Design and Analysis</em>. 3rd ed. CRC Press, Taylor &amp; Francis Group.
+</div>
+<div id="ref-NHANES_2010" class="csl-entry" role="listitem">
+<span>“National Health and Nutrition Examination Survey Data.”</span> 2010. Centers for Disease Control; Prevention (CDC). <a href="https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=laboratory&amp;CycleBeginYear=2009">https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=laboratory&amp;CycleBeginYear=2009</a>.
+</div>
+</div></section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
   const toggleBodyColorMode = (bsSheetEl) => {
