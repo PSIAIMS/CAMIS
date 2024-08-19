@@ -1,0 +1,78 @@
+---
+title: "Binomial Test"
+format: html
+editor: visual
+---
+
+The statistical test used to determine whether the proportion in a binary outcome experiment is equal to a specific value. It is appropriate when we have a small sample size and want to test the success probability $p$ against a hypothesized value $p_0$.
+
+## Creating a sample dataset
+
+-   We will generate a dataset where we record the outcomes of 1000 coin flips.
+
+-   We will use the `binom.test` function to test if the proportion of heads is significantly different from 0.5.
+
+```{r}
+set.seed(19)
+coin_flips <- sample(c("H", "T"), 
+                     size = 1000, 
+                     replace = T,
+                     prob = c(0.5, 0.5))
+```
+
+Now, we will count the heads and tails and summarize the data.
+
+```{r}
+heads_count <- sum(coin_flips == "H")
+tails_count <- sum(coin_flips == "T")
+total_flips <- length(coin_flips)
+```
+
+```{r}
+heads_count
+tails_count
+total_flips
+```
+
+## Conducting Binomial Test
+
+```{r}
+binom_test_result <- binom.test(heads_count, total_flips, p = 0.5)
+binom_test_result
+```
+
+### Results:
+
+The output has a p-value `r binom_test_result$p.value` $> 0.05$ (chosen level of significance). Hence, we fail to reject the null hypothesis and conclude that the **coin is fair**.
+
+# Example of Clinical Trial Data
+
+We load the `lung` dataset from `survival` package. We want to test if the proportion of patients with survival status 1 (dead) is significantly different from a hypothesized proportion (e.g. 50%)
+
+We will calculate number of deaths and total number of patients.
+
+```{r}
+library(survival)
+attach(lung)
+
+num_deaths <- sum(lung$status == 1)
+total_pat <- nrow(lung)
+```
+
+```{r}
+num_deaths
+total_pat
+```
+
+## Conduct the Binomial Test
+
+We will conduct the Binomial test and hypothesize that the proportin of death should be 19%.
+
+```{r}
+binom_test <- binom.test(num_deaths, total_pat, p = 0.19)
+binom_test
+```
+
+## Results:
+
+The output has a p-value `r binom_test$p.value` $< 0.05$ (chosen level of significance). Hence, we reject the null hypothesis and conclude that **the propotion of death is significantly different from 19%**.

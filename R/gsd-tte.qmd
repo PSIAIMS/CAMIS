@@ -1,0 +1,284 @@
+---
+title: "Group sequential design in R"
+editor_options:
+  chunk_output_type: console
+---
+
+## Group sequential design: time-to-event endpoint
+
+While a group sequential design (GSD) could be applied for different types
+of endpoints, here we focus on time-to-event endpoints.
+
+## Available R packages
+
+The commonly used R packages for power and sample size calculations
+utilizing a GSD are: [gsDesign](https://keaven.github.io/gsDesign/)
+(also has a [web interface](https://rinpharma.shinyapps.io/gsdesign/)),
+[gsDesign2](https://merck.github.io/gsDesign2/),
+and [rpact](https://www.rpact.org/).
+
+## Design assumptions
+
+Using a toy example, we will assume that a primary objective of a phase III
+oncology trial is to compare a new therapy to a control in terms of
+progression-free survival (PFS) and overall survival (OS).
+Note that, in this example, we have a family of primary endpoints,
+i.e., if at least one of the endpoints is successful, the study will be
+declared a success. A GSD will be utilized for each endpoint.
+PFS will be tested at one interim analysis (IA) for both efficacy and
+non-binding futility, while OS will be tested at two IAs for efficacy only.
+An O'Brien-Fleming spending function will be used for efficacy testing and a
+Hwang-Shih-Decani spending function with $\gamma = -10$ will be used for futility.
+
+Further design assumptions are as follows:
+
+```{r}
+# PFS HR = 0.6
+hr1_pfs <- 0.6
+# Median PFS of 9.4 months in the control arm
+med_pfs <- 9.4
+# Median follow-up of 10 months for PFS
+minfu_pfs <- 10
+# Monthly dropout of 0.019 for PFS
+do_rate_pfs <- 0.019
+# IA timing for PFS is at 75% information fraction
+timing_pfs <- c(0.75, 1)
+# Power of 95% for PFS
+power_pfs <- 0.95
+
+# OS HR = 0.65
+hr1_os <- 0.65
+# Median OS of 3 years in the control arm
+med_os <- 12 * 3
+# Median follow-up of 42 months for OS
+minfu_os <- 42
+# Monthly dropout of 0.001 for OS
+do_rate_os <- 0.001
+# IA timing for OS is at 60% and 80% information fraction
+timing_os <- c(0.6, 0.8, 1)
+# Power of 82% for OS
+power_os <- 0.82
+
+# Enrollment period of 24 months
+enroll_dur <- 24
+# 1:1 randomization ratio
+rand_ratio <- 1
+# alpha level of 1.25% for each endpoint
+alphal <- 0.0125
+```
+
+We assume that given the above assumptions, we need to calculate the
+target number of events for each analysis as well as the total sample size.
+
+## Example code
+
+### Example using gsDesign
+
+- PFS calculations:
+
+```{r}
+#| warning=FALSE,
+#| message=FALSE
+library(gsDesign)
+```
+
+```{r}
+pfs_gsDesign <- gsSurv(
+  k = length(timing_pfs),
+  timing = timing_pfs,
+  R = enroll_dur,
+  eta = do_rate_pfs,
+  minfup = minfu_pfs,
+  T = enroll_dur + minfu_pfs,
+  lambdaC = log(2) / med_pfs,
+  hr = hr1_pfs,
+  beta = 1 - power_pfs,
+  alpha = alphal,
+  sfu = sfLDOF,
+  sfl = sfHSD,
+  sflpar = -10,
+  test.type = 4
+)
+
+pfs_gsDesign |> gsBoundSummary()
+```
+
+- OS calculations:
+
+```{r}
+os_gsDesign <- gsSurv(
+  k = length(timing_os),
+  timing = timing_os,
+  R = enroll_dur,
+  eta = do_rate_os,
+  minfup = minfu_os,
+  T = enroll_dur + minfu_os,
+  lambdaC = log(2) / med_os,
+  hr = hr1_os,
+  beta = 1 - power_os,
+  alpha = alphal,
+  sfu = sfLDOF,
+  test.type = 1
+)
+
+os_gsDesign |> gsBoundSummary()
+```
+
+### Example using gsDesign2
+
+- PFS calculations:
+
+```{r}
+#| warning=FALSE,
+#| message=FALSE
+library(gsDesign2)
+library(tibble)
+```
+
+```{r}
+enroll_rate <- tibble(
+  stratum = "All",
+  duration = enroll_dur,
+  rate = 1
+)
+fail_rate_pfs <- tibble(
+  stratum = "All",
+  duration = Inf, # Can be set to `Inf` when proportional hazard is assumed
+  fail_rate = log(2) / med_pfs,
+  hr = hr1_pfs,
+  dropout_rate = do_rate_pfs
+)
+
+pfs_gsDesign2 <- gs_design_ahr(
+  enroll_rate = enroll_rate,
+  fail_rate = fail_rate_pfs,
+  ratio = rand_ratio,
+  beta = 1 - power_pfs,
+  alpha = alphal,
+  info_frac = timing_pfs,
+  analysis_time = enroll_dur + minfu_pfs,
+  upper = gs_spending_bound,
+  upar = list(
+    sf = gsDesign::sfLDOF,
+    total_spend = alphal
+  ),
+  lower = gs_spending_bound,
+  lpar = list(
+    sf = gsDesign::sfHSD,
+    total_spend = 1 - power_pfs,
+    param = -10
+  ),
+  info_scale = "h0_info"
+)
+
+pfs_gsDesign2 |>
+  summary() |>
+  as_gt()
+```
+
+- OS calculations:
+
+```{r}
+#| warning=FALSE
+fail_rate_os <- tibble(
+  stratum = "All",
+  duration = Inf, # Can be set to `Inf` when proportional hazard is assumed
+  fail_rate = log(2) / med_os,
+  hr = hr1_os,
+  dropout_rate = do_rate_os
+)
+
+os_gsDesign2 <- gs_design_ahr(
+  enroll_rate = pfs_gsDesign2$enroll_rate,
+  fail_rate = fail_rate_os,
+  ratio = rand_ratio,
+  beta = 1 - power_os,
+  alpha = alphal,
+  info_frac = timing_os,
+  analysis_time = enroll_dur + minfu_os,
+  test_lower = FALSE,
+  upper = gs_spending_bound,
+  upar = list(
+    sf = gsDesign::sfLDOF,
+    total_spend = alphal
+  ),
+  info_scale = "h0_info"
+)
+
+os_gsDesign2 |>
+  summary() |>
+  as_gt()
+```
+
+### Example using rpact
+
+- PFS calculations:
+
+```{r}
+#| warning=FALSE,
+#| message=FALSE
+library(rpact)
+```
+
+```{r}
+pfs_rpact_gsd <- getDesignGroupSequential(
+  sided = 1,
+  alpha = alphal,
+  informationRates = timing_pfs,
+  typeOfDesign = "asOF",
+  beta = 1 - power_pfs,
+  typeBetaSpending = "bsHSD",
+  gammaB = -10,
+  bindingFutility = FALSE
+)
+
+pfs_rpact <- getSampleSizeSurvival(
+  design = pfs_rpact_gsd,
+  accrualTime = enroll_dur,
+  followUpTime = minfu_pfs,
+  lambda2 = log(2) / med_pfs,
+  hazardRatio = hr1_pfs,
+  dropoutRate1 = 0.2,
+  dropoutRate2 = 0.2,
+  dropoutTime = 12
+)
+
+kable(summary(pfs_rpact))
+```
+
+Note: the `dropoutRate1`, `dropoutRate2` arguments in `getSampleSizeSurvival()`
+refer to the % of drop-outs by the `dropoutTime`, while the `eta` argument
+in `gsDesign::gsSurv()` and the `dropout_rate` value in the `fail_rate` argument
+in `gsDesign2::gs_design_ahr()` refer to the annual drop-out rate parameter
+under the exponential distribution.
+In our example, if $X$ is a drop-out time and $X \sim \text{Exponential} (\lambda)$,
+we assume that by month 12 the drop-out rate was 20%, which implies:
+$P(X\le12) = 1 - e^{-12\lambda} = 0.2 \Rightarrow \lambda = 0.019$.
+Due to the above differences, the value $\lambda = 0.019$ was used
+in the gsDesign and gsDesign2 example, while 0.2 was used in the rpact example.
+
+- OS calculations:
+
+```{r}
+#| warning=FALSE
+os_rpact_gsd <- getDesignGroupSequential(
+  sided = 1,
+  alpha = alphal,
+  informationRates = timing_os,
+  typeOfDesign = "asOF",
+  beta = 1 - power_os
+)
+
+os_rpact <- getSampleSizeSurvival(
+  design = os_rpact_gsd,
+  accrualTime = enroll_dur,
+  followUpTime = minfu_os,
+  lambda2 = log(2) / med_os,
+  hazardRatio = hr1_os,
+  dropoutRate1 = 1 - exp(-do_rate_os * 12),
+  dropoutRate2 = 1 - exp(-do_rate_os * 12),
+  dropoutTime = 12
+)
+
+kable(summary(os_rpact))
+```
