@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Kruskal Wallis in Python</title>
+<title>Testing approaches under non-proportional hazards</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -101,6 +101,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -196,8 +225,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
    
   <ul>
   <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
-  <li><a href="#implementing-kruskal-wallis-in-python" id="toc-implementing-kruskal-wallis-in-python" class="nav-link" data-scroll-target="#implementing-kruskal-wallis-in-python">Implementing Kruskal-Wallis in Python</a></li>
-  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a></li>
+  <li><a href="#weighted-log-rank-test" id="toc-weighted-log-rank-test" class="nav-link" data-scroll-target="#weighted-log-rank-test">Weighted log-rank test</a></li>
+  <li><a href="#illustration" id="toc-illustration" class="nav-link" data-scroll-target="#illustration">Illustration</a>
+  <ul class="collapse">
+  <li><a href="#survdiff" id="toc-survdiff" class="nav-link" data-scroll-target="#survdiff"><em>survdiff()</em></a></li>
+  <li><a href="#wlrt" id="toc-wlrt" class="nav-link" data-scroll-target="#wlrt"><em>wlrt</em>()</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 </nav>
     </div>
@@ -206,7 +240,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Kruskal Wallis in Python</h1>
+<h1 class="title">Testing approaches under non-proportional hazards</h1>
 </div>
 
 
@@ -223,77 +257,160 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="introduction" class="level2">
-<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>The Kruskal-Wallis test is a non-parametric equivalent to the one-way ANOVA. For this example, the data used is a subset of the iris dataset, testing for difference in sepal width between species of flower.</p>
-<div id="57a7157b" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>In clinical studies with time-to-event outcomes, it is commonly assumed that the hazard functions of two groups are proportional. The standard log-rank test is widely used to test the equivalence of survival functions. However, several scenarios can lead to non-proportional hazards (NPH). For example, a delayed treatment effect may be observed in the treatment arm which can lead to departure from proportionality of the survival curves. Thus there are many tests available in the literature that can handle such scenarios. Most commonly used tests are as follows:</p>
+<ul>
+<li>Weighted log-rank test</li>
+<li>Restricted Mean Survival Time (RMST)</li>
+<li>Milestone survival</li>
+<li>Max-Combo test.</li>
+</ul>
+<p>While these tests may be explored in a separate document, this particular document focuses solely on the weighted log-rank test.<br>
+</p>
+</section>
+<section id="weighted-log-rank-test" class="level1">
+<h1>Weighted log-rank test</h1>
+<p>Suppose we have two groups (e.g.&nbsp;treatment and control, male and female etc.) with survival functions <span class="math inline">\(S_1\)</span> &amp; <span class="math inline">\(S_2\)</span> respectively. The null and alternative hypotheses are given as: <span class="math display">\[H_0 : S_1(t)=S_2(t) \mbox{    }\forall t  \mbox{ v/s }  H_1 : S_1(t) \neq S_2(t) \mbox{ for some t. }\]</span> Since alternative hypothesis is composite, it includes multiple scenarios. Hence the power calculation is difficult to implement. One way to tackle this situation is to consider the Lehman alternative given by <span class="math inline">\(H_L : S_1(t)=(S_2(t))^\psi\)</span> for all <span class="math inline">\(t\)</span> where <span class="math inline">\(0&lt;\psi&lt;1\)</span>. Alternatively, <span class="math display">\[ H_0 : \psi=1  \ v/s \ H_1: \psi&lt;1\]</span></p>
+<p>which implies subjects in group 1 will have longer survival times than subjects in group 2. For more details, refer to Page 44 of the <a href="https://xsliulab.github.io/Workshop/2021/week3/survival-analysis-book.pdf">Moore (2016)</a>.<br>
+The test statistic for weighted log-rank test is given by, <span class="math display">\[ Z = \frac{\sum_{j=1}^{D}w_j(o_{j} -e_j)}{\sqrt{\sum_{j=1}^{D}w_j^2 v_j}} \to N(0,1), \text{under} \ H_0\]</span> Equivalently, <span class="math display">\[ Z^2 = \frac{\big[\sum_{j=1}^{D}w_j(o_j -e_j)\big]^2}{\sum_{j=1}^{D}w_j^2 v_j} \to \chi^2_1, \text{under} \ H_0.\]</span><br>
+Here <span class="math inline">\(t_1&lt;t_2&lt;...&lt;t_D\)</span> be the distinct failure time points of both the groups together. <span class="math inline">\(o_j\)</span> is the number of deaths, <span class="math inline">\(e_j\)</span> is the expected number of deaths and <span class="math inline">\(v_j\)</span> is the variance of number of deaths in either of the two groups.<br>
+Different weight functions are discussed in the literature and a family of weight functions <span class="math inline">\(G(\rho)\)</span> is proposed by Harrington and Fleming (1982), and it is implemented in R using <em>survival::survdiff</em> (). Further, Fleming and Harrington (1991) extended <span class="math inline">\(G(\rho)\)</span> family to <span class="math inline">\(G(\rho,\gamma)\)</span> and it is implemented in R using <em>nphRCT::wlrt()</em>.</p>
+</section>
+<section id="illustration" class="level1">
+<h1>Illustration</h1>
+<p>Data source: https://stats.idre.ucla.edu/sas/seminars/sas-survival/</p>
+<p>The data include 500 subjects from the Worcester Heart Attack Study. This study examined several factors, such as age, gender and BMI, that may influence survival time after heart attack. Follow up time for all participants begins at the time of hospital admission after heart attack and ends with death or loss to follow up (censoring). The variables used here are:</p>
+<ul>
+<li><p>lenfol: length of followup, terminated either by death or censoring - time variable</p></li>
+<li><p>fstat: loss to followup = 0, death = 1 - censoring variable</p></li>
+<li><p>afb: atrial fibrillation, no = 0, 1 = yes - Covariate</p></li>
+<li><p>gender: males = 0, females = 1 - stratification factor</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(haven)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the data</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Species'</span>: [<span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>],</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Sepal_Width'</span>: [<span class="fl">3.4</span>, <span class="fl">3.0</span>, <span class="fl">3.4</span>, <span class="fl">3.2</span>, <span class="fl">3.5</span>, <span class="fl">3.1</span>, <span class="fl">2.7</span>, <span class="fl">2.9</span>, <span class="fl">2.7</span>, <span class="fl">2.6</span>, <span class="fl">2.5</span>, <span class="fl">2.5</span>, <span class="fl">3.0</span>, <span class="fl">3.0</span>, <span class="fl">3.1</span>, <span class="fl">3.8</span>, <span class="fl">2.7</span>, <span class="fl">3.3</span>]</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the DataFrame</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>iris_sub <span class="op">=</span> pd.DataFrame(data)</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Print the DataFrame</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(iris_sub)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span>opts_chunk<span class="sc">$</span><span class="fu">set</span>(<span class="at">echo =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">read_sas</span>(<span class="fu">file.path</span>(<span class="st">"../data/whas500.sas7bdat"</span>))</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(dat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>       Species  Sepal_Width
-0       setosa          3.4
-1       setosa          3.0
-2       setosa          3.4
-3       setosa          3.2
-4       setosa          3.5
-5       setosa          3.1
-6   versicolor          2.7
-7   versicolor          2.9
-8   versicolor          2.7
-9   versicolor          2.6
-10  versicolor          2.5
-11  versicolor          2.5
-12   virginica          3.0
-13   virginica          3.0
-14   virginica          3.1
-15   virginica          3.8
-16   virginica          2.7
-17   virginica          3.3</code></pre>
+<pre><code># A tibble: 6 × 19
+     ID   AGE GENDER    HR SYSBP DIASBP   BMI   CVD   AFB   SHO   CHF   AV3
+  &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1     1    83      0    89   152     78  25.5     1     1     0     0     0
+2     2    49      0    84   120     60  24.0     1     0     0     0     0
+3     3    70      1    83   147     88  22.1     0     0     0     0     0
+4     4    70      0    65   123     76  26.6     1     0     0     1     0
+5     5    70      0    63   135     85  24.4     1     0     0     0     0
+6     6    70      0    76    83     54  23.2     1     0     0     0     1
+# ℹ 7 more variables: MIORD &lt;dbl&gt;, MITYPE &lt;dbl&gt;, YEAR &lt;dbl&gt;, LOS &lt;dbl&gt;,
+#   DSTAT &lt;dbl&gt;, LENFOL &lt;dbl&gt;, FSTAT &lt;dbl&gt;</code></pre>
 </div>
 </div>
-</section>
-<section id="implementing-kruskal-wallis-in-python" class="level2">
-<h2 class="anchored" data-anchor-id="implementing-kruskal-wallis-in-python">Implementing Kruskal-Wallis in Python</h2>
-<p>The Kruskal-Wallis test can be implemented in Python using the kruskal function from scipy.stats. The null hypothesis is that the samples are from identical populations.</p>
-<div id="800ceb80" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.stats <span class="im">import</span> kruskal</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Separate the data for each species</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>setosa_data <span class="op">=</span> iris_sub[iris_sub[<span class="st">'Species'</span>] <span class="op">==</span> <span class="st">'setosa'</span>][<span class="st">'Sepal_Width'</span>]</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>versicolor_data <span class="op">=</span> iris_sub[iris_sub[<span class="st">'Species'</span>] <span class="op">==</span> <span class="st">'versicolor'</span>][<span class="st">'Sepal_Width'</span>]</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>virginica_data <span class="op">=</span> iris_sub[iris_sub[<span class="st">'Species'</span>] <span class="op">==</span> <span class="st">'virginica'</span>][<span class="st">'Sepal_Width'</span>]</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform the Kruskal-Wallis H-test</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>h_statistic, p_value <span class="op">=</span> kruskal(setosa_data, versicolor_data, virginica_data)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the degrees of freedom</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>k <span class="op">=</span> <span class="bu">len</span>(iris_sub[<span class="st">'Species'</span>].unique())</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> k <span class="op">-</span> <span class="dv">1</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"H-statistic:"</span>, h_statistic)</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"p-value:"</span>, p_value)</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Degrees of freedom:"</span>, df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="survdiff" class="level2">
+<h2 class="anchored" data-anchor-id="survdiff"><em>survdiff()</em></h2>
+<p>This function uses <span class="math inline">\(G(\rho)=\hat{S}(t)^\rho, \rho \geq 0\)</span> , where <span class="math inline">\(\hat{S}(t)\)</span> is the Kaplan-Meier estimate of the survival function at time <span class="math inline">\(t\)</span>. If <span class="math inline">\(\rho = 0\)</span>, then this is the standard log-rank test.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survival)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>WLRtest<span class="ot">&lt;-</span><span class="fu">survdiff</span>(<span class="fu">Surv</span>(LENFOL,FSTAT)<span class="sc">~</span> AFB,<span class="at">rho =</span> <span class="dv">3</span>,<span class="at">data=</span>dat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>WLRtest</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>H-statistic: 10.922233820459285
-p-value: 0.0042488075570347485
-Degrees of freedom: 2</code></pre>
+<pre><code>Call:
+survdiff(formula = Surv(LENFOL, FSTAT) ~ AFB, data = dat, rho = 3)
+
+        N Observed Expected (O-E)^2/E (O-E)^2/V
+AFB=0 422     86.3     94.5     0.718      7.68
+AFB=1  78     24.2     16.0     4.245      7.68
+
+ Chisq= 7.7  on 1 degrees of freedom, p= 0.006 </code></pre>
 </div>
 </div>
+<p>For the illustration, <span class="math inline">\(\rho\)</span> is taken as 3 while calculating weights and the weighted log rank test reject the null hypothesis at 2.5% level of significance.</p>
 </section>
-<section id="results" class="level2">
-<h2 class="anchored" data-anchor-id="results">Results</h2>
-<p>As seen above, Python outputs the Kruskal-Wallis rank sum statistic (10.922), the degrees of freedom (2), and the p-value of the test (0.004249). Therefore, the difference in population medians is statistically significant at the 5% level.</p>
+<section id="wlrt" class="level2">
+<h2 class="anchored" data-anchor-id="wlrt"><em>wlrt</em>()</h2>
+<p>This function uses <span class="math inline">\(G(\rho,\gamma)=\hat{S}(t)^\rho (1-\hat{S}(t))^\gamma; \rho,\gamma \geq 0,\)</span> , where <span class="math inline">\(\hat{S}(t)\)</span> is the Kaplan-Meier estimate of the survival function at time <span class="math inline">\(t\)</span>. If <span class="math inline">\(\rho = \gamma = 0\)</span>, then this is the standard log-rank test. When <span class="math inline">\(\rho=0, \gamma=1\)</span> this test can be used to detect early difference in the survival curves, when <span class="math inline">\(\rho=1, \gamma = 0\)</span>, this test can be used to detect late differences in the survival curves and when <span class="math inline">\(\rho=1, \gamma = 1\)</span> this test can be used to test middle differences in the survival curves. Also it is to be noted that this test gives the Z-score as the test statistic which can be squared to obtain the chi-square statistic.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(nphRCT)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>WL<span class="ot">&lt;-</span><span class="fu">wlrt</span>(<span class="fu">Surv</span>(LENFOL,FSTAT)<span class="sc">~</span> AFB, <span class="at">data=</span>dat, <span class="at">method=</span><span class="st">"fh"</span>, <span class="at">rho =</span> <span class="dv">0</span>, <span class="at">gamma =</span> <span class="dv">0</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>WL</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         u      v_u        z trt_group
+1 16.77487 25.81609 3.301521         1</code></pre>
+</div>
+</div>
+<p>To obtain the corresponding <span class="math inline">\(p\)</span>-value we can either use <em>2(1-pnorm(abs(WL$z),0,1))</em> or we can square the test statistic <em>WL$z</em> by using <em>(WL$z)^2</em> and obtain the corresponding <span class="math inline">\(p\)</span>-values as <em>1 - pchisq((WL$z)^2,1)</em> , both the <span class="math inline">\(p\)</span>-values will be the same.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span><span class="sc">*</span>(<span class="dv">1</span><span class="sc">-</span><span class="fu">pnorm</span>(<span class="fu">abs</span>(WL<span class="sc">$</span>z),<span class="dv">0</span>,<span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.0009616214</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>(WL<span class="sc">$</span>z)<span class="sc">^</span><span class="dv">2</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 10.90004</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">-</span><span class="fu">pchisq</span>((WL<span class="sc">$</span>z)<span class="sc">^</span><span class="dv">2</span>,<span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.0009616214</code></pre>
+</div>
+</div>
+<p>For the illustration purpose we used <span class="math inline">\(\rho=0,\  \gamma=0\)</span> and in this scenario weighted log-rank test becomes standard log-rank test. Therefore, the result obtained in this illustration is consistent with the result obtained in <a href="Survival Analysis Using R (psiaims.github.io)">standard log-rank test</a>.</p>
+</section>
+</section>
+<section id="references" class="level1">
+<h1>References</h1>
+<ol type="1">
+<li>Knezevic, A., &amp; Patil, S. (2020). Combination weighted log-rank tests for survival analysis with non-proportional hazards. <em>SAS Global Forum</em>.</li>
+<li>Magirr, D., &amp; Barrott, I. (2022). nphRCT: Non-Proportional Hazards in Randomized Controlled Trials.</li>
+<li>Moore, D. F. (2016). <em>Applied survival analysis using R</em> (Vol. 473, pp.&nbsp;1-10). Cham: Springer.</li>
+<li>Therneau T (2024). A Package for Survival Analysis in R.</li>
+</ol>
+<div class="callout callout-style-default callout-note callout-titled" title="Session Info">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Session Info
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>─ Session info ───────────────────────────────────────────────────────────────
+ setting  value
+ version  R version 4.4.0 (2024-04-24)
+ os       Ubuntu 22.04.4 LTS
+ system   x86_64, linux-gnu
+ ui       X11
+ language (EN)
+ collate  C.UTF-8
+ ctype    C.UTF-8
+ tz       UTC
+ date     2024-08-19
+ pandoc   3.2 @ /opt/quarto/bin/tools/ (via rmarkdown)
+
+─ Packages ───────────────────────────────────────────────────────────────────
+ ! package  * version date (UTC) lib source
+ P nphRCT   * 0.1.1   2024-06-27 [?] RSPM (R 4.4.0)
+ P survival * 3.7-0   2024-06-05 [?] RSPM (R 4.4.0)
+
+ [1] /home/runner/work/CAMIS/CAMIS/renv/library/R-4.4/x86_64-pc-linux-gnu
+ [2] /opt/R/4.4.0/lib/R/library
+
+ P ── Loaded and on-disk path mismatch.
+
+──────────────────────────────────────────────────────────────────────────────</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
 
 
 </section>
