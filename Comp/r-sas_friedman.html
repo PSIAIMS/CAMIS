@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Summary statistics</title>
+<title>R vs SAS Non-parametric Analysis - Friedman test</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -190,15 +190,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#data-used" id="toc-data-used" class="nav-link active" data-scroll-target="#data-used">Data used</a></li>
+  <li><a href="#example-code-using-rstatix" id="toc-example-code-using-rstatix" class="nav-link" data-scroll-target="#example-code-using-rstatix">Example Code using {rstatix}</a></li>
+  <li><a href="#example-code-using-proc-freq" id="toc-example-code-using-proc-freq" class="nav-link" data-scroll-target="#example-code-using-proc-freq">Example Code using {PROC FREQ}</a></li>
+  <li><a href="#comparison" id="toc-comparison" class="nav-link" data-scroll-target="#comparison">Comparison</a></li>
+  <li><a href="#comparison-results-from-more-data" id="toc-comparison-results-from-more-data" class="nav-link" data-scroll-target="#comparison-results-from-more-data">Comparison Results from more data</a></li>
+  <li><a href="#summary-and-recommendation" id="toc-summary-and-recommendation" class="nav-link" data-scroll-target="#summary-and-recommendation">Summary and Recommendation</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Summary statistics</h1>
+<h1 class="title">R vs SAS Non-parametric Analysis - Friedman test</h1>
 </div>
 
 
@@ -215,27 +227,158 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>The <strong>numpy.percentile()</strong> function is useful to determine the <em>n<sup>th</sup>-percentile</em> for the given array of data. It returns an array with percentile values or a scalar along the specified axis. The function accepts the following parameters:</p>
-<p>1.<em>array</em>: The array of data whose percentile needs to be calculated.</p>
-<p>2.<em>percentile</em>: Denotes the percentile that needs to be computed.</p>
-<p>3.<em>axis</em> (optional): Denotes the axis along which the percentile is calculated. By default, a flattened array is used.</p>
-<p>4.<em>out</em> (optional): An alternate output array where we can place the result.</p>
-<p>5.<em>overwrite_input</em> (optional): Used to modify the input array.</p>
-<p>6.<em>keepdims</em> (optional): Creates reduced axes with dimensions of one size.</p>
-<div id="1593c593" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>sample_data<span class="op">=</span>[<span class="dv">12</span>, <span class="dv">25</span>, <span class="dv">16</span>, <span class="dv">50</span>, <span class="dv">34</span>, <span class="dv">29</span>, <span class="dv">60</span>, <span class="dv">86</span>, <span class="dv">52</span>, <span class="dv">39</span>, <span class="dv">41</span>]</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>percentile <span class="op">=</span> np.percentile(sample_data,<span class="dv">75</span>)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(percentile)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rstatix) </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggpubr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="data-used" class="level2">
+<h2 class="anchored" data-anchor-id="data-used">Data used</h2>
+<p>Friedman’s test is used when you have one within-subjects independent variable with two or more levels and a dependent variable that is not interval and normally distributed (but at least ordinal). To build such unreplicated blocked data, we’ll create a data frame called &nbsp;<code>df_bp</code>&nbsp;from random number. In &nbsp;<code>df_bp</code>&nbsp;: dependent variable <code>bp</code> is randomly generated; Block: <code>subjid</code> ; Group: <code>time_point</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>df_bp <span class="ot">=</span> <span class="fu">data.frame</span>(<span class="at">bp =</span> <span class="fu">runif</span>(<span class="at">n =</span> <span class="dv">50</span>, <span class="dv">138</span>, <span class="dv">200</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">subjid =</span> <span class="fu">as.factor</span>(<span class="fu">row_number</span>() <span class="sc">%%</span> <span class="dv">5</span>),  </span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">time_point =</span> <span class="fu">as.factor</span>((<span class="fu">row_number</span>()<span class="sc">-</span><span class="dv">1</span>) <span class="sc">%/%</span> <span class="dv">5</span> <span class="sc">+</span> <span class="dv">1</span>))</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(df_bp)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>51.0</code></pre>
+<pre><code>        bp subjid time_point
+1 155.8298      1          1
+2 186.8749      2          1
+3 163.3566      3          1
+4 192.7471      4          1
+5 196.3090      0          1
+6 140.8245      1          2</code></pre>
+</div>
+</div>
+<p>Let’s see distribution of <code>df_bp</code></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>ggpubr<span class="sc">::</span><span class="fu">ggboxplot</span>(df_bp, <span class="at">x =</span> <span class="st">"time_point"</span>, <span class="at">y =</span> <span class="st">"bp"</span>, <span class="at">add =</span> <span class="st">"jitter"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="r-sas_friedman_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="example-code-using-rstatix" class="level2">
+<h2 class="anchored" data-anchor-id="example-code-using-rstatix">Example Code using {rstatix}</h2>
+<p>In R, <strong>friedman_test</strong> can be used to compare multiple means of rank in <code>bp</code> grouped by <code>time_point</code>, stratified by <code>subjid</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>res.fried <span class="ot">&lt;-</span> df_bp <span class="sc">%&gt;%</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">friedman_test</span>(bp <span class="sc">~</span> time_point <span class="sc">|</span> subjid)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>res.fried</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 6
+  .y.       n statistic    df     p method       
+* &lt;chr&gt; &lt;int&gt;     &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;        
+1 bp        5      10.9     9 0.284 Friedman test</code></pre>
+</div>
+</div>
+</section>
+<section id="example-code-using-proc-freq" class="level2">
+<h2 class="anchored" data-anchor-id="example-code-using-proc-freq">Example Code using {PROC FREQ}</h2>
+<p>In SAS, <strong>CMH2</strong> option of PROC FREQ is used to perform Friedman’s test.</p>
+<pre class="sas"><code>proc freq data=data_bp;
+   tables patient*dos*bp / 
+          cmh2 scores=rank noprint;
+run;
+</code></pre>
+</section>
+<section id="comparison" class="level2">
+<h2 class="anchored" data-anchor-id="comparison">Comparison</h2>
+<p>The Row Mean Scores Differ statistic of SAS result is compared with statistic of R result, together with <em>p</em>-value.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 43%">
+<col style="width: 39%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Analysis</th>
+<th>Supported in R</th>
+<th>Supported in SAS</th>
+<th>Results Match</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Friedman Test</td>
+<td><p>Yes</p>
+<div class="quarto-figure quarto-figure-left">
+<figure class="figure">
+<p><img src="../images/friedman/Friedman_R.png" class="quarto-figure quarto-figure-left figure-img" width="221" height="31"></p>
+</figure>
+</div></td>
+<td>Yes<img src="../images/friedman/Friedman_SAS.png" class="img-fluid quarto-figure quarto-figure-left" width="216"></td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="comparison-results-from-more-data" class="level2">
+<h2 class="anchored" data-anchor-id="comparison-results-from-more-data">Comparison Results from more data</h2>
+<p>Friedman’s chi-suqare approximation varies when the number of blocks or the number of groups in the randomized block design differs. Similar comparison is done when number of block <code>subjid</code> ranges from 4 to 20 and number of group <code>time_point</code> ranges from 2 to 6. All results yield exact match (Comparison criterion is set to the tenth decimal place).</p>
+</section>
+<section id="summary-and-recommendation" class="level1">
+<h1>Summary and Recommendation</h1>
+<p>The R friedman test is comparable to SAS. Comparison between SAS and R show identical results for the datasets tried. The <strong>rstatix</strong> package <code>friedman_test()</code> function is very similar to SAS in the output produced.</p>
+</section>
+<section id="references" class="level1">
+<h1>References</h1>
+<p>R <code>friedman_test()</code> documentation: <a href="https://search.r-project.org/CRAN/refmans/rstatix/html/friedman_test.html" class="uri">https://search.r-project.org/CRAN/refmans/rstatix/html/friedman_test.html</a></p>
+<p>SAS <code>PROC FREQ</code> documentation: <a href="https://support.sas.com/documentation/cdl/en/statug/63033/HTML/default/viewer.htm#statug_freq_sect033.htm" class="uri">https://support.sas.com/documentation/cdl/en/statug/63033/HTML/default/viewer.htm#statug_freq_sect033.htm</a></p>
+<div class="callout callout-style-default callout-note callout-titled" title="Session Info">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Session Info
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>─ Session info ───────────────────────────────────────────────────────────────
+ setting  value
+ version  R version 4.4.0 (2024-04-24)
+ os       Ubuntu 22.04.4 LTS
+ system   x86_64, linux-gnu
+ ui       X11
+ language (EN)
+ collate  C.UTF-8
+ ctype    C.UTF-8
+ tz       UTC
+ date     2024-08-30
+ pandoc   3.2 @ /opt/quarto/bin/tools/ (via rmarkdown)
+
+─ Packages ───────────────────────────────────────────────────────────────────
+ ! package * version date (UTC) lib source
+ P rstatix * 0.7.2   2023-02-01 [?] RSPM (R 4.4.0)
+
+ [1] /home/runner/work/CAMIS/CAMIS/renv/library/R-4.4/x86_64-pc-linux-gnu
+ [2] /opt/R/4.4.0/lib/R/library
+
+ P ── Loaded and on-disk path mismatch.
+
+──────────────────────────────────────────────────────────────────────────────</code></pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
