@@ -22,10 +22,15 @@ import numpy as np
 import scipy.stats as stats 
 
 # Read the sample data
-df = pd.read_csv("../data/lung_cancer.csv")
+data = pd.read_csv("../data/lung_cancer.csv") 
+
+# Removing undesired rows
+df= data.dropna(subset=['ph.ecog','wt.loss']) 
 
 # Converting numerical variable into categorical variable
-df['ecog_grp'] = np.where(df['ph.ecog']>0, "fully active", "symptomatic")
+
+df['ecog_grp']= np.where(df['ph.ecog']>0, "fully active","symptomatic")
+print(df['ecog_grp'])
 df['wt_grp'] = np.where(df['wt.loss']>0, "weight loss", "weight gain")
 
 contingency_table= pd.crosstab(df['ecog_grp'],df['wt_grp'])
@@ -37,6 +42,7 @@ Furthermore, the chi2_contingency() function in scipy.stats library in Python ca
 
 ```{python}
 
+# Parsing the values from the contingency table
 value = np.array([contingency_table.iloc[0][0:5].values,
                   contingency_table.iloc[1][0:5].values])
 
@@ -46,3 +52,16 @@ print("The chi2 value is:", statistic)
 print("The p value is:", p)
 print("The degree of freedom is:", dof)
 print("The expected values are:", expected)
+
+```
+
+## Implementing Fisher exact test in Python
+
+To implement Fischer's exact test in Python, we can use the fischer_exact() function from the stats module in SciPy library. It returns *SignificanceResult* object with statistic and pvalue as it's attributes.
+
+
+```{python}
+
+stats.fisher_exact(value, alternative="two-sided")
+
+```
