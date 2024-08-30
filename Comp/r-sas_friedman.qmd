@@ -1,12 +1,6 @@
-------------------------------------------------------------------------
-
-title: "SAS vs R Non-parametric Analysis - Friedman test"
-
-------------------------------------------------------------------------
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+---
+title: "R vs SAS Non-parametric Analysis - Friedman test"
+---
 
 ```{r review-setup}
 #| message: FALSE
@@ -14,6 +8,7 @@ knitr::opts_chunk$set(echo = TRUE)
 #| eval: TRUE
 library(tidyverse)
 library(rstatix) 
+library(ggpubr)
 ```
 
 ## Data used
@@ -36,22 +31,6 @@ Let's see distribution of `df_bp`
 ggpubr::ggboxplot(df_bp, x = "time_point", y = "bp", add = "jitter")
 ```
 
-Save R-generated data for SAS to use.
-
-```{r}
-write_csv(df_bp, paste0(getwd(),"/data_bp.csv"))
-```
-
-SAS will import generated dataset from the corresponding location.
-
-```{=html}
-<pre><code>libname data '\\Client\Y$\Gitlab\CAMIS';
-
-proc import datafile="%sysfunc(pathname(data))\data_bp.csv" out=data_bp dbms=csv replace;
-    getnames=yes;
-run;
-</code></pre>
-```
 ## Example Code using {rstatix}
 
 In R, **friedman_test** can be used to compare multiple means of rank in `bp` grouped by `time_point`, stratified by `subjid`.
@@ -66,12 +45,12 @@ res.fried
 
 In SAS, **CMH2** option of PROC FREQ is used to perform Friedman's test.
 
-```{=html}
-<pre><code>proc freq data=data_bp;
+``` sas
+proc freq data=data_bp;
    tables patient*dos*bp / 
           cmh2 scores=rank noprint;
 run;
-</code></pre>
+
 ```
 ## Comparison
 
