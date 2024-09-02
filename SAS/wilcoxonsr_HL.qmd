@@ -4,23 +4,25 @@ title: "Wilcoxon signed-rank test in SAS & StatXact"
 
 ### **Introduction**
 
-Similarily to what has been presented in R, we will explore the options of Wilcoxon signed-rank test that are avialable in SAS & StatXact.We will consider case with N\>=20 or N\<20 and without or with ties. For more information how to perform this analysis in R go [here](../R/wilcoxonsr_hodges_lehman.qmd)
+Similarily to what has been presented in R, we will explore the options of Wilcoxon Signed-Rank test that are avialable in SAS & StatXact.We will consider case with N\>=20 or N\<20 and without or with ties. For more information how to perform this analysis in R go [here](../R/wilcoxonsr_hodges_lehman.qmd)
 
 ### Data {.unnumbered}
 
 Analysis was be conducted on the same example dataset as in R.
 
-Wilcoxon signed rank test was applied to analyse the time to return to baseline FEV1 post-mannitol challenge 2. This time only median difference and p value were provided due to SAS' limitations.
+Again, wilcoxon signed rank test was applied to analyse the time to return to baseline FEV1 post-mannitol challenge 2. 
 
-### Dataset without ties and N\>= 20 {.unnumbered}
+## Analysis in SAS {.unnumbered}
 
-Let's consider a case where the dataset has no ties and N (numbr of observations) = 240.
+### Dataset without ties and N > 20 {.unnumbered}
+
+Let's consider a case where the dataset has no ties and N (number of observations) = 240.
 
 ```{r}
 #| eval: false
 data TTR;
-	set TTR;
-	diff = TRT_B - TRT_A;
+  set TTR;
+  diff = TRT_B - TRT_A;
 run;
 ```
 
@@ -28,16 +30,12 @@ run;
 knitr::include_graphics("../images/wilcoxonsr/wsr_data.PNG")
 ```
 
-### Analysis in SAS {.unnumbered}
-
-In SAS Wilcoxon signed-rank test is available using PROC UNIVARIATE.
+In SAS Wilcoxon Signed-Rank test is available using PROC UNIVARIATE.
 
 ```{r}
 #| eval: false
 proc univariate data=TTR
-	alpha=0.1
-  CIquantNORMAL (type=twosided alpha=0.1)
-  pctldef = 2;   
+	alpha=0.1;
 	var diff;
 run;
 ```
@@ -46,8 +44,47 @@ run;
 knitr::include_graphics("../images/wilcoxonsr/wsr_240.PNG")
 ```
 
+### Dataset without ties and N≤20 {.unnumbered}
+
+Now let's consider a smaller dataset, created by selecting first 19 observations from our main data.
+
+```{r}
+#| eval: false
+data TTR_19;
+    set TTR;
+    if _N_ <= 19;
+run;
+```
+
+```{r}
+#| eval: false
+proc univariate data=TTR_19
+	alpha=0.1;
+	var diff;
+run;
+```
+
+
+```{r, echo=FALSE, fig.align='center', out.width="75%"}
+knitr::include_graphics("../images/wilcoxonsr/wsr_19.PNG")
+```
+
 ### Important notes on SAS {.unnumbered}
 
--   XXXXX
--   BBBBB
--   
+-   Only PROC UNIVARIATE can be used in SAS to perform Wilcoxon Signed-Rank test
+-   In regards to Wilcoxon S-R test, SAS provides only p value 
+-   Hodges-Lehmann estimator or CI are not available and have to be implemented manually
+-   Provided p value is based on Signed Rank (S) statistic (modification of a common T+)
+-   SAS computes exact p values only for N ≤ 20. For larger samples uses an asymptotic t-Student distribution of the test statistic. For more information how the p value is calculated go [here](https://support.sas.com/documentation/cdl/en/procstat/63104/HTML/default/viewer.htm#procstat_univariate_sect029.htm)
+
+  5 different definitions for quantil calc.... are available. See details fro the SAS documentation [here](...) CAMIS quantile page(...)
+-   Using CIQUANTNORMAL option we can get confidence limits for quantiles, using noncentral t distribution (Hahn and Meeker,1991 & Odeh and Owen,1980) -
+- 
+
+### Approach to 0s and ties in SAS {.unnumbered}
+-   In SAS all the ties and 0 differences are disregarded (Hollander and Wolfe, 1973), algorithm considering them (Pratt, 1959 & Lehmann,1975) is not available. For more information about the algorithms go [here](...)
+
+
+## Analysis in StatXact {.unnumbered}
+
+StatXact is 
