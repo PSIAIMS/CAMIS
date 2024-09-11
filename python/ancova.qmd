@@ -1,0 +1,188 @@
+---
+title: "Ancova"
+output: html_document
+---
+
+## Introduction
+
+In this example, we're looking at [Analysis of Covariance](https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_glm_examples04.htm). ANCOVA is typically used to analyse treatment differences, to see examples of prediction models go to the [simple linear regression page](linear-regression.qmd).
+
+## Data Summary
+
+```{python, eval=TRUE, echo=TRUE}
+import pandas as pd
+
+# Input data
+data = {
+    'drug': ["A", "A", "A", "A", "A", "A", "A", "A", "A", "A",
+             "D", "D", "D", "D", "D", "D", "D", "D", "D", "D",
+             "F", "F", "F", "F", "F", "F", "F", "F", "F", "F"],
+    'pre': [11, 8, 5, 14, 19, 6, 10, 6, 11, 3,
+            6, 6, 7, 8, 18, 8, 19, 8, 5, 15,
+            16, 13, 11, 9, 21, 16, 12, 12, 7, 12],
+    'post': [6, 0, 2, 8, 11, 4, 13, 1, 8, 0,
+             0, 2, 3, 1, 18, 4, 14, 9, 1, 9,
+             13, 10, 18, 5, 23, 12, 5, 16, 1, 20]
+}
+
+df = pd.DataFrame(data)
+```
+
+```{python, eval=TRUE, echo=TRUE}
+# Descriptive statistics
+summary_stats = df.describe()
+
+# Calculate median
+median_pre = df['pre'].median()
+median_post = df['post'].median()
+
+# Add median to the summary statistics
+summary_stats.loc['median'] = [median_pre, median_post]
+
+print(summary_stats)
+```
+
+## Ancova in Python
+In Python, Ancova can be performed using the [statsmodels](https://www.statsmodels.org/stable/index.html) library from the scipy package.
+
+
+```{python, eval=TRUE, echo=TRUE}
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from tabulate import tabulate
+
+# Fit the ANCOVA model
+model_ancova = smf.ols('post ~ drug + pre', data=df).fit()
+
+# Summary of the model
+model_summary = model_ancova.summary()
+print(model_summary)
+
+# Extracting glance (summary) information
+model_glance = {
+    'r_squared': model_ancova.rsquared,
+    'adj_r_squared': model_ancova.rsquared_adj,
+    'f_statistic': model_ancova.fvalue,
+    'f_pvalue': model_ancova.f_pvalue,
+    'aic': model_ancova.aic,
+    'bic': model_ancova.bic
+}
+model_glance_df = pd.DataFrame([model_glance])
+print(tabulate(model_glance_df, headers='keys', tablefmt='grid'))
+
+# Extracting tidy (coefficients) information
+model_tidy = model_ancova.summary2().tables[1]
+print(tabulate(model_tidy, headers='keys', tablefmt='grid'))
+```
+
+Please note that all values match with the corresponding [R version](https://psiaims.github.io/CAMIS/R/ancova.html), except for the AIC and BIC values, which differ slightly. This should be acceptable for most practical purposes in statistical analysis. Currently, there are [ongoing discussions](https://github.com/statsmodels/statsmodels/issues/1802) in the statsmodels community regarding the computational details of AIC and BIC.
+
+The following code can be used to enforce complete consistency of AIC and BIC values with R outputs by adding 1 to the number of parameters:
+
+```{python, eval=TRUE, echo=TRUE}
+import numpy as np
+
+# Manual calculation of AIC and BIC to ensure consistency with R
+n = df.shape[0]  # number of observations
+k = model_ancova.df_model + 1  # number of parameters (including intercept)
+log_lik = model_ancova.llf  # log-likelihood
+
+# Adjusted number of parameters (including scale parameter)
+k_adjusted = k + 1
+
+# Manually calculate AIC and BIC to match R's behavior
+aic_adjusted = 2 * k_adjusted - 2 * log_lik
+bic_adjusted = np.log(n) * k_adjusted - 2 * log_lik
+
+print(f"Number of observations (n): {n}")
+print(f"Number of parameters (k_adjusted): {k_adjusted}")
+print(f"Log-likelihood: {log_lik}")
+print(f"AIC (adjusted): {aic_adjusted}")
+print(f"BIC (adjusted): {bic_adjusted}")
+```
+There are different types of anova computations. The [statsmodels.stats.anova.anova_lm](https://www.statsmodels.org/stable/generated/statsmodels.stats.anova.anova_lm.html) function allows the types 1, 2 and 3. The code to compute these types is depicted below:
+
+```{python, eval=TRUE, echo=TRUE}
+import statsmodels.formula.api as smf
+import statsmodels.stats.anova as ssa
+
+# Center the predictor for Type III anova
+#df['pre_centered'] = df['pre'] - df['pre'].mean()
+
+# Fit the model for types I and II anova
+model = smf.ols('post ~ C(drug) + pre', data=df).fit()
+
+# Perform anova for types I and II
+ancova_table_type_1 = ssa.anova_lm(model, typ=1)
+ancova_table_type_2 = ssa.anova_lm(model, typ=2)
+
+# Fit the model for Type III anova with centered predictors
+model_type_3 = smf.ols('post ~ C(drug) + pre', data=df).fit()
+ancova_table_type_3 = ssa.anova_lm(model_type_3, typ=3)
+
+# Calculate SSd (sum of squares for residuals)
+ssd_type1 = ancova_table_type_1['sum_sq'].loc['Residual']
+ssd_type2 = ancova_table_type_2['sum_sq'].loc['Residual']
+ssd_type3 = ancova_table_type_3['sum_sq'].loc['Residual']
+
+# Calculate ges
+ancova_table_type_1['ges'] = ancova_table_type_1['sum_sq'] / (ancova_table_type_1['sum_sq'] + ssd_type1)
+ancova_table_type_2['ges'] = ancova_table_type_2['sum_sq'] / (ancova_table_type_2['sum_sq'] + ssd_type2)
+ancova_table_type_3['ges'] = ancova_table_type_3['sum_sq'] / (ancova_table_type_3['sum_sq'] + ssd_type3)
+
+# Add SSd column
+ancova_table_type_1['SSd'] = ssd_type1
+ancova_table_type_2['SSd'] = ssd_type2
+ancova_table_type_3['SSd'] = ssd_type3
+
+# Add significance column
+ancova_table_type_1['p<0.05'] = ancova_table_type_1['PR(>F)'] < 0.05
+ancova_table_type_2['p<0.05'] = ancova_table_type_2['PR(>F)'] < 0.05
+ancova_table_type_3['p<0.05'] = ancova_table_type_3['PR(>F)'] < 0.05
+
+# Rename columns to match the R output
+ancova_table_type_1.rename(columns={'sum_sq': 'SSn', 'df': 'DFn', 'F': 'F', 'PR(>F)': 'p'}, inplace=True)
+ancova_table_type_1.reset_index(inplace=True)
+ancova_table_type_1.rename(columns={'index': 'Effect'}, inplace=True)
+
+ancova_table_type_2.rename(columns={'sum_sq': 'SSn', 'df': 'DFn', 'F': 'F', 'PR(>F)': 'p'}, inplace=True)
+ancova_table_type_2.reset_index(inplace=True)
+ancova_table_type_2.rename(columns={'index': 'Effect'}, inplace=True)
+
+ancova_table_type_3.rename(columns={'sum_sq': 'SSn', 'df': 'DFn', 'F': 'F', 'PR(>F)': 'p'}, inplace=True)
+ancova_table_type_3.reset_index(inplace=True)
+ancova_table_type_3.rename(columns={'index': 'Effect'}, inplace=True)
+
+# Calculate DFd (degrees of freedom for residuals)
+dfd_type1 = ancova_table_type_1.loc[ancova_table_type_1['Effect'] == 'Residual', 'DFn'].values[0]
+dfd_type2 = ancova_table_type_2.loc[ancova_table_type_2['Effect'] == 'Residual', 'DFn'].values[0]
+dfd_type3 = ancova_table_type_3.loc[ancova_table_type_3['Effect'] == 'Residual', 'DFn'].values[0]
+ancova_table_type_1['DFd'] = dfd_type1
+ancova_table_type_2['DFd'] = dfd_type2
+ancova_table_type_3['DFd'] = dfd_type3
+
+# Filter out the Residual row
+ancova_table_type_1 = ancova_table_type_1[ancova_table_type_1['Effect'] != 'Residual']
+ancova_table_type_2 = ancova_table_type_2[ancova_table_type_2['Effect'] != 'Residual']
+ancova_table_type_3 = ancova_table_type_3[ancova_table_type_3['Effect'] != 'Residual']
+
+# Select and reorder columns to match the R output
+ancova_table_type_1 = ancova_table_type_1[['Effect', 'DFn', 'DFd', 'SSn', 'SSd', 'F', 'p', 'p<0.05', 'ges']]
+ancova_table_type_2 = ancova_table_type_2[['Effect', 'DFn', 'DFd', 'SSn', 'SSd', 'F', 'p', 'p<0.05', 'ges']]
+ancova_table_type_3 = ancova_table_type_3[['Effect', 'DFn', 'DFd', 'SSn', 'SSd', 'F', 'p', 'p<0.05', 'ges']]
+```
+
+## Type 1 Ancova in Python
+```{python, eval=TRUE, echo=TRUE}
+print(tabulate(ancova_table_type_1, headers='keys', tablefmt='grid'))
+```
+## Type 2 Ancova in Python
+```{python, eval=TRUE, echo=TRUE}
+print(tabulate(ancova_table_type_2, headers='keys', tablefmt='grid'))
+```
+## Type 3 Ancova in Python
+```{python, eval=TRUE, echo=TRUE}
+print(tabulate(ancova_table_type_3, headers='keys', tablefmt='grid'))
+```
+
+Please note that the results are consistent with the results achieved with [R](https://psiaims.github.io/CAMIS/R/ancova.html), except for the first row of the type 3 table featuring the intercept.

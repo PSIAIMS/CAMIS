@@ -1,0 +1,135 @@
+---
+title: "Logistic Regression"
+output: html_document
+---
+
+# Imports
+```{python}
+#data manipulation
+import pandas as pd
+import numpy as np
+
+#modelling
+import statsmodels.api as sm
+from sklearn.linear_model import LogisticRegression
+```
+
+
+# Background
+
+Logistic regression models the relationship between a binary variable and set of explanatory variables. The logit of expectation is explained as linear for of explanatory variables. If we observed $(y_i, x_i),$ where $y_i$ is a Bernoulli variable and $x_i$ a vector of explanatory variables, the model for $\pi_i = P(y_i=1)$ is
+
+$$
+\text{logit}(\pi_i)= \log\left\{ \frac{\pi_i}{1-\pi_i}\right\} = \beta_0 + \beta x_i, i = 1,\ldots,n 
+$$ 
+
+The model is especially useful in case-control studies and leads to the effect of risk factors by odds ratios.
+
+# Example : Lung cancer data
+*Data source: Loprinzi CL. Laurie JA. Wieand HS. Krook JE. Novotny PJ. Kugler JW. Bartel J. Law M. Bateman M. Klatt NE. et al. Prospective evaluation of prognostic variables from patient-completed questionnaires. North Central Cancer Treatment Group. Journal of Clinical Oncology. 12(3):601-7, 1994.*
+
+These data were sourced from the R package {survival} and have been downloaded and stored in the `data` folder.  
+
+```{python}
+# importing and prepare
+lung2 = pd.read_csv("../data/lung_cancer.csv")
+
+#create weight loss factor while respecting missing values
+# 1: patients with a weight loss of more than zero
+# 0: patients a weight loss of zero oe less
+lung2["wt_grp"] = np.where(lung2["wt.loss"].isnull(), np.nan, (lung2["wt.loss"] > 0).astype(int))
+```
+
+# Logistic Regression Modelling
+
+Let's further prepare our data for modelling by selecting the explanatory variables and the dependent variable. The Python packages that we are are aware of require complete (i.e. no missing values) data so for convenience of demonstrating these methods we will drop rows with missing values. 
+
+```{python}
+x_vars = ["age", "sex", "ph.ecog", "meal.cal"]
+y_var = "wt_grp"
+
+# drop rows with missing values 
+lung2_complete = lung2.dropna(axis=0)
+
+#select variables
+x = lung2_complete[x_vars]
+y = lung2_complete[y_var]
+```
+
+## Statsmodels package
+We will use the `sm.Logit()` method to fit our logistic regression model.
+
+```{python}
+#intercept column
+x_sm = sm.add_constant(x)
+
+#fit model
+lr_sm = sm.Logit(y, x_sm).fit() 
+print(lr_sm.summary())
+```
+
+### Model fitting
+In addition to the information contained in the summary, we can display the model coefficients as odds ratios:
+```{python}
+print("Odds ratios for statsmodels logistic regression:")
+print(np.exp(lr_sm.params))
+```
+
+We can also provide the 5% confidence intervals for the odds ratios:
+```{python}
+print("CI at 5% for statsmodels logistic regression:")
+print(np.exp(lr_sm.conf_int(alpha = 0.05)))
+```
+
+### Prediction
+Let's use our trained model to make a weight loss prediction about a new patient. 
+```{python}
+# new female, symptomatic but completely ambulatory patient consuming 2500 calories
+new_pt = pd.DataFrame({
+    "age": [56],
+    "sex": [2],
+    "ph.ecog": [1.00], 
+    "meal.cal": [2500]
+})
+
+# Add intercept term to the new data; for a single row this should be 
+# forced using the `add_constant` command
+new_pt_sm = sm.add_constant(new_pt, has_constant="add")
+print("Probability of weight loss using the statsmodels package:")
+print(lr_sm.predict(new_pt_sm))
+```
+
+## Scikit-learn Package
+
+The `scikit-learn` package is a popular package for machine learning and predictive modelling. 
+
+::: {.callout-warning}
+It's important to note that l2 regularisation is applied by default in the `scikit-learn` implementation of logistic regression. More recent releases of this package include an option to have no regularisation penalty.  
+:::
+
+```{python}
+lr_sk = LogisticRegression(penalty=None).fit(x, y)
+```
+
+Unlike the `statsmodels` approach `scikit-learn` doesn't have a summary method for the model but you can extract some of the model parameters as follows:
+
+```{python}
+print("Intercept for scikit learn logistic regression:")
+print(lr_sk.intercept_)
+print("Odds ratios for scikit learn logistic regression:")
+print(np.exp(lr_sk.coef_))
+```
+
+
+However, obtaining the confidence intervals and other metrics is not directly supported in `scikit-learn`. 
+
+### Prediction
+Using the same new patient example we can use our logistic regression model to make a prediction. The `predict_proba` method is used to return the probability for each class. If you are interested in viewing the prediction for `y = 1`, i.e. the probability of weight loss then you can select the second probability as shown: 
+```{python}
+print("Probability of weight loss using the scikit-learn package:")
+print(lr_sk.predict_proba(new_pt)[:,1])
+```
+
+## Conclusions
+
+There are two main ways to fit a logistic regression using python. Each of these packages have their advantages with `statsmodel` geared more towards model and coefficient interpretation in low dimensional data settings and in contrast the `scikit-learn` implementation more appropriate for use cases focused on prediction with more complex, higher dimensional data.  

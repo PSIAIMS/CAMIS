@@ -1,0 +1,98 @@
+---
+title: "Testing approaches under non-proportional hazards"
+---
+
+# Introduction
+
+In clinical studies with time-to-event outcomes, it is commonly assumed that the hazard functions of two groups are proportional. The standard log-rank test is widely used to test the equivalence of survival functions. However, several scenarios can lead to non-proportional hazards (NPH). For example, a delayed treatment effect may be observed in the treatment arm which can lead to departure from proportionality of the survival curves. Thus there are many tests available in the literature that can handle such scenarios. Most commonly used tests are as follows:
+
+-   Weighted log-rank test
+-   Restricted Mean Survival Time (RMST)
+-   Milestone survival
+-   Max-Combo test.
+
+While these tests may be explored in a separate document, this particular document focuses solely on the weighted log-rank test.\
+
+# Weighted log-rank test
+
+Suppose we have two groups (e.g. treatment and control, male and female etc.) with survival functions $S_1$ & $S_2$ respectively. The null and alternative hypotheses are given as: $$H_0 : S_1(t)=S_2(t) \mbox{    }\forall t  \mbox{ v/s }  H_1 : S_1(t) \neq S_2(t) \mbox{ for some t. }$$ Since alternative hypothesis is composite, it includes multiple scenarios. Hence the power calculation is difficult to implement. One way to tackle this situation is to consider the Lehman alternative given by $H_L : S_1(t)=(S_2(t))^\psi$ for all $t$ where $0<\psi<1$. Alternatively, $$ H_0 : \psi=1  \ v/s \ H_1: \psi<1$$
+
+which implies subjects in group 1 will have longer survival times than subjects in group 2. For more details, refer to Page 44 of the [Moore (2016)](https://xsliulab.github.io/Workshop/2021/week3/survival-analysis-book.pdf).\
+The test statistic for weighted log-rank test is given by, $$ Z = \frac{\sum_{j=1}^{D}w_j(o_{j} -e_j)}{\sqrt{\sum_{j=1}^{D}w_j^2 v_j}} \to N(0,1), \text{under} \ H_0$$ Equivalently, $$ Z^2 = \frac{\big[\sum_{j=1}^{D}w_j(o_j -e_j)\big]^2}{\sum_{j=1}^{D}w_j^2 v_j} \to \chi^2_1, \text{under} \ H_0.$$\
+Here $t_1<t_2<...<t_D$ be the distinct failure time points of both the groups together. $o_j$ is the number of deaths, $e_j$ is the expected number of deaths and $v_j$ is the variance of number of deaths in either of the two groups.\
+Different weight functions are discussed in the literature and a family of weight functions $G(\rho)$ is proposed by Harrington and Fleming (1982), and it is implemented in R using *survival::survdiff* (). Further, Fleming and Harrington (1991) extended $G(\rho)$ family to $G(\rho,\gamma)$ and it is implemented in R using *nphRCT::wlrt()*.
+
+# Illustration
+
+Data source: https://stats.idre.ucla.edu/sas/seminars/sas-survival/
+
+The data include 500 subjects from the Worcester Heart Attack Study. This study examined several factors, such as age, gender and BMI, that may influence survival time after heart attack. Follow up time for all participants begins at the time of hospital admission after heart attack and ends with death or loss to follow up (censoring). The variables used here are:
+
+-   lenfol: length of followup, terminated either by death or censoring - time variable
+
+-   fstat: loss to followup = 0, death = 1 - censoring variable
+
+-   afb: atrial fibrillation, no = 0, 1 = yes - Covariate
+
+-   gender: males = 0, females = 1 - stratification factor
+
+```{r, message=FALSE, warning=FALSE}
+library(haven)
+
+knitr::opts_chunk$set(echo = TRUE)
+
+dat <- read_sas(file.path("../data/whas500.sas7bdat"))
+head(dat)
+```
+
+## *survdiff()*
+
+This function uses $G(\rho)=\hat{S}(t)^\rho, \rho \geq 0$ , where $\hat{S}(t)$ is the Kaplan-Meier estimate of the survival function at time $t$. If $\rho = 0$, then this is the standard log-rank test.
+
+```{r}
+library(survival)
+WLRtest<-survdiff(Surv(LENFOL,FSTAT)~ AFB,rho = 3,data=dat)
+```
+
+```{r}
+WLRtest
+```
+
+For the illustration, $\rho$ is taken as 3 while calculating weights and the weighted log rank test reject the null hypothesis at 2.5% level of significance.
+
+## *wlrt*()
+
+This function uses $G(\rho,\gamma)=\hat{S}(t)^\rho (1-\hat{S}(t))^\gamma; \rho,\gamma \geq 0,$ , where $\hat{S}(t)$ is the Kaplan-Meier estimate of the survival function at time $t$. If $\rho = \gamma = 0$, then this is the standard log-rank test. When $\rho=0, \gamma=1$ this test can be used to detect early difference in the survival curves, when $\rho=1, \gamma = 0$, this test can be used to detect late differences in the survival curves and when $\rho=1, \gamma = 1$ this test can be used to test middle differences in the survival curves. Also it is to be noted that this test gives the Z-score as the test statistic which can be squared to obtain the chi-square statistic.
+
+```{r}
+library(nphRCT)
+WL<-wlrt(Surv(LENFOL,FSTAT)~ AFB, data=dat, method="fh", rho = 0, gamma = 0)
+WL
+```
+
+To obtain the corresponding $p$-value we can either use *2(1-pnorm(abs(WL\$z),0,1))* or we can square the test statistic *WL\$z* by using *(WL\$z)\^2* and obtain the corresponding $p$-values as *1 - pchisq((WL\$z)\^2,1)* , both the $p$-values will be the same.
+
+```{r}
+2*(1-pnorm(abs(WL$z),0,1))
+(WL$z)^2
+1-pchisq((WL$z)^2,1)
+```
+
+For the illustration purpose we used $\rho=0,\  \gamma=0$ and in this scenario weighted log-rank test becomes standard log-rank test. Therefore, the result obtained in this illustration is consistent with the result obtained in [standard log-rank test](Survival%20Analysis%20Using%20R%20(psiaims.github.io)).
+
+# References
+
+1.    Knezevic, A., & Patil, S. (2020). Combination weighted log-rank tests for survival analysis with non-proportional hazards. *SAS Global Forum*.
+2.    Magirr, D., & Barrott, I. (2022). nphRCT: Non-Proportional Hazards in Randomized Controlled Trials.
+3.    Moore, D. F. (2016). *Applied survival analysis using R* (Vol. 473, pp. 1-10). Cham: Springer.
+4.    Therneau T (2024). A Package for Survival Analysis in R.
+
+::: {.callout-note collapse="true" title="Session Info"}
+```{r}
+#| echo: false
+si <- sessioninfo::session_info(
+  c("survival", "nphRCT") #Vector of packages used 
+  , dependencies = FALSE)
+si
+```
+:::

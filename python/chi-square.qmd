@@ -1,0 +1,67 @@
+---
+title: "Chi-Square Association/Fisher's exact"
+---
+
+## Introduction
+
+The chi-square test is a non-parametric statistical test used to determine whether there is a significant association within the categorical variables. It compares the observed frequencies in a contingency table with the frequency we would expect if the variables were independent. The chi-square test calculates a test statistic, often denoted as χ² (chi-square), which follows chi-square distribution, we can determine whether the association between the variables are statistically significant.
+
+The chi-squared test and Fisher's exact test can assess for independence between two variables when the comparing groups are independent and not correlated. The chi-squared test applies an approximation assuming the sample is large, while the Fisher's exact test runs an exact procedure especially for small-sized samples.
+
+## Data used 
+
+To perform the analysis the data used is: *Loprinzi CL. Laurie JA. Wieand HS. Krook JE. Novotny PJ. Kugler JW. Bartel J. Law M. Bateman M. Klatt NE. et al. Prospective evaluation of prognostic variables from patient-completed questionnaires. North Central Cancer Treatment Group. Journal of Clinical Oncology. 12(3):601-7, 1994*.
+
+## Implementing Chi-Square test in Python
+
+ We can use crosstab() function to create contingency table of two selected variables.
+
+```{python}
+import pandas as pd 
+import numpy as np
+import scipy.stats as stats 
+
+# Read the sample data
+data = pd.read_csv("../data/lung_cancer.csv") 
+
+# Removing undesired rows
+df= data.dropna(subset=['ph.ecog','wt.loss']) 
+
+# Converting numerical variable into categorical variable
+
+df['ecog_grp']= np.where(df['ph.ecog']>0, "fully active","symptomatic")
+print(df['ecog_grp'])
+df['wt_grp'] = np.where(df['wt.loss']>0, "weight loss", "weight gain")
+
+contingency_table= pd.crosstab(df['ecog_grp'],df['wt_grp'])
+contingency_table
+
+```
+
+Furthermore, the chi2_contingency() function in scipy.stats library in Python can be used to implement Chi-square test. 
+
+```{python}
+
+# Parsing the values from the contingency table
+value = np.array([contingency_table.iloc[0][0:5].values,
+                  contingency_table.iloc[1][0:5].values])
+
+statistic, p, dof, expected = stats.chi2_contingency(value)
+
+print("The chi2 value is:", statistic)
+print("The p value is:", p)
+print("The degree of freedom is:", dof)
+print("The expected values are:", expected)
+
+```
+
+## Implementing Fisher exact test in Python
+
+To implement Fischer's exact test in Python, we can use the fischer_exact() function from the stats module in SciPy library. It returns *SignificanceResult* object with statistic and pvalue as it's attributes.
+
+
+```{python}
+
+stats.fisher_exact(value, alternative="two-sided")
+
+```

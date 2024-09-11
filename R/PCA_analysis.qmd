@@ -1,0 +1,95 @@
+---
+title: "Principle Component Analysis"
+format: html
+editor: visual
+---
+
+## Introduction
+
+Principal Component Analysis (PCA) is a dimensionality reduction technique used to reduce the number of features in a dataset while retaining most of the information.
+
+### Steps to Perform PCA in R
+
+-   We will load the `iris` data.
+-   Standardize the data and then compute PCA.
+
+```{r}
+suppressPackageStartupMessages({
+  library(factoextra)
+  library(plotly)
+})
+  
+data <- iris
+pca_result <- prcomp(data[, 1:4], scale = T)
+pca_result
+```
+
+We print the summary of the PCA result, which includes the standard deviation of each principal component and the proportion of variance explained.
+
+```{r}
+summary(pca_result)
+```
+
+## Visualize PCA Results
+
+### Scree Plot
+
+A scree plot shows the proportion of variance explained by each principal component.
+
+```{r}
+fviz_eig(pca_result)
+```
+
+### Biplot
+
+A biplot shows the scores of the samples and the loadings of the variables on the first two principal components.
+
+```{r}
+plt <- fviz_pca_biplot(pca_result, geom.ind = "point", pointshape = 21, 
+                pointsize = 2, fill.ind = iris$Species, 
+                col.var = "black", repel = TRUE)
+plt
+```
+
+## Interpretation
+
+-   The **Scree Plot** suggests to decide the number of principle components to retain by looking an *elbow* point where the explained variance starts to level off.
+
+-   The **biplot** visualizes both the samples (points) and the variables (arrows). Points that are close to each other represent samples with similar characteristics, while the direction and length of the arrows indicate the contribution of each variable to the principal components.
+
+## Visualization of PCA in 3d Scatter Plot
+
+A 3d scatter plot allows us to see the relationships between three principle components simultaneously and also gives us a better understanding of how much variance is explained by these components.
+
+It also allows for interactive exploration where we can rotate the plot and view it from a different angles.
+
+We will plot this using `plotly` package.
+
+```{r}
+
+pca_result2 <- prcomp(data[, 1:4], scale = T, rank. = 3)
+pca_result2
+```
+
+Next, we will create a dataframe of the 3 principle components and negate PC2 and PC3 for visual preference to make the plot look more organised and symmetric in 3d space.
+
+```{r}
+components <- as.data.frame(pca_result2$x)
+components$PC2 <- -components$PC2
+components$PC3 <- -components$PC3
+```
+
+```{r}
+fig <- plot_ly(components, 
+               x = ~PC1, 
+               y = ~PC2, 
+               z = ~PC3, 
+               color = ~data$Species, 
+               colors = c('darkgreen','darkblue','darkred')) %>%
+  add_markers(size = 12)
+
+fig <- fig %>%
+  layout(title = "3d Visualization of PCA",
+         scene = list(bgcolor = "lightgray"))
+fig
+```
