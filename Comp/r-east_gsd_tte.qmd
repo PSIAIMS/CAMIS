@@ -17,9 +17,10 @@ The main difference between the two methods is that LF method requires specifica
 
 Both LF and KM methods are implemented in gsDesign, while KT method is implemented in EAST and rpact. gsDesign2 uses LF method along with average hazard ratio (AHR) method (Schemper, Wakounig, and Heinze, 2009, Yung and Liu 2020) for non-proportional hazard assumption.
 
-One additional computational difference to note for EAST vs gsDesign/gsDesign2 is the usage of different log hazard ratio variance assumptions. By default, EAST uses the variance under the null hypothesis and provides an option for using the variance under the alternative hypothesis. gsDesign, on the other hand, is using both of these variances. gsDesign2 has `info_scale` argument in `gsDesign::gs_power_ahr()`, `gsDesign::gs_design_ahr()`, which could be set to null or alternative hypothesis for variance assumption or the combination of variances.
+One additional computational difference to note for EAST vs gsDesign/gsDesign2 is the usage of different log hazard ratio variance assumptions. By default, EAST uses the variance under the null hypothesis and provides an option for using the variance under the alternative hypothesis. gsDesign, on the other hand, is using both of these variances. gsDesign2 has `info_scale` argument in `gsDesign::gs_power_ahr()`, `gsDesign::gs_design_ahr()`, which could be set to variance under the null or alternative hypothesis or to the combination of variances.
 
-Below we provide an example of reproducing EAST results from [this vignette](https://psiaims.github.io/CAMIS/East/gsd-tte.html) using gsDesign/gsDesign2/rpact.
+Below we provide an example of reproducing EAST results from [this vignette](https://psiaims.github.io/CAMIS/East/gsd-tte.html) using gsDesign/gsDesign2/rpact. As shown in the example, gsDesign2 and rpact can reproduce EAST calculations for GSD boundaries, while gsDesign results have minor differences.
+
 
 ## Design example
 
@@ -50,9 +51,9 @@ rand_ratio <- 1
 alphal <- 0.0125
 ```
 
-We assume that EAST was initially used to calculate the target number of events and the total sample size and we will use gsDesign/gsDesign2/rpact to reproduce these.
+We assume that EAST was initially used to calculate the target number of events and the total sample size, and we will use gsDesign/gsDesign2/rpact to reproduce those.
 
-Note that, in EAST the number of target events is reported as an integer, however, gsDesign/gsDesign2 provide non-integer values which match *exactly* the specified information fraction. Therefore, in order to reproduce EAST results, we will use the number of events that was calculated in EAST for `timing` argument in `gsDesign::gsSurv()`: 176 and 235 PFS events for IA and FA respectively (please see the `timing_pfs` object in the code above).
+Note that, in EAST the number of target events is reported as an integer, however, gsDesign/gsDesign2 by default provide non-integer values which match *exactly* the specified information fraction. Therefore, in order to reproduce EAST results, we will use the number of events that was calculated in EAST for `timing` argument in `gsDesign::gsSurv()`: 176 and 235 PFS events for IA and FA respectively (please see the `timing_pfs` object in the code above).
 
 For ease of comparison the results from EAST are summarized below:
 
@@ -88,7 +89,7 @@ pfs_east |>
   colformat_double(j = c(3, 4), digits = 4)
 ```
 
--   The comparison between EAST and gsDesign/gsDesign/rpact results is presented below using absolute difference in efficacy/futility boundaries and crossing probabilities up to 4 decimals. Non-zero values will be highlighted.
+-   The comparison between EAST and gsDesign/gsDesign/rpact results is presented below using absolute difference in efficacy/futility boundaries and crossing probabilities up to 4 decimals. Non-zero values are highlighted.
 -   Note that, in gsDesign/gsDesign efficacy/futility bounds are referred to as “upper”/"lower" bounds respectively, while in EAST these appear to be "lower"/"upper" bounds respectively. For the comparison purposes, we will assume that efficacy/futility bounds are “upper”/"lower" bounds respectively.
 
 ## Code to reproduce EAST results
@@ -331,14 +332,14 @@ pfs_gsDesign2 |>
     diff_fut_gsDesign = 'Futility'
   ) |>
   flextable::hline(i = c(5, 10)) |>
-  flextable::colformat_double(j = c(1, 2), digits = digit_comp) |>
+  flextable::colformat_double(j = c(3, 4), digits = digit_comp) |>
   flextable::bg(~ round(abs(diff_eff_gsDesign), digit_comp) != 0,  ~ diff_eff_gsDesign, bg = '#6ECEB2') |>
   flextable::bg(~ round(abs(diff_fut_gsDesign), digit_comp) != 0,  ~ diff_fut_gsDesign, bg = '#6ECEB2') 
 ```
 
 ### rpact code
 
--   PFS calculations:
+-   rpact code to reproduce the above EAST results appears below.
 
 ```{r, warning=FALSE}
 library(rpact)
@@ -367,7 +368,58 @@ pfs_rpact <- getSampleSizeSurvival(
 kable(summary(pfs_rpact))
 ```
 
-Note: the `dropoutRate1`, `dropoutRate2` arguments in the `getSampleSizeSurvival()` refer to the % of drop-outs by the `dropoutTime`, while the `eta` argument in `gsDesign::gsSurv()` and the `dropout_rate` value in the `fail_rate` argument in `gsDesign2::gs_design_ahr()` refer to the annual drop-out rate parameter under the exponential distribution. In our example, if $X$ is a drop-out time and $X \sim Exponential (\lambda)$, we assume that by month 12 the drop-out rate was 20%, which implies: $P(X\le12) = 1 - e^{-12\lambda} = 0.2 \Rightarrow \lambda = 0.019$. Due to the above differences the value $\lambda = 0.019$ was used in the gsDesign and gsDesign2 example, while 0.2 was used in the rpact example.
+
+```{r}
+pcross_h1_eff <- cumsum(pfs_rpact$rejectPerStage)
+pcross_h1_fut <- pfs_rpact$futilityPerStage[1]
+hr_bound_eff <- pfs_rpact$criticalValuesEffectScale
+hr_bound_fut <- pfs_rpact$futilityBoundsEffectScale
+pval_eff <- pfs_rpact$criticalValuesPValueScale
+pval_fut <- pfs_rpact$futilityBoundsPValueScale 
+zval_eff <- pfs_rpact_gsd$criticalValues
+zval_fut <- pfs_rpact_gsd$futilityBounds
+pcross_h0_eff <- pfs_rpact_gsd$alphaSpent
+pcross_h0_fut <- pfs_rpact_gsd$betaSpent
+
+ia1_eff <- c(zval_eff[1], pval_eff[1], hr_bound_eff[1], pcross_h0_eff[1], pcross_h1_eff[1])
+fa_eff <-  c(zval_eff[2], pval_eff[2], hr_bound_eff[2], pcross_h0_eff[2], pcross_h1_eff[2])
+
+ia1_fut <- c(zval_fut[1], pval_fut[1], hr_bound_fut[1], pcross_h0_fut[1], pcross_h1_fut[1])
+
+
+pfs_rpact_sum <- tibble::tibble(
+  rpact_eff = c(ia1_eff, fa_eff),
+  rpact_fut = c(ia1_fut, rep(NA_real_, 5))
+)
+
+pfs_rpact_sum |>
+  dplyr::bind_cols(pfs_east |>
+                     dplyr::select(value, analysis, eff_east = eff_125, fut_east = fut_125) |>
+                     dplyr::mutate(
+                       eff_east = ifelse(value == 'Z', -eff_east, eff_east),
+                       fut_east = ifelse(value == 'Z', -fut_east, fut_east)
+                       )
+                   ) |>
+  dplyr::mutate(
+    diff_eff_gsDesign =  abs(eff_east - rpact_eff),
+    diff_fut_gsDesign =  abs(fut_east - rpact_fut)
+
+    ) |>
+  dplyr::select(Analysis = analysis, Value = value, diff_eff_gsDesign, diff_fut_gsDesign) |>
+  flextable::flextable() |>
+  flextable::autofit() |>
+    flextable::set_header_labels(
+    diff_eff_gsDesign = 'Efficacy',
+    diff_fut_gsDesign = 'Futility'
+  ) |>
+  flextable::hline(i = c(5, 10)) |>
+  flextable::colformat_double(j = c(3, 4), digits = digit_comp) |>
+  flextable::bg(~ round(abs(diff_eff_gsDesign), digit_comp) != 0,  ~ diff_eff_gsDesign, bg = '#6ECEB2') |>
+  flextable::bg(~ round(abs(diff_fut_gsDesign), digit_comp) != 0,  ~ diff_fut_gsDesign, bg = '#6ECEB2') 
+
+```
+
+ 
 
 ## References
 
