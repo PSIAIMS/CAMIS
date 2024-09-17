@@ -27,7 +27,7 @@ For more information about the data, see the corresponding [R page](https://psia
 
 ## Simple 2x2 cross tabulation using PROC FREQ
 
-It is first good practice to visualize your data. For this we can do a 2x2 table with percentages.
+It is good practice to visualize your data. For this we can do a 2x2 table with percentages.
 
 ```{r}
 #| eval: false 
@@ -52,7 +52,11 @@ Clopper-Pearson method is output by SAS as the default method, but you can also 
 
 ### Normal Approximation (Wald or asymptotic CI) Method
 
-The most commonly used alternative to the Clopper-Pearson (Exact) method is the asymptotic Normal Approximation (Wald) CI. If we have larger sample sizes (above 20 or 30), and a proportion closer to 0.5 (or at least not in the tail ends close to 0 or 1), then the discrete binomial distribution starts to resemble the continuous the normal distribution. The formula makes the assumption that the distribution of error about a set of binomially distributed responses can be approximated using a Normal Distribution. The Wald method is described on the corresponding [R page](https://psiaims.github.io/CAMIS/R/ci_for_prop.html). One should note that the approximation can become unreliable as the proportion of responders gets close to 0 or 1 (e.g. 0 or 100% responding), and alternative methods may be more suitable. In this scenario, common issues consist of:
+The most commonly used alternative to the Clopper-Pearson (Exact) method is the asymptotic Normal Approximation (Wald) CI. In large random samples from independent trials, the sampling distribution of proportions approximately follows the normal distribution. The expectation of a sample proportion is the corresponding population proportion. Therefore, based on a sample of size $n$, a $(1-\alpha)\%$ confidence interval for population proportion can be calculated using normal approximation as follows:
+
+$p\approx \hat p \pm z_\alpha \sqrt{\hat p(1-\hat p)}/{n}$, where $\hat p$ is the sample proportion, $z_\alpha$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to level $\alpha$, and $\sqrt{\hat p(1-\hat p)}/{n}$ is the standard error.
+
+One should note that the approximation can become unreliable as the proportion of responders gets close to 0 or 1 (e.g. 0 or 100% responding), and alternative methods may be more suitable. In this scenario, common issues consist of:
 
 -   it does not respect the 0 and 1 proportion boundary (so you can get a lower CI of -0.1 or an upper CI of 1.1%!)
 
@@ -98,9 +102,9 @@ Likelihood Ratio method is output by SAS using `BINOMIAL(LEVEL="Yes" CL=LIKELIHO
 
 ### Jeffreys Method
 
-Jeffreys method is a Bayesian method which can be preferable because they incorporate prior information.
-
-Jeffreys method is output by SAS using `BINOMIAL(LEVEL="Yes" CL=Jeffreys);`
+Jeffreys method is a Bayesian method calculated based on the non-informative Jeffreys prior for a binomial proportion. $$
+(Beta (^k/_2 + ^1/_{2}, ^{(n-k)}/_2+^1/_2)_{\alpha}, Beta (^k/_2 + ^1/_{2}, ^{(n-k)}/_2+^1/_2)_{1-\alpha}
+$$ Jeffreys method is output by SAS using `BINOMIAL(LEVEL="Yes" CL=Jeffreys);`
 
 ### Blaker Method
 
@@ -205,6 +209,9 @@ run;
 knitr::include_graphics("../images/ci_for_prop/binomial_prop_cc_act.png")
 knitr::include_graphics("../images/ci_for_prop/binomial_prop_cc_pbo.png")
 ```
+
+SAS output often rounds to 3 or 4 decimal places in the output window, however the full values can be obtained using SAS ODS statements. `ods output binomialcls=bcl;` and then using the bcl dataset, in a data step to put the variable out to the number of decimal places we require.\
+10 decimal places shown here ! `lowercl2=put(lowercl,12.10);`
 
 ## Reference
 
