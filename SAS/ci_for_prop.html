@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Confidence intervals for Proportions in SAS</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../images/logo.png" alt="" class="navbar-logo">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../contribution/contribution.html"> 
+<span class="menu-text">Contribute</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-publications-and-projects" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Publications and projects</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-publications-and-projects">    
+        <li>
+    <a class="dropdown-item" href="../publication/white_paper.html">
+ <span class="dropdown-text">White paper</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/conference.html">
+ <span class="dropdown-text">Conferences</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/dissertation.html">
+ <span class="dropdown-text">Academic projects</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-news" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">News</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-news">    
+        <li>
+    <a class="dropdown-item" href="../minutes/index.html">
+ <span class="dropdown-text">Meeting minutes</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../blogs/index.html">
+ <span class="dropdown-text">Blogs</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+    <div class="dropdown">
+      <a href="" title="" id="quarto-navigation-tool-dropdown-0" class="quarto-navigation-tool dropdown-toggle px-1" data-bs-toggle="dropdown" aria-expanded="false" role="link" aria-label=""><i class="bi bi-github"></i></a>
+      <ul class="dropdown-menu" aria-labelledby="quarto-navigation-tool-dropdown-0">
+          <li>
+            <a class="dropdown-item quarto-navbar-tools-item" href="https://github.com/PSIAIMS/CAMIS/">
+            Source Code
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item quarto-navbar-tools-item" href="https://github.com/PSIAIMS/CAMIS/issues/">
+            Report a Difference
+            </a>
+          </li>
+      </ul>
+    </div>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data used</a></li>
+  <li><a href="#simple-2x2-cross-tabulation-using-proc-freq" id="toc-simple-2x2-cross-tabulation-using-proc-freq" class="nav-link" data-scroll-target="#simple-2x2-cross-tabulation-using-proc-freq">Simple 2x2 cross tabulation using PROC FREQ</a></li>
+  <li><a href="#methods-for-calculating-confidence-intervals-for-proportions" id="toc-methods-for-calculating-confidence-intervals-for-proportions" class="nav-link" data-scroll-target="#methods-for-calculating-confidence-intervals-for-proportions">Methods for Calculating Confidence Intervals for Proportions</a>
+  <ul class="collapse">
+  <li><a href="#clopper-pearson-exact-or-binomial-ci-method" id="toc-clopper-pearson-exact-or-binomial-ci-method" class="nav-link" data-scroll-target="#clopper-pearson-exact-or-binomial-ci-method">Clopper-Pearson (Exact or binomial CI) Method</a></li>
+  <li><a href="#normal-approximation-wald-or-asymptotic-ci-method" id="toc-normal-approximation-wald-or-asymptotic-ci-method" class="nav-link" data-scroll-target="#normal-approximation-wald-or-asymptotic-ci-method">Normal Approximation (Wald or asymptotic CI) Method</a></li>
+  <li><a href="#wilson-score-method" id="toc-wilson-score-method" class="nav-link" data-scroll-target="#wilson-score-method">Wilson (score) Method</a></li>
+  <li><a href="#agresti-coull-method" id="toc-agresti-coull-method" class="nav-link" data-scroll-target="#agresti-coull-method">Agresti-Coull Method</a></li>
+  <li><a href="#logit-method" id="toc-logit-method" class="nav-link" data-scroll-target="#logit-method">LOGIT Method</a></li>
+  <li><a href="#binomial-based-midp-method" id="toc-binomial-based-midp-method" class="nav-link" data-scroll-target="#binomial-based-midp-method">Binomial based MidP Method</a></li>
+  <li><a href="#likelihood-ratio-method" id="toc-likelihood-ratio-method" class="nav-link" data-scroll-target="#likelihood-ratio-method">Likelihood Ratio Method</a></li>
+  <li><a href="#jeffreys-method" id="toc-jeffreys-method" class="nav-link" data-scroll-target="#jeffreys-method">Jeffreys Method</a></li>
+  <li><a href="#blaker-method" id="toc-blaker-method" class="nav-link" data-scroll-target="#blaker-method">Blaker Method</a></li>
+  <li><a href="#altman-newcombe-method6" id="toc-altman-newcombe-method6" class="nav-link" data-scroll-target="#altman-newcombe-method6">Altman Newcombe Method<sup>6</sup></a></li>
+  <li><a href="#bayesian-hpd-method" id="toc-bayesian-hpd-method" class="nav-link" data-scroll-target="#bayesian-hpd-method">Bayesian HPD Method</a></li>
+  </ul></li>
+  <li><a href="#example-code-using-proc-freq" id="toc-example-code-using-proc-freq" class="nav-link" data-scroll-target="#example-code-using-proc-freq">Example Code using PROC FREQ</a></li>
+  <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">Reference</a></li>
+  <li><a href="#section" id="toc-section" class="nav-link" data-scroll-target="#section"></a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Confidence intervals for Proportions in SAS</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>There are many different methods of calculating a confidence interval for a proportion (percentage). For more information about these methods in R &amp; SAS, including which performs better in different scenarios see <a href="https://towardsdatascience.com/five-confidence-intervals-for-proportions-that-you-should-know-about-7ff5484c024f">Five Confidence Intervals for Proportions That You Should Know about</a><sup>1</sup> and <a href="https://www.lexjansen.com/sesug/2015/103_Final_PDF.pdf">Confidence Intervals for Binomial Proportion Using SAS</a><sup>2</sup></p>
+<p>Proportions and Confidence intervals (CI) are commonly used with binary endpoints (e.g.&nbsp;‘response’ vs ‘non-response’ or Yes vs No). This allows us to estimate the proportion in one treatment compared to the proportion in the other treatment. You can get estimates of the proportion and CI for proportion separately for each treatment or calculate the difference in proportion between the two treatments, and then calculate a CI for the difference in proportions. In this example, we will use 95% CIs.</p>
+</section>
+<section id="data-used" class="level2">
+<h2 class="anchored" data-anchor-id="data-used">Data used</h2>
+<p>The adcibc data stored <a href="../data/adcibc.csv">here</a> was used in this example, creating a binary treatment variable <code>trt</code> taking the values of <code>Act</code> or <code>PBO</code> and a binary response variable <code>resp</code> taking the values of <code>Yes</code> or <code>No</code>. For this example, a response is defined as a score greater than 4.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>data <span class="fu">adcibc2</span> (<span class="at">keep=</span>trt resp) ;</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    set adcibc;     </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> aval gt <span class="dv">4</span> then resp<span class="ot">=</span><span class="st">"Yes"</span>;</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> resp<span class="ot">=</span><span class="st">"No"</span>;     </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> trtp<span class="ot">=</span><span class="st">"Placebo"</span> then trt<span class="ot">=</span><span class="st">"PBO"</span>;</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> trt<span class="ot">=</span><span class="st">"Act"</span>; </span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>For more information about the data, see the corresponding <a href="https://psiaims.github.io/CAMIS/R/ci_for_prop.html">R page</a>.</p>
+</section>
+<section id="simple-2x2-cross-tabulation-using-proc-freq" class="level2">
+<h2 class="anchored" data-anchor-id="simple-2x2-cross-tabulation-using-proc-freq">Simple 2x2 cross tabulation using PROC FREQ</h2>
+<p>It is good practice to visualize your data. For this we can do a 2x2 table with percentages.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>proc freq data<span class="ot">=</span>adcibc;</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  table trt<span class="sc">*</span>resp<span class="sc">/</span> nopct nocol;</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/ci_for_prop/2by2crosstab.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="methods-for-calculating-confidence-intervals-for-proportions" class="level2">
+<h2 class="anchored" data-anchor-id="methods-for-calculating-confidence-intervals-for-proportions">Methods for Calculating Confidence Intervals for Proportions</h2>
+<p>SAS PROC FREQ in Version 9.4 can compute 11 methods to calculate CIs for proportions, an explanation of these methods and the code is shown below. See <a href="https://support.sas.com/documentation/cdl/en/procstat/63104/HTML/default/viewer.htm#procstat_freq_sect010.htm">BINOMIAL</a><sup>3</sup> for more information on SAS parameterization. It is recommended to always sort your data prior to doing a PROC FREQ.</p>
+<section id="clopper-pearson-exact-or-binomial-ci-method" class="level3">
+<h3 class="anchored" data-anchor-id="clopper-pearson-exact-or-binomial-ci-method">Clopper-Pearson (Exact or binomial CI) Method</h3>
+<p>With Binary endpoint data (response/non-response), we make the assumption that the proportion of responders, has been derived from a series of Bernoulli trials. Trials (Subjects) are independent and we have a fixed number of repeated trials with an outcome of respond or not respond. This type of data follows the discrete binomial probability distribution, and the Clopper-Pearson<sup>4</sup> (Exact) method uses this distribution to calculate the CIs. However, for large numbers of trials (subjects), the probability distribution becomes difficult to calculate and hence a variety of approximations were developed all with their pros and cons (depending on your data distribution).</p>
+<p>Clopper-Pearson method is output by SAS as the default method, but you can also specify it using <code>BINOMIAL(LEVEL="Yes" CL=CLOPPERPEARSON);</code></p>
+</section>
+<section id="normal-approximation-wald-or-asymptotic-ci-method" class="level3">
+<h3 class="anchored" data-anchor-id="normal-approximation-wald-or-asymptotic-ci-method">Normal Approximation (Wald or asymptotic CI) Method</h3>
+<p>The most commonly used alternative to the Clopper-Pearson (Exact) method is the asymptotic Normal Approximation (Wald) CI. In large random samples from independent trials, the sampling distribution of proportions approximately follows the normal distribution. The expectation of a sample proportion is the corresponding population proportion. Therefore, based on a sample of size <span class="math inline">\(n\)</span>, a <span class="math inline">\((1-\alpha)\%\)</span> confidence interval for population proportion can be calculated using normal approximation as follows:</p>
+<p><span class="math inline">\(p\approx \hat p \pm z_\alpha \sqrt{\hat p(1-\hat p)}/{n}\)</span>, where <span class="math inline">\(\hat p\)</span> is the sample proportion, <span class="math inline">\(z_\alpha\)</span> is the <span class="math inline">\(1-\alpha/2\)</span> quantile of a standard normal distribution corresponding to level <span class="math inline">\(\alpha\)</span>, and <span class="math inline">\(\sqrt{\hat p(1-\hat p)}/{n}\)</span> is the standard error.</p>
+<p>One should note that the approximation can become unreliable as the proportion of responders gets close to 0 or 1 (e.g.&nbsp;0 or 100% responding), and alternative methods may be more suitable. In this scenario, common issues consist of:</p>
+<ul>
+<li><p>it does not respect the 0 and 1 proportion boundary (so you can get a lower CI of -0.1 or an upper CI of 1.1%!)</p></li>
+<li><p>the derived 95% CI may not cover the true proportion 95% of the time</p></li>
+</ul>
+<p>Wald method can be derived with or without a Yate’s continuity correction. Applying the continuity correction is recommended when you have a small sample size or the estimated proportion is close to the tail ends (0 or 1). Applying Yate’s correction is considered more conservative but it’s not as conservative as Clopper-Pearson approach.</p>
+<p>Normal approximation method is output by SAS as the default method, but you can also specify it using <code>BINOMIAL(LEVEL="Yes" CL=WALD);</code></p>
+<p>SAS also produces a continuity correction version of the Wald method, you can specify it using <code>BINOMIAL(LEVEL="Yes" CL=WALD(CORRECT));</code></p>
+</section>
+<section id="wilson-score-method" class="level3">
+<h3 class="anchored" data-anchor-id="wilson-score-method">Wilson (score) Method</h3>
+<p>The Wilson (Score) method is an extension to the normal approximation, but commonly used where the proportion is close to 0 or 1 (100% responding). This is because the normal approximation can be unreliable at the tail ends of the distribution, and as such Wilson (Score) method can provide more reliable CIs. Wilson method can be derived with or without a Yate’s continuity correction. Applying the continuity correction is recommended when you have a small sample size or the estimated proportion is close to the tail ends (0 or 1). Applying Yate’s correction is considered more conservative (sometimes too conservative), but it’s not as conservative as Clopper-Pearson approach.</p>
+<p>Wilson (score) method is output by SAS using <code>BINOMIAL(LEVEL="Yes" CL=Wilson);</code></p>
+<p>SAS also produces a continuity correction version of the Wald method, you can specify it using <code>BINOMIAL(LEVEL="Yes" CL=WALD(CORRECT));</code></p>
+</section>
+<section id="agresti-coull-method" class="level3">
+<h3 class="anchored" data-anchor-id="agresti-coull-method">Agresti-Coull Method</h3>
+<p>Agresti-Coull Method is a ‘simple solution’ designed to improve coverage compared to the Wald method and still perform better than Clopper-Pearson particularly when the probability isn’t in the mid-range (0.5). It is less conservative whilst still having good coverage. The only difference compared to the Wald method is that it adds two successes and two failures to the original observations (increasing the sample by 4 observations).</p>
+<p>Agresti-Coull method is output by SAS using <code>BINOMIAL(LEVEL="Yes" CL=AGRESTICOULL);</code></p>
+</section>
+<section id="logit-method" class="level3">
+<h3 class="anchored" data-anchor-id="logit-method">LOGIT Method</h3>
+<p>Similar to Wald method in structure, but instead of using <code>p=r/n</code>, a logit transformation is applied: <code>exp(log (p/(1-p))).</code></p>
+<p>The logit method is often applied for odds ratios, but similar to the wald method it is often unreliable when n is small or p is close to 0 or 1.</p>
+<p>LOGIT method is output by SAS using <code>BINOMIAL(LEVEL="Yes" CL=LOGIT);</code></p>
+</section>
+<section id="binomial-based-midp-method" class="level3">
+<h3 class="anchored" data-anchor-id="binomial-based-midp-method">Binomial based MidP Method</h3>
+<p>The MidP method is similar to the Clopper-Pearson method, but aims to reduce the conservatism. It’s quite a complex method compared to the methods above.</p>
+<p>MidP method is output by SAS using <code>BINOMIAL(LEVEL="Yes" CL=MIDP);</code></p>
+</section>
+<section id="likelihood-ratio-method" class="level3">
+<h3 class="anchored" data-anchor-id="likelihood-ratio-method">Likelihood Ratio Method</h3>
+<p>Likelihood Ratio method is output by SAS using <code>BINOMIAL(LEVEL="Yes" CL=LIKELIHOODRATIO);</code></p>
+</section>
+<section id="jeffreys-method" class="level3">
+<h3 class="anchored" data-anchor-id="jeffreys-method">Jeffreys Method</h3>
+<p>Jeffreys method is a Bayesian method calculated based on the non-informative Jeffreys prior for a binomial proportion. <span class="math display">\[
+(Beta (^k/_2 + ^1/_{2}, ^{(n-k)}/_2+^1/_2)_{\alpha}, Beta (^k/_2 + ^1/_{2}, ^{(n-k)}/_2+^1/_2)_{1-\alpha}
+\]</span> Jeffreys method is output by SAS using <code>BINOMIAL(LEVEL="Yes" CL=Jeffreys);</code></p>
+</section>
+<section id="blaker-method" class="level3">
+<h3 class="anchored" data-anchor-id="blaker-method">Blaker Method</h3>
+<p>The Blaker method is a less conservative alternative to the Clopper-pearson exact test. It is also an exact method, but derives the CI by inverting the p-value function of an exact test.</p>
+<p>The Clopper-pearson CI’s are always wider and contain the Blaker CI limits. It’s adoption has been limited due to the numerical algorithm taking longer to compute compared to some of the other methods especially when the sample size is large. NOTE: Klaschka and Reiczigel<sup>5</sup> is yet another adaptation of this method.</p>
+<p>BLAKER method is output by SAS using <code>BINOMIAL(LEVEL="Yes" CL=BLAKER);</code></p>
+</section>
+<section id="altman-newcombe-method6" class="level3">
+<h3 class="anchored" data-anchor-id="altman-newcombe-method6">Altman Newcombe Method<sup>6</sup></h3>
+<p>Let p=r/n, where r= number of responses, and n=number of subjects, q=1-p, and z= the appropriate value from standard normal distribution:<br>
+<span class="math display">\[
+z{_1-\alpha/2}
+\]</span>For example, for 95% confidence intervals, alpha=0.05, using standard normal tables, z in the equations below will take the value =1.96. Calculate 3 quantities</p>
+<p><span class="math display">\[
+A= 2r+z^2
+\]</span></p>
+<p><span class="math display">\[
+B=z\sqrt(z^2 + 4rq)
+\]</span> <span class="math display">\[
+C=2(n+z^2)
+\]</span>The Altman Newcombe method calculates the confidence interval (Low to High) as: (A-B)/C to (A+B)/C</p>
+<p>Available by manual calculations in SAS only.</p>
+</section>
+<section id="bayesian-hpd-method" class="level3">
+<h3 class="anchored" data-anchor-id="bayesian-hpd-method">Bayesian HPD Method</h3>
+<p>The Bayesian Highest Posterior Density interval, consists of drawing from the posterior distribution and forming a credible interval/region that has the shortest interval among all of the Bayesian credible intervals.</p>
+<p>Available by manual calculations in SAS only.</p>
+</section>
+</section>
+<section id="example-code-using-proc-freq" class="level2">
+<h2 class="anchored" data-anchor-id="example-code-using-proc-freq">Example Code using PROC FREQ</h2>
+<p>By adding the option <code>BINOMIAL(LEVEL="Yes")</code> to your ‘PROC FREQ’, SAS outputs the Normal Approximation (Wald) and Clopper-Pearson (Exact) confidence intervals as two default methods, derived for the <code>Responders</code> = <code>Yes</code>. If you do not specify the <code>LEVEL</code> you want to model, then SAS assumes you want to model the first level that appears in the output (alphabetically).</p>
+<p><strong>It is very important to ensure you are calculating the CI for the correct level! Check your output to confirm, you will see below it states <code>resp=Yes</code> !</strong></p>
+<p>The output consists of the proportion of resp=Yes, the Asymptotic SE, 95% CIs using normal-approximation method, 95% CI using the Clopper-Pearson method (Exact), and then a Binomial test statistic and p-value for the null hypothesis of H0: Proportion = 0.5.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>proc sort data<span class="ot">=</span>adcibc;</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>by trt; </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>run; </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>proc freq data<span class="ot">=</span>adcibc ; </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>table resp<span class="sc">/</span> nopct nocol <span class="fu">BINOMIAL</span>(<span class="at">LEVEL=</span><span class="st">"Yes"</span>);</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>by trt;</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/ci_for_prop/binomial_prop_act.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/ci_for_prop/binomial_prop_pbo.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>By adding the option <code>BINOMIAL(LEVEL="Yes" CL=&lt;name of CI method&gt;)</code>, the other CIs are output as shown below. You can list any number of the available methods within the BINOMIAL option CL=XXXX separated by a space. However, SAS will only calculate the WILSON and WALD or the WILSON(CORRECT) and WALD(CORRECT). SAS wont output them both from the same procedure.</p>
+<ul>
+<li><p><code>BINOMIAL(LEVEL="Yes" CL=CLOPPERPEARSON WALD WILSON AGRESTICOULL JEFFREYS MIDP LIKELIHOODRATIO LOGIT BLAKER)</code> will return Agresti-Coull, BLAKER, Clopper-pearson(Exact), WALD(without continuity correction) WILSON(without continuity correction), JEFFREYS, MIDP, LIKELIHOODRATIO, and LOGIT</p></li>
+<li><p><code>BINOMIAL(LEVEL="Yes" CL=ALL);</code> will return Agresti-Coull, Clopper-pearson (Exact), Jeffreys, Wald(without continuity correction), Wilson (without continuity correction)</p></li>
+<li><p><code>BINOMIALc(LEVEL="Yes" CL=ALL);</code>will return Agresti-Coull, Clopper-pearson (Exact), Jeffreys, Wald (with continuity correction), Wilson(with continuity correction)</p></li>
+<li><p><code>BINOMIALc(LEVEL="Yes" CL=WILSON(CORRECT)  WALD(CORRECT));</code>will return Wilson(with continuity correction) and Wald (with continuity correction)</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>proc freq data<span class="ot">=</span>adcibc;</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>         table resp<span class="sc">/</span> nopct nocol </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">BINOMIAL</span>(<span class="at">LEVEL=</span><span class="st">"Yes"</span> </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                              <span class="at">CL=</span> CLOPPERPEARSON WALD WILSON </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                                  AGRESTICOULL JEFFREYS MIDP </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                                  LIKELIHOODRATIO LOGIT BLAKER);</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  by trt; </span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/ci_for_prop/binomial_prop_all_act.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/ci_for_prop/binomial_prop_all_pbo.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>proc freq data<span class="ot">=</span>adcibc;</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>         table resp<span class="sc">/</span> nopct nocol </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">BINOMIAL</span>(<span class="at">LEVEL=</span><span class="st">"Yes"</span> </span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                              <span class="at">CL=</span> <span class="fu">WILSON</span>(CORRECT)  <span class="fu">WALD</span>(CORRECT));</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  by trt; </span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/ci_for_prop/binomial_prop_cc_act.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/ci_for_prop/binomial_prop_cc_pbo.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>SAS output often rounds to 3 or 4 decimal places in the output window, however the full values can be obtained using SAS ODS statements. <code>ods output binomialcls=bcl;</code> and then using the bcl dataset, in a data step to put the variable out to the number of decimal places we require.<br>
+10 decimal places shown here ! <code>lowercl2=put(lowercl,12.10);</code></p>
+</section>
+<section id="reference" class="level2">
+<h2 class="anchored" data-anchor-id="reference">Reference</h2>
+<ol type="1">
+<li><p><a href="https://towardsdatascience.com/five-confidence-intervals-for-proportions-that-you-should-know-about-7ff5484c024f">Five Confidence Intervals for Proportions That You Should Know about</a></p></li>
+<li><p><a href="https://www.lexjansen.com/sesug/2015/103_Final_PDF.pdf">Confidence intervals for Binomial Proportion Using SAS</a></p></li>
+<li><p><a href="https://support.sas.com/documentation/cdl/en/procstat/63104/HTML/default/viewer.htm#procstat_freq_sect010.htm">SAS PROC FREQ here</a> and <a href="https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_freq_sect028.htm">here</a></p></li>
+<li><p>Clopper,C.J.,and Pearson,E.S.(1934),“The Use of Confidence or Fiducial Limits Illustrated in the Case of the Binomial”, Biometrika 26, 404–413.</p></li>
+<li><p>Klaschka, J. and Reiczigel, J. (2021). “On matching confidence intervals and tests for some discrete distributions: Methodological and computational aspects,”&nbsp;Computational Statistics, 36, 1775–1790.</p></li>
+<li><p>Statistics with Confidence 2nd Edition, Altman, Machin, Bryant, Gardner 2002</p></li>
+</ol>
+</section>
+<section id="section" class="level2">
+<h2 class="anchored" data-anchor-id="section"></h2>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Confidence Intervals for Proportions</title>
+<title>Confidence Intervals for Proportions in R</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -224,8 +224,27 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#normal-approximation" id="toc-normal-approximation" class="nav-link active" data-scroll-target="#normal-approximation">Normal approximation</a></li>
-  <li><a href="#example-code" id="toc-example-code" class="nav-link" data-scroll-target="#example-code">Example code</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data used</a></li>
+  <li><a href="#simple-2x2-cross-tabulation-using-tidyverse" id="toc-simple-2x2-cross-tabulation-using-tidyverse" class="nav-link" data-scroll-target="#simple-2x2-cross-tabulation-using-tidyverse">Simple 2x2 cross tabulation using tidyverse</a></li>
+  <li><a href="#methods-for-calculating-confidence-intervals-for-proportions-using-cardx" id="toc-methods-for-calculating-confidence-intervals-for-proportions-using-cardx" class="nav-link" data-scroll-target="#methods-for-calculating-confidence-intervals-for-proportions-using-cardx">Methods for Calculating Confidence Intervals for Proportions using cardx</a>
+  <ul class="collapse">
+  <li><a href="#clopper-pearson-exact-or-binomial-ci-method" id="toc-clopper-pearson-exact-or-binomial-ci-method" class="nav-link" data-scroll-target="#clopper-pearson-exact-or-binomial-ci-method">Clopper-Pearson (Exact or binomial CI) Method</a></li>
+  <li><a href="#normal-approximation-wald-or-asymptotic-ci-method" id="toc-normal-approximation-wald-or-asymptotic-ci-method" class="nav-link" data-scroll-target="#normal-approximation-wald-or-asymptotic-ci-method">Normal Approximation (Wald or asymptotic CI) Method</a></li>
+  </ul></li>
+  <li><a href="#example-code" id="toc-example-code" class="nav-link" data-scroll-target="#example-code">Example code</a>
+  <ul class="collapse">
+  <li><a href="#wilson-score-method" id="toc-wilson-score-method" class="nav-link" data-scroll-target="#wilson-score-method">Wilson (score) Method</a></li>
+  <li><a href="#agresti-coull-method" id="toc-agresti-coull-method" class="nav-link" data-scroll-target="#agresti-coull-method">Agresti-Coull Method</a></li>
+  <li><a href="#logit-method" id="toc-logit-method" class="nav-link" data-scroll-target="#logit-method">LOGIT Method</a></li>
+  <li><a href="#binomial-based-midp-method" id="toc-binomial-based-midp-method" class="nav-link" data-scroll-target="#binomial-based-midp-method">Binomial based MidP Method</a></li>
+  <li><a href="#likelihood-ratio-method" id="toc-likelihood-ratio-method" class="nav-link" data-scroll-target="#likelihood-ratio-method">Likelihood Ratio Method</a></li>
+  <li><a href="#jeffreys-method" id="toc-jeffreys-method" class="nav-link" data-scroll-target="#jeffreys-method">Jeffreys Method</a></li>
+  <li><a href="#blaker-method" id="toc-blaker-method" class="nav-link" data-scroll-target="#blaker-method">Blaker Method</a></li>
+  <li><a href="#altman-newcombe-method" id="toc-altman-newcombe-method" class="nav-link" data-scroll-target="#altman-newcombe-method">Altman Newcombe Method</a></li>
+  <li><a href="#bayesian-hpd-method" id="toc-bayesian-hpd-method" class="nav-link" data-scroll-target="#bayesian-hpd-method">Bayesian HPD Method</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 </nav>
     </div>
@@ -234,7 +253,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Confidence Intervals for Proportions</h1>
+<h1 class="title">Confidence Intervals for Proportions in R</h1>
 </div>
 
 
@@ -251,31 +270,543 @@ window.Quarto = {
 </header>
 
 
-<p>A confidence interval for binomial proportion is an interval estimate for the probability of success calculated from the outcome of a series of Bernoulli trials.</p>
-<p>There are several ways to calculate a binomial confidence interval. Normal approximation is one of the most commonly used methods.</p>
-<section id="normal-approximation" class="level2">
-<h2 class="anchored" data-anchor-id="normal-approximation">Normal approximation</h2>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>A confidence interval for binomial proportion is an interval estimate for the probability of success (for example response=Yes), calculated from the outcome of a series of Bernoulli trials.</p>
+<p>There are several ways to calculate a binomial confidence interval. For more information about these methods in R &amp; SAS, including which performs better in different scenarios see <a href="https://towardsdatascience.com/five-confidence-intervals-for-proportions-that-you-should-know-about-7ff5484c024f">Five Confidence Intervals for Proportions That You Should Know about</a><sup>1</sup> and <a href="https://www.lexjansen.com/sesug/2015/103_Final_PDF.pdf">Confidence Intervals for Binomial Proportion Using SAS</a><sup>2</sup></p>
+</section>
+<section id="data-used" class="level2">
+<h2 class="anchored" data-anchor-id="data-used">Data used</h2>
+<p>The adcibc data stored <a href="../data/adcibc.csv">here</a> was used in this example, creating a binary treatment variable <code>trt</code> taking the values of <code>ACT</code> or <code>PBO</code> and a binary response variable <code>resp</code> taking the values of <code>Yes</code> or <code>No</code>. For this example, a response is defined as a score greater than 4.</p>
+<div class="cell">
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.4     ✔ readr     2.1.5
+✔ forcats   1.0.0     ✔ stringr   1.5.1
+✔ ggplot2   3.5.1     ✔ tibble    3.2.1
+✔ lubridate 1.9.3     ✔ tidyr     1.3.1
+✔ purrr     1.0.2     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors
+New names:
+Rows: 231 Columns: 37
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr  (16): STUDYID, USUBJID, TRTP, AGEGR1, RACE, SEX, ITTFL, EFFFL, COMP24FL...
+dbl  (17): ...1, SITEID, SITEGR1, TRTPN, AGE, AGEGR1N, RACEN, AVISITN, VISIT...
+lgl   (1): DTYPE
+date  (3): TRTSDT, TRTEDT, ADT
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] 0 0 0 0 0 0 0 0 1 1</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] 0 0 0 0 0 0 0 0 0 1</code></pre>
+</div>
+</div>
+</section>
+<section id="simple-2x2-cross-tabulation-using-tidyverse" class="level2">
+<h2 class="anchored" data-anchor-id="simple-2x2-cross-tabulation-using-tidyverse">Simple 2x2 cross tabulation using tidyverse</h2>
+<p>It is good practice to visualize your data. For this we can do a 2x2 table with percentages.</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 3
+# Groups:   trt [2]
+  trt   resp      n
+  &lt;chr&gt; &lt;chr&gt; &lt;int&gt;
+1 ACT   No      118
+2 ACT   Yes      36
+3 PBO   No       65
+4 PBO   Yes      12</code></pre>
+</div>
+</div>
+</section>
+<section id="methods-for-calculating-confidence-intervals-for-proportions-using-cardx" class="level2">
+<h2 class="anchored" data-anchor-id="methods-for-calculating-confidence-intervals-for-proportions-using-cardx">Methods for Calculating Confidence Intervals for Proportions using cardx</h2>
+<p>For more technical derivation and reasons for use for each of the methods listed below, see the corresponding <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html">SAS page</a>.</p>
+<p>The {cardx} package is an extension of the {cards} package, providing additional functions to create Analysis Results Data Objects (ARDs)<sup>1</sup>. It was developed as part of {NEST} and pharmaverse. This package requires the binary endpoint to be a a logical (TRUE/FALSE) vector or a numeric/integer coded as (0, 1) with 1 (TRUE) being the success you want to calculate the confidence interval for.</p>
+<section id="clopper-pearson-exact-or-binomial-ci-method" class="level3">
+<h3 class="anchored" data-anchor-id="clopper-pearson-exact-or-binomial-ci-method">Clopper-Pearson (Exact or binomial CI) Method</h3>
+<p>The cardx package calculates the Clopper-Pearson score by calling stats::binom.test() function.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">proportion_ci_clopper_pearson</span>(pbo2,<span class="at">conf.level=</span><span class="fl">0.95</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$N
+[1] 77
+
+$conf.level
+[1] 0.95
+
+$estimate
+probability of success 
+             0.1558442 
+
+$statistic
+number of successes 
+                 12 
+
+$p.value
+[1] 5.917715e-10
+
+$parameter
+number of trials 
+              77 
+
+$conf.low
+[1] 0.08320475
+
+$conf.high
+[1] 0.2564084
+
+$method
+[1] "Clopper-Pearson Confidence Interval"
+
+$alternative
+[1] "two.sided"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">proportion_ci_clopper_pearson</span>(act2,<span class="at">conf.level=</span><span class="fl">0.95</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$N
+[1] 154
+
+$conf.level
+[1] 0.95
+
+$estimate
+probability of success 
+             0.2337662 
+
+$statistic
+number of successes 
+                 36 
+
+$p.value
+[1] 2.21218e-11
+
+$parameter
+number of trials 
+             154 
+
+$conf.low
+[1] 0.1694153
+
+$conf.high
+[1] 0.308649
+
+$method
+[1] "Clopper-Pearson Confidence Interval"
+
+$alternative
+[1] "two.sided"</code></pre>
+</div>
+</div>
+</section>
+<section id="normal-approximation-wald-or-asymptotic-ci-method" class="level3">
+<h3 class="anchored" data-anchor-id="normal-approximation-wald-or-asymptotic-ci-method">Normal Approximation (Wald or asymptotic CI) Method</h3>
 <p>In large random samples from independent trials, the sampling distribution of proportions approximately follows the normal distribution. The expectation of a sample proportion is the corresponding population proportion. Therefore, based on a sample of size <span class="math inline">\(n\)</span>, a <span class="math inline">\((1-\alpha)\%\)</span> confidence interval for population proportion can be calculated using normal approximation as follows:</p>
 <p><span class="math inline">\(p\approx \hat p \pm z_\alpha \sqrt{\hat p(1-\hat p)}/{n}\)</span>, where <span class="math inline">\(\hat p\)</span> is the sample proportion, <span class="math inline">\(z_\alpha\)</span> is the <span class="math inline">\(1-\alpha/2\)</span> quantile of a standard normal distribution corresponding to level <span class="math inline">\(\alpha\)</span>, and <span class="math inline">\(\sqrt{\hat p(1-\hat p)}/{n}\)</span> is the standard error.</p>
 </section>
+</section>
 <section id="example-code" class="level2">
 <h2 class="anchored" data-anchor-id="example-code">Example code</h2>
-<p>The following code calculates a confidence interval for a binomial proportion usinng normal approximation.</p>
+<p>The following code calculates a confidence interval for a binomial proportion using normal approximation equation manually. This is replicated exactly using the <code>{cardx} proportion_ci_wald function</code> which also allows the continuity correction to be applied.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">666</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># generate a random sample of size 100 from independent Bernoulli trials</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>n <span class="ot">=</span> <span class="dv">100</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>mysamp <span class="ot">=</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>),n,<span class="at">replace =</span> T)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># sample proportion</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>p_hat <span class="ot">=</span> <span class="fu">mean</span>(mysamp)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># standard error</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>se <span class="ot">=</span> <span class="fu">sqrt</span>(p_hat<span class="sc">*</span>(<span class="dv">1</span><span class="sc">-</span>p_hat)<span class="sc">/</span>n)</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># 95% CI of population proportion</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(p_hat<span class="sc">-</span><span class="fu">qnorm</span>(<span class="dv">1</span><span class="fl">-0.05</span><span class="sc">/</span><span class="dv">2</span>)<span class="sc">*</span>se, p_hat<span class="sc">+</span><span class="fu">qnorm</span>(<span class="dv">1</span><span class="fl">-0.05</span><span class="sc">/</span><span class="dv">2</span>)<span class="sc">*</span>se)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>    <span class="co"># sample proportion by trt</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>summary <span class="ot">&lt;-</span> adcibc <span class="sc">%&gt;%</span> </span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>           <span class="fu">group_by</span>(trt,resp) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>           <span class="fu">tally</span>()  <span class="sc">%&gt;%</span> </span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>           <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>           <span class="fu">group_by</span>(trt) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>           <span class="fu">mutate</span>(<span class="at">total=</span><span class="fu">sum</span>(n)) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>           <span class="fu">mutate</span>(<span class="at">p=</span>n<span class="sc">/</span>total)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculate standard error and 95% wald confidence intervals for population proportion</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>waldci <span class="ot">&lt;-</span>summary <span class="sc">%&gt;%</span> </span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>         <span class="fu">filter</span>(resp<span class="sc">==</span><span class="st">"Yes"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>         <span class="fu">mutate</span>(<span class="at">se=</span><span class="fu">sqrt</span>(p<span class="sc">*</span>(<span class="dv">1</span><span class="sc">-</span>p)<span class="sc">/</span>total)) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>         <span class="fu">mutate</span>(<span class="at">lower_ci=</span>(p<span class="sc">-</span><span class="fu">qnorm</span>(<span class="dv">1</span><span class="fl">-0.05</span><span class="sc">/</span><span class="dv">2</span>)<span class="sc">*</span>se)) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>         <span class="fu">mutate</span>(<span class="at">upper_ci=</span>(p<span class="sc">+</span><span class="fu">qnorm</span>(<span class="dv">1</span><span class="fl">-0.05</span><span class="sc">/</span><span class="dv">2</span>)<span class="sc">*</span>se)) </span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>waldci  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 0.4936024 0.6863976</code></pre>
+<pre><code># A tibble: 2 × 8
+# Groups:   trt [2]
+  trt   resp      n total     p     se lower_ci upper_ci
+  &lt;chr&gt; &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+1 ACT   Yes      36   154 0.234 0.0341   0.167     0.301
+2 PBO   Yes      12    77 0.156 0.0413   0.0748    0.237</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">#cardx package Wald method without continuity correction</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">proportion_ci_wald</span>(pbo2,<span class="at">conf.level=</span><span class="fl">0.95</span>,<span class="at">correct=</span><span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$N
+[1] 77
+
+$estimate
+[1] 0.1558442
+
+$conf.low
+[1] 0.0748303
+
+$conf.high
+[1] 0.236858
+
+$conf.level
+[1] 0.95
+
+$method
+Wald Confidence Interval without continuity correction</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">proportion_ci_wald</span>(act2,<span class="at">conf.level=</span><span class="fl">0.95</span>,<span class="at">correct=</span><span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$N
+[1] 154
+
+$estimate
+[1] 0.2337662
+
+$conf.low
+[1] 0.1669227
+
+$conf.high
+[1] 0.3006097
+
+$conf.level
+[1] 0.95
+
+$method
+Wald Confidence Interval without continuity correction</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co">#cardx package Wald method with continuity correction</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">proportion_ci_wald</span>(pbo2,<span class="at">conf.level=</span><span class="fl">0.95</span>,<span class="at">correct=</span><span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$N
+[1] 77
+
+$estimate
+[1] 0.1558442
+
+$conf.low
+[1] 0.06833679
+
+$conf.high
+[1] 0.2433515
+
+$conf.level
+[1] 0.95
+
+$method
+Wald Confidence Interval with continuity correction</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">proportion_ci_wald</span>(act2,<span class="at">conf.level=</span><span class="fl">0.95</span>,<span class="at">correct=</span><span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$N
+[1] 154
+
+$estimate
+[1] 0.2337662
+
+$conf.low
+[1] 0.163676
+
+$conf.high
+[1] 0.3038565
+
+$conf.level
+[1] 0.95
+
+$method
+Wald Confidence Interval with continuity correction</code></pre>
 </div>
 </div>
+<section id="wilson-score-method" class="level3">
+<h3 class="anchored" data-anchor-id="wilson-score-method">Wilson (score) Method</h3>
+<p>The cardx package calculates the Wilson (score) method by calling stats::prop.test() function.</p>
+<p>The package also contains a function for proportion_ci_strat_wilson() which calculates the stratified Wilson CIs for unequal proportions as described <a href="https://search.r-project.org/CRAN/refmans/cardx/html/proportion_ci.html">here</a></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co">#cardx package Wilson method without continuity correction</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">proportion_ci_wilson</span>(pbo2,<span class="at">conf.level=</span><span class="fl">0.95</span>,<span class="at">correct=</span><span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$N
+[1] 77
+
+$conf.level
+[1] 0.95
+
+$estimate
+        p 
+0.1558442 
+
+$statistic
+X-squared 
+ 36.48052 
+
+$p.value
+[1] 1.541997e-09
+
+$parameter
+df 
+ 1 
+
+$conf.low
+[1] 0.09145872
+
+$conf.high
+[1] 0.2529371
+
+$method
+Wilson Confidence Interval without continuity correction
+
+$alternative
+[1] "two.sided"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">proportion_ci_wilson</span>(act2,<span class="at">conf.level=</span><span class="fl">0.95</span>,<span class="at">correct=</span><span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$N
+[1] 154
+
+$conf.level
+[1] 0.95
+
+$estimate
+        p 
+0.2337662 
+
+$statistic
+X-squared 
+ 43.66234 
+
+$p.value
+[1] 3.902094e-11
+
+$parameter
+df 
+ 1 
+
+$conf.low
+[1] 0.1739034
+
+$conf.high
+[1] 0.306588
+
+$method
+Wilson Confidence Interval without continuity correction
+
+$alternative
+[1] "two.sided"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co">#cardx package Wilson method with continuity correction</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">proportion_ci_wilson</span>(pbo2,<span class="at">conf.level=</span><span class="fl">0.95</span>,<span class="at">correct=</span><span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$N
+[1] 77
+
+$conf.level
+[1] 0.95
+
+$estimate
+        p 
+0.1558442 
+
+$statistic
+X-squared 
+ 35.11688 
+
+$p.value
+[1] 3.104971e-09
+
+$parameter
+df 
+ 1 
+
+$conf.low
+[1] 0.08654842
+
+$conf.high
+[1] 0.2603536
+
+$method
+Wilson Confidence Interval with continuity correction
+
+$alternative
+[1] "two.sided"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">proportion_ci_wilson</span>(act2,<span class="at">conf.level=</span><span class="fl">0.95</span>,<span class="at">correct=</span><span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$N
+[1] 154
+
+$conf.level
+[1] 0.95
+
+$estimate
+        p 
+0.2337662 
+
+$statistic
+X-squared 
+  42.6039 
+
+$p.value
+[1] 6.702575e-11
+
+$parameter
+df 
+ 1 
+
+$conf.low
+[1] 0.1710477
+
+$conf.high
+[1] 0.3100625
+
+$method
+Wilson Confidence Interval with continuity correction
+
+$alternative
+[1] "two.sided"</code></pre>
+</div>
+</div>
+</section>
+<section id="agresti-coull-method" class="level3">
+<h3 class="anchored" data-anchor-id="agresti-coull-method">Agresti-Coull Method</h3>
+<p>The cardx package calculates the Agresti-Coull method using the equation from the published method by Alan Agresti &amp; Brent Coull.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co">#cardx package agresti_coull method </span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="fu">proportion_ci_agresti_coull</span>(pbo2,<span class="at">conf.level=</span><span class="fl">0.95</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$N
+[1] 77
+
+$estimate
+[1] 0.1558442
+
+$conf.low
+[1] 0.08989631
+
+$conf.high
+[1] 0.2544995
+
+$conf.level
+[1] 0.95
+
+$method
+[1] "Agresti-Coull Confidence Interval"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">proportion_ci_agresti_coull</span>(act2,<span class="at">conf.level=</span><span class="fl">0.95</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$N
+[1] 154
+
+$estimate
+[1] 0.2337662
+
+$conf.low
+[1] 0.1735954
+
+$conf.high
+[1] 0.306896
+
+$conf.level
+[1] 0.95
+
+$method
+[1] "Agresti-Coull Confidence Interval"</code></pre>
+</div>
+</div>
+</section>
+<section id="logit-method" class="level3">
+<h3 class="anchored" data-anchor-id="logit-method">LOGIT Method</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># TBC</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="binomial-based-midp-method" class="level3">
+<h3 class="anchored" data-anchor-id="binomial-based-midp-method">Binomial based MidP Method</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># TBC</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="likelihood-ratio-method" class="level3">
+<h3 class="anchored" data-anchor-id="likelihood-ratio-method">Likelihood Ratio Method</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># TBC</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="jeffreys-method" class="level3">
+<h3 class="anchored" data-anchor-id="jeffreys-method">Jeffreys Method</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co">#cardx package jeffreys method </span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="fu">proportion_ci_jeffreys</span>(pbo2,<span class="at">conf.level=</span><span class="fl">0.95</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$N
+[1] 77
+
+$estimate
+[1] 0.1558442
+
+$conf.low
+[1] 0.08811662
+
+$conf.high
+[1] 0.2488529
+
+$conf.level
+[1] 0.95
+
+$method
+Jeffreys Interval</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">proportion_ci_jeffreys</span>(act2,<span class="at">conf.level=</span><span class="fl">0.95</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$N
+[1] 154
+
+$estimate
+[1] 0.2337662
+
+$conf.low
+[1] 0.1722823
+
+$conf.high
+[1] 0.3051484
+
+$conf.level
+[1] 0.95
+
+$method
+Jeffreys Interval</code></pre>
+</div>
+</div>
+</section>
+<section id="blaker-method" class="level3">
+<h3 class="anchored" data-anchor-id="blaker-method">Blaker Method</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co"># TBC</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="altman-newcombe-method" class="level3">
+<h3 class="anchored" data-anchor-id="altman-newcombe-method">Altman Newcombe Method</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># TBC</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="bayesian-hpd-method" class="level3">
+<h3 class="anchored" data-anchor-id="bayesian-hpd-method">Bayesian HPD Method</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co"># TBC</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ol type="1">
+<li><a href="https://insightsengineering.github.io/cardx/main/#:~:text=The%20%7Bcardx%7D%20package%20is%20an%20extension%20of%20the,Data%20Objects%20%28ARDs%29%20using%20the%20R%20programming%20language.">pharmaverse cardx package</a></li>
+</ol>
 
 
 </section>
