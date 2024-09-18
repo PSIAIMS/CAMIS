@@ -1,30 +1,181 @@
 ---
-title: "Confidence Intervals for Proportions"
+title: "Confidence Intervals for Proportions in R"
 ---
 
-A confidence interval for binomial proportion is an interval estimate for the probability of success calculated from the outcome of a series of Bernoulli trials.
+## Introduction
 
-There are several ways to calculate a binomial confidence interval. Normal approximation is one of the most commonly used methods. 
+A confidence interval for binomial proportion is an interval estimate for the probability of success (for example response=Yes), calculated from the outcome of a series of Bernoulli trials.
 
-## Normal approximation
+There are several ways to calculate a binomial confidence interval. For more information about these methods in R & SAS, including which performs better in different scenarios see [Five Confidence Intervals for Proportions That You Should Know about](https://towardsdatascience.com/five-confidence-intervals-for-proportions-that-you-should-know-about-7ff5484c024f)^1^ and [Confidence Intervals for Binomial Proportion Using SAS](https://www.lexjansen.com/sesug/2015/103_Final_PDF.pdf)^2^
+
+## Data used
+
+The adcibc data stored [here](../data/adcibc.csv) was used in this example, creating a binary treatment variable `trt` taking the values of `ACT` or `PBO` and a binary response variable `resp` taking the values of `Yes` or `No`. For this example, a response is defined as a score greater than 4.
+
+```{r}
+#| echo: FALSE
+library(tidyverse)
+library(cardx)
+adcibc2<-read_csv("../data/adcibc.csv")
+
+adcibc<- adcibc2 %>% 
+        select(AVAL,TRTP) %>% 
+        mutate(resp=if_else(AVAL>4,"Yes","No")) %>% 
+        mutate(respn=if_else(AVAL>4,1,0)) %>% 
+        mutate(trt=if_else(TRTP=="Placebo","PBO","ACT"))%>% 
+        select(trt,resp, respn) 
+
+pbo<- filter(adcibc,trt=="PBO") %>% 
+      select(respn)
+pbo2<-pbo$respn
+
+act<-filter(adcibc,trt=="ACT") %>% 
+     select(respn)
+act2<-act$respn
+
+head(act2,10)
+head(pbo2,10)
+```
+
+## Simple 2x2 cross tabulation using tidyverse
+
+It is good practice to visualize your data. For this we can do a 2x2 table with percentages.
+
+```{r}
+#| echo: FALSE
+adcibc %>% 
+  group_by(trt,resp) %>% 
+  tally()
+```
+
+## Methods for Calculating Confidence Intervals for Proportions using cardx
+
+For more technical derivation and reasons for use for each of the methods listed below, see the corresponding [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html).
+
+The {cardx} package is an extension of the {cards} package, providing additional functions to create Analysis Results Data Objects (ARDs)^1^. It was developed as part of {NEST} and pharmaverse. This package requires the binary endpoint to be a a logical (TRUE/FALSE) vector or a numeric/integer coded as (0, 1) with 1 (TRUE) being the success you want to calculate the confidence interval for.
+
+### Clopper-Pearson (Exact or binomial CI) Method
+
+The cardx package calculates the Clopper-Pearson score by calling stats::binom.test() function.
+
+```{r}
+
+proportion_ci_clopper_pearson(pbo2,conf.level=0.95)
+proportion_ci_clopper_pearson(act2,conf.level=0.95)
+
+```
+
+### Normal Approximation (Wald or asymptotic CI) Method
 
 In large random samples from independent trials, the sampling distribution of proportions approximately follows the normal distribution. The expectation of a sample proportion is the corresponding population proportion. Therefore, based on a sample of size $n$, a $(1-\alpha)\%$ confidence interval for population proportion can be calculated using normal approximation as follows:
 
-$p\approx \hat p \pm z_\alpha \sqrt{\hat p(1-\hat p)}/{n}$,
-where $\hat p$ is the sample proportion, $z_\alpha$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to level $\alpha$, and $\sqrt{\hat p(1-\hat p)}/{n}$ is the standard error.
+$p\approx \hat p \pm z_\alpha \sqrt{\hat p(1-\hat p)}/{n}$, where $\hat p$ is the sample proportion, $z_\alpha$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to level $\alpha$, and $\sqrt{\hat p(1-\hat p)}/{n}$ is the standard error.
 
 ## Example code
-The following code calculates a confidence interval for a binomial proportion usinng normal approximation.
+
+The following code calculates a confidence interval for a binomial proportion using normal approximation equation manually. This is replicated exactly using the `{cardx} proportion_ci_wald function` which also allows the continuity correction to be applied.
+
 ```{r}
-set.seed(666)
-# generate a random sample of size 100 from independent Bernoulli trials
-n = 100
-mysamp = sample(c(0,1),n,replace = T)
-# sample proportion
-p_hat = mean(mysamp)
-# standard error
-se = sqrt(p_hat*(1-p_hat)/n)
-# 95% CI of population proportion
-c(p_hat-qnorm(1-0.05/2)*se, p_hat+qnorm(1-0.05/2)*se)
+    # sample proportion by trt
+summary <- adcibc %>% 
+           group_by(trt,resp) %>% 
+           tally()  %>% 
+           ungroup() %>% 
+           group_by(trt) %>% 
+           mutate(total=sum(n)) %>% 
+           mutate(p=n/total)
+
+    # Calculate standard error and 95% wald confidence intervals for population proportion
+waldci <-summary %>% 
+         filter(resp=="Yes") %>% 
+         mutate(se=sqrt(p*(1-p)/total)) %>% 
+         mutate(lower_ci=(p-qnorm(1-0.05/2)*se)) %>% 
+         mutate(upper_ci=(p+qnorm(1-0.05/2)*se)) 
+waldci  
+
+#cardx package Wald method without continuity correction
+proportion_ci_wald(pbo2,conf.level=0.95,correct=FALSE)
+proportion_ci_wald(act2,conf.level=0.95,correct=FALSE)
+
+
+#cardx package Wald method with continuity correction
+proportion_ci_wald(pbo2,conf.level=0.95,correct=TRUE)
+proportion_ci_wald(act2,conf.level=0.95,correct=TRUE)
 ```
 
+### Wilson (score) Method
+
+The cardx package calculates the Wilson (score) method by calling stats::prop.test() function.
+
+The package also contains a function for proportion_ci_strat_wilson() which calculates the stratified Wilson CIs for unequal proportions as described [here](https://search.r-project.org/CRAN/refmans/cardx/html/proportion_ci.html)
+
+```{r}
+#cardx package Wilson method without continuity correction
+proportion_ci_wilson(pbo2,conf.level=0.95,correct=FALSE)
+proportion_ci_wilson(act2,conf.level=0.95,correct=FALSE)
+
+
+#cardx package Wilson method with continuity correction
+proportion_ci_wilson(pbo2,conf.level=0.95,correct=TRUE)
+proportion_ci_wilson(act2,conf.level=0.95,correct=TRUE)
+
+```
+
+### Agresti-Coull Method
+
+The cardx package calculates the Agresti-Coull method using the equation from the published method by Alan Agresti & Brent Coull.
+
+```{r}
+
+#cardx package agresti_coull method 
+proportion_ci_agresti_coull(pbo2,conf.level=0.95)
+proportion_ci_agresti_coull(act2,conf.level=0.95)
+```
+
+### LOGIT Method
+
+```{r}
+# TBC
+```
+
+### Binomial based MidP Method
+
+```{r}
+# TBC
+```
+
+### Likelihood Ratio Method
+
+```{r}
+# TBC
+```
+
+### Jeffreys Method
+
+```{r}
+#cardx package jeffreys method 
+proportion_ci_jeffreys(pbo2,conf.level=0.95)
+proportion_ci_jeffreys(act2,conf.level=0.95)
+```
+
+### Blaker Method
+
+```{r}
+# TBC
+```
+
+### Altman Newcombe Method
+
+```{r}
+# TBC
+```
+
+### Bayesian HPD Method
+
+```{r}
+# TBC
+```
+
+## References
+
+1.  [pharmaverse cardx package](https://insightsengineering.github.io/cardx/main/#:~:text=The%20%7Bcardx%7D%20package%20is%20an%20extension%20of%20the,Data%20Objects%20%28ARDs%29%20using%20the%20R%20programming%20language.)
