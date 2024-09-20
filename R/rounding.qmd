@@ -2,9 +2,15 @@
 title: "Rounding in R"
 ---
 
-The **round()** function in Base R will round to the nearest whole number and 'rounding to the even number' when equidistant, meaning that exactly 12.5 rounds to the integer 12.
+## round from R base
+The **round()** function in Base R will round to the nearest whole number and 'rounding to the even number' when equidistant, meaning that exactly 12.5 rounds to the integer 12. However, this is dependent on OS services and on representation error (since e.g. 0.15 is not represented exactly, the rounding rule applies to the represented number and not to the printed number, and so round(0.15, 1) could be either 0.1 or 0.2).
+```{R, eval=FALSE}
+round(1:9/10+0.05,1)
+[1] 0.2 0.2 0.3 0.4 0.6 0.7 0.8 0.9 1.0
+```
 
-Note that the [janitor](https://sfirke.github.io/janitor/) package in R contains a function `round_half_up()` that rounds away from zero. in this case it rounds to the nearest whole number and 'away from zero' or 'rounding up' when equidistant, meaning that exactly 12.5 rounds to the integer 13.
+## round_half_up from package janitor
+Note that the [janitor](https://sfirke.github.io/janitor/) package in R contains a function `round_half_up()` that rounds away from zero. In this case it rounds to the nearest whole number and 'away from zero' or 'rounding up' when equidistant, meaning that exactly 12.5 rounds to the integer 13.
 
 ```{R, eval=FALSE}
 #Example code
@@ -28,8 +34,115 @@ r_3_dec
 [1]  2.20  3.99  1.23  7.88 13.87
 > r_3_dec
 [1]  2.200  3.990  1.234  7.876 13.874
-
-
 ```
 
-If using the janitor package in R, and the function `round_half_up()`, the results would be the same with the exception of rounding 1.2345 to 3 decimal places where a result of 1.235 would be obtained instead of 1.234.
+If using the janitor package in R, and the function `round_half_up()`, the results would be the same with the exception of rounding 1.2345 to 3 decimal places where a result of 1.235 would be obtained instead of 1.234.\
+However, in some rare cases, `round_half_up()` does not return result as expected. There are two kinds of cases for it.
+1. Round down for positive decimal like 0.xx5.
+```{R, eval=FALSE}
+round_half_up(524288.1255,3)
+[1] 524288.125
+```
+The cause is that when the decimal is stored in binary, the value usually does not exactly the same with the original number. In the example above, 524288.1255 is stored as a value a little less than the original value. Then `round_half_up()` rounds it down.
+```{R, eval=FALSE}
+options(digits=22)
+R 4.3.1> 524288.1255
+[1] 524288.1254999999655411
+```
+
+In `round_half_up()`, a small decimal `sqrt(.Machine$double.eps)` is added before rounding. It avoids some incorrect rounding due to the stored numeric value is a little less than the original value, but does not cover all conditions.
+```{R, eval=FALSE}
+round_half_up
+function (x, digits = 0) 
+{
+    posneg <- sign(x)
+    z <- abs(x) * 10^digits
+    z <- z + 0.5 + sqrt(.Machine$double.eps)
+    z <- trunc(z)
+    z <- z/10^digits
+    z * posneg
+}
+```
+
+More examples can be found from the code below. It creates numeric values containing different digit numbers of integer part and decimal part, and all ending with 5 for rounding.
+```{R, eval=FALSE}
+options(digits=15) #set digit number to display 
+int1 <- c(0,2^(1:19)) #create values of integer part
+round_digits <- 1:7 #define values of rounding digits
+dec1 <- 2^(-round_digits)+10^(-round_digits-1)*5 #create values of decimal part
+df1 <- cross_join(tibble(int1),tibble(dec1,round_digits)) |>
+  mutate(num1=int1+dec1) #combine integer part and decimal part
+df1 |> mutate(rounded_num=round_half_up(num1,round_digits)) |> #round the numbers
+  filter(rounded_num<num1) |>  #incorrect if rounded result is less than the original number
+  print.data.frame()
+
+    int1       dec1 round_digits            num1    rounded_num
+1  32768 0.01562550            6  32768.01562550  32768.0156250
+2  65536 0.03125500            5  65536.03125500  65536.0312500
+3 262144 0.06255000            4 262144.06255000 262144.0625000
+4 262144 0.03125500            5 262144.03125500 262144.0312500
+5 524288 0.12550000            3 524288.12550000 524288.1250000
+6 524288 0.00781255            7 524288.00781255 524288.0078125
+```
+6 of 140 numbers have incorrect results. Most of them are big numbers or long decimals to round.
+
+2. Round up for positive decimal like 0.4999....
+```{R, eval=FALSE}
+options(digits=16)
+round_half_up(1.4999999851,0)
+[1] 
+```
+It occurs when the number is smaller than but so closed to 0.xx5. As described in point 1 above, in `round_half_up()`, a small decimal `sqrt(.Machine$double.eps)` is added before rounding, which causes a number bigger than 0.xx5 to be rounded. It occurs only when the decimal is long, so `round_half_up()` is still reliable.\
+And the added decimal `sqrt(.Machine$double.eps)` is necessary. Without it, or even replace it to a smaller decimal, there will be more incorrect results under point 1, as the example below. Some of them are common, e.g. rounding 16.1255 to 3 decimals.
+
+```{R, eval=FALSE}
+#a new function to round away from zero, by replacing sqrt(.Machine$double.eps) in round_half_up to a smaller number
+round_half_up_test <- function (x, digits = 0){
+  posneg <- sign(x)
+  z <- abs(x) * 10^digits
+  z <- z + 0.5 + .Machine$double.eps *100
+  z <- trunc(z)
+  z <- z/10^digits
+  z * posneg
+}
+
+options(digits=15) #set digit number to display 
+df1 |> mutate(rounded_num=round_half_up_test(num1,round_digits)) |> #round the numbers
+  filter(rounded_num<num1) |>  #incorrect if rounded result is less than the original number
+  print.data.frame()
+
+     int1       dec1 round_digits            num1    rounded_num
+1       2 0.03125500            5      2.03125500      2.0312500
+2       4 0.01562550            6      4.01562550      4.0156250
+3      16 0.12550000            3     16.12550000     16.1250000
+4      16 0.01562550            6     16.01562550     16.0156250
+5     128 0.12550000            3    128.12550000    128.1250000
+6     128 0.06255000            4    128.06255000    128.0625000
+7     128 0.03125500            5    128.03125500    128.0312500
+8    8192 0.25500000            2   8192.25500000   8192.2500000
+9   16384 0.12550000            3  16384.12550000  16384.1250000
+10  32768 0.25500000            2  32768.25500000  32768.2500000
+11  32768 0.01562550            6  32768.01562550  32768.0156250
+12  65536 0.12550000            3  65536.12550000  65536.1250000
+13  65536 0.03125500            5  65536.03125500  65536.0312500
+14 262144 0.06255000            4 262144.06255000 262144.0625000
+15 262144 0.03125500            5 262144.03125500 262144.0312500
+16 524288 0.12550000            3 524288.12550000 524288.1250000
+17 524288 0.00781255            7 524288.00781255 524288.0078125
+```
+
+## Other methods
+https://stackoverflow.com/a/12688836 discussed multiple algorithms to round away from zero, including the one implemented in `round_half_up()`. Below is another algorithm modified from it.
+```{R, eval=FALSE}
+round_v2 <- function(x, digits = 0, eps = .Machine$double.eps) round(x + x * eps, digits = digits)
+```
+Like `round_half_up()`, it also contains the two kinds of incorrect results. And like `round_half_up()`, a small decimal is added to make 0.xx5 round up. The parameter `eps` is provided to let user decide which small decimal to add.
+
+To avoid the rounding issue totally, the only way is to increase precision, e.g. using package `Rmpfr`. It will need CPU resource. And it's not always necessary considering the accuracy of current functions.
+
+## Conclusion
+So far, `round_half_up()` from package janitor is still one of the best solutions to round away from zero, though users may meet incorrect results in rare cases when the numbers are big or the decimal is long.
+
+
+
+
