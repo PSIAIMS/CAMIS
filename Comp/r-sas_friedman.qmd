@@ -1,0 +1,89 @@
+---
+title: "R vs SAS Non-parametric Analysis - Friedman test"
+---
+
+```{r review-setup}
+#| message: FALSE
+#| warning: FALSE
+#| eval: TRUE
+library(tidyverse)
+library(rstatix) 
+library(ggpubr)
+```
+
+## Data used
+
+Friedman's test is used when you have one within-subjects independent variable with two or more levels and a dependent variable that is not interval and normally distributed (but at least ordinal). To build such unreplicated blocked data, we'll create a data frame called  `df_bp` from random number. In  `df_bp` : dependent variable `bp` is randomly generated; Block: `subjid` ; Group: `time_point`.
+
+```{r}
+set.seed(123)
+
+df_bp = data.frame(bp = runif(n = 50, 138, 200)) %>% 
+  mutate(subjid = as.factor(row_number() %% 5),  
+         time_point = as.factor((row_number()-1) %/% 5 + 1))
+
+head(df_bp)
+```
+
+Let's see distribution of `df_bp`
+
+```{r}
+ggpubr::ggboxplot(df_bp, x = "time_point", y = "bp", add = "jitter")
+```
+
+## Example Code using {rstatix}
+
+In R, **friedman_test** can be used to compare multiple means of rank in `bp` grouped by `time_point`, stratified by `subjid`.
+
+```{r}
+res.fried <- df_bp %>% 
+  friedman_test(bp ~ time_point | subjid)
+res.fried
+```
+
+## Example Code using {PROC FREQ}
+
+In SAS, **CMH2** option of PROC FREQ is used to perform Friedman's test.
+
+``` sas
+proc freq data=data_bp;
+   tables patient*dos*bp / 
+          cmh2 scores=rank noprint;
+run;
+
+```
+## Comparison
+
+The Row Mean Scores Differ statistic of SAS result is compared with statistic of R result, together with *p*-value.
+
++---------------+----------------------------------------------------------------------------------+---------------------------------------------------------------------------+---------------+
+| Analysis      | Supported in R                                                                   | Supported in SAS                                                          | Results Match |
++===============+==================================================================================+===========================================================================+===============+
+| Friedman Test | Yes                                                                              | Yes![](../images/friedman/Friedman_SAS.png){fig-align="left" width="216"} | Yes           |
+|               |                                                                                  |                                                                           |               |
+|               | ![](../images/friedman/Friedman_R.png){fig-align="left" width="221" height="31"} |                                                                           |               |
++---------------+----------------------------------------------------------------------------------+---------------------------------------------------------------------------+---------------+
+
+## Comparison Results from more data
+
+Friedman's chi-suqare approximation varies when the number of blocks or the number of groups in the randomized block design differs. Similar comparison is done when number of block `subjid` ranges from 4 to 20 and number of group `time_point` ranges from 2 to 6. All results yield exact match (Comparison criterion is set to the tenth decimal place).
+
+# Summary and Recommendation
+
+The R friedman test is comparable to SAS. Comparison between SAS and R show identical results for the datasets tried. The **rstatix** package `friedman_test()` function is very similar to SAS in the output produced.
+
+# References
+
+R `friedman_test()` documentation: <https://search.r-project.org/CRAN/refmans/rstatix/html/friedman_test.html>
+
+SAS `PROC FREQ` documentation: <https://support.sas.com/documentation/cdl/en/statug/63033/HTML/default/viewer.htm#statug_freq_sect033.htm>
+
+::: {.callout-note collapse="true" title="Session Info"}
+```{r}
+#| echo: false
+si <- sessioninfo::session_info(
+  c("rstatix"), #Vector of packages used 
+  dependencies = FALSE)
+si
+```
+:::

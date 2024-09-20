@@ -1,0 +1,168 @@
+---
+title: "Survey Summary Statistics using Python"
+bibliography: ../Comp/survey-stats-summary.bib
+---
+
+When conducting large-scale trials on samples of the population, it can be necessary to use a more complex sampling design than a simple random sample.
+
+-   **Weighting** – If smaller populations are sampled more heavily to increase precision, then it is necessary to weight these observations in the analysis.
+
+-   **Finite population correction** – Larger samples of populations result in lower variability in comparison to smaller samples.
+
+-   **Stratification** – Dividing a population into sub-groups and sampling from each group. This protects from obtaining a very poor sample (e.g. under or over-represented groups), can give samples of a known precision, and gives more precise estimates for population means and totals.
+
+-   **Clustering** – Dividing a population into sub-groups, and only sampling certain groups. This gives a lower precision, however can be much more convenient and cheaper - for example if surveying school children you may only sample a subset of schools to avoid travelling to a school to interview a single child.
+
+All of these designs need to be taken into account when calculating statistics, and when producing models. Only summary statistics are discussed in this document, and variances are calculated using Taylor series linearisation methods. For a more detailed introduction to calculating survey statistics using statistical software, see [@Lohr_2022].
+
+The ecosystem of survey statistics packages is less mature in Python than in R or SAS, however there is a package that provides a subset of the functionality: [`samplics`](https://samplics-org.github.io/samplics/).
+
+# Complex Survey Designs
+
+For R and SAS, we give examples of summary statistics on a simple survey design which just had a finite population correction. Unfortunately, `samplics` does not have the ability to just use an fpc with no PSU or Strata, so we will instead demonstrate just with a more complete (and realistic) survey design, using the NHANES [@NHANES_2010] dataset:
+
+```{r}
+#| echo: false
+#| message: false
+library(survey)
+
+# Load example data - academic performance index for californian schools
+data("nhanes")
+
+# View the first few rows of the main dataset
+head(nhanes) |> gt::gt()
+```
+
+# Summary Statistics
+
+## Mean
+
+If we want to calculate a mean of a variable in a dataset using `samplics`, we need to create an estimator object using the estimation method we will use - here Taylor Series estimation - and the parameter we are estimating. Then, we can specify the survey design by passing columns which define our strata and PSUs, and a column to estimate:
+
+```{python}
+import numpy as np
+import pandas as pd
+
+from samplics import TaylorEstimator
+from samplics.utils.types import PopParam
+
+nhanes = pd.read_csv("../data/nhanes.csv")
+
+mean_estimator = TaylorEstimator(PopParam.mean)
+
+mean_estimator.estimate(
+    y=nhanes["HI_CHOL"],
+    samp_weight=nhanes["WTMEC2YR"],
+    psu=nhanes["SDMVPSU"],
+    stratum=nhanes["SDMVSTRA"],
+    remove_nan=True,
+)
+print(mean_estimator.to_dataframe())
+```
+
+## Total
+
+Calculating population totals can be done by changing the `TaylorEstimator` parameter to `PopParam.total`:
+
+```{python}
+total_estimator = TaylorEstimator(PopParam.total)
+
+total_estimator.estimate(
+    y=nhanes["HI_CHOL"],
+    samp_weight=nhanes["WTMEC2YR"],
+    psu=nhanes["SDMVPSU"],
+    stratum=nhanes["SDMVSTRA"],
+    remove_nan=True,
+)
+print(total_estimator.to_dataframe())
+```
+
+## Ratios
+
+Calculating population ratios can be done by changing the `TaylorEstimator` parameter to `PopParam.ratio`, and additionally specifying an `x` parameter in the `estimate` method:
+
+```{python}
+ratio_estimator = TaylorEstimator(PopParam.ratio)
+
+ratio_estimator.estimate(
+    y=nhanes["HI_CHOL"],
+    x=nhanes["RIAGENDR"],
+    samp_weight=nhanes["WTMEC2YR"],
+    psu=nhanes["SDMVPSU"],
+    stratum=nhanes["SDMVSTRA"],
+    remove_nan=True,
+)
+print(ratio_estimator.to_dataframe())
+```
+
+## Proportions
+
+Calculating proportions can be done by changing the `TaylorEstimator` parameter to `PopParam.prop`:
+
+```{python}
+prop_estimator = TaylorEstimator(PopParam.prop)
+
+prop_estimator.estimate(
+    y=nhanes["agecat"],
+    samp_weight=nhanes["WTMEC2YR"],
+    psu=nhanes["SDMVPSU"],
+    stratum=nhanes["SDMVSTRA"],
+    remove_nan=True,
+)
+prop_estimator.to_dataframe()
+```
+
+## Quantiles
+
+`samplics` currently does not have a method to calculate quantiles.
+
+## Domain Estimations
+
+We can perform domain estimations of different sub-populations by passing our domain column as a parameter to the `estimate` method:
+
+```{python}
+mean_estimator = TaylorEstimator(PopParam.mean)
+
+mean_estimator.estimate(
+    y=nhanes["HI_CHOL"],
+    samp_weight=nhanes["WTMEC2YR"],
+    psu=nhanes["SDMVPSU"],
+    stratum=nhanes["SDMVSTRA"],
+    domain=nhanes["race"],
+    remove_nan=True,
+)
+mean_estimator.to_dataframe()
+```
+
+::: {.callout-note collapse="true" title="Session Info"}
+```{r}
+#| echo: false
+si <- sessioninfo::session_info("survey", dependencies = FALSE)
+# If reticulate is used, si will include python info. However, this doesn't
+# include package info and can't really be adapted (in the same way external can)
+# So instead we delete this. (Currently bug with specifying info= multi
+# element vector in sessioninfo)
+si$python <- NULL
+si
+```
+
+```{python}
+#| echo: false
+# Although sessioninfo::session_info can report on Python config, it depends on `{reticulate}` which
+# may not be used and doesn't include package info. Instead, use the following to replicate
+import sys
+from importlib.metadata import version
+
+# Add packages to the list here
+packages = ["samplics"]
+
+max_len = max(len(pkg) for pkg in packages + ["Python"]) + 3
+message = (
+  "─ Python configuration ".ljust(79, "─") + "\n"
+  + " Python".ljust(max_len) + sys.version + "\n"
+  + "\n".join(f" {pkg}".ljust(max_len) + version(pkg) for pkg in packages)
+)
+
+print(message)
+```
+:::
