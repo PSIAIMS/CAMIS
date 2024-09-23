@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Kruskal Wallis in Python</title>
+<title>R vs SAS vs StatXact - Wilcoxon signed-rank test</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -196,9 +196,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
-  <li><a href="#implementing-kruskal-wallis-in-python" id="toc-implementing-kruskal-wallis-in-python" class="nav-link" data-scroll-target="#implementing-kruskal-wallis-in-python">Implementing Kruskal-Wallis in Python</a></li>
-  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a></li>
+  <li><a href="#wilcoxon-signed-rank-test-in-r-sas-and-statxact" id="toc-wilcoxon-signed-rank-test-in-r-sas-and-statxact" class="nav-link active" data-scroll-target="#wilcoxon-signed-rank-test-in-r-sas-and-statxact">Wilcoxon signed-rank test in R, SAS and StatXact</a>
+  <ul class="collapse">
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#general-comparison-table" id="toc-general-comparison-table" class="nav-link" data-scroll-target="#general-comparison-table">General Comparison Table</a></li>
+  <li><a href="#example-data" id="toc-example-data" class="nav-link" data-scroll-target="#example-data">Example Data</a></li>
+  <li><a href="#results-comparison" id="toc-results-comparison" class="nav-link" data-scroll-target="#results-comparison">Results Comparison</a></li>
+  <li><a href="#summary-and-recommendation" id="toc-summary-and-recommendation" class="nav-link" data-scroll-target="#summary-and-recommendation">Summary and Recommendation</a></li>
+  <li><a href="#additional-references" id="toc-additional-references" class="nav-link" data-scroll-target="#additional-references">Additional References</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -207,7 +213,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Kruskal Wallis in Python</h1>
+<h1 class="title">R vs SAS vs StatXact - Wilcoxon signed-rank test</h1>
 </div>
 
 
@@ -224,79 +230,115 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
+<section id="wilcoxon-signed-rank-test-in-r-sas-and-statxact" class="level1">
+<h1>Wilcoxon signed-rank test in R, SAS and StatXact</h1>
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>The Kruskal-Wallis test is a non-parametric equivalent to the one-way ANOVA. For this example, the data used is a subset of the iris dataset, testing for difference in sepal width between species of flower.</p>
-<div id="14324eaa" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the data</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Species'</span>: [<span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'setosa'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'versicolor'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>, <span class="st">'virginica'</span>],</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Sepal_Width'</span>: [<span class="fl">3.4</span>, <span class="fl">3.0</span>, <span class="fl">3.4</span>, <span class="fl">3.2</span>, <span class="fl">3.5</span>, <span class="fl">3.1</span>, <span class="fl">2.7</span>, <span class="fl">2.9</span>, <span class="fl">2.7</span>, <span class="fl">2.6</span>, <span class="fl">2.5</span>, <span class="fl">2.5</span>, <span class="fl">3.0</span>, <span class="fl">3.0</span>, <span class="fl">3.1</span>, <span class="fl">3.8</span>, <span class="fl">2.7</span>, <span class="fl">3.3</span>]</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the DataFrame</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>iris_sub <span class="op">=</span> pd.DataFrame(data)</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Print the DataFrame</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(iris_sub)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>       Species  Sepal_Width
-0       setosa          3.4
-1       setosa          3.0
-2       setosa          3.4
-3       setosa          3.2
-4       setosa          3.5
-5       setosa          3.1
-6   versicolor          2.7
-7   versicolor          2.9
-8   versicolor          2.7
-9   versicolor          2.6
-10  versicolor          2.5
-11  versicolor          2.5
-12   virginica          3.0
-13   virginica          3.0
-14   virginica          3.1
-15   virginica          3.8
-16   virginica          2.7
-17   virginica          3.3</code></pre>
+<p>This section compares the implementation of Wilcoxon signed-rank test in R, SAS and StatXact.</p>
+</section>
+<section id="general-comparison-table" class="level2">
+<h2 class="anchored" data-anchor-id="general-comparison-table">General Comparison Table</h2>
+<p>The following table provides an overview of the methods support comparability between R, SAS and StatXact for the new analysis point.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 23%">
+<col style="width: 7%">
+<col style="width: 8%">
+<col style="width: 10%">
+<col style="width: 49%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Analysis</th>
+<th>Supported in R</th>
+<th>Supported in SAS</th>
+<th>Supported in StatXact</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Wilcoxon signed-rank test with p value only</td>
+<td>YES</td>
+<td>YES</td>
+<td>YES</td>
+<td>Available in all, but results match only between R and StatXact. See details on p value on each software page.</td>
+</tr>
+<tr class="even">
+<td>Hodges-Lehmann estimator</td>
+<td>YES</td>
+<td>NO</td>
+<td>YES</td>
+<td>Available in R and StatXact only. In SAS needs to be derived manually.</td>
+</tr>
+<tr class="odd">
+<td><p>Exact/non-exact method</p>
+<p>Non-exact method with/without continuity correction</p></td>
+<td><p>YES</p>
+<p>YES</p></td>
+<td><p>NO</p>
+<p>NO</p></td>
+<td><p>YES</p>
+<p>NO</p></td>
+<td><p>Stats package in R and StatXact support both options. SAS applies a default one depending on N.</p>
+<p>Only Stats package in R support both options.</p></td>
+</tr>
+<tr class="even">
+<td>Dataset with “0” differences</td>
+<td>YES</td>
+<td>NO</td>
+<td>YES</td>
+<td>SAS ignores 0s. In R only Coin package supports.</td>
+</tr>
+<tr class="odd">
+<td>Dataset with ties</td>
+<td>YES</td>
+<td>YES</td>
+<td>YES</td>
+<td>Supported in SAS and StatXact. In R only in Coin.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="example-data" class="level2">
+<h2 class="anchored" data-anchor-id="example-data">Example Data</h2>
+<p>Analysis will be conducted on the example of anonymized data from 2-period, cross-over study comparing treatments A and B in patients with asthma and acute airway obstruction induced by repeated mannitol challenges.</p>
+<p>For the purpose of the results comparison we will consider a specific case where the dataset has no ties and N (number of observations) = 240.</p>
+<p>Wilcoxon signed rank test was applied to analyse the time to return to baseline FEV1 post-mannitol challenge 2. Median difference, p value and 95% CI were provided using the Hodges-Lehmann estimator.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>blood_p <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../data/WilcoxonSignedRank_TTR.csv"</span>, <span class="at">dec =</span> <span class="st">"."</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(blood_p)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="implementing-kruskal-wallis-in-python" class="level2">
-<h2 class="anchored" data-anchor-id="implementing-kruskal-wallis-in-python">Implementing Kruskal-Wallis in Python</h2>
-<p>The Kruskal-Wallis test can be implemented in Python using the kruskal function from scipy.stats. The null hypothesis is that the samples are from identical populations.</p>
-<div id="64d241b8" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.stats <span class="im">import</span> kruskal</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Separate the data for each species</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>setosa_data <span class="op">=</span> iris_sub[iris_sub[<span class="st">'Species'</span>] <span class="op">==</span> <span class="st">'setosa'</span>][<span class="st">'Sepal_Width'</span>]</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>versicolor_data <span class="op">=</span> iris_sub[iris_sub[<span class="st">'Species'</span>] <span class="op">==</span> <span class="st">'versicolor'</span>][<span class="st">'Sepal_Width'</span>]</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>virginica_data <span class="op">=</span> iris_sub[iris_sub[<span class="st">'Species'</span>] <span class="op">==</span> <span class="st">'virginica'</span>][<span class="st">'Sepal_Width'</span>]</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform the Kruskal-Wallis H-test</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>h_statistic, p_value <span class="op">=</span> kruskal(setosa_data, versicolor_data, virginica_data)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the degrees of freedom</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>k <span class="op">=</span> <span class="bu">len</span>(iris_sub[<span class="st">'Species'</span>].unique())</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> k <span class="op">-</span> <span class="dv">1</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"H-statistic:"</span>, h_statistic)</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"p-value:"</span>, p_value)</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Degrees of freedom:"</span>, df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>H-statistic: 10.922233820459285
-p-value: 0.0042488075570347485
-Degrees of freedom: 2</code></pre>
-</div>
-</div>
+<section id="results-comparison" class="level2">
+<h2 class="anchored" data-anchor-id="results-comparison">Results Comparison</h2>
 </section>
-<section id="results" class="level2">
-<h2 class="anchored" data-anchor-id="results">Results</h2>
-<p>As seen above, Python outputs the Kruskal-Wallis rank sum statistic (10.922), the degrees of freedom (2), and the p-value of the test (0.004249). Therefore, the difference in population medians is statistically significant at the 5% level.</p>
+<section id="summary-and-recommendation" class="level2">
+<h2 class="anchored" data-anchor-id="summary-and-recommendation">Summary and Recommendation</h2>
+<ul>
+<li>If you need a flexibility of choosing between methods (exact, non-exact etc) in one software, go for R or StatXact.</li>
+<li>If you need a detailed documentation explaining applied methods, go for StatXact.</li>
+<li>If you only need p value and don’t mind a default exact or t-Student distribution depending on N, you can choose SAS.</li>
+<li>If you need 0s to contribute to the analysis, go for Coin package in R or StatXact.</li>
+<li>If your dataset has ties, go for Coin package in R or StatXact.</li>
+</ul>
+</section>
+<section id="additional-references" class="level2">
+<h2 class="anchored" data-anchor-id="additional-references">Additional References</h2>
+<p>Details of how to implement the methods in the discussed software are available below:</p>
+<p><strong>R:</strong></p>
+<ul>
+<li>Check how to perform this analysis in R <a href="../R/wilcoxonsr_hodges_lehman.html">here</a></li>
+</ul>
+<p><strong>SAS &amp; StatXact:</strong></p>
+<ul>
+<li>Check how to perform this analysis in SAS &amp; StatXact <a href="../SAS/wilcoxonsr_HL.html">here</a></li>
+</ul>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
