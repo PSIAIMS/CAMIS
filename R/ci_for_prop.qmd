@@ -4,9 +4,11 @@ title: "Confidence Intervals for Proportions in R"
 
 ## Introduction
 
-There are several ways to calculate a confidence interval (CI) for a proportion. You need to select the method based on if you have a 1 sample proportion, 2 independent samples proportions or 2 matched samples and you want a CI for the difference in proportions. The method selected is also dependent on whether your proportion is close to 0 or 1 (or near to the 0.5 midpoint), and your sample size.
+There are several ways to calculate a confidence interval (CI) for a proportion. You need to select the method based on if you have a 1 sample proportion (1 proportion calculated from 1 group of subjects), or if you have 2 samples and you want a CI for the difference in the 2 proportions. The difference in proportion can come from either 2 independent samples (different subjects in each of the 2 groups), or can be matched (the same subject with 1 result in 1 group and 1 result in the other group \[paired data\]).
 
-For more information about these methods in R & SAS, including which performs better in different scenarios see [Five Confidence Intervals for Proportions That You Should Know about](https://towardsdatascience.com/five-confidence-intervals-for-proportions-that-you-should-know-about-7ff5484c024f)^1^ and [Confidence Intervals for Binomial Proportion Using SAS](https://www.lexjansen.com/sesug/2015/103_Final_PDF.pdf)^2^
+The method selected is also dependent on whether your proportion is close to 0 or 1 (or near to the 0.5 midpoint), and your sample size.
+
+For more information about these methods, including which performs better in different scenarios see [Five Confidence Intervals for Proportions That You Should Know about](https://towardsdatascience.com/five-confidence-intervals-for-proportions-that-you-should-know-about-7ff5484c024f)^1^.
 
 ## Data used
 
@@ -17,7 +19,6 @@ The adcibc data stored [here](../data/adcibc.csv) was used in this example, crea
 #| include: FALSE
 library(tidyverse)
 library(cardx)
-library(PropCIs)
 adcibc2<-read_csv("../data/adcibc.csv")
 
 adcibc<- adcibc2 %>% 
@@ -25,23 +26,13 @@ adcibc<- adcibc2 %>%
         mutate(resp=if_else(AVAL>4,"Yes","No")) %>% 
         mutate(respn=if_else(AVAL>4,1,0)) %>% 
         mutate(trt=if_else(TRTP=="Placebo","PBO","ACT"))%>% 
-        select(trt,resp, respn) 
+        mutate(trtn=if_else(TRTP=="Placebo",0,1))%>% 
+        select(trt,trtn,resp, respn) 
 
-# cardx package required a vector with 0 and 1s
-pbo<- filter(adcibc,trt=="PBO") %>% 
-      select(respn)
-pbo2<-pbo$respn
-
+# cardx package required a vector with 0 and 1s for a single proportion CI
 act<-filter(adcibc,trt=="ACT") %>% 
      select(respn)
 act2<-act$respn
-
-#PropsCIs package required just the number of events & total number
-peve<-sum(pbo2)
-ptot<-length(pbo2)
-aeve<-sum(act2)
-atot<-length(act2)
-
 ```
 
 The below shows that for the Actual Treatment, there are 36 responders out of 154 subjects = 0.234 (23.4% responders).
@@ -50,16 +41,20 @@ The below shows that for the Actual Treatment, there are 36 responders out of 15
 #| echo: FALSE
 adcibc %>% 
   group_by(trt,resp) %>% 
-  tally()
+  tally() 
 ```
 
 ## Packages
 
 The {cardx} package is an extension of the {cards} package, providing additional functions to create Analysis Results Data Objects (ARDs)^1^. It was developed as part of {NEST} and pharmaverse. This package requires the binary endpoint to be a logical (TRUE/FALSE) vector or a numeric/integer coded as (0, 1) with 1 (TRUE) being the success you want to calculate the confidence interval for.
 
+If calculating the CI for a difference in proportions, the package requires both the response and the treatment variable to be numeric/integer coded as (0, 1) (or logical vector).
+
+Instead of the code presented below, you can use `ard_categorical_ci(data, variables=resp, method ='wilson')` for example. This invokes the code below but returns an analysis results dataset format as the output. Methods included are waldcc, wald, clopper-pearson, wilson, wilsoncc, strat_wilson, strat_wilsoncc, agresti-coull and jeffreys.
+
 Code example: `proportion_ci_clopper_pearson(<resp_var>,conf.level=0.95) %>%    as_tibble()`
 
-Example data format needed for {cardx}
+Example data format needed for {cardx} for a single proportion CI
 
 ```{r}
 #| echo: FALSE
@@ -67,24 +62,22 @@ Example data format needed for {cardx}
 head(act2,30)
 ```
 
-The {PropCIs} package produces CIs for methods such as Blaker and Midp which aren't available in {cardx} but are available in SAS. It also calculates CIs for Clopper-Pearson, Wald, Wilson, Agresti-coull and these align in results to cardx to at least the 7th decimal place. The {PropsCIs} package requires just the number of events (numerator number of successes) & total number of subjects (denominator). Given Blaker and Midp are rarely used in practice, detail is not provided here, but were found to agree with SAS to the 5th decimal place.
+The {PropCIs} package produces CIs for methods such as Blaker's exact method and Midp which aren't available in {cardx} but are available in SAS. We found results agreed with SAS to the 5th decimal place. The package also calculates CIs for Clopper-Pearson, Wald, Wilson, Agresti-coull and these align to results obtained in cardx to at least the 7th decimal place. The {PropsCIs} package requires just the number of events (numerator number of successes) & total number of subjects (denominator) as an input dataset. Given Blaker and Midp are rarely used in practice, and {PropsCIs} isn't a package commonly downloaded from CRAN, further detail is not provided here.
 
-Code example: `exactci(x=<count of successes> , n=<Total>, conf.level=0.95)`
+Code example for Clopper-pearson:\
+`exactci(x=<count of successes> , n=<Total>, conf.level=0.95)`
 
-Example data format needed for {PropCIs}
+Code example for Mid P method:\
+`midPci(x=<count of successes> , n=<Total>, conf.level=0.95)`
 
-```{r}
-#| echo: FALSE
-#Data for use with PropsCIs takes the format nn/NN total success/total
-head(aeve,10)
-head(atot,10)
-```
+Code example for Blaker's exact method:\
+`blakerci(x=<count of successes> , n=<Total>, conf.level=0.95, tolerance=1e-05)`
 
-## Methods for Calculating Confidence Intervals for a single proportion using cardx and PropCIs
+## Methods for Calculating Confidence Intervals for a single proportion using cardx
 
 For more technical derivation and reasons for use of each of the methods listed below, see the corresponding [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html).
 
-Let's start by calculating a Confidence interval for the proportion of successes observed in the Active Treatment group.
+Let's start by calculating a Confidence interval for the proportion of successes observed in the Active Treatment group (a single sample).
 
 ### Clopper-Pearson (Exact or binomial CI) Method
 
@@ -98,23 +91,25 @@ proportion_ci_clopper_pearson(act2,conf.level=0.95) %>%
 
 ```
 
-### Normal Approximation (Wald or asymptotic CI) Method
+### Normal Approximation Method (Also known as the Wald or asymptotic CI Method) 
 
 In large random samples from independent trials, the sampling distribution of proportions approximately follows the normal distribution. The expectation of a sample proportion is the corresponding population proportion. Therefore, based on a sample of size $n$, a $(1-\alpha)\%$ confidence interval for population proportion can be calculated using normal approximation as follows:
 
 $p\approx \hat p \pm z_\alpha \sqrt{\hat p(1-\hat p)}/{n}$, where $\hat p$ is the sample proportion, $z_\alpha$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to level $\alpha$, and $\sqrt{\hat p(1-\hat p)}/{n}$ is the standard error.
 
-## Example code
+For more technical information see the corresponding [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html).
 
-The following code calculates a confidence interval for a binomial proportion using normal approximation equation manually. This is replicated exactly using the `` `cardx::proportion_ci_wald function` `` which also allows the continuity correction to be applied.
+#### Example code
+
+The following code calculates a confidence interval for a binomial proportion using normal approximation equation manually. This is replicated exactly using the `cardx::proportion_ci_wald function` which also allows the continuity correction to be applied.
 
 ```{r}
     # sample proportion by trt
 summary <- adcibc %>% 
-           group_by(trt,resp) %>% 
+           filter(trt=="ACT") %>% 
+           group_by(resp) %>% 
            tally()  %>% 
            ungroup() %>% 
-           group_by(trt) %>% 
            mutate(total=sum(n)) %>% 
            mutate(p=n/total)
 
@@ -135,11 +130,11 @@ proportion_ci_wald(act2,conf.level=0.95,correct=TRUE) %>%
   as_tibble()
 ```
 
-### Wilson (score) Method
+### Wilson Method (Also known as the Score method or the Altman, Newcombe method^3^ )
 
-The cardx package calculates the Wilson (score) method by calling stats::prop.test() function.
+The cardx package calculates the Wilson (score) method by calling stats::prop.test() function. This method is often used as a compromise between the Clopper-Pearson and the Wald given it was found to be accurate for most parameter values (even those close to 0 and 1), and it does not suffer from being over-conservative. For more technical information see the corresponding [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html).
 
-The package also contains a function for proportion_ci_strat_wilson() which calculates the stratified Wilson CIs for unequal proportions as described [here](https://search.r-project.org/CRAN/refmans/cardx/html/proportion_ci.html)
+The package also contains a function for proportion_ci_strat_wilson() which calculates the stratified Wilson CIs for unequal proportions as described on page 47 [here](https://cran.r-universe.dev/cardx/cardx.pdf).
 
 ```{r}
 #cardx package Wilson method without continuity correction
@@ -165,18 +160,6 @@ proportion_ci_agresti_coull(act2,conf.level=0.95) %>%
 
 ```
 
-```         
-```
-
-### Binomial based MidP Method
-
-As the MidP method is not available in {cardx}, the PropCIs package example is shown below. However, in practice this method is rarely used.
-
-```{r}
-#PropCIs package Mid P method
-midPci(x=aeve, n=atot, conf.level=0.95)
-```
-
 ### Jeffreys Method
 
 Jeffreys method is a particular type of Bayesian Highest Probability Density (HPD) Method. For proportions, the beta distribution is generally used for the prior, which consists of two parameters alpha and beta. Setting alpha=beta=0.5 is called Jeffrey's prior. NOTE: if you want to use any other priors, you can use `binom.bayes` which estimates a credible interval for proportions.
@@ -187,33 +170,43 @@ proportion_ci_jeffreys(act2,conf.level=0.95) %>%
   as_tibble()
 ```
 
-### Blaker Method using PropCIs
-
-The blaker method is available in the the package PropCIs. In practice this method is rarely used.
-
-```{r}
-blakerci(aeve, atot, conf.level=0.95, tolerance=1e-05)
-
-```
-
-### Altman Newcombe Reccomended Method 
-
-Available by manual calculations in R only. See [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html) for the equations.
-
 ## Methods for Calculating Confidence Intervals for a matched pair proportion
 
-When you have 2 measurements on the same subject, the 2 sets of measures are not independent and you have matched pair of responses which result in 2 proportions which are not independent.
+When you have 2 measurements on the same subject, the 2 sets of measures are not independent and you have matched pair of responses.
 
-A suitable method for matched pair proportions should be used. Altman et al^3^ describes the equations for both the normal approximation and Altman Newcombe recommended method for Two sample paired data. In practice this is not commonly used, since there are other methods of testing association used for paired data analysis and cross-over style trials.
+It is not usual to calculate the proportions separately for these responses, and then take a difference, instead other statistical methods such as Odds ratios, Risk Ratios and confidence intervals for those statistics are used.
 
-## Methods for Calculating Confidence Intervals for 2 independent samples proportion 
+## Methods for Calculating Confidence Intervals for 2 independent samples proportion using cardx
 
-### Altman Newcombe Recommended Method 
+This [paper](https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf)^4^ describes many methods for the calculation of confidence intervals for 2 independent proportions. The most commonly used are: Wald with continuity correction and the Wilson with continuity correction.
 
-Available by manual calculations in R only. See [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html) for the equations. NOTE: the [documentation](https://search.r-project.org/CRAN/refmans/MKinfer/html/binomDiffCI.html) for `binomDiffCI` implies that this is the same method as the Wilson method, however replication using the data in our example did not find that to be the same and that this is a different method.
+### Normal Approximation Method (Also known as the Wald or asymptotic CI Method)
+
+For more technical information see the corresponding [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html).
+
+#### Example code
+
+`cardx::ard_stats_prop_test function` uses `stats::prop.test` which also allows a continuity correction to be applied. More research is needed into this method.
+
+Although this website [here](https://rdrr.io/r/stats/prop.test.html) and this one [here](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/prop.test) both reference Newcombe for the CI that this function uses, replication of the results by hand and compared to SAS show that the results below match the Normal Approximation (Wald method) not the Newcome method? Further research is needed into this topic.
+
+Both the Treatment variable (ACT,PBO) and the Response variable (Yes,No) have to be numeric (0,1) or Logit (TRUE,FALSE) variables.
+
+```{R}
+adcibc2<-select(adcibc,trtn,respn)
+cardx::ard_stats_prop_test(data=adcibc2, by=trtn, variables=respn, conf.level = 0.95, correct=FALSE) 
+cardx::ard_stats_prop_test(data=adcibc2, by=trtn, variables=respn, conf.level = 0.95, correct=TRUE) 
+```
+
+### Wilson Method (Also known as the Score method or the Altman, Newcombe method^3^ )
+
+For more technical information see the corresponding [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html).
+
+Further research is needed into this topic.
 
 ## References
 
 1.  [pharmaverse cardx package](https://insightsengineering.github.io/cardx/main/#:~:text=The%20%7Bcardx%7D%20package%20is%20an%20extension%20of%20the,Data%20Objects%20%28ARDs%29%20using%20the%20R%20programming%20language.)
 2.  [PropCIs package](https://cran.r-project.org/web//packages/PropCIs/PropCIs.pdf)
 3.  D. Altman, D. Machin, T. Bryant, M. Gardner (eds). Statistics with Confidence: Confidence Intervals and Statistical Guidelines, 2nd edition. John Wiley and Sons 2000.
+4.  <https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf>
