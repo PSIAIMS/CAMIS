@@ -4,7 +4,7 @@ title: "Confidence intervals for Proportions in SAS"
 
 ## Introduction
 
-There are several ways to calculate a confidence interval (CI) for a proportion. You need to select the method based on if you have a 1 sample proportion (1 proportion calculated from 1 group of subjects), or if you have 2 samples and you want a CI for the difference in the 2 proportions. The difference in proportion can come from either 2 independent samples (different subjects in each of the 2 groups), or can be matched (the same subject with 1 result in 1 group and 1 result in the other group \[paired data\]).
+There are several ways to calculate a confidence interval (CI) for a proportion. You need to select the method based on if you have a 1 sample proportion (e.g 1 proportion calculated from 1 group of subjects), or if you have 2 samples and you want a CI for the difference in the 2 proportions. The difference in proportion can come from either 2 independent samples (e.g different subjects in each of the 2 groups), or can be matched (e.g the same subject with 1 result in 1 group and 1 result in the other group \[paired data\]).
 
 The method selected is also dependent on whether your proportion is close to 0 or 1 (or near to the 0.5 midpoint), and your sample size.
 
@@ -68,7 +68,7 @@ Normal approximation method is output by SAS as the default method, but you can 
 
 SAS also produces a continuity correction version of the Wald method, you can specify it using `BINOMIAL(LEVEL="Yes" CL=WALD(CORRECT));`
 
-### Wilson Method (Also known as the Score method or the Altman, Newcombe method)^7^
+### Wilson Method (Also known as the Score method or the Newcombe method)^7^
 
 The Wilson (Score) method is an extension to the normal approximation, but commonly used where the proportion is close to 0 or 1 (i.e. 0% or 100% responding). This is because the normal approximation can be unreliable at the tail ends of the distribution, and as such the Wilson method can provide more reliable CIs. The method can be derived with or without a Yate's continuity correction. Applying the continuity correction is recommended when you have a small sample size or the estimated proportion is close to the tail ends (0 or 1). Applying Yate's correction is considered more conservative (sometimes too conservative), but it's not as conservative as Clopper-Pearson approach. Not that the Wilson method is not boundary-respecting so you can get confidence interval \<0 or \>1.
 
@@ -77,9 +77,7 @@ $$ z{_1-\alpha/2} $$For example, for 95% confidence intervals, alpha=0.05, using
 
 $$ A= 2r+z^2$$
 
-$$ B=z\sqrt(z^2 + 4rq) $$ $$ C=2(n+z^2) $$The Altman Newcombe method calculates the confidence interval (Low to High) as: (A-B)/C to (A+B)/C
-
-Available by manual calculations in SAS only.
+$$ B=z\sqrt(z^2 + 4rq) $$ $$ C=2(n+z^2) $$The method calculates the confidence interval (Low to High) as: (A-B)/C to (A+B)/C
 
 A = 2 \* 36 + 1.96\^2 = 75.8416
 
@@ -95,7 +93,7 @@ CI = 0.17390 to 0.30659
 
 Wilson (score) method is output by SAS using `BINOMIAL(LEVEL="Yes" CL=Wilson);`
 
-SAS also produces a continuity correction version of the Wald method, you can specify it using `BINOMIAL(LEVEL="Yes" CL=WALD(CORRECT));`
+SAS also produces a continuity correction version of the Wilson method, you can specify it using `BINOMIAL(LEVEL="Yes" CL=WILSON(CORRECT));`
 
 The only differences in the equations to calculate the Wilson score with continuity correction is that the equations for A and B are changed as follows:
 
@@ -204,9 +202,95 @@ SAS output often rounds to 3 or 4 decimal places in the output window, however t
 
 ## Methods for Calculating Confidence Intervals for a matched pair proportion
 
-When you have 2 measurements on the same subject, the 2 sets of measures are not independent and you have matched pair of responses.
+You may experience paired data in any of the following types of situation:
 
-It is not usual to calculate the proportions separately for these responses, and then take a difference, instead other statistical methods such as Odds ratios, Risk Ratios and confidence intervals for those statistics are used.
+-   Tumour assesssments classified as Progressive Disease or Not Progressive Disease performed by an Investigator and separately by an independent panel.
+
+-   A paired case-control study (each subject taking active treatment is matched to a patient taking control)
+
+-   A cross-over trial where the same subjects take both medications
+
+In all these cases, the calculated proportions for the 2 groups are not independent.
+
+Using a cross over study as our example, a 2 x 2 table can be formed as follows:
+
++-----------------------+---------------+---------------+---------------+
+|                       | Placebo\      | Placebo\      | Total         |
+|                       | Response= Yes | Response = No |               |
++=======================+===============+===============+===============+
+| Active Response = Yes | r             | s             | r+s           |
++-----------------------+---------------+---------------+---------------+
+| Active Response = No  | t             | u             | t+u           |
++-----------------------+---------------+---------------+---------------+
+| Total                 | r+t           | s+u           | N = r+s+t+u   |
++-----------------------+---------------+---------------+---------------+
+
+The proportions of subjects responding on each treatment are:
+
+Active: $\hat p_1 = (r+s)/n$ and Placebo: $\hat p_2= (r+t)/n$
+
+Difference between the proportions for each treatment are: $D=p1-p2=(s-t)/n$
+
+### Normal Approximation Method (Also known as the Wald or asymptotic CI Method)
+
+In large random samples from independent trials, the sampling distribution of the difference between two proportions approximately follows the normal distribution. Hence the SE for the difference and 95% confidence interval can be calculated using the following equations.
+
+$SE(D)=\frac{1}{n} * sqrt(s+t-\frac{(s-t)^2}{n})$
+
+$D-z_\alpha * SE(D)$ to $D+z_\alpha * SE(D)$
+
+where $z_\alpha$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to level $\alpha$,
+
+### Wilson Method (Also known as the Score method or the Altman, Newcombe method^7^ )
+
+Derive the confidence intervals using the Wilson Method equations above for each of the individual single samples 1 and 2.
+
+Let l1 = Lower CI for sample 1, and u1 be the upper CI for sample 1.
+
+Let l2 = Lower CI for sample 2, and u2 be the upper CI for sample 2.
+
+We then define $\phi$ which is used to correct for $\hat p_1$ and $\hat p_2$ not being independent. As the samples are related, $\phi$ is usually positive and thus makes the confidence interval smaller (narrower).
+
+If any of r+s, t+u, r+t, s+u are zero, then set $\phi$ to be 0.
+
+Otherwise we calculate A, B and C, and $\phi=C / sqrt A$
+
+In the above: $A=(r+s)(t+u)(r+t)(s+u)$ and $B=(ru-st)$
+
+To calculate C follow the table below.
+
++---------------------------+----------------+
+| Condition of B            | Set C equal to |
++===========================+================+
+| If B is greater than n/2  | B - n/2        |
++---------------------------+----------------+
+| If B is between 0 and n/2 | 0              |
++---------------------------+----------------+
+| If B is less than 0       | B              |
++---------------------------+----------------+
+
+Let D = p1-p2 (the difference between the observed proportions of responders)
+
+The Confidence interval for the difference between two population proportions is: $D - sqrt((p_1-l_1)^2)-2\phi(p_1-l_1)(u_2-p_2)+(u_2-p_2)^2 )$ to
+
+$D + sqrt((p_2-l_2)^2)-2\phi(p_2-l_2)(u_1-p_1)+(u_1-p_1)^2 )$
+
+## Example Code using PROC FREQ
+
+SAS Proc Freq has 3 methods for analysis of paired data (Common risk difference).
+
+The default method is Mantel-Haenszel confidence limits. SAS can also Score (Miettinen-Nurminen) CIs and Stratified Newcombe CIs (constructed from stratified Wilson Score CIs).
+
+See [here](https://support.sas.com/documentation/cdl/en/procstat/67528/HTML/default/viewer.htm#procstat_freq_details63.htm) for equations.
+
+```{R}
+#\| eval: false 
+
+
+proc freq data=adcibc order=data; 
+table trt*resp/commonriskdiff(cl=MH NEWCOMBE); 
+run;
+```
 
 ## Methods for Calculating Confidence Intervals for 2 independent samples proportion
 
@@ -244,13 +328,15 @@ Let l1 = Lower CI for sample 1, and u1 be the upper CI for sample 1.
 
 Let l2 = Lower CI for sample 2, and u2 be the upper CI for sample 2.
 
-Let D = p1-p1 (the difference between the observed proportions)
+Let D = p1-p2 (the difference between the observed proportions)
 
 The Confidence interval for the difference between two population proportions is: $$ D - sqrt((p_1-l_1)^2)+(u_2-p_2)^2 )\quad to\quad D + sqrt((p_2-l_2)^2)+(u_1-p_1)^2 )   $$
 
 ## Example Code using PROC FREQ
 
-It is important to check the output to ensure that you are modelling Active - Placebo, and response = Yes (not Response=No). By default SAS sorts alphabetically, but you can change this by sorting the dataset (here by trt, then descending resp), and then using `order=data` in the proc freq. This tells SAS to use the order you have sorted the data by. SAS confirms this by saying "Difference is (Row 1 - Row 2)" and "Column 1 (resp=Yes)". Note how in the SAS output, it calls the requested 'wilson' method 'Newcombe' in the output.
+It is important to check the output to ensure that you are modelling Active - Placebo, and response = Yes (not Response=No). By default SAS sorts alphabetically and calculates CI's for the first column. You can change this by using the `COLUMN= Option` on riskdiff or by sorting the dataset (here by trt, then descending resp), and then using `order=data` in the proc freq. This tells SAS to use the order you have sorted the data by. SAS confirms this by saying "Difference is (Row 1 - Row 2)" and "Column 1 (resp=Yes)". Note how in the SAS output, it calls the requested 'wilson' method 'Newcombe' in the output.
+
+Options for riskdiff(CL=XXX) consist of AC:Agresti-Caffo, EXACT=exact, HA:Hauck-Anderson, MN or SCORE:Miettinen-Nurminen (another type of Score CI), WILSON or NEWCOMBE: Wilson method described above, and WALD: normal approximation wald method described above. Examples using Wald and Wilson are shown below with and without continuity correction.
 
 ```{R}
 #| eval: false
