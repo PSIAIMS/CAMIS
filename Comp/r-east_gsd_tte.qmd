@@ -21,7 +21,6 @@ One additional computational difference to note for EAST vs gsDesign/gsDesign2 i
 
 Below we provide an example of reproducing EAST results from [this vignette](https://psiaims.github.io/CAMIS/East/gsd-tte.html) using gsDesign/gsDesign2/rpact. As shown in the example, gsDesign2 and rpact can reproduce EAST calculations for GSD boundaries, while gsDesign results have minor differences.
 
-
 ## Design example
 
 We assume that a GSD is utilized for progression-free survival (PFS) endpoint. It will be tested at one interim analysis (IA) for both efficacy and non-binding futility and then at final analysis (FA). O'Brein-Fleming spending function will be used for efficacy testing and Hwang-Shih-Decani spending function with $\gamma = -10$ will be used for futility.
@@ -57,7 +56,7 @@ Note that, in EAST the number of target events is reported as an integer, howeve
 
 For ease of comparison the results from EAST are summarized below:
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 library(flextable)
 pfs_east <- tibble::tribble(
   ~analysis, ~value, ~eff_125, ~fut_125,
@@ -121,24 +120,30 @@ pfs_gsDesign |> gsBoundSummary()
 
 -   gsDesign vs EAST comparison using absolute differences:
 
-```{r}
+```{r, echo=FALSE}
 digit_comp <- 4
 pfs_gsDesign |>
   gsBoundSummary(digits = digit_comp) |>
   dplyr::select(eff_gs = Efficacy, fut_gs = Futility) |>
-  dplyr::bind_cols(pfs_east |>
-                     dplyr::select(value, analysis, eff_east = eff_125, fut_east = fut_125) |>
-                     dplyr::mutate(
-                       eff_east = ifelse(value == 'Z', -eff_east, eff_east),
-                       fut_east = ifelse(value == 'Z', -fut_east, fut_east)
-                     )
-                   ) |>
+  dplyr::bind_cols(
+    pfs_east |> 
+      dplyr::select(
+        value, analysis, eff_east = eff_125, fut_east = fut_125
+        ) |>
+      dplyr::mutate(
+        eff_east = ifelse(value == 'Z', -eff_east, eff_east),
+        fut_east = ifelse(value == 'Z', -fut_east, fut_east)
+        )
+    ) |>
   dplyr::mutate(
     diff_eff_gsDesign =  abs(eff_east - eff_gs),
     diff_fut_gsDesign =  abs(fut_east - fut_gs)
 
     ) |>
-  dplyr::select(Analysis = analysis, Value = value, diff_eff_gsDesign, diff_fut_gsDesign) |>
+  dplyr::select(
+    Analysis = analysis, Value = value, diff_eff_gsDesign,
+    diff_fut_gsDesign
+    ) |>
   flextable::flextable() |>
   flextable::autofit() |>
     flextable::set_header_labels(
@@ -147,8 +152,14 @@ pfs_gsDesign |>
   ) |>
   flextable::hline(i = c(5, 10)) |>
   flextable::colformat_double(j = c(3, 4), digits = digit_comp) |>
-  flextable::bg(~ round(abs(diff_eff_gsDesign), digit_comp) != 0,  ~ diff_eff_gsDesign, bg = '#6ECEB2') |>
-  flextable::bg(~ round(abs(diff_fut_gsDesign), digit_comp) != 0,  ~ diff_fut_gsDesign, bg = '#6ECEB2') 
+  flextable::bg(
+    ~ round(abs(diff_eff_gsDesign), digit_comp) != 0,
+    ~ diff_eff_gsDesign, bg = '#6ECEB2'
+    ) |>
+  flextable::bg(
+    ~ round(abs(diff_fut_gsDesign), digit_comp) != 0,  ~
+      diff_fut_gsDesign, bg = '#6ECEB2'
+    ) 
 ```
 
 ### gsDesign2 code
@@ -308,23 +319,29 @@ pfs_gsDesign2 |>
 
 -   gsDesign2 vs EAST comparison using absolute differences:
 
-```{r}
+```{r, echo=FALSE}
 pfs_gsDesign2 |>
   as_gs()|>
   dplyr::select(eff_gs2 = Efficacy, fut_gs2 = Futility) |>
-  dplyr::bind_cols(pfs_east |>
-                     dplyr::select(value, analysis, eff_east = eff_125, fut_east = fut_125) |>
-                     dplyr::mutate(
-                       eff_east = ifelse(value == 'Z', -eff_east, eff_east),
-                       fut_east = ifelse(value == 'Z', -fut_east, fut_east)
-                       )
-                   ) |>
+  dplyr::bind_cols(
+    pfs_east |>
+      dplyr::select(
+        value, analysis, eff_east = eff_125, fut_east = fut_125
+        ) |>
+      dplyr::mutate(
+        eff_east = ifelse(value == 'Z', -eff_east, eff_east),
+        fut_east = ifelse(value == 'Z', -fut_east, fut_east)
+        )
+    ) |>
   dplyr::mutate(
     diff_eff_gsDesign =  abs(eff_east - eff_gs2),
     diff_fut_gsDesign =  abs(fut_east - fut_gs2)
 
     ) |>
-  dplyr::select(Analysis = analysis, Value = value, diff_eff_gsDesign, diff_fut_gsDesign) |>
+  dplyr::select(
+    Analysis = analysis, Value = value,
+    diff_eff_gsDesign, diff_fut_gsDesign
+    ) |>
   flextable::flextable() |>
   flextable::autofit() |>
     flextable::set_header_labels(
@@ -333,8 +350,14 @@ pfs_gsDesign2 |>
   ) |>
   flextable::hline(i = c(5, 10)) |>
   flextable::colformat_double(j = c(3, 4), digits = digit_comp) |>
-  flextable::bg(~ round(abs(diff_eff_gsDesign), digit_comp) != 0,  ~ diff_eff_gsDesign, bg = '#6ECEB2') |>
-  flextable::bg(~ round(abs(diff_fut_gsDesign), digit_comp) != 0,  ~ diff_fut_gsDesign, bg = '#6ECEB2') 
+  flextable::bg(
+    ~ round(abs(diff_eff_gsDesign), digit_comp) != 0,  ~
+      diff_eff_gsDesign, bg = '#6ECEB2'
+    ) |>
+  flextable::bg(
+    ~ round(abs(diff_fut_gsDesign), digit_comp) != 0,  ~
+      diff_fut_gsDesign, bg = '#6ECEB2'
+    ) 
 ```
 
 ### rpact code
@@ -368,8 +391,8 @@ pfs_rpact <- getSampleSizeSurvival(
 kable(summary(pfs_rpact))
 ```
 
-
-```{r}
+-   rpact vs EAST comparison using absolute differences:
+```{r, echo=FALSE}
 pcross_h1_eff <- cumsum(pfs_rpact$rejectPerStage)
 pcross_h1_fut <- pfs_rpact$futilityPerStage[1]
 hr_bound_eff <- pfs_rpact$criticalValuesEffectScale
@@ -379,7 +402,7 @@ pval_fut <- pfs_rpact$futilityBoundsPValueScale
 zval_eff <- pfs_rpact_gsd$criticalValues
 zval_fut <- pfs_rpact_gsd$futilityBounds
 pcross_h0_eff <- pfs_rpact_gsd$alphaSpent
-pcross_h0_fut <- pfs_rpact_gsd$betaSpent
+pcross_h0_fut <- as.numeric(summary(pfs_rpact)$summaryItems[[20]]$values[[1]])
 
 ia1_eff <- c(zval_eff[1], pval_eff[1], hr_bound_eff[1], pcross_h0_eff[1], pcross_h1_eff[1])
 fa_eff <-  c(zval_eff[2], pval_eff[2], hr_bound_eff[2], pcross_h0_eff[2], pcross_h1_eff[2])
@@ -393,19 +416,24 @@ pfs_rpact_sum <- tibble::tibble(
 )
 
 pfs_rpact_sum |>
-  dplyr::bind_cols(pfs_east |>
-                     dplyr::select(value, analysis, eff_east = eff_125, fut_east = fut_125) |>
-                     dplyr::mutate(
-                       eff_east = ifelse(value == 'Z', -eff_east, eff_east),
-                       fut_east = ifelse(value == 'Z', -fut_east, fut_east)
-                       )
-                   ) |>
+  dplyr::bind_cols(
+    pfs_east |>
+      dplyr::select(
+        value, analysis, eff_east = eff_125, fut_east = fut_125
+        ) |>
+      dplyr::mutate(
+        eff_east = ifelse(value == 'Z', -eff_east, eff_east),
+        fut_east = ifelse(value == 'Z', -fut_east, fut_east)
+        )
+    ) |>
   dplyr::mutate(
     diff_eff_gsDesign =  abs(eff_east - rpact_eff),
     diff_fut_gsDesign =  abs(fut_east - rpact_fut)
-
     ) |>
-  dplyr::select(Analysis = analysis, Value = value, diff_eff_gsDesign, diff_fut_gsDesign) |>
+  dplyr::select(
+    Analysis = analysis, Value = value, diff_eff_gsDesign,
+    diff_fut_gsDesign
+    ) |>
   flextable::flextable() |>
   flextable::autofit() |>
     flextable::set_header_labels(
@@ -414,12 +442,16 @@ pfs_rpact_sum |>
   ) |>
   flextable::hline(i = c(5, 10)) |>
   flextable::colformat_double(j = c(3, 4), digits = digit_comp) |>
-  flextable::bg(~ round(abs(diff_eff_gsDesign), digit_comp) != 0,  ~ diff_eff_gsDesign, bg = '#6ECEB2') |>
-  flextable::bg(~ round(abs(diff_fut_gsDesign), digit_comp) != 0,  ~ diff_fut_gsDesign, bg = '#6ECEB2') 
+  flextable::bg(
+    ~ round(abs(diff_eff_gsDesign), digit_comp) != 0,  ~
+      diff_eff_gsDesign, bg = '#6ECEB2'
+    ) |>
+  flextable::bg(
+    ~ round(abs(diff_fut_gsDesign), digit_comp) != 0,  ~
+      diff_fut_gsDesign, bg = '#6ECEB2'
+    ) 
 
 ```
-
- 
 
 ## References
 
