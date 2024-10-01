@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>ANOVA</title>
+<title>Multiple Imputaton: Linear Regression in SAS</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -57,7 +57,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </style>
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
 <script src="../site_libs/quarto-nav/headroom.min.js"></script>
 <script src="../site_libs/clipboard/clipboard.min.js"></script>
 <script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
@@ -101,9 +101,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
-
-<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
 
 
 <link rel="stylesheet" href="../styles.css">
@@ -199,8 +196,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
-  <li><a href="#anova-test-in-python" id="toc-anova-test-in-python" class="nav-link" data-scroll-target="#anova-test-in-python">Anova Test in Python</a></li>
+  <li><a href="#input-dataset-preparation-before-multiple-imputation" id="toc-input-dataset-preparation-before-multiple-imputation" class="nav-link active" data-scroll-target="#input-dataset-preparation-before-multiple-imputation">Input dataset preparation before multiple imputation</a></li>
+  <li><a href="#check-missing-data-patterns" id="toc-check-missing-data-patterns" class="nav-link" data-scroll-target="#check-missing-data-patterns">Check missing data patterns</a></li>
+  <li><a href="#fcs-regression-for-non-monotone-missing-pattern" id="toc-fcs-regression-for-non-monotone-missing-pattern" class="nav-link" data-scroll-target="#fcs-regression-for-non-monotone-missing-pattern">FCS Regression for non-monotone missing pattern</a></li>
+  <li><a href="#monotone-regression-for-monotone-missing-pattern" id="toc-monotone-regression-for-monotone-missing-pattern" class="nav-link" data-scroll-target="#monotone-regression-for-monotone-missing-pattern">Monotone Regression for monotone missing pattern</a></li>
+  <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">Reference</a></li>
   </ul>
 </nav>
     </div>
@@ -209,7 +209,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">ANOVA</h1>
+<h1 class="title">Multiple Imputaton: Linear Regression in SAS</h1>
 </div>
 
 
@@ -226,75 +226,171 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="introduction" class="level2">
-<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>Analysis of VAriance <em>(ANOVA)</em> is a statistical test to measure the difference between means of more than two groups.It is best suited when the data is normally distributed. By partitioning total variance into components, ANOVA unravels relationship between variables and identifies the true source of variation. It can handle multiple factors and their interactions, providing a robust way to better understand intricate relationships.</p>
+<section id="input-dataset-preparation-before-multiple-imputation" class="level2">
+<h2 class="anchored" data-anchor-id="input-dataset-preparation-before-multiple-imputation">Input dataset preparation before multiple imputation</h2>
+<ol type="1">
+<li>Prepare a subset of the analysis dummy dataset, details as below:</li>
+</ol>
+<ul>
+<li><code>USUBJID</code> (length 4): Subject ID.</li>
+<li><code>SEX1N</code>: Sex A random integer between 0 and 1 representing a binary variable (perhaps gender).</li>
+<li><code>AVISITN</code>: Visit number (1 to 5 for each subject).</li>
+<li><code>AVAL</code>: A random value between 1 and 2, with a random 10% chance of being missing.</li>
+</ul>
+<p>As PROC MI requires a horizontal, one record per subject data set. More often than not, the data we impute will come from a vertical ADaM BDS data set. So we need to first transpose the aval with the avisitn as ID (assuming avisitn = 1 to 5),creating transposed variable v1-v5.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>data dummy;</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    length USUBJID <span class="sc">$</span><span class="dv">4</span>;</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    do i<span class="ot">=</span><span class="dv">1</span> to <span class="dv">10</span>;</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>            sex1n<span class="ot">=</span><span class="fu">int</span>(<span class="fu">ranuni</span>(<span class="dv">0</span>)<span class="sc">*</span><span class="dv">2</span>);</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        do j<span class="ot">=</span><span class="dv">1</span> to <span class="dv">5</span>;</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>            USUBJID<span class="ot">=</span><span class="fu">strip</span>(<span class="fu">put</span>(<span class="dv">1000</span><span class="sc">+</span>i,best.));</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>            AVISITN<span class="ot">=</span>j;</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>            AVAL<span class="ot">=</span><span class="fu">round</span>(<span class="dv">1</span><span class="sc">+</span><span class="fu">ranuni</span>(<span class="dv">0</span>),<span class="fl">0.01</span>);</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="fu">ranuni</span>(<span class="dv">0</span>) <span class="sc">&lt;</span><span class="fl">0.1</span> then aval<span class="ot">=</span>.;</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>            output;</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        end;</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    end;</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    drop i j;</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>proc sort data<span class="ot">=</span>dummy; by usubjid sex1n;run;</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>proc transpose data<span class="ot">=</span>dummy out<span class="ot">=</span><span class="fu">dummyt</span>(<span class="at">drop=</span>_name_) prefix<span class="ot">=</span>v;</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    by USUBJID sex1n;</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    id avisitn;</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    var aval;</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>proc print data<span class="ot">=</span><span class="fu">dummyt</span>(<span class="at">obs=</span><span class="dv">5</span>);</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/mi_mar_linear_sas/mi_mar_reg_view_Data.PNG" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
 </section>
-<section id="anova-test-in-python" class="level2">
-<h2 class="anchored" data-anchor-id="anova-test-in-python">Anova Test in Python</h2>
-<p>To perform a one-way ANOVA test in Python we can use the <strong>f_oneway()</strong> function from SciPy library. Similarly, to perform two-way ANOVA test <strong>anova_lm()</strong> function from the statsmodel library is frequently used.</p>
-<p>For this test, we’ll create a data frame called df_disease taken from the SAS documentation. The corresponding data can be found <a href="https://github.com/PSIAIMS/CAMIS/blob/main/data/sas_disease.csv">here</a>. In this experiment, we are trying to find the impact of different drug and disease group on the <code>stem-length</code></p>
-<div id="2e89e134" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> statsmodels.api <span class="im">as</span> sm</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsmodels.formula.api <span class="im">import</span> ols</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the sample data</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">"../data/sas_disease.csv"</span>)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">#perform two-way ANOVA</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> ols(<span class="st">'y ~ C(drug) + C(disease) + C(drug):C(disease)'</span>, data<span class="op">=</span>df).fit()</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>sm.stats.anova_lm(model, typ<span class="op">=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="1">
-<div>
-
-
-<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
-<thead>
-<tr class="header">
-<th data-quarto-table-cell-role="th"></th>
-<th data-quarto-table-cell-role="th">sum_sq</th>
-<th data-quarto-table-cell-role="th">df</th>
-<th data-quarto-table-cell-role="th">F</th>
-<th data-quarto-table-cell-role="th">PR(&gt;F)</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">C(drug)</td>
-<td>3063.432863</td>
-<td>3.0</td>
-<td>9.245096</td>
-<td>0.000067</td>
-</tr>
-<tr class="even">
-<td data-quarto-table-cell-role="th">C(disease)</td>
-<td>418.833741</td>
-<td>2.0</td>
-<td>1.895990</td>
-<td>0.161720</td>
-</tr>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">C(drug):C(disease)</td>
-<td>707.266259</td>
-<td>6.0</td>
-<td>1.067225</td>
-<td>0.395846</td>
-</tr>
-<tr class="even">
-<td data-quarto-table-cell-role="th">Residual</td>
-<td>5080.816667</td>
-<td>46.0</td>
-<td>NaN</td>
-<td>NaN</td>
-</tr>
-</tbody>
-</table>
-
+<section id="check-missing-data-patterns" class="level2">
+<h2 class="anchored" data-anchor-id="check-missing-data-patterns">Check missing data patterns</h2>
+<p>The pattern can be checked using the following code, missing data pattern could be classified as “Monotone” or “Arbitrary”</p>
+<ul>
+<li><p>“Monotone” : The missingness of data follows a specific order such that if a certain variable is missing for a particular observation, all subsequent variables are also missing for that observation. If a dataset has columns X1,X2,…,Xk a monotone missing pattern appears when: If Xj is missing, then Xj+1, Xj+2,…,Xj+3 are missing.</p></li>
+<li><p>“Arbitrary” : The missingness of data does not follow any specific order or predictable sequence. Data can be missing at random points without a discernible pattern.</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ods select MissPattern;</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>proc mi data<span class="ot">=</span>dummyt nimpute<span class="ot">=</span><span class="dv">0</span>;</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>var v1 <span class="sc">-</span> v5;</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>As below figure shows the missingness dose not follow any specific order, obviously the missing pattern is arbitrary and non-monotone missing pattern.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/mi_mar_linear_sas/mi_mar_reg_missing_pattern.PNG" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
 </div>
 </div>
 </div>
+</section>
+<section id="fcs-regression-for-non-monotone-missing-pattern" class="level2">
+<h2 class="anchored" data-anchor-id="fcs-regression-for-non-monotone-missing-pattern">FCS Regression for non-monotone missing pattern</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>proc mi data<span class="ot">=</span>dummyt out<span class="ot">=</span>outdata nimpute<span class="ot">=</span><span class="dv">10</span> seed<span class="ot">=</span><span class="dv">123</span>;</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  class sex1n;</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  var sex1n v1 <span class="sc">-</span> v5;</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  fcs <span class="fu">reg</span> (v1<span class="sc">-</span>v5 <span class="sc">/</span>details);</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>The <code>VAR</code> statement above listing the variables to be analyzed, should match the statistical models for efficacy analysis per SAP, which may include TRTPN, necessary grouping variable (for eg AGEGR1/AGEGR1N), and all outcome variables coming from repeated assessments</li>
+<li><code>NIMPUTE</code> : the number of imputations</li>
+<li><code>SEED</code> : the seed to begin random number generator</li>
+<li>Note that depending on the SAS Proc MI algorithm, if there are more factors, the ordering of factors, for example SEX1N, RACE1N, may have an effect on the generation of the imputed values for the missing values, i.e., different orderings of these factors will generate different imputed values (e.g may happen in case of monotone missing pattern) from PROC MI procedure. The ordering of subjects in the dataset may also have an effect on the generation of the imputed values for the missing values.</li>
+<li>The <code>CLASS</code> statement specifies the classification variables in the VAR statement.</li>
+<li><code>FCS</code> is displayed as the method, if not specified then MCMC will be the default method.</li>
+<li><code>REG</code> is the specified model which in this example is linear regression)</li>
+<li>The <code>DETAILS</code> option displays the regression coefficients in the regression model used in each imputation.</li>
+</ul>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/mi_mar_linear_sas/mi_mar_reg_fcs.PNG" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/mi_mar_linear_sas/mi_mar_reg_fcs2.PNG" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="monotone-regression-for-monotone-missing-pattern" class="level2">
+<h2 class="anchored" data-anchor-id="monotone-regression-for-monotone-missing-pattern">Monotone Regression for monotone missing pattern</h2>
+<p>Let’s update above SAS code to generate a dummy dataset with monotone missing pattern</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>data dummy;</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    length USUBJID <span class="sc">$</span><span class="dv">4</span>;</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    do i<span class="ot">=</span><span class="dv">1</span> to <span class="dv">10</span>; </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        sex1n<span class="ot">=</span><span class="fu">int</span>(<span class="fu">ranuni</span>(<span class="dv">0</span>)<span class="sc">*</span><span class="dv">2</span>); </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        USUBJID <span class="ot">=</span> <span class="fu">strip</span>(<span class="fu">put</span>(<span class="dv">1000</span><span class="sc">+</span>i, best.));</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        miss_start <span class="ot">=</span> <span class="fu">ceil</span>(<span class="fu">ranuni</span>(<span class="dv">0</span>) <span class="sc">*</span> <span class="dv">5</span>); <span class="sc">/</span><span class="er">*</span> Randomly decide the start point <span class="cf">for</span> missing <span class="fu">data</span> (<span class="dv">1</span> to <span class="dv">5</span>) <span class="sc">*</span><span class="er">/</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        do j<span class="ot">=</span><span class="dv">1</span> to <span class="dv">5</span>; </span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>            AVISITN <span class="ot">=</span> j;</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> j <span class="sc">&gt;=</span> miss_start then AVAL <span class="ot">=</span> .; <span class="sc">/</span><span class="er">*</span> If the visit number is greater than or equal to miss_start, make AVAL missing <span class="sc">*</span><span class="er">/</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span> AVAL <span class="ot">=</span> <span class="fu">round</span>(<span class="dv">1</span> <span class="sc">+</span> <span class="fu">ranuni</span>(<span class="dv">0</span>), <span class="fl">0.01</span>);</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>            output; </span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>        end;</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    end;</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    drop i miss_start j;</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>proc sort data<span class="ot">=</span>dummy; by usubjid sex1n;run;</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>proc transpose data<span class="ot">=</span>dummy out<span class="ot">=</span><span class="fu">dummyt</span>(<span class="at">drop=</span>_name_) prefix<span class="ot">=</span>v;</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    by USUBJID sex1n;</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    id avisitn;</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    var aval;</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>proc print data<span class="ot">=</span><span class="fu">dummyt</span>(<span class="at">obs=</span><span class="dv">5</span>);</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>ods select MissPattern;</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>proc mi data<span class="ot">=</span>dummyt nimpute<span class="ot">=</span><span class="dv">0</span>;</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>var v1 <span class="sc">-</span> v5;</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/mi_mar_linear_sas/mi_mar_reg_missing_pattern_monotone.PNG" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>In this case we will use <code>monotone</code> statement instead of <code>FCS</code> for the imputation, example code as below:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>proc mi data<span class="ot">=</span>dummyt out<span class="ot">=</span>outdata nimpute<span class="ot">=</span><span class="dv">10</span> seed<span class="ot">=</span><span class="dv">123</span>;</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  class sex1n;</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  var sex1n v1 <span class="sc">-</span> v5;</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  monotone <span class="fu">reg</span> (v1<span class="sc">-</span>v5 <span class="sc">/</span>details);</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="reference" class="level2">
+<h2 class="anchored" data-anchor-id="reference">Reference</h2>
+<ul>
+<li><a href="https://support.sas.com/documentation/onlinedoc/stat/141/mi.pdf">User’s Guide The MI Procedure</a></li>
+<li><a href="https://www.pharmasug.org/proceedings/2017/SP/PharmaSUG-2017-SP01.pdf">Multiple Imputation: A Statistical Programming Story</a></li>
+<li><a href="https://blogs.sas.com/content/iml/2016/04/18/patterns-of-missing-data-in-sas.html#:~:text=PROC%20MI%20has%20an%20option%20to%20produce%20a,MissPattern%3B%20proc%20mi%20data%20%3DSashelp.Heart%20nimpute%3D%200%20%3B">Examine patterns of missing data in SAS</a></li>
+</ul>
 
 
 </section>
