@@ -12,19 +12,19 @@ The JT test is particularly well-suited for dose-response or trend analysis with
 
 To request Jonckheere-Terpstra test, specify the **JT** option in the Table statement like below:
 
-```{r, eval=FALSE}       
+```{r, eval=FALSE}
 Proc freq; table Var1 * Var2 / JT ; Quit;
 ```
 
 The JT option in the TABLES statement provides the Jonckheere-Terpstra test.
 
-PROC FREQ also provides exact p-values for the Jonckheere-Terpstra test. You can request the exact test by specifying the **JT** option in the EXACT statement.$^{[3]}$
+PROC FREQ also provides exact p-values for the Jonckheere-Terpstra test. You can request the exact test by specifying the **JT** option in the EXACT statement.$^{[3]}$ 
 
 ## Data used 1
 
 This dataset has been generated using example data which aligned with the specifications outlined in the section on the Jonckheere–Terpstra test from reference \[5\]. It represents the duration of hospital stays for a randomly selected group of patients across three distinct ICU departments: cardiothoracic, medical, and neurosurgical.
 
-```{r, eval=FALSE} 
+```{r, eval=FALSE}
 data ICU_Stay;
     input ICU $ Stay;
     label Stay = 'Length of Stay in Days';
@@ -53,13 +53,14 @@ proc sort data=ICU_Stay;
 run;
 ```
 
-
 ## Example Code using 1
 
 The code performs a frequency analysis on the 'ICU_Stay' dataset, examining the relationship between 'ICU' and 'Stay' variables. It applies the Jonckheere-Terpstra test using JT option to identify trends in the ordered categorical 'Stay' variable. The output is streamlined by omitting percentages and totals for columns and rows with the 'nopercent nocol norow' options, emphasizing the Jonckheere-Terpstra test outcomes.
 
-```{r, eval=FALSE} 
-proc freq data=ICU_Stay; table ICU * Stay / JT nopercent nocol norow; run;
+```{r, eval=FALSE}
+proc freq data=ICU_Stay; 
+  table ICU * Stay / JT nopercent nocol norow; 
+run;
 
 ```
 
@@ -73,7 +74,7 @@ Comparing this with a standard Normal distribution gives a P value of 0.005, ind
 
 This dataset incorporates illustrative data extracted from reference \[3\]. It encapsulates the responses of subjects randomly assigned to one of four treatment arms: placebo, low dosage(20mg), medium dosage(60mg), and high dosage(180mg). The variable of interest is a continuous measure. The variable 'groupn' is used to provide an order of 'group'.
 
-```{r, eval=FALSE} 
+```{r, eval=FALSE}
 data contin;
 input groupn group $  subject response;
 cards;
@@ -109,14 +110,39 @@ run;
 
 The code is performing a Jonckheere-Terpstra trend test on a continuous 'response' variable, categorized by a 'group' variable, using the 'proc freq' procedure. The analysis is applied to the dataset named 'contin'. The result is presented with a title "Jonckheere-Terpstra Trend Test for Continuous Data", indicating the specific nature of the test being conducted. The 'JT' option is used to specify the Jonckheere-Terpstra test.
 
-```{r, eval=FALSE} 
-proc freq data=contin; tables group * response/JT; title "Jonckheere-Terpstra Trend Test for Continuous Data"; run;
+```{SAS, eval=FALSE}
+proc freq data=contin; 
+    tables group * response/JT; 
+    title "Jonckheere-Terpstra Trend Test for Continuous Data"; 
+run;
 ```
+
 ## Test Result 2
 
 ![Test Result 2](../../CAMIS/images/jonchkheere_terpstra/result2.png "Test Result 2")
 
-There is a significant trend across different groups in the response gives a P value of <.0001.
+There is a significant trend across different groups in the response gives a P value of \<.0001.
+
+## EXACT Options
+With EXACT statement, the exact version and it Monte Carlo approximation can be also conducted. However, it should be noted that the exact test, i.e., a permuation test takes a long time to compelete the task even for a small dataset.
+
+```{SAS, eval = FALSE}
+proc freq data = inds;
+  title "Asymptotic p-value calculation";
+  table ICU * Stay / jt;
+  ods output JTTest = o_jt;
+run;
+
+proc freq data = inds;
+  title "Approximation of exact test by resampling";
+  table ICU * Stay / jt;
+  exact jt / mc seed = 4989 n = 10000 alpha = 0.05;
+  ods output JTTestMC = o_jt_sim;
+run;
+
+```
+
+
 
 ## Conclusion
 
