@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Correlation Analysis in Python</title>
+<title>R vs SAS on the Jonckheere-Terpstra test</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,40 +19,6 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -102,6 +68,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -196,9 +191,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#pearsons-correlation" id="toc-pearsons-correlation" class="nav-link active" data-scroll-target="#pearsons-correlation">Pearson’s Correlation</a></li>
-  <li><a href="#kendalls-rank" id="toc-kendalls-rank" class="nav-link" data-scroll-target="#kendalls-rank">Kendall’s Rank</a></li>
-  <li><a href="#spearmans-rank" id="toc-spearmans-rank" class="nav-link" data-scroll-target="#spearmans-rank">Spearman’s Rank</a></li>
+  <li><a href="#comparison" id="toc-comparison" class="nav-link active" data-scroll-target="#comparison">Comparison</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a>
+  <ul class="collapse">
+  <li><a href="#results-from-normal-approximation" id="toc-results-from-normal-approximation" class="nav-link" data-scroll-target="#results-from-normal-approximation">Results from normal approximation</a></li>
+  <li><a href="#results-from-monte-carlo-approximation-of-an-exact-test" id="toc-results-from-monte-carlo-approximation-of-an-exact-test" class="nav-link" data-scroll-target="#results-from-monte-carlo-approximation-of-an-exact-test">Results from Monte Carlo approximation of an exact test</a></li>
+  <li><a href="#overall-conclusion" id="toc-overall-conclusion" class="nav-link" data-scroll-target="#overall-conclusion">Overall conclusion</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -207,7 +206,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Correlation Analysis in Python</h1>
+<h1 class="title">R vs SAS on the Jonckheere-Terpstra test</h1>
 </div>
 
 
@@ -224,80 +223,76 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>Correlation analyses measures the strength of the relationship between two variables. Correlation analyses can be used to test for associations in hypothesis testing. If the null hypothesis states there is correlation between the variables considered under the study. Then, the purpose is to investigate the possible association in the underlying variables.</p>
-<p>The <em>Scipy</em> library in Python encompasees <em>Stats</em> module with <strong>pearsonr()</strong>, <strong>kendalltau()</strong>, <strong>spearsmanr()</strong> function to evaluate Pearson, Kendall and Spearsman Correlation co-efficient respectively.</p>
-<section id="pearsons-correlation" class="level3">
-<h3 class="anchored" data-anchor-id="pearsons-correlation">Pearson’s Correlation</h3>
-<p>It is a parametric correlation test because it depends on the distribution of data. It measures the linear dependence between two variables x and y. It is the ratio between the covariance of two variables and the product of their standard deviation. The result always have a value between 1 and -1.</p>
-<div id="e23b1329" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.stats <span class="im">import</span> pearsonr</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the sample data</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">"../data/NCCTG_Lung_Cancer_Data_535_29.csv"</span>)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert dataframe into series</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> df[<span class="st">'age'</span>]</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df[<span class="st">'meal.cal'</span>]</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply the pearsonr()</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>corr, _ <span class="op">=</span> pearsonr(x, y)</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'Pearsons correlation: </span><span class="sc">%.3f</span><span class="st">'</span> <span class="op">%</span> corr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Pearsons correlation: -0.240</code></pre>
-</div>
-</div>
+<section id="comparison" class="level2">
+<h2 class="anchored" data-anchor-id="comparison">Comparison</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 38%">
+<col style="width: 8%">
+<col style="width: 9%">
+<col style="width: 10%">
+<col style="width: 30%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Analysis</th>
+<th>Supported in R</th>
+<th>Supported in SAS</th>
+<th>Results Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Jonckheere-Terpstra test using normal approximation</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Partial match</td>
+<td><p>The test statistics was 184.5 from both languages.</p>
+<p>Regarding the p-value, R yields 0.002655, and SAS 0.002649</p></td>
+</tr>
+<tr class="even">
+<td>Jonckheere-Terpstra test using Monte Carlo approximation for an exact test</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Partially matching</td>
+<td><p>The resampling number is 10000.</p>
+<p>The test statistics was 184.5 from both languages.</p>
+<p>Regarding the p-value, R yields 0.0023, and SAS 0.0016</p></td>
+</tr>
+</tbody>
+</table>
 </section>
-<section id="kendalls-rank" class="level3">
-<h3 class="anchored" data-anchor-id="kendalls-rank">Kendall’s Rank</h3>
-<p>A τ test is a non-parametric hypothesis test for statistical dependence based on the τ coefficient. It is a measure of rank correlation: the similarity of the orderings of the data when ranked by each of the quantities. The Kendall correlation between two variables will be high when observations have a similar (or identical for a correlation of 1) rank (i.e.&nbsp;relative position label of the observations within the variable: 1st, 2nd, 3rd, etc.) between the two variables, and low when observations have a dissimilar (or fully different for a correlation of −1) rank between the two variables.</p>
-<div id="187315fc" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.stats <span class="im">import</span> kendalltau </span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the sample data</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">"../data/NCCTG_Lung_Cancer_Data_535_29.csv"</span>)</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert dataframe into series</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>x<span class="op">=</span>df[<span class="st">'age'</span>]</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df[<span class="st">'meal.cal'</span>]</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculating Kendall Rank correlation </span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>corr, _ <span class="op">=</span> kendalltau(x, y) </span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'Kendall Rank correlation: </span><span class="sc">%.5f</span><span class="st">'</span> <span class="op">%</span> corr) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Kendall Rank correlation: -0.14581</code></pre>
-</div>
-</div>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<section id="results-from-normal-approximation" class="level3">
+<h3 class="anchored" data-anchor-id="results-from-normal-approximation">Results from normal approximation</h3>
+<p>For the test using normal approximation, the results look slightly different. The reason for this gap may be either of the following.</p>
+<ul>
+<li>Continuity correction</li>
+<li>Handling of ties in calculating the variance of the test statistics</li>
+<li>Numerical integration for normal distribution</li>
+</ul>
+<p>Regarding continuity correction, the SAS manual mentions that PROC FREQ does not apply it. The DescTools manual does not mention anything about this point.</p>
+<p>Regarding variance of the test statistics, it depends only on the “cell counts” in the context of cross tabulation analysis. From the viewpoint of rank tests, it depends on the frequencies of each tie values. However, since the same test statistics value was given by both R and SAS, it is less likely that a gap exists in calculation variance between languages.</p>
+<p>Based on consideration above, the gap looks acceptable. However, it should kept in mind that R and SAS may take different approaches in continuity correction.</p>
 </section>
-<section id="spearmans-rank" class="level3">
-<h3 class="anchored" data-anchor-id="spearmans-rank">Spearman’s Rank</h3>
-<p>Spearman’s Rank Correlation is a statistical measure of the strength and direction of the monotonic relationship between two continuous variables. Therefore, these attributes are ranked or put in the order of their preference. It is denoted by the symbol “rho” (ρ) and can take values between -1 to +1. A positive value of rho indicates that there exists a positive relationship between the two variables, while a negative value of rho indicates a negative relationship. A rho value of 0 indicates no association between the two variables.</p>
-<div id="2bf32c10" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.stats <span class="im">import</span> spearmanr</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the sample data</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>df<span class="op">=</span> pd.read_csv(<span class="st">"../data/NCCTG_Lung_Cancer_Data_535_29.csv"</span>)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert dataframe into series</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> df[<span class="st">'age'</span>]</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df[<span class="st">'meal.cal'</span>]</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate Spearman's correlation coefficient and p-value</span></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>corr, pval <span class="op">=</span> spearmanr(x, y)</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co"># print the result</span></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Spearman's correlation coefficient:"</span>, corr)</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"p-value:"</span>, pval)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Spearman's correlation coefficient: -0.21159256066613205
-p-value: 0.006051240282927171</code></pre>
-</div>
-</div>
+<section id="results-from-monte-carlo-approximation-of-an-exact-test" class="level3">
+<h3 class="anchored" data-anchor-id="results-from-monte-carlo-approximation-of-an-exact-test">Results from Monte Carlo approximation of an exact test</h3>
+<p>For the test using simulation, the results also look slightly different.</p>
+<p>As mentioned above, R and SAS may take different approaches in continuity correction and calculation of variance for the test statistics. In addition, simulation-based results generally differ between different environments.</p>
+<p>The <span class="math inline">\(95 \%\)</span> CI for the approximate p-value given by SAS was <span class="math inline">\([0.0008, 0.0024]\)</span>. Since the p-value from R, 0.0023, locates within the CI, this result looks comparable.</p>
+</section>
+<section id="overall-conclusion" class="level3">
+<h3 class="anchored" data-anchor-id="overall-conclusion">Overall conclusion</h3>
+<p>Overall, the gap between R and SAS is accaptable regarding the Jonckheere-Terpstra test. However, users should know that R and SAS may take different approaches for the following aspects:</p>
+<ul>
+<li>Continuity correction</li>
+<li>Handling of ties in calculating the variance of the test statistics</li>
+</ul>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->

@@ -233,6 +233,7 @@ window.Quarto = {
   <li><a href="#data-used-2" id="toc-data-used-2" class="nav-link" data-scroll-target="#data-used-2">Data used 2</a></li>
   <li><a href="#example-code-using-2" id="toc-example-code-using-2" class="nav-link" data-scroll-target="#example-code-using-2">Example Code using 2</a></li>
   <li><a href="#test-result-2" id="toc-test-result-2" class="nav-link" data-scroll-target="#test-result-2">Test Result 2</a></li>
+  <li><a href="#exact-options" id="toc-exact-options" class="nav-link" data-scroll-target="#exact-options">EXACT Options</a></li>
   <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
   <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">Reference</a></li>
   </ul>
@@ -310,7 +311,9 @@ window.Quarto = {
 <h2 class="anchored" data-anchor-id="example-code-using-1">Example Code using 1</h2>
 <p>The code performs a frequency analysis on the ‘ICU_Stay’ dataset, examining the relationship between ‘ICU’ and ‘Stay’ variables. It applies the Jonckheere-Terpstra test using JT option to identify trends in the ordered categorical ‘Stay’ variable. The output is streamlined by omitting percentages and totals for columns and rows with the ‘nopercent nocol norow’ options, emphasizing the Jonckheere-Terpstra test outcomes.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>proc freq data<span class="ot">=</span>ICU_Stay; table ICU <span class="sc">*</span> Stay <span class="sc">/</span> JT nopercent nocol norow; run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>proc freq data<span class="ot">=</span>ICU_Stay; </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  table ICU <span class="sc">*</span> Stay <span class="sc">/</span> JT nopercent nocol norow; </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="test-result-1" class="level2">
@@ -362,7 +365,10 @@ window.Quarto = {
 <h2 class="anchored" data-anchor-id="example-code-using-2">Example Code using 2</h2>
 <p>The code is performing a Jonckheere-Terpstra trend test on a continuous ‘response’ variable, categorized by a ‘group’ variable, using the ‘proc freq’ procedure. The analysis is applied to the dataset named ‘contin’. The result is presented with a title “Jonckheere-Terpstra Trend Test for Continuous Data”, indicating the specific nature of the test being conducted. The ‘JT’ option is used to specify the Jonckheere-Terpstra test.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>proc freq data<span class="ot">=</span>contin; tables group <span class="sc">*</span> response<span class="sc">/</span>JT; title <span class="st">"Jonckheere-Terpstra Trend Test for Continuous Data"</span>; run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre class="sas cell-code"><code>proc freq data=contin; 
+    tables group * response/JT; 
+    title "Jonckheere-Terpstra Trend Test for Continuous Data"; 
+run;</code></pre>
 </div>
 </section>
 <section id="test-result-2" class="level2">
@@ -374,6 +380,25 @@ window.Quarto = {
 </figure>
 </div>
 <p>There is a significant trend across different groups in the response gives a P value of &lt;.0001.</p>
+</section>
+<section id="exact-options" class="level2">
+<h2 class="anchored" data-anchor-id="exact-options">EXACT Options</h2>
+<p>With EXACT statement, the exact version and it Monte Carlo approximation can be also conducted. However, it should be noted that the exact test, i.e., a permuation test takes a long time to compelete the task even for a small dataset.</p>
+<div class="cell">
+<pre class="sas cell-code"><code>proc freq data = inds;
+  title "Asymptotic p-value calculation";
+  table ICU * Stay / jt;
+  ods output JTTest = o_jt;
+run;
+
+proc freq data = inds;
+  title "Approximation of exact test by resampling";
+  table ICU * Stay / jt;
+  exact jt / mc seed = 4989 n = 10000 alpha = 0.05;
+  ods output JTTestMC = o_jt_sim;
+run;
+</code></pre>
+</div>
 </section>
 <section id="conclusion" class="level2">
 <h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
