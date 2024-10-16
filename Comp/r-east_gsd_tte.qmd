@@ -13,17 +13,17 @@ There are two main methods that are generally used for GSD sample-size/power cal
 -   Lachin & Foulkes (LF) Method (1986)
 -   Kim & Tsiatis (KT) Method (1990)
 
-The main difference between the two methods is that LF method requires specification of accrual duration as well as study duration, while KM method calculates study duration iteratively given accrual rates and accrual duration. In general, these two methods produce similar, but not identical results.
+The main difference between the two methods is that LF method requires specification of accrual duration as well as study duration, while KT method calculates study duration iteratively given accrual rates and accrual duration. In general, these two methods produce similar, but not identical results.
 
-Both LF and KM methods are implemented in gsDesign, while KT method is implemented in EAST and rpact. gsDesign2 uses LF method along with average hazard ratio (AHR) method (Schemper, Wakounig, and Heinze, 2009, Yung and Liu 2020) for non-proportional hazard assumption.
+Both LF and KT methods are implemented in gsDesign, while KT method is implemented in EAST and rpact. gsDesign2 uses a modification of the LF method while applying an average hazard ratio (AHR) approach for non-proportional hazards (Schemper, Wakounig, and Heinze, 2009, Yung and Liu 2020). gsDesign2 also enables use of the sample size method of Yung and Liu (2020) TBD.
 
-One additional computational difference to note for EAST vs gsDesign/gsDesign2 is the usage of different log hazard ratio variance assumptions. By default, EAST uses the variance under the null hypothesis and provides an option for using the variance under the alternative hypothesis. gsDesign, on the other hand, is using both of these variances. gsDesign2 has `info_scale` argument in `gsDesign::gs_power_ahr()`, `gsDesign::gs_design_ahr()`, which could be set to variance under the null or alternative hypothesis or to the combination of variances.
+One additional computational difference to note for EAST vs gsDesign/gsDesign2 is the usage of different log hazard ratio variance assumptions. By default, EAST uses the variance under the null hypothesis and provides an option for using the variance under the alternative hypothesis. gsDesign, on the other hand, is using both of these variances. gsDesign2 has `info_scale` argument in `gsDesign::gs_power_ahr()`, `gsDesign::gs_design_ahr()`, which could be set to variance under the null or alternative hypothesis or to the combination of variances. 
 
 Below we provide an example of reproducing EAST results from [this vignette](https://psiaims.github.io/CAMIS/East/gsd-tte.html) using gsDesign/gsDesign2/rpact. As shown in the example, gsDesign2 and rpact can reproduce EAST calculations for GSD boundaries, while gsDesign results have minor differences.
 
 ## Design example
 
-We assume that a GSD is utilized for progression-free survival (PFS) endpoint. It will be tested at one interim analysis (IA) for both efficacy and non-binding futility and then at final analysis (FA). O'Brein-Fleming spending function will be used for efficacy testing and Hwang-Shih-Decani spending function with $\gamma = -10$ will be used for futility.
+We assume that a GSD is utilized for progression-free survival (PFS) endpoint. It will be tested at one interim analysis (IA) for both efficacy and non-binding futility and then at final analysis (FA). O'Brien-Fleming spending function will be used for efficacy testing and Hwang-Shih-Decani spending function with $\gamma = -10$ will be used for futility.
 
 Further design assumptions are as follows:
 
@@ -392,6 +392,7 @@ kable(summary(pfs_rpact))
 ```
 
 -   rpact vs EAST comparison using absolute differences:
+
 ```{r, echo=FALSE}
 pcross_h1_eff <- cumsum(pfs_rpact$rejectPerStage)
 pcross_h1_fut <- pfs_rpact$futilityPerStage[1]
