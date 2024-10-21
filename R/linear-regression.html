@@ -102,6 +102,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -266,7 +295,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="regression-analysis" class="level3">
 <h3 class="anchored" data-anchor-id="regression-analysis">Regression Analysis</h3>
-<p>Next, we fit a regression model, representing the relationships between gender, age, height and the interaction variable created in the datastep above. We again use a where statement to restrict the analysis to those who are less than or equal to 19 years old. We use the clb option to get a 95% confidence interval for each of the parameters in the model. The model that we are fitting is <strong><em>height = b0 + b1 x female + b2 x age + b3 x fem_age + e</em></strong></p>
+<p>Next, we fit a regression model, representing the relationships between gender, age, height and the interaction variable created in the datastep above. We again use a where statement to restrict the analysis to those who are less than or equal to 19 years old. We use the clb option to get a 95% confidence interval for each of the parameters in the model. The model that we are fitting is <span class="math inline">\(height = b_0 + b_1\times female + b_2\times age + b_3\times fem\_age + e\)</span></p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>regression<span class="ot">&lt;-</span><span class="fu">lm</span>(HEIGHT<span class="sc">~</span>female<span class="sc">+</span>AGE<span class="sc">+</span>fem_age, <span class="at">data=</span>htwt, AGE<span class="sc">&lt;=</span><span class="dv">19</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(regression)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -293,9 +322,13 @@ Residual standard error: 2.799 on 215 degrees of freedom
 Multiple R-squared:  0.4595,    Adjusted R-squared:  0.452 
 F-statistic: 60.93 on 3 and 215 DF,  p-value: &lt; 2.2e-16</code></pre>
 </div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>b0<span class="ot">=</span><span class="fu">round</span>(regression<span class="sc">$</span>coefficients[<span class="dv">1</span>],<span class="dv">4</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>b1<span class="ot">=</span><span class="fu">round</span>(regression<span class="sc">$</span>coefficients[<span class="dv">2</span>],<span class="dv">4</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>b2<span class="ot">=</span><span class="fu">round</span>(regression<span class="sc">$</span>coefficients[<span class="dv">3</span>],<span class="dv">4</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>b3<span class="ot">=</span><span class="fu">round</span>(regression<span class="sc">$</span>coefficients[<span class="dv">4</span>],<span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>From the coefficients table b0,b1,b2,b3 are estimated as b0=28.88 b1=13.61 b2=2.03 b3=-0.92942</p>
-<p>The resulting regression model for height, age and gender based on the available data is <strong><em>height=28.8828 + 13.6123 x female + 2.0313 x age -0.9294 x fem_age</em></strong></p>
+<p>From the coefficients table b0,b1,b2,b3 are estimated as b0=28.8828 b1=13.6123 b2=2.0313 b3=-0.9294</p>
+<p>The resulting regression model for height, age and gender based on the available data is <span class="math inline">\(height= 28.8828 + 13.6123\times female + 2.0313\times age -0.9294\times fem\_age\)</span></p>
 
 
 </section>
