@@ -8,11 +8,13 @@ library(janitor)
 library(dplyr) 
 ```
 
-
-
 ## round from R base
 
-The **round()** function in Base R will round to the nearest whole number and 'rounding to the even number' when equidistant, meaning that exactly 12.5 rounds to the integer 12. However, this is dependent on OS services and on representation error (since e.g. 0.15 is not represented exactly, the rounding rule applies to the represented number and not to the printed number, and so round(0.15, 1) could be either 0.1 or 0.2).
+The **round()** function in Base R will round to the nearest whole number and 'rounding to the even number' when equidistant, meaning that exactly 12.5 rounds to the integer 12.
+
+The **round(12.5,digits=1)** function tells R to round to 1 decimal place.
+
+However, rounding is dependent on OS services and on representation error since for example, if 0.15 is not represented exactly, if could actually be the number 0.15000000001 or 0.149999999999! The rounding rule applies to the represented number and not to the printed number, and so round(0.15, 1) could be either 0.1 or 0.2).
 
 ```{R}
 round(1:9/10+0.05,1)
@@ -37,8 +39,7 @@ r_2_dec
 r_3_dec
 ```
 
-If using the janitor package in R, and the function `round_half_up()`, the results would be the same with the exception of rounding 1.2345 to 3 decimal places where a result of 1.235 would be obtained instead of 1.234.
-However, in some rare cases, `round_half_up()` does not return result as expected. There are two kinds of cases for it. 1. Round down for positive decimal like 0.xx5.
+If using the janitor package in R, and the function `round_half_up()`, the results would be the same with the exception of rounding 1.2345 to 3 decimal places where a result of 1.235 would be obtained instead of 1.234. However, in some rare cases, `round_half_up()` does not return result as expected. There are two kinds of cases for it. 1. Round down for positive decimal like 0.xx5.
 
 ```{R}
 round_half_up(524288.1255, digits = 3)
@@ -50,7 +51,6 @@ The cause is that when the decimal is stored in binary, the value usually does n
 options(digits=22)
 524288.1255
 ```
-
 
 In `round_half_up()`, a small decimal `sqrt(.Machine$double.eps)` is added before rounding. It avoids some incorrect rounding due to the stored numeric value is a little less than the original value, but does not cover all conditions.
 
@@ -122,11 +122,14 @@ Like `round_half_up()`, it also contains the two kinds of incorrect results. And
 
 To avoid the rounding issue totally, the only way is to increase precision, e.g. using package `Rmpfr`. It will need CPU resource. And it's not always necessary considering the accuracy of current functions.
 
+## round5() from package cards
+
+The `cards::round5()` package does the same rounding as the `janitor::round_half_up()`.
+
 ## Conclusion
 
-So far, `round_half_up()` from package janitor is still one of the best solutions to round away from zero, though users may meet incorrect results in rare cases when the numbers are big or the decimal is long.
+So far, `round_half_up()` from package janitor (or `cards::round5()` ) is still one of the best solutions to round away from zero, though users may meet incorrect results in rare cases when the numbers are big or the decimal is long.
 
 ```{R}
 options(digits = 7) #This just returns the number of displayed digits back to the default
 ```
-
