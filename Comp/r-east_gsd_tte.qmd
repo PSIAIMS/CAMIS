@@ -1,29 +1,29 @@
 ---
-title: "R vs EAST Group-sequential design"
+title: "R vs EAST Group sequential design"
 editor_options: 
   chunk_output_type: console
 ---
 
 ## Introduction
 
-In this vignette, we briefly compare sample size/power calculations for a group-sequential design (GSD) for time to event endpoints between EAST and [gsDesign](https://keaven.github.io/gsDesign/), [gsDesign2](https://merck.github.io/gsDesign2/), and [rpact](https://www.rpact.org/). Note that, a comparison between rpact and gsDesign has been previously reported [here](https://www.rpact.org/vignettes/planning/rpact_vs_gsdesign_examples/#comparison-analysis-time-of-rpact-vs.-gsdesign).
+In this vignette, we briefly compare sample size/power calculations for a group sequential design (GSD) for time to event endpoints between EAST and [gsDesign](https://keaven.github.io/gsDesign/), [gsDesign2](https://merck.github.io/gsDesign2/), and [rpact](https://www.rpact.org/). Note that, a comparison between rpact and gsDesign has been previously reported [here](https://www.rpact.org/vignettes/planning/rpact_vs_gsdesign_examples/#comparison-analysis-time-of-rpact-vs.-gsdesign).
 
 There are two main methods that are generally used for GSD sample-size/power calculations for time to event endpoints under proportional hazard assumption:
 
 -   Lachin & Foulkes (LF) Method (1986)
 -   Kim & Tsiatis (KT) Method (1990)
 
-The main difference between the two methods is that LF method requires specification of accrual duration as well as study duration, while KM method calculates study duration iteratively given accrual rates and accrual duration. In general, these two methods produce similar, but not identical results.
+The main difference between the two methods is that LF method requires specification of accrual duration as well as study duration, while KT method calculates study duration iteratively given accrual rates and accrual duration. In general, these two methods produce similar, but not identical results.
 
-Both LF and KM methods are implemented in gsDesign, while KT method is implemented in EAST and rpact. gsDesign2 uses LF method along with average hazard ratio (AHR) method (Schemper, Wakounig, and Heinze, 2009, Yung and Liu 2020) for non-proportional hazard assumption.
+Both LF and KT methods are implemented in gsDesign, while KT method is implemented in EAST and rpact. gsDesign2 uses a modification of the LF method while applying an average hazard ratio (AHR) approach for non-proportional hazards (Schemper, Wakounig, and Heinze, 2009, Yung and Liu 2020). gsDesign2 also enables use of the sample size method of Yung and Liu (2020).
 
-One additional computational difference to note for EAST vs gsDesign/gsDesign2 is the usage of different log hazard ratio variance assumptions. By default, EAST uses the variance under the null hypothesis and provides an option for using the variance under the alternative hypothesis. gsDesign, on the other hand, is using both of these variances. gsDesign2 has `info_scale` argument in `gsDesign::gs_power_ahr()`, `gsDesign::gs_design_ahr()`, which could be set to variance under the null or alternative hypothesis or to the combination of variances.
+One additional computational difference to note for EAST vs gsDesign/gsDesign2 is the usage of different log hazard ratio variance assumptions. By default, EAST uses the variance under the null hypothesis and provides an option for using the variance under the alternative hypothesis. gsDesign, on the other hand, is using both of these variances as suggested by Lachin and Foulkes (1986). gsDesign2 has `info_scale` argument in `gsDesign2::gs_power_ahr()`, `gsDesign2::gs_design_ahr()`, which could be set to variance under the null or alternative hypothesis or to the combination of variances.
 
-Below we provide an example of reproducing EAST results from [this vignette](https://psiaims.github.io/CAMIS/East/gsd-tte.html) using gsDesign/gsDesign2/rpact. As shown in the example, gsDesign2 and rpact can reproduce EAST calculations for GSD boundaries, while gsDesign results have minor differences.
+Below we provide an example of reproducing EAST results from [this vignette](https://psiaims.github.io/CAMIS/East/gsd-tte.html) using gsDesign/gsDesign2/rpact. As shown in the example, gsDesign2 and rpact can reproduce EAST calculations for GSD boundaries, while gsDesign results have minor differences. gsDesign has an option under development to support a complete concordance with EAST.
 
 ## Design example
 
-We assume that a GSD is utilized for progression-free survival (PFS) endpoint. It will be tested at one interim analysis (IA) for both efficacy and non-binding futility and then at final analysis (FA). O'Brein-Fleming spending function will be used for efficacy testing and Hwang-Shih-Decani spending function with $\gamma = -10$ will be used for futility.
+We assume that a GSD is utilized for progression-free survival (PFS) endpoint. It will be tested at one interim analysis (IA) for both efficacy and non-binding futility and then at final analysis (FA). O'Brien-Fleming spending function will be used for efficacy testing and Hwang-Shih-DeCani spending function with $\gamma = -10$ will be used for futility.
 
 Further design assumptions are as follows:
 
@@ -32,13 +32,16 @@ Further design assumptions are as follows:
 hr1_pfs <- 0.6
 # median PFS of 9.4 months in the control arm
 med_pfs <- 9.4
-# median follow-up of 10 months for PFS
+# minimum follow-up of 10 months for PFS
 minfu_pfs <- 10
-# Monthly dropout of 0.019  for PFS
+# Monthly exponential dropout of 0.019  for PFS
 do_rate_pfs <- 0.019
 # IA timing for PFS is at approximately 75% information fraction, and is derived 
-# using the number of events that was calculated by EAST
-timing_pfs <- c(176/235, 1)
+# using the number of events that was calculated by EAST which sets integer event counts to approximate targeted information
+timing_pfs_rpact <- c(176/235, 1)
+timing_pfs_gs <- c(0.75, 1)
+
+
 # power of approximately 95% for PFS, EAST reported power will be used
 power_pfs <- 0.9505021
 
@@ -52,7 +55,7 @@ alphal <- 0.0125
 
 We assume that EAST was initially used to calculate the target number of events and the total sample size, and we will use gsDesign/gsDesign2/rpact to reproduce those.
 
-Note that, in EAST the number of target events is reported as an integer, however, gsDesign/gsDesign2 by default provide non-integer values which match *exactly* the specified information fraction. Therefore, in order to reproduce EAST results, we will use the number of events that was calculated in EAST for `timing` argument in `gsDesign::gsSurv()`: 176 and 235 PFS events for IA and FA respectively (please see the `timing_pfs` object in the code above).
+Note that, in EAST the number of target events is reported as an integer, however, gsDesign/gsDesign2/rpact by default provide non-integer values which match *exactly* the specified information fraction. Both gsDesign/gsDesign2 can facilitate computations using integer number of events with `gsDesign::toInteger()` and `gsDesign2::to_integer()` as shown below. In order to reproduce EAST results with rpact, we will use the number of events that was calculated in EAST for `informationRates` argument in `rpact::getDesignGroupSequential()`: 176 and 235 PFS events for IA and FA respectively (please see the `timing_pfs_rpact` object in the code above).
 
 For ease of comparison the results from EAST are summarized below:
 
@@ -89,7 +92,7 @@ pfs_east |>
 ```
 
 -   The comparison between EAST and gsDesign/gsDesign/rpact results is presented below using absolute difference in efficacy/futility boundaries and crossing probabilities up to 4 decimals. Non-zero values are highlighted.
--   Note that, in gsDesign/gsDesign efficacy/futility bounds are referred to as “upper”/"lower" bounds respectively, while in EAST these appear to be "lower"/"upper" bounds respectively. For the comparison purposes, we will assume that efficacy/futility bounds are “upper”/"lower" bounds respectively.
+-   Note that, in gsDesign/gsDesign Efficacy/Futility bounds refer to upper/lower bounds respectively, while in EAST these refer to the opposite directions, i.e., lower/upper bounds respectively. For the comparison purposes, we will assume that Efficacy/Futility bounds refer to upper/lower bounds respectively.
 
 ## Code to reproduce EAST results
 
@@ -100,8 +103,8 @@ pfs_east |>
 ```{r, warning=FALSE}
 library(gsDesign)
 pfs_gsDesign <- gsSurv(
-  k = length(timing_pfs),
-  timing = timing_pfs, 
+  k = length(timing_pfs_gs),
+  timing = timing_pfs_gs, 
   R = enroll_dur, 
   eta =  do_rate_pfs, 
   minfup = minfu_pfs,
@@ -114,7 +117,10 @@ pfs_gsDesign <- gsSurv(
   sfl = sfHSD, 
   sflpar = -10,
   test.type = 4
-  )
+  ) |> 
+  toInteger()
+  
+
 pfs_gsDesign |> gsBoundSummary()
 ```
 
@@ -310,7 +316,8 @@ pfs_gsDesign2 <- gs_power_ahr(
     param = -10
     ),
   info_scale = "h0_info"
-  )
+  ) |> 
+  to_integer()
 
 pfs_gsDesign2 |>
   summary() |>
@@ -369,7 +376,7 @@ library(rpact)
 pfs_rpact_gsd <- getDesignGroupSequential(
   sided = 1, 
   alpha = alphal,
-  informationRates = timing_pfs,
+  informationRates = timing_pfs_rpact,
   typeOfDesign = "asOF",
   beta = 1 - power_pfs,
   typeBetaSpending = "bsHSD",
@@ -392,6 +399,7 @@ kable(summary(pfs_rpact))
 ```
 
 -   rpact vs EAST comparison using absolute differences:
+
 ```{r, echo=FALSE}
 pcross_h1_eff <- cumsum(pfs_rpact$rejectPerStage)
 pcross_h1_fut <- pfs_rpact$futilityPerStage[1]
@@ -451,6 +459,11 @@ pfs_rpact_sum |>
       diff_fut_gsDesign, bg = '#6ECEB2'
     ) 
 
+```
+
+
+```{r}
+sessionInfo()
 ```
 
 ## References
