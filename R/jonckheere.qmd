@@ -1,0 +1,69 @@
+---
+title: "Jonckheere-Terpstra test"
+---
+
+## Available R packages
+
+As far as I know, the following packages are available:
+
+-   DescTools
+-   clinfun
+-   PMCMRplus
+-   fastJT
+
+Due to availability in the company, DescTools version 0.99.55 is used to compare the results with SAS. Of these packages DescTools is the most common. 
+
+## Data used
+
+The data for testing is a sample dataset on a dose-response study.
+
+![](/images/jonckheere/jonck_bp.png)
+
+The Group indicates a dose of a drug. The scores for Group represent ordering of dose arms. Then the boxplot implies a declining dose-response relationship.
+
+## Example Code
+
+```{r}
+
+library(DescTools)
+library(ggplot2)
+library(readr)
+
+#
+# Constants
+k_n_samp <- 10000
+
+set.seed(4989)
+#
+# The input dataset is imported.
+#
+inds <- read_csv("../data/jonck.csv", col_select = c(DOSE, value)) 
+  
+
+#
+# Analysis
+#
+jt_norm <- DescTools::JonckheereTerpstraTest(
+  value ~ DOSE,
+  alternative = "decreasing",
+  data = inds
+)
+
+jt_resamp <- DescTools::JonckheereTerpstraTest(
+  value ~ DOSE,
+  alternative = "decreasing",
+  data = inds,
+  nperm = k_n_samp
+)
+
+jt_norm
+jt_resamp
+
+
+```
+
+
+
+## Reference
+
+Signorell A (2024). DescTools: Tools for Descriptive Statistics. R package version 0.99.55, https://github.com/AndriSignorell/DescTools/, https://andrisignorell.github.io/DescTools/.
