@@ -4,7 +4,15 @@ title: "Confidence intervals for Proportions in SAS"
 
 ## Introduction
 
-There are several ways to calculate a confidence interval (CI) for a proportion. You need to select the method based on if you have a 1 sample proportion (e.g 1 proportion calculated from 1 group of subjects), or if you have 2 samples and you want a CI for the difference in the 2 proportions. The difference in proportion can come from either 2 independent samples (e.g different subjects in each of the 2 groups), or can be matched (e.g the same subject with 1 result in 1 group and 1 result in the other group \[paired data\]).
+The methods to use for calculating a confidence interval (CI) for a proportion depend on the type of proportion you have.
+
+-   1 sample proportion (1 proportion calculated from 1 group of subjects)
+
+-   2 sample proportions and you want a CI for the difference in the 2 proportions.
+
+    -   If the 2 samples come from 2 independent samples (different subjects in each of the 2 groups)
+
+    -   If the 2 samples are matched (i.e. the same subject has 2 results, one on each group \[paired data\]).
 
 The method selected is also dependent on whether your proportion is close to 0 or 1 (or near to the 0.5 midpoint), and your sample size.
 
@@ -214,22 +222,35 @@ In all these cases, the calculated proportions for the 2 groups are not independ
 
 Using a cross over study as our example, a 2 x 2 table can be formed as follows:
 
-+-----------------------+---------------+---------------+---------------+
-|                       | Placebo\      | Placebo\      | Total         |
-|                       | Response= Yes | Response = No |               |
-+=======================+===============+===============+===============+
-| Active Response = Yes | r             | s             | r+s           |
-+-----------------------+---------------+---------------+---------------+
-| Active Response = No  | t             | u             | t+u           |
-+-----------------------+---------------+---------------+---------------+
-| Total                 | r+t           | s+u           | N = r+s+t+u   |
-+-----------------------+---------------+---------------+---------------+
++-----------------------+---------------+---------------+-------------+
+|                       | Placebo\      | Placebo\      | Total       |
+|                       | Response= Yes | Response = No |             |
++=======================+===============+===============+=============+
+| Active Response = Yes | r             | s             | r+s         |
++-----------------------+---------------+---------------+-------------+
+| Active Response = No  | t             | u             | t+u         |
++-----------------------+---------------+---------------+-------------+
+| Total                 | r+t           | s+u           | N = r+s+t+u |
++-----------------------+---------------+---------------+-------------+
 
 The proportions of subjects responding on each treatment are:
 
 Active: $\hat p_1 = (r+s)/n$ and Placebo: $\hat p_2= (r+t)/n$
 
 Difference between the proportions for each treatment are: $D=p1-p2=(s-t)/n$
+
+Suppose :
+
++-----------------------+---------------+---------------+------------------+
+|                       | Placebo\      | Placebo\      | Total            |
+|                       | Response= Yes | Response = No |                  |
++=======================+===============+===============+==================+
+| Active Response = Yes | r = 20        | s = 15        | r+s = 35         |
++-----------------------+---------------+---------------+------------------+
+| Active Response = No  | t = 6         | u = 5         | t+u = 11         |
++-----------------------+---------------+---------------+------------------+
+| Total                 | r+t = 26      | s+u = 20      | N = r+s+t+u = 46 |
++-----------------------+---------------+---------------+------------------+
 
 ### Normal Approximation Method (Also known as the Wald or asymptotic CI Method)
 
@@ -240,6 +261,14 @@ $SE(D)=\frac{1}{n} * sqrt(s+t-\frac{(s-t)^2}{n})$
 $D-z_\alpha * SE(D)$ to $D+z_\alpha * SE(D)$
 
 where $z_\alpha$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to level $\alpha$,
+
+D=(15-6) /46 = 0.196
+
+SE(D) = 1/ 46 \* sqrt (15+6- (((15+6)\^2)/46) ) = 0.0956
+
+Lower CI= 0.196 - 1.96 \*0.0956 = 0.009108
+
+Upper CI = 0.196 + 1.96 \* 0.0956 = 0.382892
 
 ### Wilson Method (Also known as the Score method or the Altman, Newcombe method^7^ )
 
@@ -257,39 +286,69 @@ Otherwise we calculate A, B and C, and $\phi=C / sqrt A$
 
 In the above: $A=(r+s)(t+u)(r+t)(s+u)$ and $B=(ru-st)$
 
-To calculate C follow the table below.
+To calculate C follow the table below. n=sample size.
 
-+---------------------------+----------------+
 | Condition of B            | Set C equal to |
-+===========================+================+
+|---------------------------|----------------|
 | If B is greater than n/2  | B - n/2        |
-+---------------------------+----------------+
 | If B is between 0 and n/2 | 0              |
-+---------------------------+----------------+
 | If B is less than 0       | B              |
-+---------------------------+----------------+
 
 Let D = p1-p2 (the difference between the observed proportions of responders)
 
-The Confidence interval for the difference between two population proportions is: $D - sqrt((p_1-l_1)^2)-2\phi(p_1-l_1)(u_2-p_2)+(u_2-p_2)^2 )$ to
+The Confidence interval for the difference between two population proportions is: $D - sqrt((p_1-l_1)^2-2\phi(p_1-l_1)(u_2-p_2)+(u_2-p_2)^2 )$ to
 
-$D + sqrt((p_2-l_2)^2)-2\phi(p_2-l_2)(u_1-p_1)+(u_1-p_1)^2 )$
+$D + sqrt((p_2-l_2)^2-2\phi(p_2-l_2)(u_1-p_1)+(u_1-p_1)^2 )$
+
+First using the Wilson Method equations for each of the individual single samples 1 and 2.
+
+|          | Active     | Placebo    |
+|----------|------------|------------|
+| a        | 73.842     | 55.842     |
+| b        | 13.728     | 11.974     |
+| c        | 99.683     | 99.683     |
+| Lower CI | 0.603 = L1 | 0.440 = L2 |
+| Upper CI | 0.878 = U1 | 0.680 = U2 |
+
+$A=(r+s)(t+u)(r+t)(s+u)$ = 9450000
+
+B=10
+
+C= 0 (as B is between 0 and n/2)
+
+$\phi$ = 0.
+
+Hence the middle part of the equation simplies to 0, and becomes simply:
+
+Lower CI = $D - sqrt((p_1-l_1)^2+(u_2-p_2)^2 )$ = 0.196 - sqrt \[ (0.761-0.603)\^2 + (0.680-0.565) \^2 \]
+
+Upper CI = $D + sqrt((p_2-l_2)^2+(u_1-p_1)^2 )$ = 0.196 + sqrt \[ (0.565-0.440)\^2 + (0.878-0.761) \^2 \]
+
+CI= 0.00032 to 0.367389
 
 ## Example Code using PROC FREQ
 
-SAS Proc Freq has 3 methods for analysis of paired data (Common risk difference).
+Unfortunately, SAS does not have a procedure which outputs the confidence intervals for matched proportions.
 
-The default method is Mantel-Haenszel confidence limits. SAS can also Score (Miettinen-Nurminen) CIs and Stratified Newcombe CIs (constructed from stratified Wilson Score CIs).
+Instead it calculates the risk difference = (r / (r+s) - t / (t+u) )
 
-See [here](https://support.sas.com/documentation/cdl/en/procstat/67528/HTML/default/viewer.htm#procstat_freq_details63.htm) for equations.
+Which in the example above is: 20/ (20+15) - 6 / (6+5) = 0.0296
+
+This is more applicable when you have exposed / non-exposed groups looking at who has experienced the outcome. SAS Proc Freq has 3 methods for analysis of paired data using a Common risk difference.
+
+The default method is Mantel-Haenszel confidence limits. SAS can also Score (Miettinen-Nurminen) CIs and Stratified Newcombe CIs (constructed from stratified Wilson Score CIs). See [here](https://support.sas.com/documentation/cdl/en/procstat/67528/HTML/default/viewer.htm#procstat_freq_details63.htm) for equations.
+
+As you can see below, this is not a CI for difference in proportions of 0.196, it is a CI for the risk difference of 0.0260. So must be interpreted with much consideration.
 
 ```{R}
 #| eval: false 
-
-
 proc freq data=adcibc order=data; 
 table trt*resp/commonriskdiff(cl=MH NEWCOMBE); 
 run;
+```
+
+```{r echo=FALSE, fig.align='center', out.width="50%"}
+knitr::include_graphics("../images/ci_for_prop/riskdiff_matched.png")
 ```
 
 ## Methods for Calculating Confidence Intervals for 2 independent samples proportion
@@ -330,7 +389,7 @@ Let l2 = Lower CI for sample 2, and u2 be the upper CI for sample 2.
 
 Let D = p1-p2 (the difference between the observed proportions)
 
-The Confidence interval for the difference between two population proportions is: $$ D - sqrt((p_1-l_1)^2)+(u_2-p_2)^2 )\quad to\quad D + sqrt((p_2-l_2)^2)+(u_1-p_1)^2 )   $$
+The Confidence interval for the difference between two population proportions is: $$ D - sqrt((p_1-l_1)^2+(u_2-p_2)^2) \quad to\quad D + sqrt((p_2-l_2)^2+(u_1-p_1)^2 )   $$
 
 ## Example Code using PROC FREQ
 
