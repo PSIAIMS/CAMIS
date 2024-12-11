@@ -222,16 +222,16 @@ NOTE that the {ExactNumCI} package should not be used for this task. More detail
 
 Using a cross over study as our example, a 2 x 2 table can be formed as follows:
 
-+-----------------------+---------------+---------------+---------------+
-|                       | Placebo\      | Placebo\      | Total         |
-|                       | Response= Yes | Response = No |               |
-+=======================+===============+===============+===============+
-| Active Response = Yes | r             | s             | r+s           |
-+-----------------------+---------------+---------------+---------------+
-| Active Response = No  | t             | u             | t+u           |
-+-----------------------+---------------+---------------+---------------+
-| Total                 | r+t           | s+u           | N = r+s+t+u   |
-+-----------------------+---------------+---------------+---------------+
++-----------------------+---------------+---------------+--------------+
+|                       | Placebo\      | Placebo\      | Total        |
+|                       | Response= Yes | Response = No |              |
++=======================+===============+===============+==============+
+| Active Response = Yes | r             | s             | r+s          |
++-----------------------+---------------+---------------+--------------+
+| Active Response = No  | t             | u             | t+u          |
++-----------------------+---------------+---------------+--------------+
+| Total                 | r+t           | s+u           | N = r+s+t+u  |
++-----------------------+---------------+---------------+--------------+
 
 : The proportions of subjects responding on each treatment are:
 
@@ -277,26 +277,35 @@ For more technical information see the corresponding [SAS page](https://psiaims.
 
 `cardx::ard_stats_prop_test function` uses `stats::prop.test` which also allows a continuity correction to be applied.
 
-Although this website [here](https://rdrr.io/r/stats/prop.test.html) and this one [here](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/prop.test) both reference Newcombe for the CI that this function uses, replication of the results by hand and compared to SAS show that the results below match the Normal Approximation (Wald method) not the Newcome method? Further research is needed into this topic.
+Although this website [here](https://rdrr.io/r/stats/prop.test.html) and this one [here](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/prop.test) both reference Newcombe for the CI that this function uses, replication of the results by hand and compared to SAS show that the results below match the Normal Approximation (Wald method).
 
 Both the Treatment variable (ACT,PBO) and the Response variable (Yes,No) have to be numeric (0,1) or Logit (TRUE,FALSE) variables.
 
 The prop.test default with 2 groups, is the null hypothesis that the proportions in each group are the same and a 2-sided CI.
 
-It expects data to be in a 2x2 table, as shown below
-
 ```{r}
-adcibc2<- select(adcibc, trtn,respn)
 
-cardx::ard_stats_prop_test(data=adcibc2, by=trtn, variables=respn, conf.level = 0.95, correct=FALSE) 
-cardx::ard_stats_prop_test(data=adcibc2, by=trtn, variables=respn, conf.level = 0.95, correct=TRUE) 
+indat1<- adcibc2 %>% 
+  select(AVAL,TRTP) %>% 
+  mutate(resp=if_else(AVAL>4,"Yes","No")) %>% 
+  mutate(respn=if_else(AVAL>4,1,0)) %>% 
+  mutate(trt=if_else(TRTP=="Placebo","PBO","ACT"))%>% 
+  mutate(trtn=if_else(TRTP=="Placebo",1,0)) %>% 
+  select(trt,trtn,resp, respn) 
+
+# cardx package required a vector with 0 and 1s for a single proportion CI
+# To get the comparison the correct way around Placebo must be 1, and Active 0
+
+indat<- select(indat1, trtn,respn)
+cardx::ard_stats_prop_test(data=indat, by=trtn, variables=respn, conf.level = 0.95, correct=FALSE) 
+cardx::ard_stats_prop_test(data=indat, by=trtn, variables=respn, conf.level = 0.95, correct=TRUE) 
 ```
 
 ### Wilson Method (Also known as the Score method or the Altman, Newcombe method^3^ )
 
 For more technical information see the corresponding [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html).
 
-Further research is needed into this topic.
+We have not yet found a package in R which produces these confidence intervals for 2 independent proportions.
 
 ## References
 
