@@ -1,0 +1,167 @@
+---
+title: "<R> <Tobit Regression>"
+---
+
+# Tobit regression
+
+## Libraries
+
+### General
+```{r}
+#| output: false
+#| warning: false
+library(dplyr)
+library(gt)
+library(broom)
+```
+
+### Methodology specific
+```{r}
+#| output: false
+#| warning: false
+library(emmeans)
+library(censReg)
+library(survival)
+library(VGAM)
+```
+
+
+## Tobit model
+
+Censoring occurs when data on the dependent variable is only partially known. For example, in virology, sample results could be below the lower limit of detection (eg, 100 copies/mL) and in such a case we only know that the sample result is <100 copies/mL, but we don't know the exact value.
+
+Let $y^{*}$ be the the true underlying latent variable, and $y$ the observed variable. We discuss here censoring on the left:
+
+$$
+y =
+\begin{cases}
+ y^{*}, & y^{*} > \tau  \\
+ \tau, & y^{*} \leq \tau
+ \end{cases}       
+$$
+We consider tobit regression with a censored normal distribution. The model equation is
+$$
+y_{i}^{*} = X_{i}\beta + \epsilon_{i} 
+$$
+with $\epsilon_{i} \sim N(0,\sigma^2)$. But we only observe $y = max(\tau, y^{*})$.
+The tobit model uses maximum likelihood estimation (for details see for example Breen, 1996). It is important to note that $\beta$ estimates the effect of $x$ on the latent variable $y^{*}$, and not on the observed value $y$.
+
+
+## Data used
+
+We assume two equally sized groups (n=10 in each group). The data is censored on the left at a value of $\tau=8.0$.
+In group A 4/10 records are censored, and 1/10 in group B.
+
+```{r create data}
+dat_used = tribble(
+  ~ID, ~ARM, ~Y, ~CENS,
+  "001", "A", 8.0, 1, 
+  "002", "A", 8.0, 1,
+  "003", "A", 8.0, 1,
+  "004", "A", 8.0, 1,
+  "005", "A", 8.9, 0,
+  "006", "A", 9.5, 0,
+  "007", "A", 9.9, 0,
+  "008", "A", 10.3, 0,
+  "009", "A", 11.0, 0,
+  "010", "A", 11.2, 0,
+  "011", "B", 8.0, 1, 
+  "012", "B", 9.2, 0,
+  "013", "B", 9.9, 0,
+  "014", "B", 10.0, 0,
+  "015", "B", 10.6, 0,
+  "016", "B", 10.6, 0,
+  "017", "B", 11.3, 0,
+  "018", "B", 11.8, 0,
+  "019", "B", 12.9, 0,
+  "020", "B", 13.0, 0,
+)
+
+gt(dat_used)
+```
+
+
+## Example Code using R
+
+The analysis will be based on a Tobit analysis of variance with $Y$, rounded to 1 decimal places, as dependent variable and study group as a fixed covariate. A normally distributed error term will be used. Values will be left censored at the value 8.0.
+
+Several R functions and packages are presented.
+
+### censReg
+The `censReg` function from the `censReg` package performs tobit models for left and right censored. The model is estimated by Maximum Likelihood (ML) assuming a Gaussian (normal) distribution of the error term. The maximization of the likelihood function is done by function `maxLik` of the `maxLik` package. The optimization method can be changed.
+```{r censReg}
+res_censreg = censReg(Y ~ ARM, 
+                      left = 8.0, 
+                      data = dat_used)
+summary(res_censreg)
+
+# Difference between groups (Wald CIs)
+round(res_censreg$estimate[2], 3) 
+round(stats::confint(res_censreg, level = 0.95)[2,], 3)
+```
+The output provides an estimate of difference between groups A and B (B-A), namely 1.8225 (se=0.8061). The presented p-value is a two-sided p-value based on the Z-test. The output also provides an estimate for $log(\sigma) = 0.5491$. Wald based confidence intervals can be obtained by the `stats::confint` function.
+
+
+
+### survreg
+Using the `survreg` function from the `survival` package a tobit model can be fit. For more information, refer to the [survival package](https://cran.r-project.org/web/packages/survival/index.html).
+```{r survreg}
+res_survreg = survreg(Surv(Y, 1-CENS, type="left") ~ ARM,
+                      dist = "gaussian",
+                      data = dat_used)
+summary(res_survreg)
+
+# Least square means by group
+lsm = emmeans(res_survreg, specs = trt.vs.ctrl ~ ARM)
+lsm$emmeans
+
+# Difference between groups (Wald CIs)
+lsm_contrast = broom::tidy(lsm$contrasts, conf.int=TRUE, conf.level=0.95)
+gt(lsm_contrast) %>%
+  fmt_number(decimals = 3)
+```
+
+The output provides an estimate of difference between groups A and B (B-A), namely 1.823 (se=0.806). The presented p-value is a two-sided p-value based on the Z-test. The output also provides an estimate for $log(\sigma) = 0.549$. Using the `emmeans` package/function least square means and contrast can be easily obtained. The confidence intervals and p-value is based on the t-test. 
+
+
+### vglm
+The `VGAM` package provides functions for fitting vector generalized linear and additive models (VGLMs and VGAMs). This package centers on the iteratively reweighted least squares (IRLS) algorithm. The `vglm` function offers the possibility to fit a tobit model.
+```{r vglm}
+res_vglm = vglm(Y ~ ARM,
+                tobit(Lower = 8.0),
+                data = dat_used)
+summary(res_vglm)
+
+# Difference between groups
+round(res_vglm@coefficients[3], 3)
+round(confintvglm(res_vglm, level = 0.95)[3,], 3)
+```
+
+The output provides an estimate of difference between groups A and B (B-A), namely 1.823 (se=0.794). The presented p-value is a two-sided p-value based on the Z-test. Note that point estimate for the difference (and associated SE) are slightly different from the results obtained by `censReg` and `tobit` due to the difference in estimation procedure used. Wald based confidence intervals can be obtained by the `confintvglm` function. The $(Intercept):2$ in the model output is an estimate for $log(\sigma)$.
+
+## Discussion
+The results from the `censReg::censReg` and `survival::survreg` are similar. The `survival::survreg` allows for easy incorporation with the `emmeans` package (note: be aware that the standard approach with emmeans is based on the t-test and not the Z-test).
+
+The `VGAM::vglm` approach provides slightly different results. This difference comes from the fact that a iteratively reweighted least squares (IRLS) algorithm is used for estimation.
+
+
+## Reference
+
+Breen, R. (1996). Regression models. SAGE Publications, Inc., https://doi.org/10.4135/9781412985611
+
+Tobin, James (1958). "Estimation of Relationships for Limited Dependent Variables". Econometrica. 26 (1): 24-36. doi:10.2307/1907382
+
+
+
+
+::: {.callout-note collapse="true" title="Session Info"}
+```{r}
+#| echo: false
+
+# List all the packages needed 
+si <- sessioninfo::session_info(c(
+  #Create a vector of all the packages used in this file 
+))
+si
+```
+:::
