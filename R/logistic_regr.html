@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Logistic Regression</title>
+<title>Logistic Regression in R</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -237,7 +237,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Logistic Regression</h1>
+<h1 class="title">Logistic Regression in R</h1>
 </div>
 
 
@@ -254,7 +254,7 @@ window.Quarto = {
 </header>
 
 
-<p>In binary logistic regression, there is a single binary dependent variable, coded by an indicator variable. For example, if we respresent a response as 1 and non-response as 0, then the corresponding probability of response, can be between 0 (certainly not a response) and 1 (certainly a response) - hence the labeling !</p>
+<p>In binary logistic regression, there is a single binary dependent variable, coded by an indicator variable. For example, if we represent a response as 1 and non-response as 0, then the corresponding probability of response, can be between 0 (certainly not a response) and 1 (certainly a response) - hence the labeling !</p>
 <p>The logistic model models the log-odds of an event as a linear combination of one or more independent variables (explanatory variables). If we observed <span class="math inline">\((y_i, x_i),\)</span> where <span class="math inline">\(y_i\)</span> is a Bernoulli variable and <span class="math inline">\(x_i\)</span> a vector of explanatory variables, the model for <span class="math inline">\(\pi_i = P(y_i=1)\)</span> is</p>
 <p><span class="math display">\[
 \text{logit}(\pi_i)= \log\left\{ \frac{\pi_i}{1-\pi_i}\right\} = \beta_0 + \beta x_i, i = 1,\ldots,n
@@ -285,16 +285,19 @@ $ wt.loss   &lt;dbl&gt; NA, 15, 15, 11, 0, 0, 10, 1, 16, 34, 27, 23, 5, 32, 60, 
 </section>
 <section id="model-fit" class="level1">
 <h1>Model Fit</h1>
-<p>We analyze the weight loss in lung cancer patients in dependency of age, sex, ECOG performance score and calories consumed at meals.</p>
+<p>We analyze the event of weight gain (or staying the same weight) in lung cancer patients in dependency of age, sex, ECOG performance score and calories consumed at meals. In the original data, a positive number for the <code>wt.loss</code> variable is a weight loss, negative number is a gain. We start by dichotomising the response such that a result &gt;0 is a weight loss, &lt;= weight gain and creating a factor variable <code>wt_grp</code>.</p>
+<p>One of the most important things to remember is to ensure you tell R what your event is ! We want to model Events / Non-events, and hence your reference category for <code>wt_grp</code> dichotomous variable below is the weight loss level. Therefore, by telling R that your reference category is weight loss, you are effectively telling R that your Event = Weight Gain !</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>lung2 <span class="ot">&lt;-</span> survival<span class="sc">::</span>lung <span class="sc">%&gt;%</span> </span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">wt_grp =</span> <span class="fu">factor</span>(wt.loss <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"weight loss"</span>, <span class="st">"weight gain"</span>))</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  ) </span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>m1 <span class="ot">&lt;-</span> <span class="fu">glm</span>(wt_grp <span class="sc">~</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog <span class="sc">+</span> meal.cal, <span class="at">data =</span> lung2, <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>))</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">#specify that weight loss should be used as baseline level (i.e we want to model weight gain as the event)</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>lung2<span class="sc">$</span>wt_grp <span class="ot">&lt;-</span> <span class="fu">relevel</span>(lung2<span class="sc">$</span>wt_grp, <span class="at">ref=</span><span class="st">'weight loss'</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>m1 <span class="ot">&lt;-</span> <span class="fu">glm</span>(wt_grp <span class="sc">~</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog <span class="sc">+</span> meal.cal, <span class="at">data =</span> lung2, <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>))</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Call:
@@ -344,7 +347,7 @@ meal.cal    0.9982107   0.9999837</code></pre>
 </section>
 <section id="model-comparison" class="level1">
 <h1>Model Comparison</h1>
-<p>To compare two logistic models, one tests the difference in residual variances from both models using a <span class="math inline">\(\chi^2\)</span>-distribution with a single degree of freedom (here at the <span class="math inline">\(5\)</span>% level):</p>
+<p>To compare two logistic models, the <code>residual deviances</code> (-2 * log likelihoods) are compared against a <span class="math inline">\(\chi^2\)</span>-distribution with degrees of freedom calculated using the difference in the two models’ parameters. Below, the only difference is the inclusion/exclusion of age in the model, hence we test using <span class="math inline">\(\chi^2\)</span> with 1 df. Here testing at the <span class="math inline">\(5\)</span>% level.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>m2 <span class="ot">&lt;-</span> <span class="fu">glm</span>(wt_grp <span class="sc">~</span> sex <span class="sc">+</span> ph.ecog <span class="sc">+</span> meal.cal, <span class="at">data =</span> lung2, <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>))</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -372,7 +375,7 @@ AIC: 199.74
 
 Number of Fisher Scoring iterations: 4</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">anova</span>(m1, m2, <span class="at">test =</span> <span class="st">"Chisq"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">anova</span>(m1, m2, <span class="at">test =</span> <span class="st">"LRT"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Analysis of Deviance Table
 
@@ -383,6 +386,7 @@ Model 2: wt_grp ~ sex + ph.ecog + meal.cal
 2       166     191.75 -1 -0.24046   0.6239</code></pre>
 </div>
 </div>
+<p>Stackexchange <a href="https://stats.stackexchange.com/questions/59879/logistic-regression-anova-chi-square-test-vs-significance-of-coefficients-ano">here</a> has a good article describing this method and the difference between comparing 2 models using the likelihood ratio tests versus using wald tests and Pr&gt;chisq (from the maximum likelihood estimate). Note: <code>anova(m1, m2, test = "Chisq")</code> and using <code>test="LRT"</code> as above are synonymous in this context.</p>
 </section>
 <section id="prediction" class="level1">
 <h1>Prediction</h1>

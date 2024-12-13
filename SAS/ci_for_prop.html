@@ -278,7 +278,15 @@ window.Quarto = {
 
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>There are several ways to calculate a confidence interval (CI) for a proportion. You need to select the method based on if you have a 1 sample proportion (e.g 1 proportion calculated from 1 group of subjects), or if you have 2 samples and you want a CI for the difference in the 2 proportions. The difference in proportion can come from either 2 independent samples (e.g different subjects in each of the 2 groups), or can be matched (e.g the same subject with 1 result in 1 group and 1 result in the other group [paired data]).</p>
+<p>The methods to use for calculating a confidence interval (CI) for a proportion depend on the type of proportion you have.</p>
+<ul>
+<li><p>1 sample proportion (1 proportion calculated from 1 group of subjects)</p></li>
+<li><p>2 sample proportions and you want a CI for the difference in the 2 proportions.</p>
+<ul>
+<li><p>If the 2 samples come from 2 independent samples (different subjects in each of the 2 groups)</p></li>
+<li><p>If the 2 samples are matched (i.e.&nbsp;the same subject has 2 results, one on each group [paired data]).</p></li>
+</ul></li>
+</ul>
 <p>The method selected is also dependent on whether your proportion is close to 0 or 1 (or near to the 0.5 midpoint), and your sample size.</p>
 <p>For more information about these methods in R &amp; SAS, including which performs better in different scenarios see <a href="https://towardsdatascience.com/five-confidence-intervals-for-proportions-that-you-should-know-about-7ff5484c024f">Five Confidence Intervals for Proportions That You Should Know about</a><sup>1</sup> and <a href="https://www.lexjansen.com/sesug/2015/103_Final_PDF.pdf">Confidence Intervals for Binomial Proportion Using SAS</a><sup>2</sup></p>
 </section>
@@ -460,7 +468,7 @@ window.Quarto = {
 <col style="width: 32%">
 <col style="width: 21%">
 <col style="width: 21%">
-<col style="width: 21%">
+<col style="width: 20%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -496,12 +504,55 @@ Response = No</th>
 <p>The proportions of subjects responding on each treatment are:</p>
 <p>Active: <span class="math inline">\(\hat p_1 = (r+s)/n\)</span> and Placebo: <span class="math inline">\(\hat p_2= (r+t)/n\)</span></p>
 <p>Difference between the proportions for each treatment are: <span class="math inline">\(D=p1-p2=(s-t)/n\)</span></p>
+<p>Suppose :</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 31%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 24%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Placebo<br>
+Response= Yes</th>
+<th>Placebo<br>
+Response = No</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Active Response = Yes</td>
+<td>r = 20</td>
+<td>s = 15</td>
+<td>r+s = 35</td>
+</tr>
+<tr class="even">
+<td>Active Response = No</td>
+<td>t = 6</td>
+<td>u = 5</td>
+<td>t+u = 11</td>
+</tr>
+<tr class="odd">
+<td>Total</td>
+<td>r+t = 26</td>
+<td>s+u = 20</td>
+<td>N = r+s+t+u = 46</td>
+</tr>
+</tbody>
+</table>
 <section id="normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method-1" class="level3">
 <h3 class="anchored" data-anchor-id="normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method-1">Normal Approximation Method (Also known as the Wald or asymptotic CI Method)</h3>
 <p>In large random samples from independent trials, the sampling distribution of the difference between two proportions approximately follows the normal distribution. Hence the SE for the difference and 95% confidence interval can be calculated using the following equations.</p>
 <p><span class="math inline">\(SE(D)=\frac{1}{n} * sqrt(s+t-\frac{(s-t)^2}{n})\)</span></p>
 <p><span class="math inline">\(D-z_\alpha * SE(D)\)</span> to <span class="math inline">\(D+z_\alpha * SE(D)\)</span></p>
 <p>where <span class="math inline">\(z_\alpha\)</span> is the <span class="math inline">\(1-\alpha/2\)</span> quantile of a standard normal distribution corresponding to level <span class="math inline">\(\alpha\)</span>,</p>
+<p>D=(15-6) /46 = 0.196</p>
+<p>SE(D) = 1/ 46 * sqrt (15+6- (((15+6)^2)/46) ) = 0.0956</p>
+<p>Lower CI= 0.196 - 1.96 *0.0956 = 0.009108</p>
+<p>Upper CI = 0.196 + 1.96 * 0.0956 = 0.382892</p>
 </section>
 <section id="wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method7" class="level3">
 <h3 class="anchored" data-anchor-id="wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method7">Wilson Method (Also known as the Score method or the Altman, Newcombe method<sup>7</sup> )</h3>
@@ -512,12 +563,8 @@ Response = No</th>
 <p>If any of r+s, t+u, r+t, s+u are zero, then set <span class="math inline">\(\phi\)</span> to be 0.</p>
 <p>Otherwise we calculate A, B and C, and <span class="math inline">\(\phi=C / sqrt A\)</span></p>
 <p>In the above: <span class="math inline">\(A=(r+s)(t+u)(r+t)(s+u)\)</span> and <span class="math inline">\(B=(ru-st)\)</span></p>
-<p>To calculate C follow the table below.</p>
+<p>To calculate C follow the table below. n=sample size.</p>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 38%">
-<col style="width: 23%">
-</colgroup>
 <thead>
 <tr class="header">
 <th>Condition of B</th>
@@ -540,19 +587,76 @@ Response = No</th>
 </tbody>
 </table>
 <p>Let D = p1-p2 (the difference between the observed proportions of responders)</p>
-<p>The Confidence interval for the difference between two population proportions is: <span class="math inline">\(D - sqrt((p_1-l_1)^2)-2\phi(p_1-l_1)(u_2-p_2)+(u_2-p_2)^2 )\)</span> to</p>
-<p><span class="math inline">\(D + sqrt((p_2-l_2)^2)-2\phi(p_2-l_2)(u_1-p_1)+(u_1-p_1)^2 )\)</span></p>
+<p>The Confidence interval for the difference between two population proportions is: <span class="math inline">\(D - sqrt((p_1-l_1)^2-2\phi(p_1-l_1)(u_2-p_2)+(u_2-p_2)^2 )\)</span> to</p>
+<p><span class="math inline">\(D + sqrt((p_2-l_2)^2-2\phi(p_2-l_2)(u_1-p_1)+(u_1-p_1)^2 )\)</span></p>
+<p>First using the Wilson Method equations for each of the individual single samples 1 and 2.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th></th>
+<th>Active</th>
+<th>Placebo</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>a</td>
+<td>73.842</td>
+<td>55.842</td>
+</tr>
+<tr class="even">
+<td>b</td>
+<td>13.728</td>
+<td>11.974</td>
+</tr>
+<tr class="odd">
+<td>c</td>
+<td>99.683</td>
+<td>99.683</td>
+</tr>
+<tr class="even">
+<td>Lower CI</td>
+<td>0.603 = L1</td>
+<td>0.440 = L2</td>
+</tr>
+<tr class="odd">
+<td>Upper CI</td>
+<td>0.878 = U1</td>
+<td>0.680 = U2</td>
+</tr>
+</tbody>
+</table>
+<p><span class="math inline">\(A=(r+s)(t+u)(r+t)(s+u)\)</span> = 9450000</p>
+<p>B=10</p>
+<p>C= 0 (as B is between 0 and n/2)</p>
+<p><span class="math inline">\(\phi\)</span> = 0.</p>
+<p>Hence the middle part of the equation simplies to 0, and becomes simply:</p>
+<p>Lower CI = <span class="math inline">\(D - sqrt((p_1-l_1)^2+(u_2-p_2)^2 )\)</span> = 0.196 - sqrt [ (0.761-0.603)^2 + (0.680-0.565) ^2 ]</p>
+<p>Upper CI = <span class="math inline">\(D + sqrt((p_2-l_2)^2+(u_1-p_1)^2 )\)</span> = 0.196 + sqrt [ (0.565-0.440)^2 + (0.878-0.761) ^2 ]</p>
+<p>CI= 0.00032 to 0.367389</p>
 </section>
 </section>
 <section id="example-code-using-proc-freq-1" class="level2">
 <h2 class="anchored" data-anchor-id="example-code-using-proc-freq-1">Example Code using PROC FREQ</h2>
-<p>SAS Proc Freq has 3 methods for analysis of paired data (Common risk difference).</p>
-<p>The default method is Mantel-Haenszel confidence limits. SAS can also Score (Miettinen-Nurminen) CIs and Stratified Newcombe CIs (constructed from stratified Wilson Score CIs).</p>
-<p>See <a href="https://support.sas.com/documentation/cdl/en/procstat/67528/HTML/default/viewer.htm#procstat_freq_details63.htm">here</a> for equations.</p>
+<p>Unfortunately, SAS does not have a procedure which outputs the confidence intervals for matched proportions.</p>
+<p>Instead it calculates the risk difference = (r / (r+s) - t / (t+u) )</p>
+<p>Which in the example above is: 20/ (20+15) - 6 / (6+5) = 0.0296</p>
+<p>This is more applicable when you have exposed / non-exposed groups looking at who has experienced the outcome. SAS Proc Freq has 3 methods for analysis of paired data using a Common risk difference.</p>
+<p>The default method is Mantel-Haenszel confidence limits. SAS can also Score (Miettinen-Nurminen) CIs and Stratified Newcombe CIs (constructed from stratified Wilson Score CIs). See <a href="https://support.sas.com/documentation/cdl/en/procstat/67528/HTML/default/viewer.htm#procstat_freq_details63.htm">here</a> for equations.</p>
+<p>As you can see below, this is not a CI for difference in proportions of 0.196, it is a CI for the risk difference of 0.0260. So must be interpreted with much consideration.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>proc freq data<span class="ot">=</span>adcibc order<span class="ot">=</span>data; </span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>table trt<span class="sc">*</span>resp<span class="sc">/</span><span class="fu">commonriskdiff</span>(<span class="at">cl=</span>MH NEWCOMBE); </span>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>proc freq data<span class="ot">=</span>adcibc; </span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>table act<span class="sc">*</span>pbo<span class="sc">/</span><span class="fu">commonriskdiff</span>(<span class="at">cl=</span>MH); </span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/ci_for_prop/riskdiff_matched.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
 </div>
 </section>
 <section id="methods-for-calculating-confidence-intervals-for-2-independent-samples-proportion" class="level2">
@@ -579,7 +683,7 @@ and</p>
 <p>Let l1 = Lower CI for sample 1, and u1 be the upper CI for sample 1.</p>
 <p>Let l2 = Lower CI for sample 2, and u2 be the upper CI for sample 2.</p>
 <p>Let D = p1-p2 (the difference between the observed proportions)</p>
-<p>The Confidence interval for the difference between two population proportions is: <span class="math display">\[ D - sqrt((p_1-l_1)^2)+(u_2-p_2)^2 )\quad to\quad D + sqrt((p_2-l_2)^2)+(u_1-p_1)^2 )   \]</span></p>
+<p>The Confidence interval for the difference between two population proportions is: <span class="math display">\[ D - sqrt((p_1-l_1)^2+(u_2-p_2)^2) \quad to\quad D + sqrt((p_2-l_2)^2+(u_1-p_1)^2 )   \]</span></p>
 </section>
 </section>
 <section id="example-code-using-proc-freq-2" class="level2">
@@ -631,7 +735,7 @@ and</p>
 <li><p>Klaschka, J. and Reiczigel, J. (2021). “On matching confidence intervals and tests for some discrete distributions: Methodological and computational aspects,”&nbsp;Computational Statistics, 36, 1775–1790.</p></li>
 <li><p>Blaker, H. (2000). Confidence curves and improved exact confidence intervals for discrete distributions, Canadian Journal of Statistics 28 (4), 783–798</p></li>
 <li><p>D. Altman, D. Machin, T. Bryant, M. Gardner (eds). Statistics with Confidence: Confidence Intervals and Statistical Guidelines, 2nd edition. John Wiley and Sons 2000.</p></li>
-<li><p>https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf</p></li>
+<li><p><a href="https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf" class="uri">https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf</a></p></li>
 </ol>
 
 

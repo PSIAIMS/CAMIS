@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>MANOVA</title>
+<title>Restricted Mean Survival Time (RMST) in SAS</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -196,7 +196,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#manova-in-python" id="toc-manova-in-python" class="nav-link active" data-scroll-target="#manova-in-python">MANOVA in Python</a></li>
+  <li><a href="#data-used" id="toc-data-used" class="nav-link active" data-scroll-target="#data-used">Data used</a></li>
+  <li><a href="#example-code-using-proc-rmstreg" id="toc-example-code-using-proc-rmstreg" class="nav-link" data-scroll-target="#example-code-using-proc-rmstreg">Example Code using proc rmstreg</a></li>
   </ul>
 </nav>
     </div>
@@ -205,7 +206,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">MANOVA</h1>
+<h1 class="title">Restricted Mean Survival Time (RMST) in SAS</h1>
 </div>
 
 
@@ -213,6 +214,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="quarto-title-meta">
 
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">13 December, 2024</p>
+    </div>
+  </div>
   
     
   </div>
@@ -222,50 +229,171 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="manova-in-python" class="level3">
-<h3 class="anchored" data-anchor-id="manova-in-python">MANOVA in Python</h3>
-<p>Multivariate analysis of variance <strong>(MANOVA)</strong> is a statistical technique used to examine group mean difference of several dependent variables at once while accounting for correlations between the variables.By considering multiple dependent variables simultaneously, MANOVA provides a more comprehensive understanding of group differences and patterns. In context of python, statsmodels library can be used to implement MANOVA.</p>
-<p>The <strong>from_formula()</strong> function is the recommended method to specify a model and simplifies testing without needing to manually configure the contrast matrices.</p>
-<p><strong>Example 39.6 Multivariate Analysis of Variance</strong> from <a href="https://support.sas.com/documentation/cdl/en/statug/63033/HTML/default/viewer.htm#statug_glm_sect051.htm">SAS MANOVA User Guide</a></p>
-<p>This example employs multivariate analysis of variance (MANOVA) to measure differences in the chemical characteristics of ancient pottery found at four kiln sites in Great Britain. The data are from Tubb, Parker, and Nickless (1980), as reported in Hand et al.&nbsp;(1994).</p>
-<p>For each of 26 samples of pottery, the percentages of oxides of five metals are measured. The following statements create the data set and invoke the GLM procedure to perform a one-way MANOVA. Additionally, it is of interest to know whether the pottery from one site in Wales (Llanederyn) differs from the samples from other sites; a CONTRAST statement is used to test this hypothesis.</p>
-<div id="e8dc0bd5" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsmodels.multivariate.manova <span class="im">import</span> MANOVA</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>df<span class="op">=</span> pd.read_csv(<span class="st">"../data/manova1.csv"</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>df.rename(columns<span class="op">=</span>{<span class="st">'al'</span>:<span class="st">'Al'</span>,<span class="st">'fe'</span>:<span class="st">'Fe'</span>,<span class="st">'mg'</span>:<span class="st">'Mg'</span>,<span class="st">'ca '</span>:<span class="st">'Ca'</span>,<span class="st">'na'</span>:<span class="st">'Na'</span>},inplace<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>manova <span class="op">=</span> MANOVA.from_formula(<span class="st">'Al + Fe + Mg + Ca + Na ~ site'</span>, data<span class="op">=</span>df)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> manova.mv_test()</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>                   Multivariate linear model
-===============================================================
-                                                               
----------------------------------------------------------------
-        Intercept         Value  Num DF  Den DF F Value  Pr &gt; F
----------------------------------------------------------------
-           Wilks' lambda  0.0300 5.0000 18.0000 116.5838 0.0000
-          Pillai's trace  0.9700 5.0000 18.0000 116.5838 0.0000
-  Hotelling-Lawley trace 32.3844 5.0000 18.0000 116.5838 0.0000
-     Roy's greatest root 32.3844 5.0000 18.0000 116.5838 0.0000
----------------------------------------------------------------
-                                                               
----------------------------------------------------------------
-          site           Value   Num DF  Den DF F Value  Pr &gt; F
----------------------------------------------------------------
-          Wilks' lambda  0.0123 15.0000 50.0915  13.0885 0.0000
-         Pillai's trace  1.5539 15.0000 60.0000   4.2984 0.0000
- Hotelling-Lawley trace 35.4388 15.0000 29.1304  40.5880 0.0000
-    Roy's greatest root 34.1611  5.0000 20.0000 136.6445 0.0000
-===============================================================
-</code></pre>
+<p>SAS have a User’s Guide for RMSTREG Procedure <a href="https://support.sas.com/documentation/onlinedoc/stat/151/rmstreg.pdf">here</a> which explains RMST analysis.</p>
+<p>There are two things you need to be aware of in the SAS documentation.</p>
+<p><strong>Issue 1:</strong> page 8615 SAS says it expects the event indicator (Status) to be 1=event (death time) and 0=censor. If you follow this guidance, then you must ensure that you use:</p>
+<p><code>model time*status(0)</code> as the model to ensure SAS knows that 0 is the censored observation.</p>
+<p>This is a little confusing, because firstly the information in brackets is asking for what is the indicator of censored observations, which is contrary to the name of the variable being ‘status’ !</p>
+<p>In other survival procedures, we often have a variable <code>cnsr</code> which we set to 1=censored or 0=event, and hence we use <code>model time*cnsr(1)</code>. We find this more straight forward that using <code>status</code> and hence that is used throughout this example.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/rmst/SASrmstreg2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
 </div>
 </div>
-<p>The Wilki’s lambda test evaluates the significance of group difference across several dependent variables. A lower Wilk’s Lambda value suggest more evidence of group difference.</p>
-<p>The Pillai’s Trace test statistics is statistically significant [Pillai’s Trace = 1.55, F(6, 72) = 4.29, p &lt; 0.001] and indicates that sites has a statistically significant association with all the listed elements.</p>
-<p><strong>NOTE</strong>: if you feel you can help with the above discrepancy please contribute to the CAMIS repo by following the instructions on the <a href="../contribution.qmd">contributions page</a>.</p>
+</div>
+<p><strong>Issue 2:</strong> page 8616 tells us that if we omit the option <code>tau=xx</code> then SAS sets tau using the largest <strong>event</strong> time. However, what SAS actually does is use the largest <code>time</code> from either events or censored observations which will result in an incorrect analysis. Therefore, you must calculate tau yourself (using events only) and include it as an option in the SAS code.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/rmst/SASrmstreg1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<section id="data-used" class="level2">
+<h2 class="anchored" data-anchor-id="data-used">Data used</h2>
+<p>We are using the lung_cancer.csv dataset found <a href="CAMIS/data at main · PSIAIMS/CAMIS">here</a> with some manipulation as shown below.</p>
+<p>We just create a <code>cnsr</code> variable to use in the analysis which has 165 events, and 63 censored values.</p>
+<div class="cell">
+<pre class="eval cell-code"><code>data adcibc (keep=age sex trt time cnsr);
+  set lung_cancer;
+  if _N_&lt;=100 then trt="PBO";
+  else trt="Active";
+  if status=1 then cnsr=1;
+  else cnsr=0;
+run; </code></pre>
+</div>
+<p>The data consist of:</p>
+<ul>
+<li><p>time - Time(days) to event</p></li>
+<li><p>cnsr - 1=censored, 0=event</p></li>
+<li><p>age - Age of subject</p></li>
+<li><p>sex - 1=male, 2 = female</p></li>
+<li><p>trt - PBO or Act</p></li>
+<li><p>ref- column of 1’s just used for sorting</p></li>
+</ul>
+<p>For example:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>time</th>
+<th>cnsr</th>
+<th>trt</th>
+<th>age</th>
+<th>sex</th>
+<th>ref</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>279</td>
+<td>1</td>
+<td>Act</td>
+<td>64</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>276</td>
+<td>1</td>
+<td>Act</td>
+<td>52</td>
+<td>2</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>79</td>
+<td>0</td>
+<td>Act</td>
+<td>64</td>
+<td>2</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>654</td>
+<td>0</td>
+<td>PBO</td>
+<td>68</td>
+<td>2</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="example-code-using-proc-rmstreg" class="level2">
+<h2 class="anchored" data-anchor-id="example-code-using-proc-rmstreg">Example Code using proc rmstreg</h2>
+<p>Firstly we have to calculate tau from the data we have (using events only - cnsr=0). As explained in issue 2 above, if you do not do this SAS uses both events and censored observations to calculate tau, which is incorrect. The below calculates <code>tau</code> as 883 (highest event time). Following the calculation of tau, we then fit the proc rmstreg as shown.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>proc sort data<span class="ot">=</span><span class="fu">adcibc</span> (<span class="at">where=</span>(<span class="at">cnsr=</span><span class="dv">0</span>)) out<span class="ot">=</span>timord;</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  by ref time;</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>data adcibc2;</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  set adcibc ;</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  by ref time;</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> last.ref then call <span class="fu">symput</span>(<span class="st">"_tau"</span>,<span class="fu">put</span>(time,best8.));</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>%put <span class="sc">&amp;</span>_tau;</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>proc rmstreg data<span class="ot">=</span>adtte tau<span class="ot">=</span><span class="er">&amp;</span>_tau;</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>class trtp sex;</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a> model aval<span class="sc">*</span><span class="fu">cnsr</span>(<span class="dv">1</span>) <span class="ot">=</span>trtp sex age <span class="sc">/</span>link<span class="ot">=</span>linear method<span class="ot">=</span><span class="fu">ipcw</span> (<span class="at">strata=</span>trtp);</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a> lsmeans trtp<span class="sc">/</span>pdiff<span class="ot">=</span><span class="fu">control</span>(<span class="st">'Placebo'</span>) cl alpha<span class="ot">=</span><span class="fl">0.05</span>;</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>ods output lsmeans<span class="ot">=</span>lsm diffs<span class="ot">=</span> diff;</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>Run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>To ensure you have the cnsr/event flag the right way around and tau set correctly, check the output closely. As you can see in the images below, tau=883 and number of events = 165 which is correct.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/rmst/rmstreg_output1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The above model results in a difference in expected value of the time-to-event (Active-Placebo) of -57 days.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/rmst/rmstreg_output2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>However, fitting the analysis without the tau=XX option, you can see that the output shows tau =1022 which is the highest censored observation. This can radically change the analysis and should not be used. In this example, the difference in expected value of the time-to-event for Active-Placebo estimated at -65 days.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>proc rmstreg data<span class="ot">=</span>adtte ;</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>class trtp sex;</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a> model aval<span class="sc">*</span><span class="fu">cnsr</span>(<span class="dv">0</span>) <span class="ot">=</span>trtp sex age <span class="sc">/</span>link<span class="ot">=</span>linear method<span class="ot">=</span><span class="fu">ipcw</span> (<span class="at">strata=</span>trtp);</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a> lsmeans trtp<span class="sc">/</span>pdiff<span class="ot">=</span><span class="fu">control</span>(<span class="st">'Placebo'</span>) cl alpha<span class="ot">=</span><span class="fl">0.05</span>;</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>ods output lsmeans<span class="ot">=</span>lsm diffs<span class="ot">=</span> diff;</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>Run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/rmst/rmstreg_output3.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/rmst/rmstreg_output4.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+</div>
 
 
 </section>
