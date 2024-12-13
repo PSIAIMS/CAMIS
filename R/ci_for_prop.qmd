@@ -46,7 +46,7 @@ adcibc %>%
 
 ## Packages
 
-The {cardx} package is an extension of the {cards} package, providing additional functions to create Analysis Results Data Objects (ARDs)^1^. It was developed as part of {NEST} and pharmaverse. This package requires the binary endpoint to be a logical (TRUE/FALSE) vector or a numeric/integer coded as (0, 1) with 1 (TRUE) being the success you want to calculate the confidence interval for.
+**The {cardx} package** is an extension of the {cards} package, providing additional functions to create Analysis Results Data Objects (ARDs)^1^. It was developed as part of {NEST} and pharmaverse. This package requires the binary endpoint to be a logical (TRUE/FALSE) vector or a numeric/integer coded as (0, 1) with 1 (TRUE) being the success you want to calculate the confidence interval for.
 
 If calculating the CI for a difference in proportions, the package requires both the response and the treatment variable to be numeric/integer coded as (0, 1) (or logical vector).
 
@@ -58,11 +58,11 @@ Example data format needed for {cardx} for a single proportion CI
 
 ```{r}
 #| echo: FALSE
-#Data for use with cardrx takes the format 0s and 1s
+#Data for use with cardx takes the format 0s and 1s
 head(act2,30)
 ```
 
-The {PropCIs} package produces CIs for methods such as Blaker's exact method and Midp which aren't available in {cardx} but are available in SAS. We found results agreed with SAS to the 5th decimal place. The package also calculates CIs for Clopper-Pearson, Wald, Wilson, Agresti-coull and these align to results obtained in cardx to at least the 7th decimal place. The {PropsCIs} package requires just the number of events (numerator number of successes) & total number of subjects (denominator) as an input dataset. Given Blaker and Midp are rarely used in practice, and {PropsCIs} isn't a package commonly downloaded from CRAN, further detail is not provided here.
+**The {PropCIs} package** produces CIs for methods such as Blaker's exact method and Midp which aren't available in {cardx} but are available in SAS. We found results agreed with SAS to the 5th decimal place. The package also calculates CIs for Clopper-Pearson, Wald, Wilson, Agresti-Coull and these align to results obtained in cardx to at least the 7th decimal place. The {PropsCIs} package requires just the number of events (numerator number of successes) & total number of subjects (denominator) as an input dataset. Given Blaker and Midp are rarely used in practice, and {PropsCIs} isn't a package commonly downloaded from CRAN, further detail is not provided here.
 
 Code example for Clopper-pearson:\
 `exactci(x=<count of successes> , n=<Total>, conf.level=0.95)`
@@ -72,6 +72,32 @@ Code example for Mid P method:\
 
 Code example for Blaker's exact method:\
 `blakerci(x=<count of successes> , n=<Total>, conf.level=0.95, tolerance=1e-05)`
+
+**The {Hmisc} package** produces CIs using the Clopper-Pearson method. In this example (x=36 and n=154), the results match the cardx package. Documentation reports that the method uses F distribution to compute exact intervals based on the binomial cdf. However, if the percentage of responders is 100% then the upper limit is set to 1. Similarly if the percentage of responders is 0%, then the lower limit is set to 0. Hence, in extreme cases there may be differences between this package and the standard implementation of Clopper-Pearson method.
+
+Code example for Clopper-pearson:\
+`binconf(x=<count of successes> , n=<Total>,method="exact",alpha=0.05)`
+
+**The {RBesT} package** produces CIs using the Clopper-Pearson method. In this example (x=36 and n=154), the results match the cardx package. However, as described below, there are 2 cases where the results using RBesT package do not match cardx or Hmisc.
+
+1)  x = 0 (0% responders), in which case the lower limit does not match.
+2)  x = n (100% responders), in which case the upper limit does not match.
+
+Because of the relationship between the binomial distirbution and the beta distribution. This package uses quantiles of the beta distribution to derive exact confidence intervals.
+
+$$ B(\alpha/2;x, n-x+1) < p < B(1-\alpha/2; x+1, n-x)$$
+
+RBesT equations are: \
+pLow \<- qbeta(Low, r + (r == 0), n - r + 1)\
+pHigh \<- qbeta(High, r + 1, n - r + ((n - r) == 0))
+
+If the equations were updated as follows then it would match Hmisc intervals:\
+pLow \<- qbeta(Low, r, n - r + 1)\
+pHigh \<- qbeta(High, r + 1, n - r)
+
+`BinaryExactCI(x=<count of successes> , n=<Total>,alpha=0.05)`
+
+It is currently unclear why the RBesT script has the logical conditions (r==0) and ((n-r)==0. Therefore, we currently do not recommend using this package and suggest cardx or Hmisc is used instead.
 
 ## Methods for Calculating Confidence Intervals for a single proportion using cardx
 
@@ -91,7 +117,7 @@ proportion_ci_clopper_pearson(act2,conf.level=0.95) %>%
 
 ```
 
-### Normal Approximation Method (Also known as the Wald or asymptotic CI Method) 
+### Normal Approximation Method (Also known as the Wald or asymptotic CI Method)
 
 In large random samples from independent trials, the sampling distribution of proportions approximately follows the normal distribution. The expectation of a sample proportion is the corresponding population proportion. Therefore, based on a sample of size $n$, a $(1-\alpha)\%$ confidence interval for population proportion can be calculated using normal approximation as follows:
 
@@ -170,11 +196,14 @@ proportion_ci_jeffreys(act2,conf.level=0.95) %>%
   as_tibble()
 ```
 
+```         
+```
+
 ## Methods for Calculating Confidence Intervals for a matched pair proportion
 
 When you have 2 measurements on the same subject, the 2 sets of measures are not independent and you have matched pair of responses.
 
-It is not usual to calculate the proportions separately for these responses, and then take a difference, instead other statistical methods such as odds ratios, risk ratios and confidence intervals for those statistics are used.
+This section is work in progress. For more information about methods for calculating confidence intervals for a matched pair proportion see [here](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html#methods-for-calculating-confidence-intervals-for-a-matched-pair-proportion)
 
 ## Methods for Calculating Confidence Intervals for 2 independent samples proportion using {cardx}
 
