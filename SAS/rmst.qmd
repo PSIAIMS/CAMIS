@@ -1,0 +1,126 @@
+---
+title: "Restricted Mean Survival Time (RMST) in SAS"
+output: html_document
+date: last-modified
+date-format: D MMMM, YYYY
+---
+
+SAS have a User's Guide for RMSTREG Procedure [here](https://support.sas.com/documentation/onlinedoc/stat/151/rmstreg.pdf) which explains RMST analysis.
+
+There are two things you need to be aware of in the SAS documentation.
+
+**Issue 1:** page 8615 SAS says it expects the event indicator (Status) to be 1=event (death time) and 0=censor. If you follow this guidance, then you must ensure that you use:
+
+`model time*status(0)` as the model to ensure SAS knows that 0 is the censored observation.
+
+This is a little confusing, because firstly the information in brackets is asking for what is the indicator of censored observations, which is contrary to the name of the variable being 'status' !
+
+In other survival procedures, we often have a variable `cnsr` which we set to 1=censored or 0=event, and hence we use `model time*cnsr(1)`. We find this more straight forward that using `status` and hence that is used throughout this example.
+
+```{r, echo=FALSE, fig.align='center', out.width="50%"}
+knitr::include_graphics("../images/rmst/SASrmstreg2.png")
+```
+
+**Issue 2:** page 8616 tells us that if we omit the option `tau=xx` then SAS sets tau using the largest **event** time. However, what SAS actually does is use the largest `time` from either events or censored observations which will result in an incorrect analysis. Therefore, you must calculate tau yourself (using events only) and include it as an option in the SAS code.
+
+```{r, echo=FALSE, fig.align='center', out.width="50%"}
+knitr::include_graphics("../images/rmst/SASrmstreg1.png")
+```
+
+## Data used
+
+We are using the lung_cancer.csv dataset found [here](CAMIS/data%20at%20main%20·%20PSIAIMS/CAMIS) with some manipulation as shown below.
+
+We just create a `cnsr` variable to use in the analysis which has 165 events, and 63 censored values.
+
+```{eval = FALSE}
+data adcibc (keep=age sex trt time cnsr);
+  set lung_cancer;
+  if _N_<=100 then trt="PBO";
+  else trt="Active";
+  if status=1 then cnsr=1;
+  else cnsr=0;
+run; 
+```
+
+The data consist of:
+
+-   time - Time(days) to event
+
+-   cnsr - 1=censored, 0=event
+
+-   age - Age of subject
+
+-   sex - 1=male, 2 = female
+
+-   trt - PBO or Act
+
+-   ref- column of 1's just used for sorting
+
+For example:
+
+| time | cnsr | trt | age | sex | ref |
+|------|------|-----|-----|-----|-----|
+| 279  | 1    | Act | 64  | 1   | 1   |
+| 276  | 1    | Act | 52  | 2   | 1   |
+| 79   | 0    | Act | 64  | 2   | 1   |
+| 654  | 0    | PBO | 68  | 2   | 1   |
+
+## Example Code using proc rmstreg
+
+Firstly we have to calculate tau from the data we have (using events only - cnsr=0). As explained in issue 2 above, if you do not do this SAS uses both events and censored observations to calculate tau, which is incorrect. The below calculates `tau` as 883 (highest event time). Following the calculation of tau, we then fit the proc rmstreg as shown.
+
+```{r eval=FALSE}
+proc sort data=adcibc (where=(cnsr=0)) out=timord;
+  by ref time;
+run;
+
+data adcibc2;
+  set adcibc ;
+  by ref time;
+  if last.ref then call symput("_tau",put(time,best8.));
+run;
+
+%put &_tau;
+
+proc rmstreg data=adtte tau=&_tau;
+class trtp sex;
+ model aval*cnsr(1) =trtp sex age /link=linear method=ipcw (strata=trtp);
+ lsmeans trtp/pdiff=control('Placebo') cl alpha=0.05;
+ods output lsmeans=lsm diffs= diff;
+Run;
+
+```
+
+To ensure you have the cnsr/event flag the right way around and tau set correctly, check the output closely. As you can see in the images below, tau=883 and number of events = 165 which is correct.
+
+```{r, echo=FALSE, fig.align='center', out.width="50%"}
+knitr::include_graphics("../images/rmst/rmstreg_output1.png")
+```
+
+The above model results in a difference in expected value of the time-to-event (Active-Placebo) of -57 days.
+
+```{r, echo=FALSE, fig.align='center', out.width="50%"}
+knitr::include_graphics("../images/rmst/rmstreg_output2.png")
+```
+
+However, fitting the analysis without the tau=XX option, you can see that the output shows tau =1022 which is the highest censored observation. This can radically change the analysis and should not be used. In this example, the difference in expected value of the time-to-event for Active-Placebo estimated at -65 days.
+
+```{r eval=FALSE}
+
+proc rmstreg data=adtte ;
+class trtp sex;
+ model aval*cnsr(0) =trtp sex age /link=linear method=ipcw (strata=trtp);
+ lsmeans trtp/pdiff=control('Placebo') cl alpha=0.05;
+ods output lsmeans=lsm diffs= diff;
+Run;
+
+```
+
+```{r, echo=FALSE, fig.align='center', out.width="50%"}
+knitr::include_graphics("../images/rmst/rmstreg_output3.png")
+```
+
+```{r, echo=FALSE, fig.align='center', out.width="50%"}
+knitr::include_graphics("../images/rmst/rmstreg_output4.png")
+```

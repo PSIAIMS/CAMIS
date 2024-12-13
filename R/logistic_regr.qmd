@@ -1,5 +1,5 @@
 ---
-title: "Logistic Regression"
+title: "Logistic Regression in R"
 ---
 
 ```{r}
@@ -8,7 +8,7 @@ title: "Logistic Regression"
 library(tidyverse)
 ```
 
-In binary logistic regression, there is a single binary dependent variable, coded by an indicator variable. For example, if we respresent a response as 1 and non-response as 0, then the corresponding probability of response, can be between 0 (certainly not a response) and 1 (certainly a response) - hence the labeling !
+In binary logistic regression, there is a single binary dependent variable, coded by an indicator variable. For example, if we represent a response as 1 and non-response as 0, then the corresponding probability of response, can be between 0 (certainly not a response) and 1 (certainly a response) - hence the labeling !
 
 The logistic model models the log-odds of an event as a linear combination of one or more independent variables (explanatory variables). If we observed $(y_i, x_i),$ where $y_i$ is a Bernoulli variable and $x_i$ a vector of explanatory variables, the model for $\pi_i = P(y_i=1)$ is
 
@@ -31,7 +31,9 @@ glimpse(lung)
 
 # Model Fit
 
-We analyze the weight loss in lung cancer patients in dependency of age, sex, ECOG performance score and calories consumed at meals.
+We analyze the event of weight gain (or staying the same weight) in lung cancer patients in dependency of age, sex, ECOG performance score and calories consumed at meals. In the original data, a positive number for the `wt.loss` variable is a weight loss, negative number is a gain. We start by dichotomising the response such that a result \>0 is a weight loss, \<= weight gain and creating a factor variable `wt_grp`.
+
+One of the most important things to remember is to ensure you tell R what your event is ! We want to model Events / Non-events, and hence your reference category for `wt_grp` dichotomous variable below is the weight loss level. Therefore, by telling R that your reference category is weight loss, you are effectively telling R that your Event = Weight Gain !
 
 ```{r}
 lung2 <- survival::lung %>% 
@@ -39,6 +41,8 @@ lung2 <- survival::lung %>%
     wt_grp = factor(wt.loss > 0, labels = c("weight loss", "weight gain"))
   ) 
 
+#specify that weight loss should be used as baseline level (i.e we want to model weight gain as the event)
+lung2$wt_grp <- relevel(lung2$wt_grp, ref='weight loss')
 
 m1 <- glm(wt_grp ~ age + sex + ph.ecog + meal.cal, data = lung2, family = binomial(link="logit"))
 summary(m1)
@@ -53,14 +57,16 @@ exp(confint(m1))
 
 # Model Comparison
 
-To compare two logistic models, one tests the difference in residual variances from both models using a $\chi^2$-distribution with a single degree of freedom (here at the $5$% level):
+To compare two logistic models, the `residual deviances` (-2 \* log likelihoods) are compared against a $\chi^2$-distribution with degrees of freedom calculated using the difference in the two models' parameters. Below, the only difference is the inclusion/exclusion of age in the model, hence we test using $\chi^2$ with 1 df. Here testing at the $5$% level.
 
 ```{r}
 m2 <- glm(wt_grp ~ sex + ph.ecog + meal.cal, data = lung2, family = binomial(link="logit"))
 summary(m2)
 
-anova(m1, m2, test = "Chisq")
+anova(m1, m2, test = "LRT")
 ```
+
+Stackexchange [here](https://stats.stackexchange.com/questions/59879/logistic-regression-anova-chi-square-test-vs-significance-of-coefficients-ano) has a good article describing this method and the difference between comparing 2 models using the likelihood ratio tests versus using wald tests and Pr\>chisq (from the maximum likelihood estimate). Note: `anova(m1, m2, test = "Chisq")` and using `test="LRT"` as above are synonymous in this context.
 
 # Prediction
 
