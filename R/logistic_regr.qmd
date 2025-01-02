@@ -53,7 +53,14 @@ The model summary contains the parameter estimates $\beta_j$ for each explanator
 ```{r}
 exp(coef(m1))
 exp(confint(m1))
+
+#to output to a single tibble
+out1<-as_tibble(cbind(names(m1$coefficients),exp(cbind(Odds_Ratio = coef(m1), confint(m1)))))
+out1
+
 ```
+
+NOTE: that the confidence intervals are being calculated using the profile likelihood method.
 
 # Model Comparison
 
@@ -77,3 +84,17 @@ Predictions from the model for the log-odds of a patient with new data to experi
 new_pt <- data.frame(sex=2, ph.ecog=1, meal.cal=2500)
 predict(m2, new_pt, type = "response")
 ```
+
+# Contrast statements for 2 or more treatments
+
+To create contrasts, you can use the `fit.contrast()` function from the `gmodels` package.
+
+This can be used with lm and glm objections:
+
+Suppose we had a 3 level treatment variable (trt01p), whose levels were ordered Dose1, Dose2, Placebo.
+
+You would fit the model as above, followed by `fit.contrast()`. This is effective testing the null hypothesis that 0.5\*dose1 + 0.5\* dose2 - placebo = 0.
+
+m2 \<- glm(wt_grp \~ sex + trt01p, data = lung2, family = binomial(link="logit"))
+
+fit.contrast(m2,'trt01p',c(0.5,0.5,-1),conf.int=0.95)
