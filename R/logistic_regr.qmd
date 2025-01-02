@@ -31,7 +31,7 @@ glimpse(lung)
 
 # Model Fit
 
-We analyze the event of weight gain (or staying the same weight) in lung cancer patients in dependency of age, sex, ECOG performance score and calories consumed at meals. In the original data, a positive number for the `wt.loss` variable is a weight loss, negative number is a gain. We start by dichotomising the response such that a result \>0 is a weight loss, \<= weight gain and creating a factor variable `wt_grp`.
+We analyze the event of weight gain (or staying the same weight) in lung cancer patients in dependency of age, sex, ECOG performance score and calories consumed at meals. In the original data, a positive number for the `wt.loss` variable is a weight loss, negative number is a gain. We start by dichotomising the response such that a result >0 is a weight loss, <= weight gain and creating a factor variable `wt_grp`.
 
 One of the most important things to remember is to ensure you tell R what your event is ! We want to model Events / Non-events, and hence your reference category for `wt_grp` dichotomous variable below is the weight loss level. Therefore, by telling R that your reference category is weight loss, you are effectively telling R that your Event = Weight Gain !
 
@@ -48,7 +48,7 @@ m1 <- glm(wt_grp ~ age + sex + ph.ecog + meal.cal, data = lung2, family = binomi
 summary(m1)
 ```
 
-The model summary contains the parameter estimates $\beta_j$ for each explanatory variable $x_j$, corresponding to the log-odds for the response variable to take the value $1$, conditional on all other explanatory variables remaining constant. For better interpretation, we can exponentiate these estimates, to obtain estimates for the odds instead and provide $95$% confidence intervals:
+The model summary contains the parameter estimates $\beta_j$ for each explanatory variable $x_j$, corresponding to the log-odds for the response variable to take the value $1$, conditional on all other explanatory variables remaining constant. For better interpretation, we can exponentiate these estimates, to obtain estimates for the odds instead and provide 95% confidence intervals:
 
 ```{r}
 exp(coef(m1))
@@ -60,11 +60,11 @@ out1
 
 ```
 
-NOTE: that the confidence intervals are being calculated using the profile likelihood method.
+NOTE: that the confidence intervals are being calculated using the profile likelihood method. See [here](https://cytel.com/perspectives/why-and-when-to-use-profile-likelihood-based-confidence-intervals/) for more details.
 
 # Model Comparison
 
-To compare two logistic models, the `residual deviances` (-2 \* log likelihoods) are compared against a $\chi^2$-distribution with degrees of freedom calculated using the difference in the two models' parameters. Below, the only difference is the inclusion/exclusion of age in the model, hence we test using $\chi^2$ with 1 df. Here testing at the $5$% level.
+To compare two logistic models, the `residual deviances` (-2 * log likelihoods) are compared against a $\chi^2$-distribution with degrees of freedom calculated using the difference in the two models' parameters. Below, the only difference is the inclusion/exclusion of age in the model, hence we test using $\chi^2$ with 1 df. Here testing at the 5% level.
 
 ```{r}
 m2 <- glm(wt_grp ~ sex + ph.ecog + meal.cal, data = lung2, family = binomial(link="logit"))
@@ -73,7 +73,7 @@ summary(m2)
 anova(m1, m2, test = "LRT")
 ```
 
-Stackexchange [here](https://stats.stackexchange.com/questions/59879/logistic-regression-anova-chi-square-test-vs-significance-of-coefficients-ano) has a good article describing this method and the difference between comparing 2 models using the likelihood ratio tests versus using wald tests and Pr\>chisq (from the maximum likelihood estimate). Note: `anova(m1, m2, test = "Chisq")` and using `test="LRT"` as above are synonymous in this context.
+Stackexchange [here](https://stats.stackexchange.com/questions/59879/logistic-regression-anova-chi-square-test-vs-significance-of-coefficients-ano) has a good article describing this method and the difference between comparing 2 models using the likelihood ratio tests versus using wald tests and Pr>chisq (from the maximum likelihood estimate). Note: `anova(m1, m2, test = "Chisq")` and using `test="LRT"` as above are synonymous in this context.
 
 # Prediction
 
@@ -93,8 +93,20 @@ This can be used with lm and glm objections:
 
 Suppose we had a 3 level treatment variable (trt01p), whose levels were ordered Dose1, Dose2, Placebo.
 
-You would fit the model as above, followed by `fit.contrast()`. This is effective testing the null hypothesis that 0.5\*dose1 + 0.5\* dose2 - placebo = 0.
+You would fit the model as above, followed by `fit.contrast()`. This is effective testing the null hypothesis that 0.5*dose1 + 0.5* dose2 - placebo = 0.
 
-m2 \<- glm(wt_grp \~ sex + trt01p, data = lung2, family = binomial(link="logit"))
+m2 <- glm(wt_grp ~ sex + trt01p, data = lung2, family = binomial(link="logit"))
 
 fit.contrast(m2,'trt01p',c(0.5,0.5,-1),conf.int=0.95)
+
+# Reference
+
+```{r}
+#\| echo: false
+
+#List all the packages needed
+
+si <- sessioninfo::session_info(c('tidyverse','survival')) 
+si
+
+```
