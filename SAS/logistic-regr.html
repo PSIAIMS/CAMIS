@@ -229,6 +229,7 @@ window.Quarto = {
   <li><a href="#parameterization-of-model-effects-categorical-covariates-in-sas" id="toc-parameterization-of-model-effects-categorical-covariates-in-sas" class="nav-link" data-scroll-target="#parameterization-of-model-effects-categorical-covariates-in-sas">Parameterization of model effects (categorical covariates) in SAS</a></li>
   <li><a href="#example-of-deriving-contrast-statements-in-sas" id="toc-example-of-deriving-contrast-statements-in-sas" class="nav-link" data-scroll-target="#example-of-deriving-contrast-statements-in-sas">Example of deriving contrast statements in SAS</a></li>
   <li><a href="#ensuring-you-are-modelling-the-correct-binary-event-in-sas" id="toc-ensuring-you-are-modelling-the-correct-binary-event-in-sas" class="nav-link" data-scroll-target="#ensuring-you-are-modelling-the-correct-binary-event-in-sas">Ensuring you are modelling the correct Binary event in SAS</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 </nav>
     </div>
@@ -274,6 +275,7 @@ window.Quarto = {
 <li><p>If using proc logistic, be careful of how SAS creates its parameters used in the model as this determines how you can use the parameter estimates! It is often easiest to use <code>param=glm</code> so that the exp(maximum liklihood parameter estimate) = odds ratio. Check the class level information (Design variables) is as you would expect. See below for more detail on other parameterization methods.</p></li>
 </ol>
 <p><strong>Option 1:</strong> <strong>Using Proc Logistic with sex and ph_ecog as character factors:</strong> sex (2 levels: 1,2) and ph_ecog (4 levels:0,1,2 or 3), meal_cal as continuous. As shown below, the <code>class</code> statement and <code>ref=" "</code> option can be used to set the direction of the comparison, <code>/param=glm</code> ensures exp(estimates)=odds ratio.</p>
+<p>NOTE: that the 95% confidence limits are being calculated using the Wald method. This assumes symmetric intervals around the maximum likelihood estimate using a normal distribution assumption (MLE +/-1.96* SE). This is different to the profile likelihood method which is the default in R using confint() function.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung;  </span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    class <span class="fu">sex</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="fu">ph_ecog</span> (<span class="at">ref=</span><span class="st">"0"</span>)<span class="sc">/</span>param<span class="ot">=</span>glm;</span>
@@ -287,7 +289,7 @@ window.Quarto = {
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>      model <span class="fu">wt_grp</span> (<span class="at">event=</span><span class="st">"weight_gain"</span>) <span class="ot">=</span> age sex ph_ecog meal_cal <span class="sc">/</span> dist<span class="ot">=</span>bin link<span class="ot">=</span>logit;</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p><strong>Option 3:</strong> <strong>Using proc logistic, however this time all covariates are treated as continuous parameters not categorical.</strong> You do need to ensure <code>age</code> <code>sex</code> <code>ph_ecog</code> and <code>meal_cal</code> are numeric SAS variables else you will get an error message suggesting to add the varibles to a class statement.</p>
+<p><strong>Option 3:</strong> <strong>Using proc logistic, however this time all covariates are treated as continuous parameters not categorical.</strong> You do need to ensure <code>age</code> <code>sex</code> <code>ph_ecog</code> and <code>meal_cal</code> are numeric SAS binary 0/1 variables else you will get an error message suggesting to add the variables to a class statement or may get incorrect results.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung;</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>model <span class="fu">wt_grp</span>(<span class="at">event=</span><span class="st">"weight_gain"</span>) <span class="ot">=</span> age sex ph_ecog meal_cal;</span>
@@ -486,6 +488,10 @@ window.Quarto = {
 <p>It’s a common mistake, and we find SAS modelling the number of failures instead of successes. Very common when your response is: ‘Responder’ vs ‘Non-responder’, SAS will model the Non-responders as ‘N’ is alphabetically first before ‘R’!</p>
 <p>For this reason, It is recommended to always use the event=“Y” option.</p>
 <p>Options such as <code>ORDER=DATA|FORMATTED|FREQ|INTERNAL</code> as well as descending can be used to ensure the correct levels of classification variables are being modelled. More detail <a href="https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_logistic_sect006.htm">here</a></p>
+</section>
+<section id="references" class="level1">
+<h1>References</h1>
+<p>Created using : SAS release:9.04.01M7P08062020”</p>
 
 
 </section>
