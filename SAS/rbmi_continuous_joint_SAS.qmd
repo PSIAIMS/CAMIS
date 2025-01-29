@@ -5,28 +5,110 @@ title: "<SAS> <Reference-Based Multiple Imputation (joint modelling): Continuous
 ## Reference-based multiple imputation (rbmi)
 
 ### Methodology introduction
-[To be copied from R implementation]
+Reference-based multiple imputation methods have become popular for handling missing data, as well as for conducting sensitivity analyses, in randomized clinical trials. In the context of a repeatedly measured continuous endpoint assuming a multivariate normal model, [Carpenter et al. (2013)](https://www.tandfonline.com/doi/full/10.1080/10543406.2013.834911) proposed a framework to extend the usual MAR-based MI approach by postulating assumptions about the joint distribution of pre- and post-deviation data. Under this framework, one makes qualitative assumptions about how individuals’ missing outcomes relate to those observed in relevant groups in the trial, based on plausible clinical scenarios. Statistical analysis then proceeds using the method of multiple imputation ([Rubin 1976](https://doi.org/10.1093/biomet/63.3.581), [Rubin 1987](https://onlinelibrary.wiley.com/doi/book/10.1002/9780470316696)).
 
-### 5 Macro's
-[Tina] can you add?
+In general, multiple imputation of a repeatedly measured continuous outcome can be done via 2 computational routes ([Roger 2022](https://baselbiometrics.github.io/home/docs/talks/20221208/5_JamesRoger%2020121118.pdf)):
+
+  1. Stepwise: split problem into separate imputations of data at each visit
+  
+      + requires monotone missingness, such as missingness due to withdrawal
+    
+      + conditions on the imputed values at previous visit
+    
+      + Bayesian linear regression problem is much simpler with monotone missing, as one can sample directly using conjugate priors
+
+  2. One-step approach (joint modelling): Fit a Bayesian full multivariate normal repeated measures model using MCMC and then draw a sample.
+
+Here, we illustrate reference-based multiple imputation of a continuous outcome measured repeatedly via the so-called one-step approach.
+
+
+### Five Macros
+The `five macros` ([Roger 2022](https://baselbiometrics.github.io/home/docs/talks/20221208/5_JamesRoger%2020121118.pdf)), available at [LSHTM DIA Missing Data](https://www.lshtm.ac.uk/research/centres-projects-groups/missing-data#dia-missing-data), fit a Bayesian Normal RM model and then impute post withdrawal data under a series of possible post-withdrawal profiles including J2R, CIR and CR as described by [Carpenter et al. (2013)](https://www.tandfonline.com/doi/full/10.1080/10543406.2013.834911). It then analyses the data using a univariate ANOVA at each visit and summarizes across imputations using Rubin’s rules.  
+
+The following standard and reference-based multiple imputation approaches will be illustrated here: 
+    
+    * MAR (Missing At Random)
+    
+    * CIR (Copy Increment from Reference)
+    
+    * J2R (Jump to Reference)
+    
+    * CR (Copy Reference)
 
 
 ## Data used
+A publicly available example [dataset](https://r-packages.io/datasets/antidepressant_data) from an antidepressant clinical trial of an active drug versus placebo is used. Overall, data of 172 patients is available with 88 patients receiving placebo and 84 receiving active drug. The same data is used for the [R part](../R/rbmi_continuous_joint.html).
 
-A publicly available example [dataset](https://r-packages.io/datasets/antidepressant_data) from an antidepressant clinical trial of an active drug versus placebo is used. Overall, data of 172 patients is available with 88 patients receiving placebo and 84 receiving active drug. More information on the data is available in the [R part](../R/rbmi_continuous_joint.html).
+The relevant endpoint is the Hamilton 17-item depression rating scale (HAMD17) which was assessed at baseline and at weeks 1, 2, 4, and 6 (visits 4-7). Study drug discontinuation occurred in 24% (20/84) of subjects from the active drug and 26% (23/88) of subjects from placebo. All data after study drug discontinuation are missing.
+
+```{r}
+#| eval: false
+proc print data=dat (obs=10);
+	var PATIENT GENDER THERAPY RELDAYS VISIT BASVAL HAMDTL17 CHANGE;
+run;
+```
+
+```{r, echo=FALSE, fig.align='center', out.width="80%"}
+knitr::include_graphics("../images/rbmi/SAS_ExploreData1.PNG")
+```
+
+
+The number of patients per visit and arm are:
+```{r}
+#| eval: false
+proc freq data=dat;
+	table VISIT*THERAPY / norow nocol nopercent nocum;
+run;
+```
+
+```{r, echo=FALSE, fig.align='center', out.width="80%"}
+knitr::include_graphics("../images/rbmi/SAS_ExploreData2.PNG")
+```
+
+
+The mean change from baseline of the endpoint (Hamilton 17-item depression rating scale, HAMD17) per visit per treatment group using only the complete cases are:
+```{r}
+#| eval: false
+proc means data=dat n mean nonobs;
+	class VISIT THERAPY;
+	var CHANGE;
+run;
+```
+
+```{r, echo=FALSE, fig.align='center', out.width="80%"}
+knitr::include_graphics("../images/rbmi/SAS_ExploreData3.PNG")
+```
+
+
+The missingness pattern is show below. The incomplete data is primarily monotone in nature. 128 patients have complete data for all visits (all 1’s at each visit). 20, 10 and 13 patients have 1, 2 or 3 monotone missing data, respectively. Further, there is a single additional intermittent missing observation (patient 3618).
+```{r}
+#| eval: false
+proc transpose data=dat out=HAMD_wide(drop=_NAME_) prefix=CHG;
+	by PATIENT THERAPY BASVAL;
+	id VISIT;
+	var CHANGE;
+run;
+
+proc mi data=HAMD_wide nimpute=0 displaypattern=NOMEANS;
+	var CHG4 CHG5 CHG6 CHG7;
+run;
+```
+
+```{r, echo=FALSE, fig.align='center', out.width="80%"}
+knitr::include_graphics("../images/rbmi/SAS_ExploreData4.PNG")
+```
 
 
 ## Complete case analysis
-
 A complete case analysis is performed using mixed model for repeated measures (MMRM) with covariates: treatment [THERAPY], gender [GENDER], visit [VISIT] as factors; baseline score [BASVAL] as continuous; and visit-by-treatment [THERAPY * VISIT] interaction, and visit-by-baseline [BASVAL * VISIT] interaction. An unstructured covariance matrix is used.
 The **MIXED** procedure is used.
 
 ```{r}
 #| eval: false
 proc mixed data=dat method=reml;
-	class THERAPY(ref="PLACEBO") VISIT(ref="7") PATIENT GENDER(ref="F");
-	model CHANGE = THERAPY VISIT BASVAL BASVAL*VISIT THERAPY*VISIT GENDER /s ddfm=satterthwaite;
-	repeated VISIT / type=UN subject=PATIENT;
+	class THERAPY(ref="PLACEBO") VISIT(ref="4") PATIENT GENDER(ref="F");
+	model CHANGE = THERAPY GENDER VISIT BASVAL THERAPY*VISIT BASVAL*VISIT /s ddfm=satterthwaite;
+	repeated VISIT / type=UN subject=PATIENT r;
 	lsmeans THERAPY*VISIT / diff=control("PLACEBO" "7") cl;
 run;
 ```
@@ -43,16 +125,16 @@ The estimated unstructured covariance matrix parameters are:
 knitr::include_graphics("../images/rbmi/SAS_CompleteCase_covarianceEstimates.PNG")
 ```
 
-The contrasts are. The treatment difference at visit 7 is of interest, and is estimated to be 2.829 (se=1.117) with 95% CI of 0.623 - 5.035 (p=0.0123).
+The treatment difference at visit 7 is of interest, and is estimated to be -2.829 (se=1.117) with 95% CI of [-5.033 to -0.624] (p=0.0122).
 ```{r, echo=FALSE, fig.align='center', out.width="90%"}
 knitr::include_graphics("../images/rbmi/SAS_CompleteCase_contrastEstimates.PNG")
 ```
 
-## rbmi: MAR approach
+## Five macros: MAR approach
 
-As described above, the so-called 5 macros will be used for the SAS implementation. The 5 macros are available at [LSHTM DIA Missing Data](https://www.lshtm.ac.uk/research/centres-projects-groups/missing-data#dia-missing-data) under Reference-based MI via Multivariate Normal RM (the "five macros and MIWithD"). For the details, see the use guide available in the download of the 5 macros.
+As described above, the so-called `five macros` will be used for the SAS implementation. The `five macros` are available at [LSHTM DIA Missing Data](https://www.lshtm.ac.uk/research/centres-projects-groups/missing-data#dia-missing-data) under Reference-based MI via Multivariate Normal RM (the "five macros and MIWithD"). For the details, see the use guide available in the download of the `five macros`.
 
-Applying the 5 macros for reference-based multiple imputation entails the sequential run of the following 5 macro's.
+Applying the `five macros` for reference-based multiple imputation entails the sequential run of the following:
 
 - Part1A declares the parameter estimation model and checks consistency with the dataset. It builds a master dataset which holds details of the current job (run of the macros in sequence). It also builds indexes for the classification variables, which may be either numeric or character.
 
@@ -105,7 +187,7 @@ knitr::include_graphics("../images/rbmi/SAS_MAR_Contrast.PNG")
 ```
 
 
-## rbmi: MNAR CR approach
+## Five macros: MNAR CR approach
 
 To perform reference-based multiple imputation using Copy Reference (CR) approach the following changes are needed in part2A of the 5 macros
 ```{r}
@@ -116,13 +198,13 @@ To perform reference-based multiple imputation using Copy Reference (CR) approac
         ref = PLACEBO);
 ```
 
-The results for 500 imputations are
+The results for M=500 imputations are
 ```{r, echo=FALSE, fig.align='center', out.width="90%"}
 knitr::include_graphics("../images/rbmi/SAS_MNAR_CR_contrast.PNG")
 ```
 
 
-## rbmi: MNAR J2R approach
+## Five macros: MNAR J2R approach
 
 To perform reference-based multiple imputation using Jump to Reference (J2R) approach the following changes are needed in part2A of the 5 macros
 ```{r}
@@ -133,13 +215,13 @@ To perform reference-based multiple imputation using Jump to Reference (J2R) app
         ref = PLACEBO);
 ```
 
-The results for 500 imputations are
+The results for M=500 imputations are
 ```{r, echo=FALSE, fig.align='center', out.width="90%"}
 knitr::include_graphics("../images/rbmi/SAS_MNAR_J2R_contrast.PNG")
 ```
 
 
-## rbmi: MNAR CIR approach
+## Five macros: MNAR CIR approach
 
 To perform reference-based multiple imputation using Copy Increments in Reference (CIR) approach the following changes are needed in part2A of the 5 macros
 ```{r}
@@ -150,7 +232,7 @@ To perform reference-based multiple imputation using Copy Increments in Referenc
         ref = PLACEBO);
 ```
 
-The results for 500 imputations are
+The results for M=500 imputations are
 ```{r, echo=FALSE, fig.align='center', out.width="90%"}
 knitr::include_graphics("../images/rbmi/SAS_MNAR_CIR_contrast.PNG")
 ```
@@ -158,35 +240,32 @@ knitr::include_graphics("../images/rbmi/SAS_MNAR_CIR_contrast.PNG")
 
 
 ## Summary of results
-
-In the table we present the results of the different estimation procedures (and with different number $B$ of multiple imputation draws). Note that some results can be slightly different from the results above due to a possible different seed. The table show the contrast at Visit 7 between DRUG and PLACEBO [DRUG - PLACEBO]:
+In the table we present the results of the different imputation strategies (and with varying number, *M*, of multiple imputation draws). Note that some results can be slightly different from the results above due to a possible different seed. The table show the contrast at Visit 7 between DRUG and PLACEBO [DRUG - PLACEBO]:
 
 | Method            | Estimate | SE    | 95% CI           | p-value |
 |-------------------|----------|-------|------------------|---------|
 | Complete Case     | -2.829   | 1.117 | -5.035 to -0.623 | 0.0123  |
-| MI - MAR (B=500)  | -2.819   | 1.125 | -5.042 to -0.596 | 0.0133  |
-| MI - MAR (B=2000) | -2.834   | 1.125 | -5.058 to -0.610 | 0.0129  |
-| MI - MAR (B=5000) | -2.812   | 1.122 | -5.029 to -0.595 | 0.0133  |
-| MI - MNAR CR (B=500)  | -2.393 | 1.118 | -4.603 to -0.183 | 0.0340 |
-| MI - MNAR CR (B=2000) | -2.407 | 1.117 | -4.615 to -0.200 | 0.0327 |
-| MI - MNAR CR (B=5000) | -2.387 | 1.115 | -4.590 to -0.185 | 0.0338 |
-| MI - MNAR J2R (B=500)  | -2.131 | 1.139 | -4.382 to	0.121 | 0.0634 |
-| MI - MNAR J2R (B=2000) | -2.153 | 1.139 | -4.405 to	0.098 | 0.0607 |
-| MI - MNAR J2R (B=5000) | -2.131 | 1.134 | -4.372 to	0.110 | 0.0622 |
-| MI - MNAR CIR (B=500)  | -2.470 | 1.118 | -4.680 to	-0.261 | 0.0287 |
-| MI - MNAR CIR (B=2000) | -2.487 | 1.116 | -4.694 to	-0.281 | 0.0274 |
-| MI - MNAR CIR (B=5000) | -2.467 | 1.114 | -4.670 to	-0.265 | 0.0284 |
+| MI - MAR (M=500)  | -2.810   | 1.122 | -5.029 to -0.592 | 0.0134  |
+| MI - MAR (M=2000) | -2.816   | 1.128 | -5.047 to -0.586 | 0.0137  |
+| MI - MAR (M=5000) | -2.825   | 1.123 | -5.045 to -0.605 | 0.0130  |
+| MI - MNAR CR (M=500)  | -2.384 | 1.120 | -4.598 to -0.170 | 0.0350 |
+| MI - MNAR CR (M=2000) | -2.390 | 1.118 | -4.599 to -0.180 | 0.0342 |
+| MI - MNAR CR (M=5000) | -2.400 | 1.115 | -4.604 to -0.196 | 0.0330 |
+| MI - MNAR J2R (M=500)  | -2.122 | 1.141 | -4.377 to	0.133 | 0.0650 |
+| MI - MNAR J2R (M=2000) | -2.135 | 1.140 | -4.388 to	0.117 | 0.0630 |
+| MI - MNAR J2R (M=5000) | -2.144 | 1.136 | -4.389 to	0.101 | 0.0611 |
+| MI - MNAR CIR (M=500)  | -2.461 | 1.120 | -4.674 to	-0.248 | 0.0296 |
+| MI - MNAR CIR (M=2000) | -2.469 | 1.118 | -4.679 to	-0.260 | 0.0287 |
+| MI - MNAR CIR (M=5000) | -2.481 | 1.115 | -4.684 to	-0.278 | 0.0276 |
 
 
 ## Discussion
-To add last.
+A note on computational time. The total running time (including data loading, setting up data sets, MCMC run, imputing data and analysis MI data) for M=500 was about 23 seconds on a personal laptop. It increased to about 44 seconds for M=2000. Computational time was similar across difference imputation strategies.
 
-A note on computational time. The total running time (including data loading, setting up data sets, MCMC run, imputing data and analysis MI data) for B=500 was about 23 seconds on a personal laptop. It increased to about 44 seconds for B=2000. Computational time was similar across difference imputation strategies.
+With a small number of `Ndraws` in part1B a warning could pop-up "There is still significant autocorrelation after 5 lags, and the effective sample size for the parameter might not be estimated accurately.". Increasing the number of `Ndraws` will mostly solve this warning. For example, for this data example, this message is received when setting `Ndraws` below 100.
 
-With a small number of `Ndraws` in part1B a warning could pop-up "There is still significant autocorrelation after 5 lags, and the effective sample size for the parameter might not be estimated accurately.". Increasing the number of `Ndraws` will mostly solve this warning. For example, for this data example, this message is received when setting `Ndraws` equal to 50 or 100.
 
 ## Appendix 1: mmrm as analysis model
-
 Part 3 of the 5 macros carries out a univariate ANOVA analysis at selected time points usually based on the same covariates as the parameter estimation model. It then combines the least-squares means and their differences using Rubin’s formula in a calculation similar to that in the MIANALYZE procedure to provide final results.
 
 Since, all imputed datasets are readily available (after part2B), another possibility is to analyse each imputed dataset using the analysis model of your choice, and combining the results using `PROC MIANALYZE`. For example, suppose an MMRM should be fit on each imputed dataset:
@@ -200,11 +279,11 @@ run;
 
 proc mixed data=HAMD_CR_DATAFULL ;
 	by _Imputation_;
-	class THERAPY(ref="PLACEBO") VISIT PATIENT GENDER;
-	model CHANGE = THERAPY VISIT BASVAL BASVAL*VISIT THERAPY*VISIT GENDER /s;
-	repeated / 	type=UN subject=PATIENT;
-	lsmeans THERAPY*VISIT / diff=control("PLACEBO" "7");
-	ods output Diffs=diff01;
+  class THERAPY(ref="PLACEBO") VISIT(ref="4") PATIENT GENDER(ref="F");
+  model CHANGE = THERAPY GENDER VISIT BASVAL THERAPY*VISIT BASVAL*VISIT /s ddfm=satterthwaite;
+  repeated VISIT /  type=UN subject=PATIENT r;
+  lsmeans THERAPY*VISIT / diff=control("PLACEBO" "7") cl;
+  ods output Diffs=diff01;
 run;	
 
 proc mianalyze parms=diff01(where=(VISIT="7"));
@@ -214,14 +293,22 @@ proc mianalyze parms=diff01(where=(VISIT="7"));
 run;
 ```
 
-The results for 500 imputations are
+The results for M=500 imputations are
 ```{r, echo=FALSE, fig.align='center', out.width="90%"}
 knitr::include_graphics("../images/rbmi/SAS_MNAR_mmrm.PNG")
 ```
 
 ## Reference
 
-[5 macros: LSHTM DIA Missing Data](https://www.lshtm.ac.uk/research/centres-projects-groups/missing-data#dia-missing-data)
+[Carpenter JR, Roger JH & Kenward MG (2013)](https://doi.org/10.1080/10543406.2013.834911). Analysis of Longitudinal Trials with Protocol Deviation: A Framework for Relevant, Accessible Assumptions, and Inference via MI. *Journal of Biopharmaceutical Statistics* 23: 1352-1371.
 
-[PROC MIANALYZE](https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.3/statug/statug_mianalyze_toc.htm)
+[Five macros: Drug Information Association (DIA) Missing Data Working Group (2012)](https://www.lshtm.ac.uk/research/centres-projects-groups/missing-data#dia-missing-data). Reference-based MI via Multivariate Normal RM (the “five macros and MIWithD”). London School of Hygiene and Tropical Medicine DIA Missing Data.
+
+[PROC MIANALYZE, SAS Institute Inc. (2017)](https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.3/statug/statug_mianalyze_toc.htm). SAS/STAT® 14.3 User’s Guide. Cary, NC: SAS Institute Inc.
+
+[Roger J (2022, Dec 8)](https://baselbiometrics.github.io/home/docs/talks/20221208/5_JamesRoger%2020121118.pdf). Other statistical software for continuous longitudinal endpoints: SAS macros for multiple imputation. *Addressing intercurrent events: Treatment policy and hypothetical strategies*. Joint EFSPI and BBS virtual event.
+
+[Rubin DB (1976)](https://doi.org/10.1093/biomet/63.3.581). Inference and Missing Data. *Biometrika* 63: 581–592.
+
+[Rubin DB (1987)](https://onlinelibrary.wiley.com/doi/book/10.1002/9780470316696). *Multiple Imputation for Nonresponse in Surveys*. New York: John Wiley & Sons.
 
