@@ -73,7 +73,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-549806ee2085284f45b00abea8c6df48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-f0af2363f51803d086e0717bb3ded87a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-09aa764689f4468b5e6f411a57a96eed.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -200,6 +200,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#reason-1-cox-regression-handling-of-tied-survival-times" id="toc-reason-1-cox-regression-handling-of-tied-survival-times" class="nav-link" data-scroll-target="#reason-1-cox-regression-handling-of-tied-survival-times">Reason 1: Cox Regression Handling of Tied Survival Times</a></li>
   <li><a href="#reason-2-kaplan-meier-median-survival-confidence-intervals" id="toc-reason-2-kaplan-meier-median-survival-confidence-intervals" class="nav-link" data-scroll-target="#reason-2-kaplan-meier-median-survival-confidence-intervals">Reason 2: Kaplan Meier Median Survival Confidence Intervals</a></li>
+  <li><a href="#reason-3-convergence-criteria-in-cox-proportional-hazards-model" id="toc-reason-3-convergence-criteria-in-cox-proportional-hazards-model" class="nav-link" data-scroll-target="#reason-3-convergence-criteria-in-cox-proportional-hazards-model">Reason 3: Convergence Criteria in Cox Proportional Hazards Model</a></li>
   </ul></li>
   <li><a href="#other-cases-where-discrepancies-are-found" id="toc-other-cases-where-discrepancies-are-found" class="nav-link" data-scroll-target="#other-cases-where-discrepancies-are-found">Other Cases Where Discrepancies Are Found</a>
   <ul class="collapse">
@@ -360,15 +361,43 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </section>
+<section id="reason-3-convergence-criteria-in-cox-proportional-hazards-model" class="level2">
+<h2 class="anchored" data-anchor-id="reason-3-convergence-criteria-in-cox-proportional-hazards-model">Reason 3: Convergence Criteria in Cox Proportional Hazards Model</h2>
+<p>Another source of discrepancy between R and SAS in Cox models can arise from the default convergence criteria used by the two software packages.</p>
+<p>In R, the <code>survival::coxph()</code> function has a default convergence criterion for the relative change in log partial likelihood set at <code>1e-9</code>. On the other hand, SAS’s <code>PHREG</code> procedure uses a default convergence criterion for the relative gradient convergence set at <code>1e-8</code>. This discrepancy in the convergence criteria can lead to slight differences in the hazard ratios (HR) obtained from the two software packages.</p>
+<p>To achieve comparable results, it is possible to adjust the convergence criteria in SAS to match the more stringent criteria used by R. This can be done by specifying the <code>fconv</code> option in the model statement within <code>PHREG</code> to change the criteria to relative function convergence with a value of <code>1e-9</code>.</p>
+<ul>
+<li>R: default convergence criterion</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>fit.cox <span class="ot">&lt;-</span> <span class="fu">coxph</span>(<span class="fu">Surv</span>(LENFOLY, FSTAT) <span class="sc">~</span> AFB, <span class="at">data =</span> dat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>SAS: adjust convergence criterion</li>
+</ul>
+<div class="cell">
+<pre class="sas cell-code"><code>proc phreg data=dat;
+class afb;
+model lenfol*fstat(0) = afb / rl fconv = 1e-9;
+run;</code></pre>
+</div>
+<p>By making this adjustment, the hazard ratios obtained from SAS will align more closely with those from R or even achieve bitwise reproducibility.</p>
+<p>The convergence criterion details are described in their documentation:</p>
+<ul>
+<li><a href="https://support.sas.com/documentation/onlinedoc/stat/131/phreg.pdf">SAS PHREG documentation</a>.</li>
+<li><a href="https://stat.ethz.ch/R-manual/R-devel/library/survival/html/coxph.html">R <code>survival::coxph()</code> documentation</a>.</li>
+<li><a href="https://stat.ethz.ch/R-manual/R-devel/library/survival/html/coxph.control.html">R <code>survival::coxph.control()</code> ancillary arguments documentation</a>.</li>
+</ul>
+</section>
 </section>
 <section id="other-cases-where-discrepancies-are-found" class="level1">
 <h1>Other Cases Where Discrepancies Are Found</h1>
 <p>Now we look at other cases when the data has some special type which causes a mismatch between SAS and R. Suppose a dataset has 10 observations, and the first 5 are all events, and the last 5 are all censored.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">time =</span> <span class="fu">c</span>(<span class="dv">54</span>, <span class="dv">75</span>, <span class="dv">77</span>, <span class="dv">84</span>, <span class="dv">87</span>, <span class="dv">92</span>, <span class="dv">103</span>, <span class="dv">105</span>, <span class="dv">112</span>, <span class="dv">118</span>), </span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">status =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>))</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>test</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">time =</span> <span class="fu">c</span>(<span class="dv">54</span>, <span class="dv">75</span>, <span class="dv">77</span>, <span class="dv">84</span>, <span class="dv">87</span>, <span class="dv">92</span>, <span class="dv">103</span>, <span class="dv">105</span>, <span class="dv">112</span>, <span class="dv">118</span>), </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">status =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>))</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>test</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 10 × 2
     time status
@@ -390,17 +419,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Suppose we are interested to know the 25%, 50% and 75% quartile estimates, and the day 80, 100, and 120 estimates.</p>
 <p>Below is the R code:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>fit.km <span class="ot">&lt;-</span> <span class="fu">survfit</span>(<span class="fu">Surv</span>(time, status) <span class="sc">~</span> <span class="dv">1</span>, <span class="at">conf.type =</span> <span class="st">"log-log"</span>, <span class="at">data =</span> test)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="do">## quantile estimates</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(fit.km, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.25</span>, <span class="fl">0.5</span>, <span class="fl">0.75</span>))</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="do">## landmark estimates at 80, 100, 120-day</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit.km, <span class="at">times =</span> <span class="fu">c</span>(<span class="dv">80</span>, <span class="dv">100</span>, <span class="dv">120</span>), <span class="at">extend =</span> T)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>fit.km <span class="ot">&lt;-</span> <span class="fu">survfit</span>(<span class="fu">Surv</span>(time, status) <span class="sc">~</span> <span class="dv">1</span>, <span class="at">conf.type =</span> <span class="st">"log-log"</span>, <span class="at">data =</span> test)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="do">## quantile estimates</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(fit.km, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.25</span>, <span class="fl">0.5</span>, <span class="fl">0.75</span>))</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="do">## landmark estimates at 80, 100, 120-day</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit.km, <span class="at">times =</span> <span class="fu">c</span>(<span class="dv">80</span>, <span class="dv">100</span>, <span class="dv">120</span>), <span class="at">extend =</span> T)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Below is the SAS code:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>proc lifetest data<span class="ot">=</span>dat outsurv<span class="ot">=</span>_SurvEst timelist<span class="ot">=</span> <span class="dv">80</span> <span class="dv">100</span> <span class="dv">120</span> reduceout stderr; </span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>time lenfoly<span class="sc">*</span><span class="fu">fstat</span>(<span class="dv">0</span>);</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>proc lifetest data<span class="ot">=</span>dat outsurv<span class="ot">=</span>_SurvEst timelist<span class="ot">=</span> <span class="dv">80</span> <span class="dv">100</span> <span class="dv">120</span> reduceout stderr; </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>time lenfoly<span class="sc">*</span><span class="fu">fstat</span>(<span class="dv">0</span>);</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Below is the side-by-side comparison:</p>
 <div class="cell" data-layout-align="center">
@@ -430,21 +459,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>When using R, the median is the smallest time which survival estimate is &lt;= 0.5 –&gt; <code>(87+118) / 2 = 102.5.</code> However, SAS searches the smallest time which survival estimate is &lt; 0.5, which does not exist in this dataset, so it gives “NE” (Not evaluable).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>pl <span class="ot">&lt;-</span> survminer<span class="sc">::</span><span class="fu">ggsurvplot</span>(fit.km, </span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>                            <span class="at">conf.int =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                            <span class="at">ggtheme =</span> <span class="fu">theme_light</span>()) </span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>pl<span class="sc">$</span>plot <span class="sc">+</span>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fl">0.5</span>, <span class="at">color =</span> <span class="st">"black"</span>, <span class="at">linetype =</span> <span class="st">"solid"</span>)  </span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit.km)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>pl <span class="ot">&lt;-</span> survminer<span class="sc">::</span><span class="fu">ggsurvplot</span>(fit.km, </span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>                            <span class="at">conf.int =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>                            <span class="at">ggtheme =</span> <span class="fu">theme_light</span>()) </span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>pl<span class="sc">$</span>plot <span class="sc">+</span>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fl">0.5</span>, <span class="at">color =</span> <span class="st">"black"</span>, <span class="at">linetype =</span> <span class="st">"solid"</span>)  </span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit.km)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p><strong>Reason 2: Last event censored and prior to the required landmark estimate.</strong></p>
 <p>For the 120-day event-free estimate, SAS considers that 120 days is beyond the maximum observed day in the data (which was a censored event at time =118). Therefore, SAS considers this as Unknown and returns a result of “NE” (Not-evaluable). However, R uses the rate at last observed censored date to estimate the 120-day event free rate. As the event-free estimate at time of the last censored event at 118 was 0.5 (0.184, 0.753), R makes the assumption that this is the best estimate for the event-free rate at Time =120.</p>
 <p>If we change the last observation in the dataset to be an event (instead of censored), R and SAS will both give 0 for the event-free survival estimate, because it is for sure that all subjects did not survive beyond 120 days.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">time =</span> <span class="fu">c</span>(<span class="dv">54</span>, <span class="dv">75</span>, <span class="dv">77</span>, <span class="dv">84</span>, <span class="dv">87</span>, <span class="dv">92</span>, <span class="dv">103</span>, <span class="dv">105</span>, <span class="dv">112</span>, <span class="dv">118</span>), </span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">status =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>))</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>test</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">time =</span> <span class="fu">c</span>(<span class="dv">54</span>, <span class="dv">75</span>, <span class="dv">77</span>, <span class="dv">84</span>, <span class="dv">87</span>, <span class="dv">92</span>, <span class="dv">103</span>, <span class="dv">105</span>, <span class="dv">112</span>, <span class="dv">118</span>), </span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">status =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>))</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>test</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 10 × 2
     time status
