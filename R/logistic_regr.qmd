@@ -6,6 +6,7 @@ title: "Logistic Regression in R"
 #| echo: FALSE
 #| include: FALSE
 library(tidyverse)
+library(gmodels)
 ```
 
 In binary logistic regression, there is a single binary dependent variable, coded by an indicator variable. For example, if we represent a response as 1 and non-response as 0, then the corresponding probability of response, can be between 0 (certainly not a response) and 1 (certainly a response) - hence the labeling !
@@ -22,58 +23,51 @@ The model is especially useful in case-control studies and leads to the effect o
 
 *Data source: Loprinzi CL. Laurie JA. Wieand HS. Krook JE. Novotny PJ. Kugler JW. Bartel J. Law M. Bateman M. Klatt NE. et al. Prospective evaluation of prognostic variables from patient-completed questionnaires. North Central Cancer Treatment Group. Journal of Clinical Oncology. 12(3):601-7, 1994.*
 
-Survival in patients with advanced lung cancer from the North Central Cancer Treatment Group. Performance scores rate how well the patient can perform usual daily activities (see `?lung` for details).
+wgt_catn consists of: 1= patients a weight loss of zero or less, 0= patients with a weight loss of more than zero
 
-```{r}
-library(survival) 
-glimpse(lung)
-```
+trt01pn consists of 1= active treatment, 0 = placebo
 
 # Model Fit
 
-We analyze the event of weight gain (or staying the same weight) in lung cancer patients in dependency of age, sex, ECOG performance score and calories consumed at meals. In the original data, a positive number for the `wt.loss` variable is a weight loss, negative number is a gain. We start by dichotomising the response such that a result >0 is a weight loss, <= weight gain and creating a factor variable `wt_grp`.
-
-One of the most important things to remember is to ensure you tell R what your event is ! We want to model Events / Non-events, and hence your reference category for `wt_grp` dichotomous variable below is the weight loss level. Therefore, by telling R that your reference category is weight loss, you are effectively telling R that your Event = Weight Gain !
+We analyze the event of weight gain (or staying the same weight) in lung cancer patients in dependency of treatment (active or placebo), age, sex, ECOG performance score and calories consumed at meals. One of the most important things to remember is to ensure you tell R what your event is and what treatment comparison you are doing Active / Placebo or Placebo/Active! The easiest way to do this is to have event (or non-reference treatment) as 1, and non-event (reference treatment) as 0. Hence we will use the wt_catn and trt01pn variables.
 
 ```{r}
-lung2 <- survival::lung %>% 
-  mutate(
-    wt_grp = factor(wt.loss > 0, labels = c("weight loss", "weight gain"))
-  ) 
-
-#specify that weight loss should be used as baseline level (i.e we want to model weight gain as the event)
-lung2$wt_grp <- relevel(lung2$wt_grp, ref='weight loss')
-
-m1 <- glm(wt_grp ~ age + sex + ph.ecog + meal.cal, data = lung2, family = binomial(link="logit"))
+lung<-read.csv("../data/lung_cancer.csv")
+head(lung)
+m1 <- glm(wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, data = lung, family = binomial(link="logit"))
 summary(m1)
 ```
 
-The model summary contains the parameter estimates $\beta_j$ for each explanatory variable $x_j$, corresponding to the log-odds for the response variable to take the value $1$, conditional on all other explanatory variables remaining constant. For better interpretation, we can exponentiate these estimates, to obtain estimates for the odds instead and provide 95% confidence intervals:
+The model summary contains the parameter estimates $\beta_j$ for each explanatory variable $x_j$, corresponding to the log-odds for the response variable to take the value $1$, conditional on all other explanatory variables remaining constant. For better interpretation, we can exponentiate these estimates, to obtain estimates for the odds instead and provide 95% confidence intervals.
 
 ```{r}
-exp(coef(m1))
-exp(confint(m1))
+# model coefficients summary
+summary(m1)$coefficients
 
-#to output to a single tibble
-out1<-as_tibble(cbind(names(m1$coefficients),exp(cbind(Odds_Ratio = coef(m1), confint(m1)))))
-out1
+## Wald confidence limits
+cbind(est = exp(coef(m1)), 
+          exp(confint.default(m1)))
+## profile-likelihood limits
+cbind(est = exp(coef(m1)), 
+          exp(confint(m1)))
+
 
 ```
 
-NOTE: that the confidence intervals are being calculated using the profile likelihood method. See [here](https://cytel.com/perspectives/why-and-when-to-use-profile-likelihood-based-confidence-intervals/) for more details.
+NOTE: that there are two types of confidence intervals that you can calculate. Function `confint.default` gives the Wald confidence limits, which is the default option in SAS `PROC LOGISTIC` procedure; whereas `confint` gives the profile-likelihood limits.
 
 # Model Comparison
 
-To compare two logistic models, the `residual deviances` (-2 * log likelihoods) are compared against a $\chi^2$-distribution with degrees of freedom calculated using the difference in the two models' parameters. Below, the only difference is the inclusion/exclusion of age in the model, hence we test using $\chi^2$ with 1 df. Here testing at the 5% level.
+To compare two logistic models, the `residual deviances` (-2 \* log likelihoods) are compared against a $\chi^2$-distribution with degrees of freedom calculated using the difference in the two models' parameters. Below, the only difference is the inclusion/exclusion of age in the model, hence we test using $\chi^2$ with 1 df. Here testing at the 5% level.
 
 ```{r}
-m2 <- glm(wt_grp ~ sex + ph.ecog + meal.cal, data = lung2, family = binomial(link="logit"))
+m2 <- glm(wt_catn ~ trt01pn + sex + ph.ecog + meal.cal, data = lung, family = binomial(link="logit"))
 summary(m2)
 
 anova(m1, m2, test = "LRT")
 ```
 
-Stackexchange [here](https://stats.stackexchange.com/questions/59879/logistic-regression-anova-chi-square-test-vs-significance-of-coefficients-ano) has a good article describing this method and the difference between comparing 2 models using the likelihood ratio tests versus using wald tests and Pr>chisq (from the maximum likelihood estimate). Note: `anova(m1, m2, test = "Chisq")` and using `test="LRT"` as above are synonymous in this context.
+Stackexchange [here](https://stats.stackexchange.com/questions/59879/logistic-regression-anova-chi-square-test-vs-significance-of-coefficients-ano) has a good article describing this method and the difference between comparing 2 models using the likelihood ratio tests versus using wald tests and Pr\>chisq (from the maximum likelihood estimate). Note: `anova(m1, m2, test = "Chisq")` and using `test="LRT"` as above are synonymous in this context.
 
 # Prediction
 
@@ -81,7 +75,7 @@ Predictions from the model for the log-odds of a patient with new data to experi
 
 ```{r}
 # new female, symptomatic but completely ambulatory patient consuming 2500 calories
-new_pt <- data.frame(sex=2, ph.ecog=1, meal.cal=2500)
+new_pt <- data.frame(trt01pn=1, sex=2, ph.ecog=1, meal.cal=2500)
 predict(m2, new_pt, type = "response")
 ```
 
@@ -89,15 +83,21 @@ predict(m2, new_pt, type = "response")
 
 To create contrasts, you can use the `fit.contrast()` function from the `gmodels` package.
 
-This can be used with lm and glm objections:
+This can be used with lm and glm objects:
 
-Suppose we had a 3 level treatment variable (trt01p), whose levels were ordered Dose1, Dose2, Placebo.
+Here if we use the 3 level treatment variable (dose_id), we have 1=10mg, 2=20mg doses for active treatment and then 3= placebo which is 0mg.
 
-You would fit the model as above, followed by `fit.contrast()`. This is effective testing the null hypothesis that 0.5*dose1 + 0.5* dose2 - placebo = 0.
+You would fit the model as above, followed by `fit.contrast()`. This is effective testing the null hypothesis that 0.5*dose10mg + 0.5* dose20mg - placebo = 0.
 
-m2 <- glm(wt_grp ~ sex + trt01p, data = lung2, family = binomial(link="logit"))
+```{r}
 
-fit.contrast(m2,'trt01p',c(0.5,0.5,-1),conf.int=0.95)
+lung2<-lung |> 
+    mutate(dose_id2 = as.factor(lung$dose_id))
+
+m3 <- glm (wt_catn ~ dose_id2 + age + sex + ph.ecog + meal.cal, data = lung2, family = binomial(link="logit"))
+
+fit.contrast (m3,'dose_id2',c(0.5,0.5,-1),conf.int=0.95)
+```
 
 # Reference
 
@@ -106,7 +106,7 @@ fit.contrast(m2,'trt01p',c(0.5,0.5,-1),conf.int=0.95)
 
 #List all the packages needed
 
-si <- sessioninfo::session_info(c('tidyverse','survival')) 
+si <- sessioninfo::session_info(c('tidyverse','gmodels')) 
 si
 
 ```
