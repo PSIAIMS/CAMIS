@@ -1,0 +1,668 @@
+---
+title: "<R> <Reference-Based Multiple Imputation (joint modelling): Continuous Data>"
+---
+
+# Reference-Based Multiple Imputation (joint modelling): Continuous Data
+
+## Libraries
+
+### General
+```{r}
+#| output: false
+#| warning: false
+library(dplyr)
+library(tidyr)
+library(gt)
+library(labelled)
+```
+
+### Methodology specific
+```{r}
+#| output: false
+#| warning: false
+library(mmrm)
+library(emmeans)
+library(rbmi)
+library(mice)  # only used md.pattern()
+```
+
+
+## Reference-based multiple imputation (rbmi)
+
+### Methodology introduction
+Reference-based multiple imputation methods have become popular for handling missing data, as well as for conducting sensitivity analyses, in randomized clinical trials. In the context of a repeatedly measured continuous endpoint assuming a multivariate normal model, [Carpenter et al. (2013)](https://www.tandfonline.com/doi/full/10.1080/10543406.2013.834911) proposed a framework to extend the usual MAR-based MI approach by postulating assumptions about the joint distribution of pre- and post-deviation data. Under this framework, one makes qualitative assumptions about how individuals’ missing outcomes relate to those observed in relevant groups in the trial, based on plausible clinical scenarios. Statistical analysis then proceeds using the method of multiple imputation ([Rubin 1976](https://doi.org/10.1093/biomet/63.3.581), [Rubin 1987]((https://onlinelibrary.wiley.com/doi/book/10.1002/9780470316696))).
+
+In general, multiple imputation of a repeatedly measured continuous outcome can be done via 2 computational routes ([Roger 2022](https://baselbiometrics.github.io/home/docs/talks/20221208/5_JamesRoger%2020121118.pdf)):
+
+  1. Stepwise: split problem into separate imputations of data at each visit
+  
+      + requires monotone missingness, such as missingness due to withdrawal
+    
+      + conditions on the imputed values at previous visit
+    
+      + Bayesian linear regression problem is much simpler with monotone missing, as one can sample directly using conjugate priors
+
+  2. One-step approach (joint modelling): Fit a Bayesian full multivariate normal repeated measures model using MCMC and then draw a sample.
+
+Here, we illustrate reference-based multiple imputation of a continuous outcome measured repeatedly via the so-called one-step approach.
+
+### rbmi package
+The `rbmi` package [Gower-Page et al. (2022)](https://joss.theoj.org/papers/10.21105/joss.04251) will be used for the one-step approach of the reference-based multiple imputation using R. The package implements standard and reference based multiple imputation methods for continuous longitudinal endpoints . In particular, this package supports deterministic conditional mean imputation and jackknifing as described in [Wolbers et al. (2022)](https://onlinelibrary.wiley.com/doi/full/10.1002/pst.2234), convential MI based on Bayesian posterior draws as described in [Carpenter et al. (2013)](https://www.tandfonline.com/doi/full/10.1080/10543406.2013.834911), and bootstrapped maximum likelihood imputation as described in [von Hippel and Bartlett (2021)](https://doi.org/10.1214/20-STS793).
+
+The following standard and reference-based multiple imputation approaches will be illustrated here: 
+    
+    * MAR (Missing At Random)
+    
+    * CIR (Copy Increment from Reference)
+    
+    * J2R (Jump to Reference)
+    
+    * CR (Copy Reference)
+
+
+## Data used
+A publicly available example [dataset](https://r-packages.io/datasets/antidepressant_data) from an antidepressant clinical trial of an active drug versus placebo is used. Overall, data of 172 patients is available with 88 patients receiving placebo and 84 receiving active drug. This data is also used in the `rbmi` package [quickstart vignette](https://cran.r-project.org/web/packages/rbmi/vignettes/quickstart.html).
+
+The relevant endpoint is the Hamilton 17-item depression rating scale (HAMD17) which was assessed at baseline and at weeks 1, 2, 4, and 6 (visits 4-7). Study drug discontinuation occurred in 24% (20/84) of subjects from the active drug and 26% (23/88) of subjects from placebo. All data after study drug discontinuation are missing. 
+
+```{r create data}
+data("antidepressant_data")
+dat <- antidepressant_data %>%
+  dplyr::select(PATIENT, GENDER, THERAPY, RELDAYS, VISIT, BASVAL, HAMDTL17, CHANGE) %>%
+  dplyr::mutate(THERAPY = factor(THERAPY, levels = c("PLACEBO", "DRUG"))) %>%
+  remove_labels()
+
+gt(head(dat, n = 10))
+```
+
+The number of patients per visit and arm are:
+```{r explore data 1}
+dat %>%
+  group_by(VISIT, THERAPY) %>%
+  dplyr::summarise(N = n())
+```
+
+The mean change from baseline of the endpoint (Hamilton 17-item depression rating scale, HAMD17) per visit per treatment group using only the complete cases are:
+```{r explore data mean per visit}
+dat %>%
+  group_by(VISIT, THERAPY) %>%
+  dplyr::summarise(N = n(),
+                   MEAN = mean(CHANGE))
+```
+
+The missingness pattern is show below (1=observed data point (blue), 0=missing data point (red)). The incomplete data is primarily monotone in nature. 128 patients have complete data for all visits (all 1's at each visit). 20, 10 and 13 patients have 1, 2 or 3  monotone missing data, respectively. Further, there is a single additional intermittent missing observation (patient 3618).
+```{r explore data 2}
+dat_wide = dat %>%
+  dplyr::select(PATIENT, VISIT, CHANGE) %>%
+  pivot_wider(id_cols = PATIENT,
+              names_from = VISIT,
+              names_prefix = "VISIT_",
+              values_from = CHANGE)
+
+dat_wide %>%
+  dplyr::select(starts_with("VISIT_")) %>%
+  md.pattern(plot=TRUE, rotate.names = TRUE)
+```
+
+
+## Complete case analysis
+A complete case analysis is performed using mixed model for repeated measures (MMRM) with covariates: treatment [THERAPY], gender [GENDER], visit [VISIT] as factors; baseline score [BASVAL] as continuous; and visit-by-treatment [THERAPY * VISIT] interaction, and visit-by-baseline [BASVAL * VISIT] interaction. An unstructured covariance matrix is used.
+
+```{r mmrm fit}
+mmrm_fit = mmrm(CHANGE ~ 1 + THERAPY + GENDER + VISIT + BASVAL + THERAPY*VISIT + BASVAL*VISIT +
+                  us(VISIT | PATIENT),
+                data = dat,
+                reml = TRUE)
+summary(mmrm_fit)
+```
+
+Using the `emmeans` package/function least square means and contrast can be obtained.
+```{r mmrm emmeans}
+em = emmeans::emmeans(mmrm_fit,
+                      specs = trt.vs.ctrl ~ THERAPY*VISIT,
+                      at = list(VISIT = "7"),
+                      level = 0.95,
+                      adjust = "none",
+                      mode = "df.error")
+
+em_contrast = broom::tidy(em$contrasts, conf.int=TRUE, conf.level=0.95)
+gt(em_contrast) %>%
+  fmt_number(decimals = 3)
+```
+
+The treatment difference at visit 7 is of interest, and is estimated to be -2.829 (se=1.117) with 95% CI of [-5.035 to -0.622] (p=0.0123).
+
+
+## rbmi: MAR approach
+The code presented here is based on the `rbmi` package  [quickstart vignette](https://cran.r-project.org/web/packages/rbmi/vignettes/quickstart.html).
+
+### Create needed datasets and specify imputation strategy
+`rbmi` expects its input dataset to be complete; that is, there must be one row per subject for each visit (note: in clinical trials ADAMs typically do not have this required complete data structure). Missing outcome values should be coded as `NA`, while missing covariate values are not allowed. If the dataset is incomplete, then the `expand_locf()` function can be used to add any missing rows, using LOCF imputation to carry forward the observed baseline covariate values to visits with missing outcomes.
+
+```{r MAR - create dataset 1}
+dat_expand <- expand_locf(
+  dat,
+  PATIENT = levels(dat$PATIENT),  # expand by PATIENT and VISIT
+  VISIT = levels(dat$VISIT),
+  vars = c("BASVAL", "THERAPY", "GENDER"),  # complete covariates using LOCF
+  group = c("PATIENT"),
+  order = c("PATIENT", "VISIT")   # sort
+)
+```
+
+For example, the data of patient 1513 in the original data and expanded data are:
+```{r MAR - create dataset 2}
+gt(dat %>% dplyr::filter(PATIENT == "1513"))
+gt(dat_expand %>% dplyr::filter(PATIENT == "1513"))
+```
+
+Next, a dataset must be created specifying which data points should be imputed with the specified imputation strategy. The dataset `dat_ice` is created which specifies the first visit affected by an intercurrent event (ICE) and the imputation strategy for handling missing outcome data after the ICE. At most one ICE which is to be imputed is allowed per subject. In the example, the subject’s first visit affected by the ICE “study drug discontinuation” corresponds to the first terminal missing observation
+
+```{r MAR - create dataset 3}
+dat_ice <- dat_expand %>% 
+  arrange(PATIENT, VISIT) %>% 
+  filter(is.na(CHANGE)) %>% 
+  group_by(PATIENT) %>% 
+  slice(1) %>%
+  ungroup() %>% 
+  select(PATIENT, VISIT) %>% 
+  mutate(strategy = "MAR")
+
+gt(head(dat_ice))
+```
+
+In this dataset, subject 3618 has an intermittent missing values which does not correspond to a study drug discontinuation. We therefore remove this subject from `dat_ice`. In the later imputation step, it will automatically be imputed under the default MAR assumption.
+```{r MAR - create dataset 4}
+dat_ice <- dat_ice[-which(dat_ice$PATIENT == 3618),]
+```
+
+### Fit imputation model and draw posterior parameters
+The `vars` object using using `set_vars()` defines the names of key variables in the dataset and the covariates included in the imputation model. If you wish to include interaction terms these need to be added in the covariates input.
+
+The `method` object specifies the statistical method used to fit the imputation models and to create imputed datasets.
+
+The `draws()` function fits the imputation model and stores the corresponding parameter estimates and Bayesian posterior parameter draws.
+
+```{r MAR - draw step}
+vars <- set_vars(
+  outcome = "CHANGE",
+  visit = "VISIT",
+  subjid = "PATIENT",
+  group = "THERAPY",
+  covariates = c("GENDER", "BASVAL*VISIT", "THERAPY*VISIT")
+)
+
+method <- method_bayes(
+  n_samples = 500,
+  control = control_bayes(warmup = 500, thin = 10)
+)
+
+set.seed(12345)
+drawObj <- draws(
+  data = dat_expand,
+  data_ice = dat_ice,
+  vars = vars,
+  method = method,
+  quiet = TRUE
+)
+
+drawObj
+```
+
+### Generate imputed datasets
+
+The next step is to use the parameters from the imputation model to generate the imputed datasets. This is done via the `impute()` function. The function only has two key inputs: the imputation model output from `draws()` and the `references` groups relevant to reference-based imputation methods. Since we are using the MAR approach here, we can set it to NULL.
+
+```{r MAR - impute step}
+imputeObj <- impute(draws = drawObj,
+                    references = NULL)
+```
+
+In case we would like to access the imputed datasets, we can use the `extract_imputed_dfs()` function. For example, the imputed values in the 10th imputed dataset for patient 1513 are:
+
+```{r MAR - impute step 2}
+imputed_dfs = extract_imputed_dfs(imputeObj)
+MI_10 = imputed_dfs[[10]]
+MI_10$PATIENT_ID = dat_expand$PATIENT
+
+gt(MI_10 %>% dplyr::filter(PATIENT_ID == "1513"))
+```
+
+### Analyse imputed datasets
+The next step is to run the analysis model on each imputed dataset. This is done by defining an analysis function and then calling the `analyse()` function to apply this function to each imputed dataset. The `ancova()` function provided by the `rbmi` package which fits a separate ANCOVA model for the outcomes from each visit is used.
+
+The `ancova()` function uses the `set_vars()` function which determines the names of the key variables within the data and the covariates (in addition to the treatment group) for which the analysis model will be adjusted.
+
+Note: In Appendix 1 below we show how you can easily use a different analysis method (e.g., mmrm).
+
+```{r MAR - analyse}
+vars_analyse <- set_vars(
+  outcome = "CHANGE",
+  visit = "VISIT",
+  subjid = "PATIENT",
+  group = "THERAPY",
+  covariates = c("BASVAL", "GENDER")
+)
+
+anaObj <- analyse(imputations = imputeObj,
+                  fun = ancova, 
+                  vars = vars_analyse)
+```
+
+
+### Pool results
+Finally, the `pool()` function can be used to summarise the analysis results across multiple imputed datasets to provide an overall statistic with a standard error, confidence intervals and a p-value for the hypothesis test of the null hypothesis that the effect is equal to 0. Since we used `method_bayes()`, pooling and inference are based on Rubin’s rules.
+
+Here, the treatment difference at visit 7 is of interest. Since we set PLACEBO as the first factor in the variable `THERAPY` this corresponds to `ref`, whereas DRUG corresponds to `alt`.
+```{r MAR - pool}
+poolObj <- rbmi::pool(anaObj,
+                      conf.level = 0.95, 
+                      alternative = "two.sided")
+
+poolObj %>%
+  data.frame() %>%
+  dplyr::filter(grepl("7", parameter)) %>%
+  gt()
+```
+
+
+## rbmi: MNAR CR approach
+The following changes need to be made in the code above to apply the Copy Reference (CR) approach in `rbmi`. For `dat_ice` the strategy need to be changed to CR. In the `impute()` step the `references` need to be specified. Here we set the reference for the DRUG group to PLACEBO.
+
+```{r MNAR CR - changes}
+#| eval: false
+dat_ice <- dat_expand %>% 
+  arrange(PATIENT, VISIT) %>% 
+  filter(is.na(CHANGE)) %>% 
+  group_by(PATIENT) %>% 
+  slice(1) %>%
+  ungroup() %>% 
+  select(PATIENT, VISIT) %>% 
+  mutate(strategy = "CR")
+
+imputeObj <- impute(
+  drawObj,
+  references = c("PLACEBO"="PLACEBO", "DRUG"="PLACEBO")
+)
+```
+
+```{r MNAR CR - evaluate}
+#| echo: false
+#| include: false
+
+dat_ice <- dat_expand %>% 
+  arrange(PATIENT, VISIT) %>% 
+  filter(is.na(CHANGE)) %>% 
+  group_by(PATIENT) %>% 
+  slice(1) %>%
+  ungroup() %>% 
+  select(PATIENT, VISIT) %>% 
+  mutate(strategy = "CR")
+dat_ice <- dat_ice[-which(dat_ice$PATIENT == 3618),]
+
+vars <- set_vars(
+  outcome = "CHANGE",
+  visit = "VISIT",
+  subjid = "PATIENT",
+  group = "THERAPY",
+  covariates = c("GENDER", "BASVAL*VISIT", "THERAPY*VISIT")
+)
+
+method <- method_bayes(
+  n_samples = 500,
+  control = control_bayes(warmup = 500, thin = 10)
+)
+
+set.seed(12345)
+drawObj <- draws(
+  data = dat_expand,
+  data_ice = dat_ice,
+  vars = vars,
+  method = method,
+  quiet = TRUE
+)
+
+imputeObj <- impute(
+  drawObj,
+  references = c("PLACEBO"="PLACEBO", "DRUG"="PLACEBO")
+  )
+
+vars_analyse <- set_vars(
+  outcome = "CHANGE",
+  visit = "VISIT",
+  subjid = "PATIENT",
+  group = "THERAPY",
+  covariates = c("BASVAL", "GENDER")
+)
+
+anaObj <- analyse(imputations = imputeObj,
+                  fun = ancova, 
+                  vars = vars_analyse)  
+  
+poolObj <- rbmi::pool(anaObj,
+                      conf.level = 0.95, 
+                      alternative = "two.sided")
+```
+
+The results for M=500 imputed datasets using the MNAR CR approach are:
+```{r MNAR CR - results}
+poolObj %>%
+  data.frame() %>%
+  dplyr::filter(grepl("7", parameter)) %>%
+  gt()
+```
+
+
+
+## rbmi: MNAR JR approach
+The following changes need to be made in the code above to apply the Jump to Reference (JR) approach in `rbmi`. For `dat_ice` the strategy need to be changed to JR. In the `impute()` step the `references` need to be specified. Here we set the reference for the DRUG group to PLACEBO.
+
+```{r MNAR JR - changes}
+#| eval: false
+dat_ice <- dat_expand %>% 
+  arrange(PATIENT, VISIT) %>% 
+  filter(is.na(CHANGE)) %>% 
+  group_by(PATIENT) %>% 
+  slice(1) %>%
+  ungroup() %>% 
+  select(PATIENT, VISIT) %>% 
+  mutate(strategy = "JR")
+
+imputeObj <- impute(
+  drawObj,
+  references = c("PLACEBO"="PLACEBO", "DRUG"="PLACEBO")
+)
+```
+
+```{r MNAR JR - evaluate}
+#| echo: false
+#| include: false
+
+dat_ice <- dat_expand %>% 
+  arrange(PATIENT, VISIT) %>% 
+  filter(is.na(CHANGE)) %>% 
+  group_by(PATIENT) %>% 
+  slice(1) %>%
+  ungroup() %>% 
+  select(PATIENT, VISIT) %>% 
+  mutate(strategy = "JR")
+dat_ice <- dat_ice[-which(dat_ice$PATIENT == 3618),]
+
+vars <- set_vars(
+  outcome = "CHANGE",
+  visit = "VISIT",
+  subjid = "PATIENT",
+  group = "THERAPY",
+  covariates = c("GENDER", "BASVAL*VISIT", "THERAPY*VISIT")
+)
+
+method <- method_bayes(
+  n_samples = 500,
+  control = control_bayes(warmup = 500, thin = 10)
+)
+
+set.seed(12345)
+drawObj <- draws(
+  data = dat_expand,
+  data_ice = dat_ice,
+  vars = vars,
+  method = method,
+  quiet = TRUE
+)
+
+imputeObj <- impute(
+  drawObj,
+  references = c("PLACEBO"="PLACEBO", "DRUG"="PLACEBO")
+  )
+
+vars_analyse <- set_vars(
+  outcome = "CHANGE",
+  visit = "VISIT",
+  subjid = "PATIENT",
+  group = "THERAPY",
+  covariates = c("BASVAL", "GENDER")
+)
+
+anaObj <- analyse(imputations = imputeObj,
+                  fun = ancova, 
+                  vars = vars_analyse)  
+  
+poolObj <- rbmi::pool(anaObj,
+                      conf.level = 0.95, 
+                      alternative = "two.sided")
+```
+
+The results for M=500 imputed datasets using the MNAR JR approach are:
+```{r MNAR JR - results}
+poolObj %>%
+  data.frame() %>%
+  dplyr::filter(grepl("7", parameter)) %>%
+  gt()
+```
+
+
+
+## rbmi: MNAR CIR approach
+The following changes need to be made in the code above to apply the Copy Increments in Reference (CIR) approach in `rbmi`. For `dat_ice` the strategy need to be changed to CIR. In the `impute()` step the `references` need to be specified. Here we set the reference for the DRUG group to PLACEBO.
+
+```{r MNAR CIR - changes}
+#| eval: false
+dat_ice <- dat_expand %>% 
+  arrange(PATIENT, VISIT) %>% 
+  filter(is.na(CHANGE)) %>% 
+  group_by(PATIENT) %>% 
+  slice(1) %>%
+  ungroup() %>% 
+  select(PATIENT, VISIT) %>% 
+  mutate(strategy = "CIR")
+
+imputeObj <- impute(
+  drawObj,
+  references = c("PLACEBO"="PLACEBO", "DRUG"="PLACEBO")
+)
+```
+
+```{r MNAR CIR - evaluate}
+#| echo: false
+#| include: false
+
+dat_ice <- dat_expand %>% 
+  arrange(PATIENT, VISIT) %>% 
+  filter(is.na(CHANGE)) %>% 
+  group_by(PATIENT) %>% 
+  slice(1) %>%
+  ungroup() %>% 
+  select(PATIENT, VISIT) %>% 
+  mutate(strategy = "CIR")
+dat_ice <- dat_ice[-which(dat_ice$PATIENT == 3618),]
+
+vars <- set_vars(
+  outcome = "CHANGE",
+  visit = "VISIT",
+  subjid = "PATIENT",
+  group = "THERAPY",
+  covariates = c("GENDER", "BASVAL*VISIT", "THERAPY*VISIT")
+)
+
+method <- method_bayes(
+  n_samples = 500,
+  control = control_bayes(warmup = 500, thin = 10)
+)
+
+set.seed(12345)
+drawObj <- draws(
+  data = dat_expand,
+  data_ice = dat_ice,
+  vars = vars,
+  method = method,
+  quiet = TRUE
+)
+
+imputeObj <- impute(
+  drawObj,
+  references = c("PLACEBO"="PLACEBO", "DRUG"="PLACEBO")
+  )
+
+vars_analyse <- set_vars(
+  outcome = "CHANGE",
+  visit = "VISIT",
+  subjid = "PATIENT",
+  group = "THERAPY",
+  covariates = c("BASVAL", "GENDER")
+)
+
+anaObj <- analyse(imputations = imputeObj,
+                  fun = ancova, 
+                  vars = vars_analyse)  
+  
+poolObj <- rbmi::pool(anaObj,
+                      conf.level = 0.95, 
+                      alternative = "two.sided")
+```
+
+The results for M=500 imputed datasets using the MNAR CIR approach are:
+```{r MNAR CIR - results}
+poolObj %>%
+  data.frame() %>%
+  dplyr::filter(grepl("7", parameter)) %>%
+  gt()
+```
+
+
+## Summary of results
+In the table we present the results of the different imputation strategies (and with varying number, *M*, of multiple imputation draws). Note that the results can be (slightly) different from the results above due to a possible different seed. The table show the contrast at Visit 7 between DRUG and PLACEBO [DRUG - PLACEBO]:
+
+| Method            | Estimate | SE    | 95% CI           | p-value |
+|-------------------|----------|-------|------------------|---------|
+| Complete Case     | -2.829   | 1.117 | -5.035 to -0.622 | 0.0123  |
+| MI - MAR (M=500)  | -2.833   | 1.120 | -5.046 to -0.620 | 0.0125  |
+| MI - MAR (M=2000) | -2.837   | 1.118 | -5.047 to -0.627 | 0.0122  |
+| MI - MAR (M=5000) | -2.830   | 1.123 | -5.040 to -0.610 | 0.0128  |
+| MI - MNAR CR (M=500)  | -2.377 | 1.119 | -4.588 to -0.167 | 0.0352 |
+| MI - MNAR CR (M=2000) | -2.391 | 1.110 | -4.585 to -0.198 | 0.0328 |
+| MI - MNAR CR (M=5000) | -2.394 | 1.112 | -4.592 to -0.197 | 0.0329 |
+| MI - MNAR JR (M=500)  | -2.169 | 1.134 | -4.411 to 0.072 | 0.0577 |
+| MI - MNAR JR (M=2000) | -2.146 | 1.135 | -4.389 to 0.097 | 0.0606 |
+| MI - MNAR JR (M=5000) | -2.148 | 1.135 | -4.390 to 0.095 | 0.0603 |
+| MI - MNAR CIR (M=500)  | -2.495 | 1.113 | -4.695 to -0.295 | 0.0265 |
+| MI - MNAR CIR (M=2000) | -2.469 | 1.116 | -4.674 to -0.263 | 0.0285 |
+| MI - MNAR CIR (M=5000) | -2.479 | 1.112 | -4.676 to -0.282 | 0.0273 |
+
+
+## Approximate Bayesian
+In the `draws()` function it is possible to specify other methods. For example, the approximate Bayesian MI `method_approxbayes()` which is based on bootstrapping. `draws()` returns the draws from the posterior distribution of the parameters using an approximate Bayesian approach, where the sampling from the posterior distribution is simulated by fitting the MMRM model on bootstrap samples of the original dataset.
+
+```{r ApproxBayes - changes}
+#| eval: false
+method <- method_approxbayes(
+  covariance = "us",
+  threshold = 0.01,
+  REML=TRUE,
+  n_samples = 500
+)
+```
+
+In the table we present the results of the approximate Bayesian approach for a CR imputation strategy. The table show the contrast at Visit 7 between DRUG and PLACEBO [DRUG - PLACEBO]:
+
+| Method            | Estimate | SE    | 95% CI           | p-value |
+|-------------------|----------|-------|------------------|---------|
+| MI - MNAR CR (M=500)  | -2.415 | 1.109 | -4.617 to -0.210 | 0.0320 |
+| MI - MNAR CR (M=2000) | -2.403 | 1.112 | -4.600 to -0.205 | 0.0323 |
+
+
+## Discussion
+A note on computational time: The total running time (including data loading, setting up data sets, MCMC run, imputing data and analysis MI data) for M=500 was about 26 seconds on a personal laptop. It increased to about 92 seconds for M=2000. Computational time was similar across different imputation strategies.
+
+With a small number of `n_samples` in `method_bayes()` a warning could pop-up "The largest R-hat is 1.08, indicating chains have not mixed. Running the chains for more iterations may help". Increasing the number of `n_samples` will mostly solve this warning. For example, for this data example, this message is received when setting `n_samples` equal to a number below 100.
+
+Mention something on the simulation study [Tina] did with different seeds.
+
+## Appendix 1: mmrm as analysis model
+In the `analyse()` function (at the moment of writing) the only available analysis function is `ancova`. However, the user is able to specify its own analysis function. See the `analyse()` function for more details.
+
+Another possibility (although, not the most efficient) is to implement a for loop in which the model is fit on each imputed dataset. The obtained results could then be pooled using Rubin's rule. For example, suppose an MMRM should be fit on each imputed dataset:
+
+```{r mmrm analyse}
+mmrm_analyse_mi_function <- function(Impute_Obj){
+  # create all imputed datasets
+  imputed_dfs = extract_imputed_dfs(Impute_Obj)
+
+  # create empty vectors to store mmrm analysis results
+  est_vec = sd_vec = df_vec = NULL
+  
+  # for loop to save estimates per imputation
+  for (k in 1:length(imputed_dfs)){
+    temp_dat = imputed_dfs[[k]]
+    mmrm_fit_temp = mmrm(CHANGE ~ 1 + THERAPY + VISIT + BASVAL * VISIT + THERAPY * VISIT + GENDER +
+                           us(VISIT | PATIENT),
+                         data = temp_dat,
+                         reml = TRUE)
+    em = emmeans::emmeans(mmrm_fit_temp,
+                          specs = trt.vs.ctrl ~ THERAPY * VISIT,
+                          at = list(VISIT = "7"),
+                          level = 0.95,
+                          adjust = "none",
+                          mode = "df.error")
+    est_vec[k] = summary(em$contrasts)$estimate
+    sd_vec[k] = summary(em$contrasts)$SE
+    df_vec[k] = summary(em$contrasts)$df
+  }
+  
+  # summarize results using rubin's rule
+  rr = rbmi:::rubin_rules(ests=est_vec, 
+                          ses = sd_vec,
+                          v_com = mean(df_vec))
+  rr$se_t = sqrt(rr$var_t)
+  rr$t.stat =  rr$est_point / sqrt(rr$var_t)
+  rr$p_value = 2*pt(q = rr$t.stat, df = rr$df, lower.tail = TRUE)
+  
+  return(rr=rr)
+}
+```
+
+The following code then performs the analysis and pooling
+```{r mmrm analyse 2}
+#| eval: false
+mmrm_analyse_mi_function(Impute_Obj = imputeObj)
+```
+
+In the table we present the results of the Bayesian approach for a CR imputation strategy with an MMRM analysis model. The table show the contrast at Visit 7 between DRUG and PLACEBO [DRUG - PLACEBO]:
+
+| Method            | Estimate | SE    | 95% CI           | p-value |
+|-------------------|----------|-------|------------------|---------|
+| MI - MNAR CR (M=500)  | -2.415 | 1.109 | -4.607 to -0.223 | 0.0310 |
+| MI - MNAR CR (M=2000) | -2.388 | 1.111 | -4.584 to -0.193 | 0.0332 | 
+
+
+## Reference
+
+[Carpenter JR, Roger JH & Kenward MG (2013)](https://doi.org/10.1080/10543406.2013.834911). Analysis of Longitudinal Trials with Protocol Deviation: A Framework for Relevant, Accessible Assumptions, and Inference via MI. *Journal of Biopharmaceutical Statistics* 23: 1352-1371.
+
+[Gower-Page C, Noci A & Wolbers M (2022)](https://doi.org/10.21105/joss.04251). rbmi: A R package for standard and reference-based multiple imputation methods. *Journal of Open Source Software* 7(74): 4251.  
+
+[rbmi: Reference Based Multiple Imputation](https://cran.r-project.org/web/packages/rbmi/index.html)
+
+[rbmi: Quickstart](https://cran.r-project.org/web/packages/rbmi/vignettes/quickstart.html)
+
+[Roger J (2022, Dec 8)](https://baselbiometrics.github.io/home/docs/talks/20221208/5_JamesRoger%2020121118.pdf). Other statistical software for continuous longitudinal endpoints: SAS macros for multiple imputation. *Addressing intercurrent events: Treatment policy and hypothetical strategies*. Joint EFSPI and BBS virtual event.
+
+[Rubin DB (1976)](https://doi.org/10.1093/biomet/63.3.581). Inference and Missing Data. *Biometrika* 63: 581–592.
+
+[Rubin DB (1987)](https://onlinelibrary.wiley.com/doi/book/10.1002/9780470316696). *Multiple Imputation for Nonresponse in Surveys*. New York: John Wiley & Sons.
+
+[von Hippel PT & Bartlett JW (2021)](https://doi.org/10.1214/20-STS793). Maximum likelihood multiple imputation: Faster imputations and consistent standard errors without posterior draws. *Statistical Science* 36(3): 400–420. 
+
+[Wolbers M, Noci A, Delmar P, Gower-Page C, Yiu S & Bartlett JW (2022)](https://onlinelibrary.wiley.com/doi/full/10.1002/pst.2234). Standard and reference-based conditional mean imputation. *Pharmaceutical Statistics* 21(6): 1246-1257.
+
+::: {.callout-note collapse="true" title="Session Info"}
+```{r}
+#| echo: false
+
+# List all the packages needed 
+si <- sessioninfo::session_info(c(
+  #Create a vector of all the packages used in this file 
+))
+si
+```
+:::
+
