@@ -73,7 +73,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-e02d26bcf25074182f5ecbe0194a9a93.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-ebfcb0ed0ac0539375ffcf22e0e9fa78.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -225,9 +225,20 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#modelling-the-lung-cancer-data" id="toc-modelling-the-lung-cancer-data" class="nav-link active" data-scroll-target="#modelling-the-lung-cancer-data">Modelling the lung cancer data</a></li>
-  <li><a href="#parameterization-of-model-effects-categorical-covariates-in-sas" id="toc-parameterization-of-model-effects-categorical-covariates-in-sas" class="nav-link" data-scroll-target="#parameterization-of-model-effects-categorical-covariates-in-sas">Parameterization of model effects (categorical covariates) in SAS</a></li>
-  <li><a href="#example-of-deriving-contrast-statements-in-sas" id="toc-example-of-deriving-contrast-statements-in-sas" class="nav-link" data-scroll-target="#example-of-deriving-contrast-statements-in-sas">Example of deriving contrast statements in SAS</a></li>
+  <li><a href="#modelling-the-lung-cancer-data" id="toc-modelling-the-lung-cancer-data" class="nav-link active" data-scroll-target="#modelling-the-lung-cancer-data">Modelling the lung cancer data</a>
+  <ul class="collapse">
+  <li><a href="#summary-of-common-mistakes-in-sas" id="toc-summary-of-common-mistakes-in-sas" class="nav-link" data-scroll-target="#summary-of-common-mistakes-in-sas"><strong>Summary of Common Mistakes in SAS</strong></a></li>
+  <li><a href="#modelling-using-proc-genmod" id="toc-modelling-using-proc-genmod" class="nav-link" data-scroll-target="#modelling-using-proc-genmod">Modelling using Proc Genmod</a></li>
+  <li><a href="#modelling-using-proc-logistic" id="toc-modelling-using-proc-logistic" class="nav-link" data-scroll-target="#modelling-using-proc-logistic">Modelling using Proc Logistic</a></li>
+  <li><a href="#model-comparison" id="toc-model-comparison" class="nav-link" data-scroll-target="#model-comparison"><strong>Model Comparison</strong></a></li>
+  <li><a href="#parameterization-of-model-effects-categorical-covariates-in-sas" id="toc-parameterization-of-model-effects-categorical-covariates-in-sas" class="nav-link" data-scroll-target="#parameterization-of-model-effects-categorical-covariates-in-sas">Parameterization of model effects (categorical covariates) in SAS</a>
+  <ul class="collapse">
+  <li><a href="#class-x-y-z-parameffect" id="toc-class-x-y-z-parameffect" class="nav-link" data-scroll-target="#class-x-y-z-parameffect">CLASS X Y Z /PARAM=Effect</a></li>
+  <li><a href="#class-x-y-z-paramglm" id="toc-class-x-y-z-paramglm" class="nav-link" data-scroll-target="#class-x-y-z-paramglm">CLASS X Y Z /PARAM=glm</a></li>
+  <li><a href="#class-x-y-z-paramref" id="toc-class-x-y-z-paramref" class="nav-link" data-scroll-target="#class-x-y-z-paramref">CLASS X Y Z /PARAM=Ref</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#contrast-statements-for-2-or-more-treatments" id="toc-contrast-statements-for-2-or-more-treatments" class="nav-link" data-scroll-target="#contrast-statements-for-2-or-more-treatments">Contrast statements for 2 or more treatments</a></li>
   <li><a href="#ensuring-you-are-modelling-the-correct-binary-event-in-sas" id="toc-ensuring-you-are-modelling-the-correct-binary-event-in-sas" class="nav-link" data-scroll-target="#ensuring-you-are-modelling-the-correct-binary-event-in-sas">Ensuring you are modelling the correct Binary event in SAS</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
@@ -249,7 +260,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">25 February, 2025</p>
+      <p class="date">27 February, 2025</p>
     </div>
   </div>
   
@@ -262,228 +273,415 @@ window.Quarto = {
 
 
 <p>For a brief description of what is logistic regression see <a href="../R/logistic_regr.html">here</a>.</p>
-<section id="modelling-the-lung-cancer-data" class="level3">
-<h3 class="anchored" data-anchor-id="modelling-the-lung-cancer-data">Modelling the lung cancer data</h3>
+<section id="modelling-the-lung-cancer-data" class="level1">
+<h1>Modelling the lung cancer data</h1>
 <p>In SAS, we can use proc logistic or proc genmod to perform a logistic regression.</p>
 <p>To demonstrate the use of logistic regression we examine the same lung dataset as used in the R example <a href="../R/logistic_regr.html">here</a>.</p>
-<p><strong>Some Common mistakes</strong></p>
+<section id="summary-of-common-mistakes-in-sas" class="level2">
+<h2 class="anchored" data-anchor-id="summary-of-common-mistakes-in-sas"><strong>Summary of Common Mistakes in SAS</strong></h2>
 <ol type="1">
 <li><p>Handling of missing data. Check SAS output that the number of missing values is as you expect. Make sure you have changed any <code>NA</code> results in the raw data to be missing, since SAS would consider <code>NA</code> as a valid category (a non-missing character result).</p></li>
-<li><p>Make sure you consider continuous or categorical variables as you intended. Just because a variable is character or numeric in the dataset, doesn’t mean SAS will treat it that way in the model. You have to use Class row to tell SAS which variables should be treated as character factors (also using <code>ref=' '</code> to select the reference category).</p></li>
+<li><p>Make sure you consider continuous or categorical variables as you intended. Just because a variable is character or numeric in the dataset, doesn’t mean SAS will treat it that way in the model. You have to use Class row to tell SAS which variables should be treated as character factors. You also have to use <code>ref=' '</code> to tell SAS which is the reference category, otherwise SAS by default which use the last value of the variable alphabetically (e..g a categorical variable with 1, 2, 3 would default to 3 as the reference).</p></li>
 <li><p>Be careful you are modelling the correct event (response vs non-response, or weight_gain vs weight_loss for example)</p></li>
 <li><p>Be careful when interpreting any odds ratios that you have the factor of interest the correct way around (0 vs 1, or 1 vs 0)</p></li>
 <li><p>If using proc logistic, be careful of how SAS creates its parameters used in the model as this determines how you can use the parameter estimates! It is often easiest to use <code>param=glm</code> so that the exp(maximum liklihood parameter estimate) = odds ratio. Check the class level information (Design variables) is as you would expect. See below for more detail on other parameterization methods.</p></li>
 </ol>
-<p><strong>Option 1:</strong> <strong>Using Proc Logistic with sex and ph_ecog as character factors:</strong> sex (2 levels: 1,2) and ph_ecog (4 levels:0,1,2 or 3), meal_cal as continuous. As shown below, the <code>class</code> statement and <code>ref=" "</code> option can be used to set the direction of the comparison, <code>/param=glm</code> ensures exp(estimates)=odds ratio.</p>
-<p>NOTE: that the 95% confidence limits are being calculated using the Wald method. This assumes symmetric intervals around the maximum likelihood estimate using a normal distribution assumption (MLE +/-1.96* SE). This is different to the profile likelihood method which is the default in R using confint() function.</p>
+</section>
+<section id="modelling-using-proc-genmod" class="level2">
+<h2 class="anchored" data-anchor-id="modelling-using-proc-genmod">Modelling using Proc Genmod</h2>
+<p>Proc Genmod is a procedure that allows the fitting of Generalized Linear Models. By using the options <code>dist=bin</code> and <code>link=logit,</code> it fits a logistic regression as shown below. For more information see the SAS help <a href="https://support.sas.com/documentation/cdl/en/statug/63033/HTML/default/viewer.htm#statug_genmod_sect002.htm">here</a>.</p>
+<p>Always check that the Class Level Information matches what you expect (SAS puts the reference class level last). Also check that you are modelling the correct ‘event’ and that the algorithm has converged.</p>
+<p>Below we are fitting trt01pn and sex as categorical variables, age, ph_ecog2 and meal_caln as continuous variables.</p>
+<p>You can use exponential of the maximum likelihood parameter estimate and the exponential of the Wald 95% Confidence Limits to obtain the odds ratios and 95% CIs. Proc Genmod uses GLM parameterization.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung;  </span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    class <span class="fu">sex</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="fu">ph_ecog</span> (<span class="at">ref=</span><span class="st">"0"</span>)<span class="sc">/</span>param<span class="ot">=</span>glm;</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    model  <span class="fu">wt_grp</span>(<span class="at">event=</span><span class="st">"weight_gain"</span>) <span class="ot">=</span> age sex ph_ecog meal_cal;</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>Example data<span class="sc">:</span> . <span class="ot">=</span> missing, <span class="fu">trt01pn</span> (<span class="dv">1</span> or <span class="dv">2</span>), <span class="fu">sex</span> (<span class="dv">1</span> or <span class="dv">2</span>), <span class="fu">ph_ecog2</span> (<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">wt_gain</span> (<span class="dv">1</span><span class="ot">=</span>gain, <span class="dv">0</span><span class="ot">=</span>no gain)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>wt_gain   trt01pn  age   sex    ph_ecog2   meal_caln</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>.         <span class="dv">1</span>        <span class="dv">74</span>    <span class="dv">1</span>       <span class="dv">1</span>          <span class="dv">1175</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="dv">0</span>         <span class="dv">1</span>        <span class="dv">68</span>    <span class="dv">2</span>       <span class="dv">0</span>          <span class="dv">1225</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span>         <span class="dv">2</span>        <span class="dv">60</span>    <span class="dv">1</span>       <span class="dv">2</span>           .</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>proc genmod data<span class="ot">=</span>lung;       </span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  class <span class="fu">trt01pn</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="fu">sex</span> (<span class="at">ref=</span><span class="st">"1"</span>)  ;    </span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  model <span class="fu">wt_gain</span> (<span class="at">event=</span><span class="st">"1"</span>) <span class="ot">=</span> trt01pn age sex ph_ecog2 meal_caln <span class="sc">/</span> </span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        dist<span class="ot">=</span>bin link<span class="ot">=</span>logit;</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>run; </span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>Class Level Information</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>Class     Levels      Values</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>trt01pn   <span class="dv">2</span>           <span class="dv">2</span> <span class="dv">1</span> </span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>sex       <span class="dv">2</span>           <span class="dv">2</span> <span class="dv">1</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>Response Profile</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>Ordered value     wt_gain         Total Frequency</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span>                 <span class="dv">1</span>                <span class="dv">48</span> </span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span>                 <span class="dv">0</span>                <span class="dv">122</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>PROC GENMOD is modeling the probability that wt_gain<span class="ot">=</span><span class="st">'1'</span>. </span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>Algorithm Converged.</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>                    Analysis of Maximum Likelihood Estimates                 </span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>Parameter   DF  Estimate  Standard   Wald <span class="dv">95</span>%        Wald         Pr<span class="sc">&gt;</span>ChiSq</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>                          Error      CIs             Chi<span class="sc">-</span>Square</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>Intercept   <span class="dv">1</span>   <span class="sc">-</span><span class="fl">2.6415</span>   <span class="fl">1.5140</span>   <span class="sc">-</span><span class="fl">5.6090</span> <span class="fl">0.3259</span>    <span class="fl">3.04</span>         <span class="fl">0.0810</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>trt01pn <span class="dv">2</span>   <span class="dv">1</span>    <span class="fl">0.3888</span>   <span class="fl">0.3782</span>   <span class="sc">-</span><span class="fl">0.3524</span> <span class="fl">1.1299</span>    <span class="fl">1.03</span>         <span class="fl">0.3039</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>trt01pn <span class="dv">1</span>   <span class="dv">0</span>    <span class="fl">0.0000</span>   <span class="fl">0.0000</span>    <span class="fl">0.0000</span> <span class="fl">0.0000</span>    .            .</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>age         <span class="dv">1</span>    <span class="fl">0.0123</span>   <span class="fl">0.0212</span>   <span class="sc">-</span><span class="fl">0.0292</span> <span class="fl">0.0537</span>    <span class="fl">0.34</span>         <span class="fl">0.5624</span>    </span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>sex <span class="dv">2</span>       <span class="dv">1</span>    <span class="fl">0.8321</span>   <span class="fl">0.3744</span>    <span class="fl">0.0983</span> <span class="fl">1.5659</span>    <span class="fl">4.97</span>         <span class="fl">0.0262</span>  </span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>sex <span class="dv">1</span>       <span class="dv">0</span>    <span class="fl">0.0000</span>   <span class="fl">0.0000</span>    <span class="fl">0.0000</span> <span class="fl">0.0000</span>    .            .</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>ph_ecog     <span class="dv">1</span>   <span class="sc">-</span><span class="fl">0.3764</span>   <span class="fl">0.2638</span>   <span class="sc">-</span><span class="fl">0.8935</span> <span class="fl">0.1407</span>    <span class="fl">2.03</span>         <span class="fl">0.1537</span>   </span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>meal_cal    <span class="dv">1</span>   <span class="sc">-</span><span class="fl">0.0008</span>   <span class="fl">0.0004</span>   <span class="sc">-</span><span class="fl">0.0000</span> <span class="fl">0.0017</span>    <span class="fl">3.59</span>         <span class="fl">0.0581</span>  </span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>scale       <span class="dv">0</span>    <span class="fl">1.0000</span>   <span class="fl">0.0000</span>    <span class="fl">1.0000</span> <span class="fl">1.0000</span></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a><span class="sc">----------------------------------------------------------------------------</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>Note<span class="sc">:</span> The scale parameter was held fixed</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p><strong>Option 2:</strong> <strong>Using proc Genmod with sex and ph_ecog as character factors:</strong> sex (2 levels: 1,2) and ph_ecog (4 levels:0,1,2 or 3), meal_cal as continuous. This gets the same results as above. You can use exp(maximum likelihood parameter estimate) to obtain the odds ratios and 95% CIs for the odds ratios. The below already uses GLM parameterization.</p>
+</section>
+<section id="modelling-using-proc-logistic" class="level2">
+<h2 class="anchored" data-anchor-id="modelling-using-proc-logistic">Modelling using Proc Logistic</h2>
+<p>The same model above can also be modelled using Proc Logistic. You no longer have to specify the distribution and link function, however you do need to add an option <code>/ param=glm</code> on the class row. Different parameterizations are discussed later in the context of forming treatment contrast statements.</p>
+<p>For now, all you need to know is that using <code>/param=glm</code> ensures exp(estimates)=odds ratio. You will also note that in the <code>class level information</code>, SAS now tells you the <code>design variables</code>. This will also be important later when we learn more about parameterization.</p>
+<p>Proc Logistic is often preferred above Proc Genmod as it outputs the Odds Ratios and 95% CIs for you, without you having to back transform them using exponential of the MLEs yourself.</p>
+<p>NOTE: that the 95% confidence limits are being calculated using the Wald method. This assumes symmetric intervals around the maximum likelihood estimate using a normal distribution assumption (MLE +/-1.96* SE). Alternative confidence interval estimation methods exist such as the profile likelihood method but SAS does not calculate these.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>proc genmod data<span class="ot">=</span>lung; </span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>      class <span class="fu">sex</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="fu">ph_ecog</span> (<span class="at">ref=</span><span class="st">"0"</span>); </span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>      model <span class="fu">wt_grp</span> (<span class="at">event=</span><span class="st">"weight_gain"</span>) <span class="ot">=</span> age sex ph_ecog meal_cal <span class="sc">/</span> dist<span class="ot">=</span>bin link<span class="ot">=</span>logit;</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung;  </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    class <span class="fu">trt01pn</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="fu">sex</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="sc">/</span>param<span class="ot">=</span>glm;</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    model  <span class="fu">wt_gain</span>(<span class="at">event=</span><span class="st">"1"</span>) <span class="ot">=</span> trt01pn age sex ph_ecog2 meal_caln;</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>Response Profile</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>Ordered value     wt_gain         Total Frequency</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span>                 <span class="dv">0</span>                <span class="dv">122</span> </span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span>                 <span class="dv">1</span>                <span class="dv">48</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>Probability modeled is wt_gain<span class="ot">=</span><span class="dv">1</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>Note<span class="sc">:</span> <span class="dv">58</span> observations were deleted due to missing values fro the repsonse or</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>explanatory variables.</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>Class Level Information</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>Class     Levels      Design Variables</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>trt01pn   <span class="dv">2</span>           <span class="dv">1</span>  <span class="dv">0</span> </span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>          <span class="dv">1</span>           <span class="dv">0</span>  <span class="dv">1</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>sex       <span class="dv">2</span>           <span class="dv">1</span>  <span class="dv">0</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>          <span class="dv">1</span>           <span class="dv">0</span>  <span class="dv">1</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>Convergence <span class="fu">criterion</span> (<span class="at">GCONV=</span><span class="fl">1E-8</span>) satisfied.</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>                    Analysis of Maximum Likelihood Estimates                 </span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>Parameter   DF  Estimate  Standard     Wald         Pr<span class="sc">&gt;</span>ChiSq</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>                          Error        Chi<span class="sc">-</span>Square</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>Intercept   <span class="dv">1</span>   <span class="sc">-</span><span class="fl">2.6415</span>   <span class="fl">1.5140</span>       <span class="fl">3.0440</span>       <span class="fl">0.0810</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>trt01pn <span class="dv">2</span>   <span class="dv">1</span>    <span class="fl">0.3888</span>   <span class="fl">0.3782</span>       <span class="fl">1.0569</span>       <span class="fl">0.3039</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>trt01pn <span class="dv">1</span>   <span class="dv">0</span>    <span class="fl">0.0000</span>   .            .            .</span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>age         <span class="dv">1</span>    <span class="fl">0.0123</span>   <span class="fl">0.0212</span>       <span class="fl">0.3356</span>       <span class="fl">0.5624</span>    </span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>sex <span class="dv">2</span>       <span class="dv">1</span>    <span class="fl">0.8321</span>   <span class="fl">0.3744</span>       <span class="fl">4.9400</span>       <span class="fl">0.0262</span>  </span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>sex <span class="dv">1</span>       <span class="dv">0</span>    <span class="fl">0.0000</span>   .            .            .</span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>ph_ecog     <span class="dv">1</span>   <span class="sc">-</span><span class="fl">0.3764</span>   <span class="fl">0.2638</span>       <span class="fl">2.0349</span>       <span class="fl">0.1537</span>   </span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>meal_cal    <span class="dv">1</span>   <span class="sc">-</span><span class="fl">0.000850</span> <span class="fl">0.000449</span>     <span class="fl">3.5895</span>       <span class="fl">0.0581</span>  </span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a><span class="sc">----------------------------------------------------------------------------</span></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>                   Odds Ratio Estimates                </span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>Effect           Point Estimate    <span class="dv">95</span>% Wald Confidence Limits</span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a>trt01pn <span class="dv">2</span> vs <span class="dv">1</span>   <span class="fl">1.475</span>             <span class="fl">0.703</span>   <span class="fl">3.095</span></span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>age              <span class="fl">1.012</span>             <span class="fl">0.971</span>   <span class="fl">1.055</span></span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a>sex     <span class="dv">2</span> vs <span class="dv">1</span>   <span class="fl">2.298</span>             <span class="fl">1.103</span>   <span class="fl">4.787</span>    </span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a>ph_ecog          <span class="fl">0.686</span>             <span class="fl">0.409</span>   <span class="fl">1.151</span>  </span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a>meal_cal         <span class="fl">1.001</span>             <span class="fl">1.000</span>   <span class="fl">1.002</span> </span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a><span class="sc">----------------------------------------------------------------------------</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p><strong>Option 3:</strong> <strong>Using proc logistic, however this time all covariates are treated as continuous parameters not categorical.</strong> You do need to ensure <code>age</code> <code>sex</code> <code>ph_ecog</code> and <code>meal_cal</code> are numeric SAS binary 0/1 variables else you will get an error message suggesting to add the variables to a class statement or may get incorrect results.</p>
+</section>
+<section id="model-comparison" class="level2">
+<h2 class="anchored" data-anchor-id="model-comparison"><strong>Model Comparison</strong></h2>
+<p>To compare two logistic models, the -2 * Log Likelihood from each model can be compared against a <span class="math inline">\(\chi^2\)</span>-distribution with degrees of freedom calculated using the difference in the two models’ parameters.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung;</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>model <span class="fu">wt_grp</span>(<span class="at">event=</span><span class="st">"weight_gain"</span>) <span class="ot">=</span> age sex ph_ecog meal_cal;</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>Model <span class="dv">1</span><span class="sc">:</span>  model  <span class="fu">wt_gain</span>(<span class="at">event=</span><span class="st">"1"</span>) <span class="ot">=</span> trt01pn age sex ph_ecog2 meal_caln;</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>Model Fit Statistics</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>Criterion   Intercept Only     Intercept and Covariates       </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>AIC         <span class="fl">204.355</span>            <span class="fl">202.460</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>SC          <span class="fl">207.491</span>            <span class="fl">221.274</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="sc">-</span><span class="dv">2</span> Log L    <span class="fl">202.355</span>            <span class="fl">190.460</span>   </span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>Model <span class="dv">2</span><span class="sc">:</span>  model  <span class="fu">wt_gain</span>(<span class="at">event=</span><span class="st">"1"</span>) <span class="ot">=</span> trt01pn sex ph_ecog2 meal_caln;</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>Model Fit Statistics</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>Criterion   Intercept Only     Intercept and Covariates       </span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>AIC         <span class="fl">204.355</span>            <span class="fl">200.798</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>SC          <span class="fl">207.491</span>            <span class="fl">216.477</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="sc">-</span><span class="dv">2</span> Log L    <span class="fl">202.355</span>            <span class="fl">190.798</span>   </span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p><strong>Comparison with R model</strong> Option 3 is used with the following 3 models, in order to match the same analysis performed in R. This is modelling Sex and ECOG as continuous parameters. We analyze the weight gain in lung cancer patients in dependency of age, sex, ECOG performance score and calories consumed at meals. Weight is categorized into a binary variable for Loss or Gain. The probability modelled is weight_gain.</p>
-<p>We fit 3 models. In</p>
-<ul>
-<li><p>Model 1: Weight Loss (1/0) = Age + Sex + ECOG + Calories</p></li>
-<li><p>Model 2: Weight Loss (1/0) = Sex + ECOG + Calories</p></li>
-<li><p>Model 3: Using backwards selection to compare models with/without age</p></li>
-</ul>
+<p>190.460 - 190.798 = -0.338 which using a <span class="math inline">\(\chi^2\)</span>-distribution corresponds to p=0.5606</p>
+<p>SAS also allows us to fit forward or backwards stepwise selection. Below we specify to stop when we have 4 variables left in the model. This is not commonly done in practice but is included to highlight the difference in using a selection procedure compared to doing the difference betweeen the -2 * log likelihood models using a <span class="math inline">\(\chi^2\)</span>-distribution.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>title1 <span class="st">"Model 1"</span>;                                                                                                             </span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung;                                                                                                    </span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  model  <span class="fu">wt_grp</span> (<span class="at">event=</span><span class="st">"weight_gain"</span>)  <span class="ot">=</span> age sex ph_ecog meal_cal;                                                                                    </span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>run;  </span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>Response Profile</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>Ordered value     wt_grp         Total Frequency</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span>                 weight_gain     <span class="dv">122</span> </span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span>                 weight_loss     <span class="dv">48</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>Model <span class="dv">1</span> Results</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>                    Analysis of Maximum Likelihood Estimates                 </span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>Parameter   DF     Estimate       Standard Error    Wald Chi<span class="sc">-</span>Square  Pr<span class="sc">&gt;</span>ChiSq</span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>Intercept   <span class="dv">1</span>      <span class="fl">3.2632</span>         <span class="fl">1.6488</span>            <span class="fl">3.9168</span>            <span class="fl">0.0478</span></span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>Age         <span class="dv">1</span>     <span class="sc">-</span><span class="fl">0.0102</span>         <span class="fl">0.0208</span>            <span class="fl">0.2389</span>            <span class="fl">0.6250</span></span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>Sex         <span class="dv">1</span>     <span class="sc">-</span><span class="fl">0.8717</span>         <span class="fl">0.3714</span>            <span class="fl">5.5090</span>            <span class="fl">0.0189</span></span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>ph_ecog     <span class="dv">1</span>      <span class="fl">0.4180</span>         <span class="fl">0.2589</span>            <span class="fl">2.6069</span>            <span class="fl">0.1064</span></span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>meal_cal    <span class="dv">1</span>     <span class="sc">-</span><span class="fl">0.00089</span>        <span class="fl">0.000447</span>          <span class="fl">3.9417</span>            <span class="fl">0.0471</span></span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="sc">----------------------------------------------------------------------------</span></span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>Model Fit Statistics</span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>Criterion   Intercept Only     Intercept and Covariates       </span>
-<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
-<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>AIC         <span class="fl">204.355</span>            <span class="fl">201.505</span></span>
-<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>SC          <span class="fl">207.491</span>            <span class="fl">217.184</span></span>
-<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="sc">-</span><span class="dv">2</span> Log L    <span class="fl">202.355</span>            <span class="fl">191.505</span>   </span>
-<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung;  </span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    class <span class="fu">trt01pn</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="fu">sex</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="sc">/</span>param<span class="ot">=</span>glm;</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    model  <span class="fu">wt_gain</span>(<span class="at">event=</span><span class="st">"1"</span>) <span class="ot">=</span> trt01pn age sex ph_ecog2 meal_caln<span class="sc">/</span> </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>           selection<span class="ot">=</span>backward stop<span class="ot">=</span><span class="dv">4</span>;</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>run;  </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>Step <span class="dv">1</span><span class="sc">:</span> Effect age is removed</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>Summary of Backward Elimination</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>Step   Effect Removed   DF     Number In     Wald Chi<span class="sc">-</span>Square   Pr<span class="sc">&gt;</span>ChiSq</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span>      Age              <span class="dv">1</span>      <span class="dv">4</span>             <span class="fl">0.3356</span>            <span class="fl">0.5624</span>   </span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>title1 <span class="st">"Model 2"</span>;                                                    </span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung2;</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>model  <span class="fu">wt_grp</span> (<span class="at">event=</span><span class="st">"weight_gain"</span>) <span class="ot">=</span> sex ph_ecog meal_cal;</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>run;             </span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>Model <span class="dv">2</span> Results</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                    Analysis of Maximum Likelihood Estimates                 </span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>Parameter   DF     Estimate       Standard Error    Wald Chi<span class="sc">-</span>Square  Pr<span class="sc">&gt;</span>ChiSq</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>Intercept   <span class="dv">1</span>      <span class="fl">2.5607</span>         <span class="fl">0.7977</span>           <span class="fl">10.3047</span>            <span class="fl">0.0013</span></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>Sex         <span class="dv">1</span>     <span class="sc">-</span><span class="fl">0.8359</span>         <span class="fl">0.3637</span>            <span class="fl">5.2815</span>            <span class="fl">0.0216</span></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>ph_ecog     <span class="dv">1</span>      <span class="fl">0.3794</span>         <span class="fl">0.2469</span>            <span class="fl">2.3616</span>            <span class="fl">0.1244</span></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>meal_cal    <span class="dv">1</span>     <span class="sc">-</span><span class="fl">0.00083</span>        <span class="fl">0.000435</span>          <span class="fl">3.6770</span>            <span class="fl">0.0552</span></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="sc">----------------------------------------------------------------------------</span></span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>Model Fit Statistics</span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>Criterion   Intercept Only     Intercept and Covariates       </span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>AIC         <span class="fl">204.355</span>            <span class="fl">201.505</span></span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>SC          <span class="fl">207.491</span>            <span class="fl">217.184</span></span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="sc">-</span><span class="dv">2</span> Log L    <span class="fl">202.355</span>            <span class="fl">191.505</span>   </span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>title1 <span class="st">"Using selection=backward to get model comparison stats"</span>; </span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung2;  </span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>model  <span class="fu">wt_grp</span> (<span class="at">event=</span><span class="st">"weight_gain"</span>)  <span class="ot">=</span> age sex ph_ecog meal_cal <span class="sc">/</span> selection <span class="ot">=</span> backward stop<span class="ot">=</span><span class="dv">3</span>; </span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>run;   </span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>Step <span class="dv">1</span><span class="sc">:</span> Effect age is removed</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>Summary of Backward Elimination</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>Step   Effect Removed   DF     Number In     Wald Chi<span class="sc">-</span>Square   Pr<span class="sc">&gt;</span>ChiSq</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span>      Age              <span class="dv">1</span>      <span class="dv">3</span>             <span class="fl">0.2389</span>            <span class="fl">0.6250</span>   </span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>Note: The number of effects in the model has reached STOP=3, (when 3 variables remain in the model, it will not proceed to remove any more even if the ones left are not significant)</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>Model <span class="dv">3</span> Results</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                    Analysis of Maximum Likelihood Estimates                 </span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>Parameter   DF     Estimate       Standard Error    Wald Chi<span class="sc">-</span>Square  Pr<span class="sc">&gt;</span>ChiSq</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="sc">-----------------------------------------------------------------------------</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>Intercept   <span class="dv">1</span>      <span class="fl">2.5607</span>         <span class="fl">0.7977</span>           <span class="fl">10.3047</span>            <span class="fl">0.0013</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>Sex         <span class="dv">1</span>     <span class="sc">-</span><span class="fl">0.8359</span>         <span class="fl">0.3637</span>            <span class="fl">5.2815</span>            <span class="fl">0.0216</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>ph_ecog     <span class="dv">1</span>      <span class="fl">0.3794</span>         <span class="fl">0.2469</span>            <span class="fl">2.3616</span>            <span class="fl">0.1244</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>meal_cal    <span class="dv">1</span>     <span class="sc">-</span><span class="fl">0.00083</span>        <span class="fl">0.000435</span>          <span class="fl">3.6770</span>            <span class="fl">0.0552</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="sc">----------------------------------------------------------------------------</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>NOTE: the chi-square test summary of backward elimination, p=0.6250 is different to the results in R, which gave a difference in deviance of -0.24046, p=0.6239.</p>
-<p>This is because R was doing a difference in -2 * Log Likelihood test comparing the model with sex + ph_ecog + meal_cal + age vs sex + ph_ecog + meal_cal, based on <span class="math inline">\(\chi^2\)</span> distribution with 1 df.</p>
-<p>However, the backward elimination process in SAS uses the residual sums of squares and the F statistic. Starting with the full model, it removes the parameter with the least significant F statistic until all effects in the model have F statistics significant as a certain level. The F statistic is calculated as:</p>
+<p>NOTE: the chi-square test summary of backward elimination, p=0.5624 is slightly different to using the -2 * log likelihood models using a <span class="math inline">\(\chi^2\)</span>-distribution p=0.5606.</p>
+<p>This is because the backward elimination process in SAS uses the residual sums of squares and the F statistic. Starting with the full model, it removes the parameter with the least significant F statistic until all effects in the model have F statistics significant as a certain level. The F statistic is calculated as:</p>
 <p><span class="math display">\[F=\frac{(RSS_{p-k}-RSS_p)/k}{RSS_p /(n-p-k)}\]</span> where RSS = Residual sums of squares, n=number of observations in the analysis, p=number of parameters in fuller model (exc. intercept), k=number of degrees of freedom associated with the effect you are dropping, <span class="math display">\[RSS_p\]</span> =RSS for the fuller model, <span class="math display">\[RSS_{p-k}\]</span> = RSS for the reduced model.</p>
 </section>
-<section id="parameterization-of-model-effects-categorical-covariates-in-sas" class="level3">
-<h3 class="anchored" data-anchor-id="parameterization-of-model-effects-categorical-covariates-in-sas">Parameterization of model effects (categorical covariates) in SAS</h3>
-<p>The most common problem when fitting logistic regression in SAS, is getting SAS to model the binary variable (events) and any categorical covariates correctly.</p>
-<p>There are two procedures which can be used to perform logistic regression in SAS, <code>proc logistic</code>, and <code>proc genmod</code> (using dist=bin and link=logit options). They obtain the same results when parameterized correctly. However <code>proc logistic</code> has three ways to parameterize categorical variables, and failure to parameterize correctly can lead to incorrect interpretation of results. Parameterization is what SAS does when you include a categorical variable in your model. It codes that variable using new parameters and it fits those into your model.</p>
-<p>The default parameterization is <code>/PARAM=EFFECT</code> - This is shown as Example A in the design matrix example figure below.</p>
-<p>For the example of a categorical variable trt - which has 3 treatment levels (Active 1, Active 2, Placebo). With the EFFECT option, the reference level (Placebo) is given values of “-1” for both of the x1 and x2 parameters. The design matrix consists of 1 less parameter than the number of levels of your variable (so that for 3 treatment groups you have x1 and x2 - 2 parameters in the model). Which reference category is selected is specified either by using the <code>ref='X'</code> option, or the default which would be the last value of the variable. In our example (as we have not specified <code>ref='X'</code> this is Placebo (as this is last in the alphabet after Active 1 and Active 2).</p>
+<section id="parameterization-of-model-effects-categorical-covariates-in-sas" class="level2">
+<h2 class="anchored" data-anchor-id="parameterization-of-model-effects-categorical-covariates-in-sas">Parameterization of model effects (categorical covariates) in SAS</h2>
+<p>The most common problem when fitting logistic regression in SAS, is getting SAS to model the binary variable (events) and any categorical covariates correctly. Using <code>proc genmod</code> (using dist=bin and link=logit options), there is no issue as SAS defaults to using GLM parameterization. However using <code>proc logistic</code> there are three ways to parameterize categorical variables, and the default is <code>/PARAM=EFFECT</code> which can cause confusion when interpreting your model.</p>
+<p>To demonstrate, we will now model a categorical variable called Dose, which has 3 treatment levels (1=10mg Active, 2=20 mg Active, 3=Placebo). The reference is now dose=3. You must pay close attention to the table of Class level information in order to understand how SAS is modelling your data.</p>
+<section id="class-x-y-z-parameffect" class="level3">
+<h3 class="anchored" data-anchor-id="class-x-y-z-parameffect">CLASS X Y Z /PARAM=Effect</h3>
+<p>This is the SAS default such that if you do not specify the <code>/param</code> option, SAS defaults to using this method.</p>
+<p>With the EFFECT option, dose_id has 3 levels, and so needs 2 design variables (β1 and β2). Sex has 2 levels so uses just 1 design variable (β1). For dose_id, the reference level (Placebo) is given values of “-1” for both of the β1 and β2 parameters. General model: Y= α + β1x1 + β2x1 {+β3x3} etc, representing each parameter in the model.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>dataset; </span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>      CLASS TRTP <span class="sc">/</span>PARAM<span class="ot">=</span>EFFECT; </span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>      MODEL <span class="fu">resp</span> (<span class="at">event=</span><span class="st">"Y"</span>) <span class="ot">=</span> TRTP ;</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>run;</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>or </span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>dataset; </span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>      CLASS TRTP; </span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>      MODEL <span class="fu">resp</span> (<span class="at">event=</span><span class="st">"Y"</span>) <span class="ot">=</span> TRTP ;</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung;  </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    class <span class="fu">dose_id</span> (<span class="at">ref=</span><span class="st">"3"</span>) <span class="fu">sex</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="sc">/</span>param<span class="ot">=</span>effect;</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    model  <span class="fu">wt_gain</span>(<span class="at">event=</span><span class="st">"1"</span>) <span class="ot">=</span> dose_id age sex ph_ecog2 meal_caln;</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>Class Level Information</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>Class       Value            Design Variables</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>                             dose_β1  dose_β2</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>dose_id      <span class="dv">1</span>                <span class="dv">1</span>           <span class="dv">0</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>             <span class="dv">2</span>                <span class="dv">0</span>           <span class="dv">1</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>             <span class="dv">3</span>               <span class="sc">-</span><span class="dv">1</span>          <span class="sc">-</span><span class="dv">1</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>             </span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>                             sex_β3      </span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>SEX          <span class="dv">1</span>               <span class="sc">-</span><span class="dv">1</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>             <span class="dv">2</span>                <span class="dv">1</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>If we want to estimate the effect of <span class="fu">treatment</span> (ignoring the other covariates), the Class Level Information can be translated into the table below, which is then used to form contrast statements.</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>α is the intercept, and β1 and β2 (including the sign <span class="sc">+</span><span class="er">/</span><span class="sc">-</span>) are from the design variables above.</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>                              </span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>Dose_id       Effect          </span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="sc">------------------------------</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="dv">10</span>mg Active   Y <span class="ot">=</span> α <span class="sc">+</span> β1          </span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="dv">20</span>mg Active   Y <span class="ot">=</span> α <span class="sc">+</span> β2          </span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>Placebo       Y <span class="ot">=</span> α <span class="sc">-</span> β1 <span class="sc">-</span> β2    </span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="sc">------------------------------</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>To compare <span class="dv">10</span>mg Active vs Placebo, we would do the following<span class="sc">:</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a> (α <span class="sc">+</span> β1 ) <span class="sc">-</span> (α <span class="sc">-</span> β1 <span class="sc">-</span> β2)</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> <span class="dv">2</span> β1 <span class="sc">+</span> β2  </span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> <span class="dv">2</span> β1 <span class="sc">+</span> <span class="dv">1</span> β2</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>This equates to a contrast statement as follows<span class="sc">:</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung;  </span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>    class <span class="fu">dose_id</span> (<span class="at">ref=</span><span class="st">"3"</span>) <span class="fu">sex</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="sc">/</span>param<span class="ot">=</span>effect;</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>    model  <span class="fu">wt_gain</span>(<span class="at">event=</span><span class="st">"1"</span>) <span class="ot">=</span> dose_id age sex ph_ecog2 meal_caln;</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>    CONTRAST <span class="st">"10mg vs. Placebo"</span> dose_id <span class="dv">2</span> <span class="dv">1</span> <span class="sc">/</span> e; </span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>To compare the average <span class="fu">of</span> (<span class="dv">10</span>mg Active and <span class="dv">20</span>mg Active) vs Placebo, we would do the following<span class="sc">:</span></span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>((α <span class="sc">+</span> β1 <span class="sc">+</span> α <span class="sc">+</span> β2 ) <span class="sc">/</span><span class="dv">2</span> ) <span class="sc">-</span> (α <span class="sc">-</span> β1 <span class="sc">-</span> β2)</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> α <span class="sc">+</span> <span class="fl">0.5</span> β1 <span class="sc">+</span> <span class="fl">0.5</span> β2 <span class="sc">-</span> α <span class="sc">+</span> β1 <span class="sc">+</span> β2  </span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> <span class="fl">1.5</span> β1 <span class="sc">+</span> <span class="fl">1.5</span> β2</span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>This equates to a contrast statement as follows<span class="sc">:</span></span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung;  </span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>    class <span class="fu">dose_id</span> (<span class="at">ref=</span><span class="st">"3"</span>) <span class="fu">sex</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="sc">/</span>param<span class="ot">=</span>effect;</span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>    model  <span class="fu">wt_gain</span>(<span class="at">event=</span><span class="st">"1"</span>) <span class="ot">=</span> dose_id age sex ph_ecog2 meal_caln;</span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>    CONTRAST <span class="st">"Active (10mg + 20mg) vs. Placebo"</span> dose_id <span class="fl">1.5</span> <span class="fl">1.5</span> <span class="sc">/</span> e; </span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>As you can see, these contrasts are not very intuitive and hence it is not reccomended to use the default SAS option of <span class="sc">/</span>param<span class="ot">=</span>effect, since its easy to end up with the wrong contrasts.</span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a>Contract Test Results</span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a>Contrast                           DF        Wald Chi<span class="sc">-</span>Square      Pr<span class="sc">&gt;</span>ChiSq</span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a><span class="fu">Active</span> (<span class="dv">10</span>mg <span class="sc">+</span><span class="dv">20</span>mg) vs Placebo     <span class="dv">1</span>          <span class="fl">1.1610</span>               <span class="fl">0.2813</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Alternatively, you change the parameterization in SAS using the following options:</p>
-<p><code>PARAM=REF</code> - This is shown as Example B below - reference parameter values “0”, n-1 variables</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>dataset; </span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>      CLASS TRTP <span class="sc">/</span>PARAM<span class="ot">=</span>REF; </span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>      MODEL <span class="fu">resp</span> (<span class="at">event=</span><span class="st">"Y"</span>) <span class="ot">=</span> TRTP ;</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p><code>PARAM=GLM</code> - This is shown as Example C below - no reference parameter as such (output compares against last value of treatment group), n variables.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>dataset;  </span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>      CLASS TRTP <span class="sc">/</span>PARAM<span class="ot">=</span>GLM; </span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>      MODEL <span class="fu">resp</span> (<span class="at">event=</span><span class="st">"Y"</span>) <span class="ot">=</span> TRTP ;</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p><strong>Design Matrix Examples</strong></p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/logistic_regression/parameterization.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>Depending on which parameterization you use, you have to interpret the estimates you obtains from the model carefully. It is also very important to check the reference assigned is the correct one.</p>
-<p>This is also particularly important if you are using any contrast, estimate or lsmestimate statements since the coefficients used for the contrasts must be in line with the parameterization.</p>
 </section>
-<section id="example-of-deriving-contrast-statements-in-sas" class="level3">
-<h3 class="anchored" data-anchor-id="example-of-deriving-contrast-statements-in-sas">Example of deriving contrast statements in SAS</h3>
-<p>The table below shows the how the parameterizations using EFFECT, REF or GLM, translate to the model being fitted.</p>
-<p>Using General model: Y= α + β1x1 + β2x1 {+β3x3}, the treatments are represented as follows:</p>
+<section id="class-x-y-z-paramglm" class="level3">
+<h3 class="anchored" data-anchor-id="class-x-y-z-paramglm">CLASS X Y Z /PARAM=glm</h3>
+<p>Now let’s look at the <code>param=glm</code> option. GLM parameterization has a design variable for each level of a parameter. Hence for dose with 3 levels, we have 3 design variables (β1, β2 and β3).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>Treatment  <span class="fu">Effect</span>(A)          <span class="fu">REF</span> (B)       <span class="fu">GLM</span> (C)</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>Active A   Y <span class="ot">=</span> α <span class="sc">+</span> β1         Y <span class="ot">=</span> α <span class="sc">+</span> β1    Y <span class="ot">=</span> α <span class="sc">+</span> β1 </span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>Active B   Y <span class="ot">=</span> α <span class="sc">+</span> β2         Y <span class="ot">=</span> α <span class="sc">+</span> β2    Y <span class="ot">=</span> α <span class="sc">+</span> β2 </span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>Placebo    Y <span class="ot">=</span> α <span class="sc">-</span> β1 <span class="sc">-</span> β2    Y <span class="ot">=</span> α         Y <span class="ot">=</span> α <span class="sc">+</span> β3 </span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung;  </span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    class <span class="fu">dose_id</span> (<span class="at">ref=</span><span class="st">"3"</span>) <span class="fu">sex</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="sc">/</span>param<span class="ot">=</span>glm;</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    model  <span class="fu">wt_gain</span>(<span class="at">event=</span><span class="st">"1"</span>) <span class="ot">=</span> dose_id age sex ph_ecog2 meal_caln;</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>Class Level Information</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>Class       Value            Design Variables</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>                             dose_β1  dose_β2 dose_β3</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>dose_id      <span class="dv">1</span>                <span class="dv">1</span>           <span class="dv">0</span>       <span class="dv">0</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>             <span class="dv">2</span>                <span class="dv">0</span>           <span class="dv">1</span>       <span class="dv">0</span>  </span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>             <span class="dv">3</span>                <span class="dv">0</span>           <span class="dv">0</span>       <span class="dv">1</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>             </span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>                             sex_β3   sex_β4   </span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>SEX          <span class="dv">1</span>                <span class="dv">1</span>           <span class="dv">0</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>             <span class="dv">2</span>                <span class="dv">0</span>           <span class="dv">1</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>If we want to estimate the effect of <span class="fu">treatment</span> (ignoring the other covariates), the Class Level Information can be translated into the table below, which is then used to form contrast statements.</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>α is the intercept, and β1 and β2 and β3 (including the sign <span class="sc">+</span><span class="er">/</span><span class="sc">-</span>) are from the design variables above.</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>                              </span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>Dose_id       Effect          </span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="sc">------------------------------</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a><span class="dv">10</span>mg Active   Y <span class="ot">=</span> α <span class="sc">+</span> β1          </span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="dv">20</span>mg Active   Y <span class="ot">=</span> α <span class="sc">+</span> β2          </span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>Placebo       Y <span class="ot">=</span> α <span class="sc">-</span> β3    </span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>To compare <span class="dv">10</span>mg Active vs Placebo, we would do the following<span class="sc">:</span></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a> (α <span class="sc">+</span> β1 ) <span class="sc">-</span> (α <span class="sc">-</span> β3)</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span>  β1 <span class="sc">-</span> β3  </span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> <span class="dv">1</span> β1 <span class="sc">-</span> <span class="dv">1</span> β3</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>This equates to a contrast statement as follows<span class="sc">:</span></span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung;  </span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>    class <span class="fu">dose_id</span> (<span class="at">ref=</span><span class="st">"3"</span>) <span class="fu">sex</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="sc">/</span>param<span class="ot">=</span>glm;</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>    model  <span class="fu">wt_gain</span>(<span class="at">event=</span><span class="st">"1"</span>) <span class="ot">=</span> dose_id age sex ph_ecog2 meal_caln;</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>    CONTRAST <span class="st">"10mg vs. Placebo"</span> trt <span class="dv">1</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">/</span> e; </span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>As you can see, this contrast is much more intuitive. If you want to compare the effect of <span class="fu">Active</span> (<span class="dv">10</span>mg) compared to placebo,  you take the effect of <span class="dv">10</span>mg and subtract the effect of placebo <span class="sc">!</span></span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>To compare the average <span class="fu">of</span> (<span class="dv">10</span>mg Active and <span class="dv">20</span>mg Active) vs Placebo, we would do the following<span class="sc">:</span></span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>((α <span class="sc">+</span> β1 <span class="sc">+</span> α <span class="sc">+</span> β2)<span class="sc">/</span><span class="dv">2</span> <span class="sc">-</span> (α <span class="sc">+</span> β3) </span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> α <span class="sc">+</span> <span class="fl">0.5</span> β1 <span class="sc">+</span> <span class="fl">0.5</span> β2 <span class="sc">-</span> α <span class="sc">-</span> β3 </span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> <span class="fl">0.5</span> β1 <span class="sc">+</span> <span class="fl">0.5</span> β2 <span class="sc">-</span> β3</span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a>This equates to a contrast statement as follows<span class="sc">:</span></span>
+<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a>proc logistic <span class="at">data=</span>lung;  </span>
+<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a>    class <span class="fu">dose_id</span> (<span class="at">ref=</span><span class="st">"3"</span>) <span class="fu">sex</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="sc">/</span><span class="at">param=</span>glm;</span>
+<span id="cb6-51"><a href="#cb6-51" aria-hidden="true" tabindex="-1"></a>    model  <span class="fu">wt_gain</span>(<span class="at">event=</span><span class="st">"1"</span>) <span class="ot">=</span> dose_id age sex ph_ecog2 meal_caln;</span>
+<span id="cb6-52"><a href="#cb6-52" aria-hidden="true" tabindex="-1"></a>CONTRAST <span class="st">"Active (10mg + 20mg) vs. Placebo (1)"</span> trt <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">/</span> e; </span>
+<span id="cb6-53"><a href="#cb6-53" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb6-54"><a href="#cb6-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-55"><a href="#cb6-55" aria-hidden="true" tabindex="-1"></a>As you can see, this contrast is much more intuitive. If you want to compare the average of <span class="fu">Active</span> (<span class="dv">10</span>mg <span class="sc">+</span> <span class="dv">20</span>mg) compared to placebo,  you take half the effect of <span class="dv">10</span>mg plus half the effect of <span class="dv">20</span>mg and substract the effect of placebo <span class="sc">!</span></span>
+<span id="cb6-56"><a href="#cb6-56" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-57"><a href="#cb6-57" aria-hidden="true" tabindex="-1"></a>Contract Test Results</span>
+<span id="cb6-58"><a href="#cb6-58" aria-hidden="true" tabindex="-1"></a>Contrast                           DF        Wald Chi<span class="sc">-</span>Square      Pr<span class="sc">&gt;</span>ChiSq</span>
+<span id="cb6-59"><a href="#cb6-59" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
+<span id="cb6-60"><a href="#cb6-60" aria-hidden="true" tabindex="-1"></a><span class="fu">Active</span> (<span class="dv">10</span>mg <span class="sc">+</span><span class="dv">20</span>mg) vs Placebo     <span class="dv">1</span>          <span class="fl">1.1610</span>               <span class="fl">0.2813</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Now let’s suppose we wanted to compare the average of the Active Treatment groups versus the Placebo treatment group. (A+B)/2 compared to Placebo.</p>
-<p><strong>EFFECT (A) parameterization</strong></p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>((α <span class="sc">+</span> β1 <span class="sc">+</span> α <span class="sc">+</span> β2 ) <span class="sc">/</span><span class="dv">2</span> ) <span class="sc">-</span> (α <span class="sc">-</span> β1 <span class="sc">-</span> β2)</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> α <span class="sc">+</span> <span class="fl">0.5</span> β1 <span class="sc">+</span> <span class="fl">0.5</span> β2 <span class="sc">-</span> α <span class="sc">+</span> β1 <span class="sc">+</span> β2  </span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> <span class="fl">1.5</span> β1 <span class="sc">+</span> <span class="fl">1.5</span> β2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>Therefore, to apply this contrast in SAS we would use:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>PROC LOGISTIC data<span class="ot">=</span>dataset;</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>CLASS trt ; <span class="sc">-</span>default PARAM<span class="ot">=</span>EFFECT option is used so last trt is reference </span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>MODEL <span class="fu">resp</span> (<span class="at">event=</span><span class="st">"Y"</span>) <span class="ot">=</span> trt ; </span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>CONTRAST <span class="st">"Active (A &amp; B) vs. Placebo"</span> trt <span class="fl">1.5</span> <span class="fl">1.5</span> <span class="sc">/</span> e; </span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>RUN;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p><strong>GLM (C) parameterization</strong></p>
-<p>The GLM parameterization can be more intuitive.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>((α <span class="sc">+</span> β1 <span class="sc">+</span> α <span class="sc">+</span> β2)<span class="sc">/</span><span class="dv">2</span> <span class="sc">-</span> (α <span class="sc">+</span> β3) </span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> α <span class="sc">+</span> <span class="fl">0.5</span> β1 <span class="sc">+</span> <span class="fl">0.5</span> β2 <span class="sc">-</span> α <span class="sc">-</span> β3 </span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> <span class="fl">0.5</span> β1 <span class="sc">+</span> <span class="fl">0.5</span> β2 <span class="sc">-</span> β3</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>Therefore, to apply this contrast in SAS we would use:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>PROC LOGISTIC data<span class="ot">=</span>dataset; </span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>CLASS trt <span class="sc">/</span> param<span class="ot">=</span>glm; </span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>MODEL <span class="fu">resp</span> (<span class="at">event=</span><span class="st">"Y"</span>) <span class="ot">=</span> trt ; </span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>CONTRAST <span class="st">"Active (2 &amp; 3) vs. Placebo (1)"</span> trt <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">/</span> e; </span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>RUN;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>For this reason, it is common to either use the default PARAM=Effect with ref=“X” option. or to use the param=GLM with no ref=“X” option. It is very important to check the output design matrix so you know what parameterization and reference groups are being used.</p>
 </section>
-<section id="ensuring-you-are-modelling-the-correct-binary-event-in-sas" class="level3">
-<h3 class="anchored" data-anchor-id="ensuring-you-are-modelling-the-correct-binary-event-in-sas">Ensuring you are modelling the correct Binary event in SAS</h3>
+<section id="class-x-y-z-paramref" class="level3">
+<h3 class="anchored" data-anchor-id="class-x-y-z-paramref">CLASS X Y Z /PARAM=Ref</h3>
+<p>Now let’s look at the <code>param=ref</code> option. Similar to param=effect, ref parameterization uses 1 less design variable compared to the number of levels each parameter has, but the parameterization is different. For dose with 3 levels, we have 2 design variables (β1 and β2).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung;   </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>class <span class="fu">dose_id</span> (<span class="at">ref=</span><span class="st">"3"</span>) <span class="fu">sex</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="sc">/</span>param<span class="ot">=</span>ref;</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>model  <span class="fu">wt_gain</span>(<span class="at">event=</span><span class="st">"1"</span>) <span class="ot">=</span> dose_id age sex ph_ecog2 meal_caln;</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>Class Level Information</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>Class       Value            Design Variables</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>                             dose_β1  dose_β2 </span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>dose_id      <span class="dv">1</span>                <span class="dv">1</span>           <span class="dv">0</span>       </span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>             <span class="dv">2</span>                <span class="dv">0</span>           <span class="dv">1</span>         </span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>             <span class="dv">3</span>                <span class="dv">0</span>           <span class="dv">0</span>       </span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>             </span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>                             sex_β3     </span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>SEX          <span class="dv">1</span>                <span class="dv">0</span>           </span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>             <span class="dv">2</span>                <span class="dv">1</span>           </span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>If we want to estimate the effect of <span class="fu">treatment</span> (ignoring the other covariates), the Class Level Information can be translated into the table below, which is then used to form contrast statements.</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>α is the intercept, and β1 and β2 and β3 (including the sign <span class="sc">+</span><span class="er">/</span><span class="sc">-</span>) are from the design variables above.</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>                              </span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>Dose_id       Effect          </span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a><span class="sc">------------------------------</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="dv">10</span>mg Active   Y <span class="ot">=</span> α <span class="sc">+</span> β1          </span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a><span class="dv">20</span>mg Active   Y <span class="ot">=</span> α <span class="sc">+</span> β2          </span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>Placebo       Y <span class="ot">=</span> α     </span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>To compare <span class="dv">10</span>mg Active vs Placebo, we would do the following<span class="sc">:</span></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a> (α <span class="sc">+</span> β1 ) <span class="sc">-</span> (α )</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span>  β1  </span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>This equates to a contrast statement as follows<span class="sc">:</span></span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung;  </span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>    class <span class="fu">dose_id</span> (<span class="at">ref=</span><span class="st">"3"</span>) <span class="fu">sex</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="sc">/</span>param<span class="ot">=</span>glm;</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>    model  <span class="fu">wt_gain</span>(<span class="at">event=</span><span class="st">"1"</span>) <span class="ot">=</span> dose_id age sex ph_ecog2 meal_caln;</span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>    CONTRAST <span class="st">"10mg vs. Placebo"</span> trt <span class="dv">1</span>  <span class="sc">/</span> e; </span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>To compare the average <span class="fu">of</span> (<span class="dv">10</span>mg Active and <span class="dv">20</span>mg Active) vs Placebo, we would do the following<span class="sc">:</span></span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>((α <span class="sc">+</span> β1 <span class="sc">+</span> α <span class="sc">+</span> β2)<span class="sc">/</span><span class="dv">2</span> <span class="sc">-</span>  α  </span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> α <span class="sc">+</span> <span class="fl">0.5</span> β1 <span class="sc">+</span> <span class="fl">0.5</span> β2 <span class="sc">-</span> α  </span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> <span class="fl">0.5</span> β1 <span class="sc">+</span> <span class="fl">0.5</span> β2 </span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a>This equates to a contrast statement as follows<span class="sc">:</span></span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a>proc logistic <span class="at">data=</span>lung;  </span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a>    class <span class="fu">dose_id</span> (<span class="at">ref=</span><span class="st">"3"</span>) <span class="fu">sex</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="sc">/</span><span class="at">param=</span>glm;</span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a>    model  <span class="fu">wt_gain</span>(<span class="at">event=</span><span class="st">"1"</span>) <span class="ot">=</span> dose_id age sex ph_ecog2 meal_caln;</span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a>CONTRAST <span class="st">"Active (10mg + 20mg) vs. Placebo (1)"</span> trt <span class="fl">0.5</span> <span class="fl">0.5</span>  <span class="sc">/</span> e; </span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a>Again this is less intuitive than the <span class="at">param=</span>glm parameterization,  but the same results are obtained.</span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a>Contract Test Results</span>
+<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a>Contrast                           DF        Wald Chi<span class="sc">-</span>Square      Pr<span class="sc">&gt;</span>ChiSq</span>
+<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
+<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a><span class="fu">Active</span> (<span class="dv">10</span>mg <span class="sc">+</span><span class="dv">20</span>mg) vs Placebo     <span class="dv">1</span>          <span class="fl">1.1610</span>               <span class="fl">0.2813</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="contrast-statements-for-2-or-more-treatments" class="level1">
+<h1>Contrast statements for 2 or more treatments</h1>
+<p>The Contrast statement, only outputs the p-value for the contrast, but it is common to also require an estimate of the difference between the treatments, with associated 95% CI. You can do this by changing <code>contrast</code> to an <code>estimate</code> statement. Note that the parameterization of the contrast remains the same as when using a contrast statement as shown below. These estimates and 95% CI’s can be back transformed to give you the Odds ratio of the contrast and associated 95% CI. The estimate coefficients table should be checked for accuracy versus the contrast you are trying to do.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>proc logistic data<span class="ot">=</span>lung;</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>class <span class="fu">dose_id</span> (<span class="at">ref=</span><span class="st">"3"</span>) <span class="fu">sex</span> (<span class="at">ref=</span><span class="st">"1"</span>) <span class="sc">/</span>param<span class="ot">=</span>glm;</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>model <span class="fu">wt_gain</span>(<span class="at">event=</span><span class="st">"1"</span>) <span class="ot">=</span> dose_id age sex ph_ecog2 meal_caln; </span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>Estimate <span class="st">"Active (10mg + 20mg) vs. Placebo (1)"</span> dose_id <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">/</span> e cl; </span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>Estimate Coefficients</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>Parameter   dose_id    sex    Row1</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>dose_id <span class="dv">1</span>   <span class="dv">1</span>                 <span class="fl">0.5</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>dose_id <span class="dv">2</span>   <span class="dv">2</span>                 <span class="fl">0.5</span> </span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>dose_id <span class="dv">3</span>   <span class="dv">3</span>                 <span class="sc">-</span><span class="dv">1</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>Estimate</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>Label      estimate   Std Err   Z value   Pr<span class="sc">&gt;</span><span class="er">|</span>z<span class="sc">|</span> Alpha  Lower  Upper</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------------------------</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="fu">Active</span> (<span class="dv">10</span>mg <span class="sc">+</span><span class="dv">20</span>mg) vs. <span class="fu">Placebo</span> (<span class="dv">1</span>)</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>           <span class="sc">-</span><span class="fl">0.4096</span>    <span class="fl">0.3802</span>    <span class="sc">-</span><span class="fl">1.08</span>     <span class="fl">0.2813</span>  <span class="fl">0.05</span>  <span class="sc">-</span><span class="fl">1.1547</span>  <span class="fl">0.3355</span>  </span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a><span class="sc">--------------------------------------------------------------------------</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>The odds ratio <span class="cf">for</span> the comparison of <span class="fu">Active</span> (<span class="dv">10</span>mg <span class="sc">+</span><span class="dv">20</span>mg) vs. Placebo is </span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">exp</span>(<span class="sc">-</span><span class="fl">0.4096</span>) (<span class="dv">95</span>% CI<span class="sc">:</span> <span class="fu">exp</span>(<span class="sc">-</span><span class="fl">1.1547</span>) to <span class="fu">exp</span>(<span class="fl">0.3355</span>))</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> OR<span class="sc">:</span> <span class="fl">0.664</span> (<span class="dv">95</span>%CI <span class="cf">for</span> OR<span class="sc">:</span> <span class="fl">0.315</span> to <span class="fl">1.399</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="ensuring-you-are-modelling-the-correct-binary-event-in-sas" class="level1">
+<h1>Ensuring you are modelling the correct Binary event in SAS</h1>
 <p>With logistic regression, we often want to model the number of “Successes”. However, by default, SAS sorts alphabetically/numerically and selects the first occurring EVENT alphabetically as the one it’s going to model.</p>
 <p>It’s a common mistake, and we find SAS modelling the number of failures instead of successes. Very common when your response is: ‘Responder’ vs ‘Non-responder’, SAS will model the Non-responders as ‘N’ is alphabetically first before ‘R’!</p>
 <p>For this reason, It is recommended to always use the event=“Y” option.</p>
