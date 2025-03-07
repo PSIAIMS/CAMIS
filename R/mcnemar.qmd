@@ -4,49 +4,80 @@ title: "McNemar's test in R"
 
 ### Performing McNemar's test in R
 
-To demonstrate McNemar's test, data was used concerning the presence or absence of cold symptoms reported by the same children at age 12 and age 14. A total of 2638 participants were involved.
+The McNemar test is a statistical test used to determine if there are significant differences in the paired proportions of categorical data. It is particularly useful for testing the change in responses before and after an intervention on the same subjects, such as in pre-test/post-test study designs. By comparing the discordant pairs, where outcomes change in one direction versus the opposite, the McNemar test assesses if the intervention or treatment has a statistically significant effect on the outcome.
+
+To demonstrate McNemar's test, data was used concerning the presence or absence of cold symptoms reported by the same children at age 12 and age 14. A total of 2638 participants were involved, with the interest being in whether the prevalence was significantly different at either age. In order to use any of the packages to calculate first we need to convert our data into a frequency table.  
 
 ```{r}
 #| echo: false
 #| include: false
-library(knitr)
-
-knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
 
 colds <- 
   read.csv(
     file = "../data/colds.csv")
+freq_tbl <- table("age12" = colds$age12, "age14" = colds$age14)
+freq_tbl
 ```
 
-#### Using the `epibasix::mcnemar` function
-
-Testing for a significant difference in cold symptoms between the two ages using the `mcNemar` function from the `epibasix` package can be performed as below. The symptoms for participants at age 12 and age 14 are tabulated and stored as an object, then passed to the `mcNemar` function. A more complete view of the output is achieved by calling the `summary` function.
-
-```{r}
-library(epibasix)
-
-X <- table(colds$age12, colds$age14)
-epi_mcn <- mcNemar(X)
-summary(epi_mcn)
-```
-
-#### Using the `stats::mcnemar.test` function
+## Example Code using {stats}
 
 McNemar's test can also be performed using `stats::mcnemar.test` as shown below, using the same table `X` as in the previous section.
 
 ```{r}
-mcnemar.test(X)
+mcnemar.test(freq_tbl)
 ```
-
-The result is shown without continuity correction by specifying `correct=FALSE`.
+The other possible input to `mcnemar.test` is `correct =` which is a true/false value to indicate if the continuity correction should be applied. To get the result without continuity correction by specify `correct=FALSE`.
 
 ```{r}
-mcnemar.test(X, correct=FALSE)
+mcnemar.test(freq_tbl, correct=FALSE)
+```
+## Example Code using {coin}
+
+McNemar test is calculated [without continuity correction]{.underline} which corresponds to SAS FREQ procedure (see [R v SAS McNemar’s test](https://psiaims.github.io/CAMIS/Comp/r-sas_mcnemar.html) for more details).
+```{r}
+library(coin)
+## Asymptotic McNemar Test
+# Corresponds to SAS FREQ procedure
+coin::mh_test(freq_tbl)
+
+## Approximative McNemar Test
+coin::mh_test(
+  freq_tbl, 
+  distribution = coin::approximate(nresample = 10000)
+)
+
+## Exact McNemar Test
+coin::mh_test(freq_tbl, distribution = "exact")
 
 ```
+#### Calculating Confidence Intervals with {vcd}
+It is common when calculating McNemar, to also want to check the level agreement between the two rates. To do this we use Cohen's Kappa and its associated confidence intervals. To do this, we use the `vcd` package as follows: 
+
+```{r}
+library(vcd)
+cohen_kappa <- Kappa(freq_tbl)
+cohen_kappa
+confint(cohen_kappa, level = 0.95)
+
+
+```
+
+
+
+#### Using the `epibasix::mcnemar` function
+
+Another package that is sometimes used to calculate McNemar is {epibasix}. *This package isn't recommended by CAMIS*. It was found that the author is no longer maintaining the package and there was no documentation available for certain methods used. Therefore, the use of the {epibasix} package is advised against and other packages may be more suitable. 
 
 #### Results
 
-As default, using `summary` with `epibasix::mcNemar` gives additional information to the McNemar's chi-square statistic. This includes a table to view proportions, and odds ratio and risk difference with 95% confidence limits. The result uses Edward's continuity correction without the option to remove this, which is consistent with other functions within the package.
+`stats::mcnemar.test` and `coin::mh_test` are both sutiable options for calculating McNemar. The {coin} package also has a variety of other marginal homogeneity test, for more information [see here](https://psiaims.github.io/CAMIS/R/marginal_homogeneity_tests.html). `stats::mcnemar.test` uses a continuity correction as default but does allow for this to be removed. This function does not output any other coefficients for agreement or proportions but (if required) these can be achieved within other functions or packages in R.
 
-`stats::mcnemar.test` uses a continuity correction as default but does allow for this to be removed. This function does not output any other coefficients for agreement or proportions but (if required) these can be achieved within other functions or packages in R.
+## Reference
+
+Agresti, A. (2002). Categorical Data Analysis, Second Edition. Hoboken, New Jersey: John Wiley & Sons.
+
+Cohen, J. (1960), A coefficient of agreement for nominal scales. Educational and Psychological Measurement, 20, 37–46.
+
+Everitt, B.S. (1968), Moments of statistics kappa and weighted kappa. The British Journal of Mathematical and Statistical Psychology, 21, 97–103.
+
+Fleiss, J.L., Cohen, J., and Everitt, B.S. (1969), Large sample standard errors of kappa and weighted kappa. Psychological Bulletin, 72, 332–327.
