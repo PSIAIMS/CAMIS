@@ -197,6 +197,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
    
   <ul>
   <li><a href="#performing-mcnemars-test-in-r" id="toc-performing-mcnemars-test-in-r" class="nav-link active" data-scroll-target="#performing-mcnemars-test-in-r">Performing McNemar’s test in R</a></li>
+  <li><a href="#example-code-using-stats" id="toc-example-code-using-stats" class="nav-link" data-scroll-target="#example-code-using-stats">Example Code using {stats}</a></li>
+  <li><a href="#example-code-using-coin" id="toc-example-code-using-coin" class="nav-link" data-scroll-target="#example-code-using-coin">Example Code using {coin}</a></li>
+  <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">Reference</a></li>
   </ul>
 </nav>
     </div>
@@ -224,68 +227,121 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="performing-mcnemars-test-in-r" class="level3">
 <h3 class="anchored" data-anchor-id="performing-mcnemars-test-in-r">Performing McNemar’s test in R</h3>
-<p>To demonstrate McNemar’s test, data was used concerning the presence or absence of cold symptoms reported by the same children at age 12 and age 14. A total of 2638 participants were involved.</p>
-<section id="using-the-epibasixmcnemar-function" class="level4">
-<h4 class="anchored" data-anchor-id="using-the-epibasixmcnemar-function">Using the <code>epibasix::mcnemar</code> function</h4>
-<p>Testing for a significant difference in cold symptoms between the two ages using the <code>mcNemar</code> function from the <code>epibasix</code> package can be performed as below. The symptoms for participants at age 12 and age 14 are tabulated and stored as an object, then passed to the <code>mcNemar</code> function. A more complete view of the output is achieved by calling the <code>summary</code> function.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(epibasix)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">table</span>(colds<span class="sc">$</span>age12, colds<span class="sc">$</span>age14)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>epi_mcn <span class="ot">&lt;-</span> <span class="fu">mcNemar</span>(X)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(epi_mcn)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-Matched Pairs Analysis: McNemar's Statistic and Odds Ratio (Detailed Summary):
- 
-     
-       No Yes
-  No  707 256
-  Yes 144 212
-
-Entries in above matrix correspond to number of pairs. 
- 
-McNemar's Chi^2 Statistic (corrected for continuity) = 30.802 which has a p-value of: 0
-Note: The p.value for McNemar's Test corresponds to the hypothesis test: H0: OR = 1 vs. HA: OR != 1
-McNemar's Odds Ratio (b/c): 1.778
-95% Confidence Limits for the OR are: [1.449, 2.208]
-The risk difference is: 0.085
-95% Confidence Limits for the rd are: [0.055, 0.115]</code></pre>
-</div>
-</div>
+<p>The McNemar test is a statistical test used to determine if there are significant differences in the paired proportions of categorical data. It is particularly useful for testing the change in responses before and after an intervention on the same subjects, such as in pre-test/post-test study designs. By comparing the discordant pairs, where outcomes change in one direction versus the opposite, the McNemar test assesses if the intervention or treatment has a statistically significant effect on the outcome.</p>
+<p>To demonstrate McNemar’s test, data was used concerning the presence or absence of cold symptoms reported by the same children at age 12 and age 14. A total of 2638 participants were involved, with the interest being in whether the prevalence was significantly different at either age. In order to use any of the packages to calculate first we need to convert our data into a frequency table.</p>
 </section>
-<section id="using-the-statsmcnemar.test-function" class="level4">
-<h4 class="anchored" data-anchor-id="using-the-statsmcnemar.test-function">Using the <code>stats::mcnemar.test</code> function</h4>
+<section id="example-code-using-stats" class="level2">
+<h2 class="anchored" data-anchor-id="example-code-using-stats">Example Code using {stats}</h2>
 <p>McNemar’s test can also be performed using <code>stats::mcnemar.test</code> as shown below, using the same table <code>X</code> as in the previous section.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mcnemar.test</span>(X)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mcnemar.test</span>(freq_tbl)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     McNemar's Chi-squared test with continuity correction
 
-data:  X
+data:  freq_tbl
 McNemar's chi-squared = 30.802, df = 1, p-value = 2.857e-08</code></pre>
 </div>
 </div>
-<p>The result is shown without continuity correction by specifying <code>correct=FALSE</code>.</p>
+<p>The other possible input to <code>mcnemar.test</code> is <code>correct =</code> which is a true/false value to indicate if the continuity correction should be applied. To get the result without continuity correction by specify <code>correct=FALSE</code>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mcnemar.test</span>(X, <span class="at">correct=</span><span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mcnemar.test</span>(freq_tbl, <span class="at">correct=</span><span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     McNemar's Chi-squared test
 
-data:  X
+data:  freq_tbl
 McNemar's chi-squared = 31.36, df = 1, p-value = 2.144e-08</code></pre>
 </div>
 </div>
 </section>
+<section id="example-code-using-coin" class="level2">
+<h2 class="anchored" data-anchor-id="example-code-using-coin">Example Code using {coin}</h2>
+<p>McNemar test is calculated <u>without continuity correction</u> which corresponds to SAS FREQ procedure (see <a href="https://psiaims.github.io/CAMIS/Comp/r-sas_mcnemar.html">R v SAS McNemar’s test</a> for more details).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(coin)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: survival</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Asymptotic McNemar Test</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Corresponds to SAS FREQ procedure</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>coin<span class="sc">::</span><span class="fu">mh_test</span>(freq_tbl)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic Marginal Homogeneity Test
+
+data:  response by
+     conditions (age12, age14) 
+     stratified by block
+chi-squared = 31.36, df = 1, p-value = 2.144e-08</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Approximative McNemar Test</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>coin<span class="sc">::</span><span class="fu">mh_test</span>(</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  freq_tbl, </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">distribution =</span> coin<span class="sc">::</span><span class="fu">approximate</span>(<span class="at">nresample =</span> <span class="dv">10000</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Approximative Marginal Homogeneity Test
+
+data:  response by
+     conditions (age12, age14) 
+     stratified by block
+chi-squared = 31.36, p-value &lt; 1e-04</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Exact McNemar Test</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>coin<span class="sc">::</span><span class="fu">mh_test</span>(freq_tbl, <span class="at">distribution =</span> <span class="st">"exact"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Exact Marginal Homogeneity Test
+
+data:  response by
+     conditions (age12, age14) 
+     stratified by block
+chi-squared = 31.36, p-value = 2.331e-08</code></pre>
+</div>
+</div>
+<section id="calculating-confidence-intervals-with-vcd" class="level4">
+<h4 class="anchored" data-anchor-id="calculating-confidence-intervals-with-vcd">Calculating Confidence Intervals with {vcd}</h4>
+<p>It is common when calculating McNemar, to also want to check the level agreement between the two rates. To do this we use Cohen’s Kappa and its associated confidence intervals. To do this, we use the <code>vcd</code> package as follows:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(vcd)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: grid</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>cohen_kappa <span class="ot">&lt;-</span> <span class="fu">Kappa</span>(freq_tbl)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>cohen_kappa</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            value     ASE     z Pr(&gt;|z|)
+Unweighted 0.2999 0.02733 10.97 5.07e-28
+Weighted   0.2999 0.02733 10.97 5.07e-28</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">confint</span>(cohen_kappa, <span class="at">level =</span> <span class="fl">0.95</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            
+Kappa              lwr       upr
+  Unweighted 0.2463654 0.3534966
+  Weighted   0.2463654 0.3534966</code></pre>
+</div>
+</div>
+</section>
+<section id="using-the-epibasixmcnemar-function" class="level4">
+<h4 class="anchored" data-anchor-id="using-the-epibasixmcnemar-function">Using the <code>epibasix::mcnemar</code> function</h4>
+<p>Another package that is sometimes used to calculate McNemar is {epibasix}. <em>This package isn’t recommended by CAMIS</em>. It was found that the author is no longer maintaining the package and there was no documentation available for certain methods used. Therefore, the use of the {epibasix} package is advised against and other packages may be more suitable.</p>
+</section>
 <section id="results" class="level4">
 <h4 class="anchored" data-anchor-id="results">Results</h4>
-<p>As default, using <code>summary</code> with <code>epibasix::mcNemar</code> gives additional information to the McNemar’s chi-square statistic. This includes a table to view proportions, and odds ratio and risk difference with 95% confidence limits. The result uses Edward’s continuity correction without the option to remove this, which is consistent with other functions within the package.</p>
-<p><code>stats::mcnemar.test</code> uses a continuity correction as default but does allow for this to be removed. This function does not output any other coefficients for agreement or proportions but (if required) these can be achieved within other functions or packages in R.</p>
-
-
+<p><code>stats::mcnemar.test</code> and <code>coin::mh_test</code> are both sutiable options for calculating McNemar. The {coin} package also has a variety of other marginal homogeneity test, for more information <a href="https://psiaims.github.io/CAMIS/R/marginal_homogeneity_tests.html">see here</a>. <code>stats::mcnemar.test</code> uses a continuity correction as default but does allow for this to be removed. This function does not output any other coefficients for agreement or proportions but (if required) these can be achieved within other functions or packages in R.</p>
 </section>
+</section>
+<section id="reference" class="level2">
+<h2 class="anchored" data-anchor-id="reference">Reference</h2>
+<p>Agresti, A. (2002). Categorical Data Analysis, Second Edition. Hoboken, New Jersey: John Wiley &amp; Sons.</p>
+<p>Cohen, J. (1960), A coefficient of agreement for nominal scales. Educational and Psychological Measurement, 20, 37–46.</p>
+<p>Everitt, B.S. (1968), Moments of statistics kappa and weighted kappa. The British Journal of Mathematical and Statistical Psychology, 21, 97–103.</p>
+<p>Fleiss, J.L., Cohen, J., and Everitt, B.S. (1969), Large sample standard errors of kappa and weighted kappa. Psychological Bulletin, 72, 332–327.</p>
+
+
 </section>
 
 </main> <!-- /main -->

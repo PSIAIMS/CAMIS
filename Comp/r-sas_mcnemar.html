@@ -191,8 +191,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#general-comparison-table" id="toc-general-comparison-table" class="nav-link" data-scroll-target="#general-comparison-table">General Comparison Table</a></li>
+  <li><a href="#summary-and-recommendation" id="toc-summary-and-recommendation" class="nav-link" data-scroll-target="#summary-and-recommendation">Summary and Recommendation</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -216,27 +224,157 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p><strong>McNemar’s test; R and SAS</strong></p>
-<p>In R, the <code>mcNemar</code> function from the <code>epibasix</code> package can be used to perform McNemar’s test.</p>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>McNemar’s test is a test of marginal homogeneity. That is used with 2x2 contingency tables, when both x and y are binary factors.</p>
+</section>
+<section id="general-comparison-table" class="level2">
+<h2 class="anchored" data-anchor-id="general-comparison-table">General Comparison Table</h2>
+<p>The following table provides an overview of the support and results comparability between R and SAS for the new analysis point.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Analysis</th>
+<th>Supported in R</th>
+<th>Supported in SAS</th>
+<th>Results Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>McNemar’s Chi-Squared test</td>
+<td><a href="../R/mcnemar.html">Yes</a></td>
+<td><a href="../SAS/mcnemar.html">Yes</a></td>
+<td>✅</td>
+<td>By default SAS doesn’t include the continuity correction.</td>
+</tr>
+<tr class="even">
+<td>Cohen’s Kappa CI</td>
+<td><a href="../R/mcnemar.html">Yes</a></td>
+<td><a href="../SAS/mcnemar.html">Yes</a></td>
+<td>✅</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>In R,the {stats} or the {coin} package can be used to calculate McNemar. The {coin} package has the same defaults as SAS. But, using either of these packages, the first step is to calculate a frequency table, using the table function.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>X<span class="ot">&lt;-</span><span class="fu">table</span>(colds<span class="sc">$</span>age12,colds<span class="sc">$</span>age14)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">mcNemar</span>(X))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(coin)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: survival</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>colds <span class="ot">&lt;-</span> </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read.csv</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">file =</span> <span class="st">"../data/colds.csv"</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>freq_tbl <span class="ot">&lt;-</span> <span class="fu">table</span>(<span class="st">"age12"</span> <span class="ot">=</span> colds<span class="sc">$</span>age12, <span class="st">"age14"</span> <span class="ot">=</span> colds<span class="sc">$</span>age14)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>freq_tbl</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     age14
+age12  No Yes
+  No  707 256
+  Yes 144 212</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>coin<span class="sc">::</span><span class="fu">mh_test</span>(freq_tbl)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic Marginal Homogeneity Test
+
+data:  response by
+     conditions (age12, age14) 
+     stratified by block
+chi-squared = 31.36, df = 1, p-value = 2.144e-08</code></pre>
+</div>
+</div>
+<p>In order to get Cohen’s Kappa an additional package is needed.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(vcd)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: grid</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>cohen_kappa <span class="ot">&lt;-</span> <span class="fu">Kappa</span>(freq_tbl)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>cohen_kappa</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            value     ASE     z Pr(&gt;|z|)
+Unweighted 0.2999 0.02733 10.97 5.07e-28
+Weighted   0.2999 0.02733 10.97 5.07e-28</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">confint</span>(cohen_kappa, <span class="at">level =</span> <span class="fl">0.95</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            
+Kappa              lwr       upr
+  Unweighted 0.2463654 0.3534966
+  Weighted   0.2463654 0.3534966</code></pre>
+</div>
 </div>
 <p>The FREQ procedure can be used in SAS with the AGREE option to run the McNemar test, with OR, and RISKDIFF options stated for production of odds ratios and risk difference. These options were added as <code>epibasix::mcNemar</code> outputs the odds ratio and risk difference with confidence limits as default. In contrast to R, SAS outputs the Kappa coefficients with confident limits as default.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>proc freq data<span class="ot">=</span>colds;</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    tables age12<span class="sc">*</span>age14 <span class="sc">/</span> agree or riskdiff;</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<pre class="sas"><code>proc freq data=colds;
+    tables age12*age14 / agree or riskdiff;
+run;</code></pre>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/mcnemar/sas-mcnemar.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:40.0%"></p>
+</figure>
 </div>
+</div>
+</div>
+</section>
+<section id="summary-and-recommendation" class="level2">
+<h2 class="anchored" data-anchor-id="summary-and-recommendation">Summary and Recommendation</h2>
 <p>When calculating the odds ratio and risk difference confidence limits, SAS is not treating the data as matched-pairs. There is advice on the SAS blog and SAS support page to amend this, which requires a lot of additional coding.</p>
-<p>R is using Edward’s continuity correction with no option to remove this. In contrast, there is no option to include Edward’s continuity correction in SAS, but this can be manually coded to agree with R. However, its use is controversial due to being seen as overly conservative.</p>
-<p>R’s use of the continuity correction is consistent with other functions within the <code>epibasix</code> package, which was categorised as ‘High Risk’ by the Risk Assessment Shiny App created by the R Validation Hub. Risk is quantified by the app through a number of metrics relating to maintenance and community usage. It was found that the author is no longer maintaining the package and there was no documentation available for certain methods used. Therefore, the use of the <code>epibasix</code> package is advised against and other packages may be more suitable.</p>
-<p>The <code>mcnemar.test</code> function in the <code>stats</code> package provides the option to remove continuity corrections which results in a match with SAS. This function does not output any other coefficients for agreement/difference in proportions etc. but (if required) these can be achieved within other functions and/or packages.</p>
+<p>{stats} is using Edward’s continuity correction by default, but this can be removed. In contrast, there is no option to include Edward’s continuity correction in SAS, but this can be manually coded to agree with R. However, its use is controversial due to being seen as overly conservative.</p>
+<p>There is another R package that is sometimes used to calculate McNemar’s, called <code>epibasix</code>. This package is no longer being maintained, and there was no documentation available for certain methods used. Therefore, the use of the <code>epibasix</code> package is advised against and other packages may be more suitable.</p>
+<div class="callout callout-style-default callout-note callout-titled" title="Session Info">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Session Info
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mcnemar.test</span>(X, <span class="at">correct =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>─ Session info ───────────────────────────────────────────────────────────────
+ setting  value
+ version  R version 4.4.2 (2024-10-31)
+ os       Ubuntu 24.04.2 LTS
+ system   x86_64, linux-gnu
+ ui       X11
+ language (EN)
+ collate  C.UTF-8
+ ctype    C.UTF-8
+ tz       UTC
+ date     2025-03-07
+ pandoc   3.4 @ /opt/quarto/bin/tools/ (via rmarkdown)
+
+─ Packages ───────────────────────────────────────────────────────────────────
+ ! package * version date (UTC) lib source
+ P coin    * 1.4-3   2023-09-27 [?] RSPM (R 4.4.0)
+
+ [1] /home/runner/work/CAMIS/CAMIS/renv/library/linux-ubuntu-noble/R-4.4/x86_64-pc-linux-gnu
+ [2] /opt/R/4.4.2/lib/R/library
+
+ P ── Loaded and on-disk path mismatch.
+
+─ External software ──────────────────────────────────────────────────────────
+ setting value
+ SAS     9.04.01M7P080520
+
+──────────────────────────────────────────────────────────────────────────────</code></pre>
+</div>
+</div>
+</div>
+</div>
 </div>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
