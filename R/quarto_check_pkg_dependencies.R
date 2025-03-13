@@ -11,7 +11,7 @@ library(fs)
 library(here)
 library(purrr)
 library(readr)
-library(renv)
+library(renv, warn.conflicts = FALSE)
 library(stringr)
 
 message("Checking package versions against previous executions...")
@@ -56,7 +56,9 @@ qmd_deps <-
   mutate(
     local_path = str_replace(full_path, fixed(str_c(here(), "/")), "")
   ) |> 
-  select(local_path, package, hash)
+  select(local_path, package, hash) |>
+  # Sort for easier diffs in CSV output 
+  arrange(local_path, package)
 
 # Load old dependencies from CSV (if it exists)
 if (file_exists(here("data/quarto_pkg_dependencies.csv"))) {
