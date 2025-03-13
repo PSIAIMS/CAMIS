@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Skewness/Kurtosis</title>
+<title>Tobit Regression Comparison between R and SAS</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,60 +20,26 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
-/* CSS for syntax highlighting */
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-}
 </style>
 
 
-<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="../site_libs/quarto-nav/headroom.min.js"></script>
-<script src="../site_libs/clipboard/clipboard.min.js"></script>
-<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="../site_libs/quarto-search/fuse.min.js"></script>
-<script src="../site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="../">
-<link href="../images/logo.png" rel="icon" type="image/png">
-<script src="../site_libs/quarto-html/quarto.js"></script>
-<script src="../site_libs/quarto-html/popper.min.js"></script>
-<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="../site_libs/quarto-html/anchor.min.js"></script>
-<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-ebfcb0ed0ac0539375ffcf22e0e9fa78.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../images/logo.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-ebfcb0ed0ac0539375ffcf22e0e9fa78.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -102,37 +68,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN") {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
-
-<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="../../styles.css">
 </head>
 
 <body class="nav-fixed">
@@ -142,8 +79,8 @@ window.Quarto = {
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a href="../index.html" class="navbar-brand navbar-brand-logo">
-    <img src="../images/logo.png" alt="" class="navbar-logo">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../images/logo.png" alt="" class="navbar-logo">
     </a>
   </div>
             <div id="quarto-search" class="" title="Search"></div>
@@ -153,11 +90,11 @@ window.Quarto = {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="../about.html"> 
+    <a class="nav-link" href="../../about.html"> 
 <span class="menu-text">About</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../contribution/contribution.html"> 
+    <a class="nav-link" href="../../contribution/contribution.html"> 
 <span class="menu-text">Contribute</span></a>
   </li>  
   <li class="nav-item dropdown ">
@@ -166,15 +103,15 @@ window.Quarto = {
     </a>
     <ul class="dropdown-menu" aria-labelledby="nav-menu-publications-and-projects">    
         <li>
-    <a class="dropdown-item" href="../publication/white_paper.html">
+    <a class="dropdown-item" href="../../publication/white_paper.html">
  <span class="dropdown-text">White paper</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../publication/conference.html">
+    <a class="dropdown-item" href="../../publication/conference.html">
  <span class="dropdown-text">Conferences</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../publication/dissertation.html">
+    <a class="dropdown-item" href="../../publication/dissertation.html">
  <span class="dropdown-text">Academic projects</span></a>
   </li>  
     </ul>
@@ -185,11 +122,11 @@ window.Quarto = {
     </a>
     <ul class="dropdown-menu" aria-labelledby="nav-menu-news">    
         <li>
-    <a class="dropdown-item" href="../minutes/index.html">
+    <a class="dropdown-item" href="../../minutes/index.html">
  <span class="dropdown-text">Meeting minutes</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../blogs/index.html">
+    <a class="dropdown-item" href="../../blogs/index.html">
  <span class="dropdown-text">Blogs</span></a>
   </li>  
     </ul>
@@ -220,24 +157,15 @@ window.Quarto = {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" class="toc-active">
-    <h2 id="toc-title">On this page</h2>
-   
-  <ul>
-  <li><a href="#skewness-and-kurtosis-in-python" id="toc-skewness-and-kurtosis-in-python" class="nav-link active" data-scroll-target="#skewness-and-kurtosis-in-python"><strong>Skewness and Kurtosis in Python</strong></a>
-  <ul class="collapse">
-  <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data Used</a></li>
-  </ul></li>
-  </ul>
-</nav>
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+        
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Skewness/Kurtosis</h1>
+<h1 class="title">Tobit Regression Comparison between R and SAS</h1>
 </div>
 
 
@@ -254,103 +182,23 @@ window.Quarto = {
 </header>
 
 
-<section id="skewness-and-kurtosis-in-python" class="level1">
-<h1><strong>Skewness and Kurtosis in Python</strong></h1>
-<p>Skewness measures the the amount of asymmetry in a distribution, while Kurtosis describes the “tailedness” of the curve. These measures are frequently used to assess the normality of the data. There are several methods to calculate these measures. In Python, the packages <strong>pandas</strong>, <strong>scipy.stats.skew</strong> and <strong>scipy.stats.kurtosis</strong> can be used.</p>
-<section id="data-used" class="level2">
-<h2 class="anchored" data-anchor-id="data-used">Data Used</h2>
-<div id="a3327eb8" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.stats <span class="im">import</span> skew, kurtosis</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Create sample data</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> {</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'team'</span>: [<span class="st">"A"</span>]<span class="op">*</span><span class="dv">5</span> <span class="op">+</span> [<span class="st">"B"</span>]<span class="op">*</span><span class="dv">5</span> <span class="op">+</span> [<span class="st">"C"</span>]<span class="op">*</span><span class="dv">5</span>,</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'points'</span>: [<span class="dv">10</span>, <span class="dv">17</span>, <span class="dv">17</span>, <span class="dv">18</span>, <span class="dv">15</span>, <span class="dv">10</span>, <span class="dv">14</span>, <span class="dv">13</span>, <span class="dv">29</span>, <span class="dv">25</span>, <span class="dv">12</span>, <span class="dv">30</span>, <span class="dv">34</span>, <span class="dv">12</span>, <span class="dv">11</span>],</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'assists'</span>: [<span class="dv">2</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">3</span>, <span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">5</span>, <span class="dv">4</span>, <span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">7</span>]</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.DataFrame(data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<section id="skewness" class="level4">
-<h4 class="anchored" data-anchor-id="skewness">Skewness</h4>
-<p>Joanes and Gill (1998) discusses three methods for estimating skewness:</p>
-<ul>
-<li>Type 1: This is the typical definition used in many older textbooks</li>
-</ul>
-<p><span class="math display">\[g_1 = m_1/m_2^{3/2}\]</span></p>
-<ul>
-<li><p>Type 2: Used in SAS and SPSS</p>
-<p><span class="math display">\[
-G_1 = g_1\sqrt{n(n-1)}/(n-2)
-\]</span></p></li>
-<li><p>Type 3: Used in MINITAB and BMDP</p>
-<p><span class="math display">\[
-b_1 = m_3/s^3 = g_1((n-1)/n)^{3/2}
-\]</span></p></li>
-</ul>
-<p>All three skewness measures are unbiased under normality. The three methods are illustrated in the following code:</p>
-<div id="15641a64" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Skewness</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>type1_skew <span class="op">=</span> skew(df[<span class="st">'points'</span>])</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>type2_skew <span class="op">=</span> df[<span class="st">'points'</span>].skew()</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>type3_skew <span class="op">=</span> skew(df[<span class="st">'points'</span>]) <span class="op">*</span> ((<span class="bu">len</span>(df[<span class="st">'points'</span>]) <span class="op">-</span> <span class="dv">1</span>) <span class="op">/</span> <span class="bu">len</span>(df[<span class="st">'points'</span>])) <span class="op">**</span> (<span class="dv">3</span><span class="op">/</span><span class="dv">2</span>)</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Skewness - Type 1: </span><span class="sc">{</span>type1_skew<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Skewness - Type 2: </span><span class="sc">{</span>type2_skew<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Skewness - Type 3: </span><span class="sc">{</span>type3_skew<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Skewness - Type 1: 0.9054442043798532
-Skewness - Type 2: 1.0093179298709385
-Skewness - Type 3: 0.816426058828937</code></pre>
+<p>A recent CAMIS contribution explored the standard Tobit model for a virology endpoint (viral load) with a lower detection limit.</p>
+<p>Tobit regression, a censored regression model, estimates linear relationships between independent variables and a dependent variable that is either left- or right-censored at a specific known value.</p>
+<p>The implementations of Tobit regression in R and SAS were compared (link to full comparison on CAMIS website: <a href="https://psiaims.github.io/CAMIS/Comp/r-sas_tobit.html">R vs SAS Tobit Regression</a>). In SAS, the LIFEREG procedure was used, which requires a specific structure in the MODEL statement, namely “(lower, upper)”. Here, if the lower value is missing, then the upper value is used as a left-censored value.</p>
+<p>In R, the censReg, survival, and VGAM packages were explored. The censReg() and survreg() (from the survival package) functions provided matching results with SAS LIFEREG. In both cases estimation is being done by the maximum likelihood approach. The vglm() function in VGAM showed slight numerical differences due to a different estimation technique. The VGAM package uses vector generalized linear and additive models which are estimated using an iteratively reweighted least squares (IRLS) algorithm.</p>
+<p>Typically, the Tobit model assumes normally distributed data, and the standard Tobit regression results matched between R and SAS when a normally distributed endpoint was assumed. Additionally, this comparison also highlighted the flexibility of Tobit regression implementations across different software (as well as the importance of being aware of different default and available options), with SAS LIFEREG and R’s survival package offering multiple different distributional assumptions.</p>
+<p>CAMIS is a PHUSE working group in collaboration with PSI AIMS SIG. For more on CAMIS’s goals and repository, as well as how to contribute, visit the CAMIS website: <a href="https://psiaims.github.io/CAMIS/" class="uri">https://psiaims.github.io/CAMIS/</a>.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/Tobit_comparison.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
+</figure>
 </div>
 </div>
-<p>The default for the <strong>scipy.stats.skew</strong> function is type 1.</p>
-</section>
-<section id="kurtosis" class="level4">
-<h4 class="anchored" data-anchor-id="kurtosis">Kurtosis</h4>
-<p>Joanes and Gill (1998) discuss three methods for estimating kurtosis:</p>
-<ul>
-<li>Type 1: This is the typical definition used in many older textbooks</li>
-</ul>
-<p><span class="math display">\[g_2 = m_4/m_2^{2}-3\]</span></p>
-<ul>
-<li><p>Type 2: Used in SAS and SPSS</p>
-<p><span class="math display">\[G_2 = ((n+1)g_2+6)*\frac{(n-1)}{(n-2)(n-3)}\]</span></p></li>
-<li><p>Type 3: Used in MINITAB and BMDP</p>
-<p><span class="math display">\[b_2 = m_4/s^4-3 = (g_2 + 3)(1-1/n)^2-3\]</span></p></li>
-</ul>
-<p>Only <span class="math inline">\(G_2\)</span> (corresponding to type 2) is unbiased under normality. The three methods are illustrated in the following code:</p>
-<div id="eac313f4" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Kurtosis</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>type1_kurt <span class="op">=</span> kurtosis(df[<span class="st">'points'</span>])</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="bu">len</span>(df[<span class="st">'points'</span>])</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>g2 <span class="op">=</span> kurtosis(df[<span class="st">'points'</span>], fisher<span class="op">=</span><span class="va">True</span>)  <span class="co"># Fisher's kurtosis</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the kurtosis type using the formula G2</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>type2_kurt <span class="op">=</span> ((n <span class="op">+</span> <span class="dv">1</span>) <span class="op">*</span> g2 <span class="op">+</span> <span class="dv">6</span>) <span class="op">*</span> ((n <span class="op">-</span> <span class="dv">1</span>) <span class="op">/</span> ((n <span class="op">-</span> <span class="dv">2</span>) <span class="op">*</span> (n <span class="op">-</span> <span class="dv">3</span>)))</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the kurtosis type using the formula b2</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="bu">len</span>(df[<span class="st">'points'</span>])</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>g2 <span class="op">=</span> kurtosis(df[<span class="st">'points'</span>], fisher<span class="op">=</span><span class="va">True</span>)  <span class="co"># Fisher's kurtosis</span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>type3_kurt <span class="op">=</span> (g2 <span class="op">+</span> <span class="dv">3</span>) <span class="op">*</span> ((<span class="dv">1</span> <span class="op">-</span> <span class="dv">1</span><span class="op">/</span>n) <span class="op">**</span> <span class="dv">2</span>) <span class="op">-</span> <span class="dv">3</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Kurtosis - Type 1: </span><span class="sc">{</span>type1_kurt<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Kurtosis - Type 2: </span><span class="sc">{</span>type2_kurt<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Kurtosis - Type 3: </span><span class="sc">{</span>type3_kurt<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Kurtosis - Type 1: -0.5833410771247833
-Kurtosis - Type 2: -0.2991564184355863
-Kurtosis - Type 3: -0.8948215605175891</code></pre>
 </div>
-</div>
-<p>The default for the <strong>scipy.stats.kurtosis</strong> function is type 1.</p>
 
 
-</section>
-</section>
-</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
