@@ -52,9 +52,12 @@ qmd_deps <-
   ) |> 
   # Add all python packages/dependencies
   bind_rows(python_deps) |>
-  # Path local to project root
   mutate(
-    local_path = str_replace(full_path, fixed(str_c(here(), "/")), "")
+    # Path local to project root
+    local_path = str_replace(full_path, fixed(str_c(here(), "/")), ""),
+    # Some R packages will have a hash of NA if they are base/recommended,
+    # so add a string for the R version instead
+    hash = coalesce(hash, as.character(getRversion()))
   ) |> 
   select(local_path, package, hash) |>
   # Sort for easier diffs in CSV output 
