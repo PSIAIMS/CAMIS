@@ -1,0 +1,95 @@
+---
+title: "Sample size for superiority studies"
+---
+
+### **Introduction about sample size calculations**
+
+For determination of the sample size, in most cases, all of the below parameters will be required to perform the calculations:
+
+-   Power
+
+-   clinically relevant/significant difference
+
+-   alpha (α)
+
+-   beta (β)
+
+-   Effect size (Cohen's d) (required only in some R packages), can be defined as:
+
+    Difference between the means divided by the pooled standard deviation. In general, 0.2 can be considered a small effect, 0.5 a medium effect and 0.8 a large effect.
+
+```{r}
+#| echo: false
+#| include: false
+library(samplesize)
+library(pwr)
+library(knitr)
+library(stats)
+
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+### Superiority studies {.unnumbered}
+
+Superiority trials aim to prove that the investigated treatment is better than the comparator. The null hypothesis states that is no difference between the treatments and the alternative that there is some difference between the treatments (difference ≠ 0).
+
+#### Calculations in R {.unnumbered}
+
+Can be performed in 3 packages in R: **samplesize**, **stats** and **pwr**.
+
+### Comparing means for parallel design (unpaired) {.unnumbered}
+
+In the most common scenario SDs are known and the same. Otherwise Student t distribution is used instead of the normal distribution. Then approach between SAS and R is different - SAS follows only the Satterthwaite method, whilst in R both, Satterthwaiteand Welch one are available. The results differ slightly.
+
+Primarily, we will consider the case with the same SDs.
+
+#### Example {.unnumbered}
+
+A client is interested in conducting a clinical trial to compare two cholesterol lowering agents for treatment of hypercholesterolemic patients. The primary efficacy parameter is a low-density lipidprotein cholesterol (LDL-C). Suppose that a difference of 8% in the percent change of LDL-C is considered a clinically meaningful difference and that the standard deviation is assumed to be 15%. What sample size is required for a two-sided false positive rate of 5% and a power of 80%?
+
+```{r}
+# samplesize:
+n.ttest(power = 0.8, alpha = 0.05, mean.diff = 8, sd1 = 15,
+        k = 1, design = "unpaired", fraction = "balanced", variance = "equal")
+
+#stats:
+power.t.test(delta=8, sd=15, sig.level=0.05, power=0.8, 
+             type="two.sample", alternative="two.sided")
+
+#pwr:
+pwr.t.test(d = 8/15, sig.level = 0.05, power = 0.80, 
+           type = "two.sample", alternative = "two.sided")
+
+```
+
+### Comparing means for crossover design (paired) {.unnumbered}
+
+It is important to differenciate here between the within patient SD and the SD of the difference. We may need to recalculate one to the other, depending on the case.
+
+Variance of the difference = 2x Variance within patient. $$Var_{diff} = 2 * Var_{patient}$$
+
+#### Example
+
+We wish to run an AB/BA single dose crossover to compare two brochodilators. The primary outcome is peak expiratory flow, and a clinically relevant difference of 30 l/min is sought with 80% power, the significance level is 5% and the best estimate of the within patient standard deviation is 32 l/min. What size of trial do we require?
+
+(After recalculating: $$32 * \sqrt{2} = 45$$)
+
+```{r}
+# samplesize:
+n.ttest(power = 0.8, alpha = 0.05, mean.diff = 30, sd1 = 45,
+        k = 1, design = "paired", fraction = "balanced")
+
+#stats:
+power.t.test(delta=30, sd=45, sig.level=0.05, power=0.8, 
+             type="one.sample", alternative="two.sided")
+
+#pwr:
+pwr.t.test(d = 30/45, sig.level = 0.05, power = 0.80, 
+           type = "one.sample", alternative = "two.sided")
+
+```
+
+#### References {.unnumbered}
+
+Majority of the examples are taken from: *Chow SC, Liu JP (1998). Design and analysis of clinical trials. Concepts and methodologies. Wiley, New York.*
