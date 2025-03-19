@@ -4,8 +4,8 @@
 #
 # This script should be called by quarto before rendering, as below:
 # project:
-#   pre-render: "R/quarto_check_pkg_dependencies.R"
-here::i_am("R/quarto_check_pkg_dependencies.R")
+#   pre-render: "utils/quarto_check_pkg_dependencies.R"
+here::i_am("utils/quarto_check_pkg_dependencies.R")
 library(dplyr, warn.conflicts = FALSE)
 library(fs)
 library(here)
