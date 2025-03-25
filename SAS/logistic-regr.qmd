@@ -7,17 +7,17 @@ date-format: D MMMM, YYYY
 
 For a brief description of what is logistic regression see [here](../R/logistic_regr.html).
 
-### Modelling the lung cancer data
+# Modelling the lung cancer data
 
 In SAS, we can use proc logistic or proc genmod to perform a logistic regression.
 
 To demonstrate the use of logistic regression we examine the same lung dataset as used in the R example [here](../R/logistic_regr.html).
 
-**Some Common mistakes**
+## **Summary of Common Mistakes in SAS**
 
 1)  Handling of missing data. Check SAS output that the number of missing values is as you expect. Make sure you have changed any `NA` results in the raw data to be missing, since SAS would consider `NA` as a valid category (a non-missing character result).
 
-2)  Make sure you consider continuous or categorical variables as you intended. Just because a variable is character or numeric in the dataset, doesn't mean SAS will treat it that way in the model. You have to use Class row to tell SAS which variables should be treated as character factors (also using `ref=' '` to select the reference category).
+2)  Make sure you consider continuous or categorical variables as you intended. Just because a variable is character or numeric in the dataset, doesn't mean SAS will treat it that way in the model. You have to use Class row to tell SAS which variables should be treated as character factors. You also have to use `ref=' '` to tell SAS which is the reference category, otherwise SAS by default which use the last value of the variable alphabetically (e..g a categorical variable with 1, 2, 3 would default to 3 as the reference).
 
 3)  Be careful you are modelling the correct event (response vs non-response, or weight_gain vs weight_loss for example)
 
@@ -25,251 +25,423 @@ To demonstrate the use of logistic regression we examine the same lung dataset a
 
 5)  If using proc logistic, be careful of how SAS creates its parameters used in the model as this determines how you can use the parameter estimates! It is often easiest to use `param=glm` so that the exp(maximum liklihood parameter estimate) = odds ratio. Check the class level information (Design variables) is as you would expect. See below for more detail on other parameterization methods.
 
-**Option 1:** **Using Proc Logistic with sex and ph_ecog as character factors:** sex (2 levels: 1,2) and ph_ecog (4 levels:0,1,2 or 3), meal_cal as continuous. As shown below, the `class` statement and `ref=" "` option can be used to set the direction of the comparison, `/param=glm` ensures exp(estimates)=odds ratio.
+## Modelling using Proc Genmod
+
+Proc Genmod is a procedure that allows the fitting of Generalized Linear Models. By using the options `dist=bin` and `link=logit,` it fits a logistic regression as shown below. For more information see the SAS help [here](https://support.sas.com/documentation/cdl/en/statug/63033/HTML/default/viewer.htm#statug_genmod_sect002.htm).
+
+Always check that the Class Level Information matches what you expect (SAS puts the reference class level last). Also check that you are modelling the correct 'event' and that the algorithm has converged.
+
+Below we are fitting trt01pn and sex as categorical variables, age, ph_ecog2 and meal_caln as continuous variables.
+
+You can use exponential of the maximum likelihood parameter estimate and the exponential of the Wald 95% Confidence Limits to obtain the odds ratios and 95% CIs. Proc Genmod uses GLM parameterization.
+
+```{r eval=FALSE}
+Example data: . = missing, trt01pn (1 or 2), sex (1 or 2), ph_ecog2 (0,1,2,3)
+wt_gain (1=gain, 0=no gain)
+
+wt_gain   trt01pn  age   sex    ph_ecog2   meal_caln
+-----------------------------------------------------------------------------
+.         1        74    1       1          1175
+0         1        68    2       0          1225
+1         2        60    1       2           .
+
+
+proc genmod data=lung;       
+  class trt01pn (ref="1") sex (ref="1")  ;    
+  model wt_gain (event="1") = trt01pn age sex ph_ecog2 meal_caln / 
+        dist=bin link=logit;
+run; 
+
+Class Level Information
+Class     Levels      Values
+-----------------------------------------------------------------------------
+trt01pn   2           2 1 
+sex       2           2 1
+-----------------------------------------------------------------------------
+
+Response Profile
+Ordered value     wt_gain         Total Frequency
+-----------------------------------------------------------------------------
+1                 1                48 
+2                 0                122
+-----------------------------------------------------------------------------
+
+PROC GENMOD is modeling the probability that wt_gain='1'. 
+
+Algorithm Converged.
+
+                    Analysis of Maximum Likelihood Estimates                 
+
+Parameter   DF  Estimate  Standard   Wald 95%        Wald         Pr>ChiSq
+                          Error      CIs             Chi-Square
+-----------------------------------------------------------------------------
+Intercept   1   -2.6415   1.5140   -5.6090 0.3259    3.04         0.0810
+trt01pn 2   1    0.3888   0.3782   -0.3524 1.1299    1.03         0.3039
+trt01pn 1   0    0.0000   0.0000    0.0000 0.0000    .            .
+age         1    0.0123   0.0212   -0.0292 0.0537    0.34         0.5624    
+sex 2       1    0.8321   0.3744    0.0983 1.5659    4.97         0.0262  
+sex 1       0    0.0000   0.0000    0.0000 0.0000    .            .
+ph_ecog     1   -0.3764   0.2638   -0.8935 0.1407    2.03         0.1537   
+meal_cal    1   -0.0008   0.0004   -0.0000 0.0017    3.59         0.0581  
+scale       0    1.0000   0.0000    1.0000 1.0000
+----------------------------------------------------------------------------
+Note: The scale parameter was held fixed
+```
+
+## Modelling using Proc Logistic
+
+The same model above can also be modelled using Proc Logistic. You no longer have to specify the distribution and link function, however you do need to add an option `/ param=glm` on the class row. Different parameterizations are discussed later in the context of forming treatment contrast statements.
+
+For now, all you need to know is that using `/param=glm` ensures exp(estimates)=odds ratio. You will also note that in the `class level information`, SAS now tells you the `design variables`. This will also be important later when we learn more about parameterization.
+
+Proc Logistic is often preferred above Proc Genmod as it outputs the Odds Ratios and 95% CIs for you, without you having to back transform them using exponential of the MLEs yourself.
+
+NOTE: that the 95% confidence limits are being calculated using the Wald method. This assumes symmetric intervals around the maximum likelihood estimate using a normal distribution assumption (MLE +/-1.96\* SE). Alternative confidence interval estimation methods exist such as the profile likelihood method but SAS does not calculate these.
 
 ```{r eval=FALSE}
 proc logistic data=lung;  
-    class sex (ref="1") ph_ecog (ref="0")/param=glm;
-    model  wt_grp(event="weight_gain") = age sex ph_ecog meal_cal;
+    class trt01pn (ref="1") sex (ref="1") /param=glm;
+    model  wt_gain(event="1") = trt01pn age sex ph_ecog2 meal_caln;
 run;
-
-```
-
-**Option 2:** **Using proc Genmod with sex and ph_ecog as character factors:** sex (2 levels: 1,2) and ph_ecog (4 levels:0,1,2 or 3), meal_cal as continuous. This gets the same results as above. You can use exp(maximum likelihood parameter estimate) to obtain the odds ratios and 95% CIs for the odds ratios. The below already uses GLM parameterization.
-
-```{r eval=FALSE}
-proc genmod data=lung; 
-      class sex (ref="1") ph_ecog (ref="0"); 
-      model wt_grp (event="weight_gain") = age sex ph_ecog meal_cal / dist=bin link=logit;
-run;
-
-```
-
-**Option 3:** **Using proc logistic, however this time all covariates are treated as continuous parameters not categorical.** You do need to ensure `age` `sex` `ph_ecog` and `meal_cal` are numeric SAS variables else you will get an error message suggesting to add the varibles to a class statement.
-
-```{r eval=FALSE}
-proc logistic data=lung;
-model wt_grp(event="weight_gain") = age sex ph_ecog meal_cal;
-run;
-```
-
-**Comparison with R model** Option 3 is used with the following 3 models, in order to match the same analysis performed in R. This is modelling Sex and ECOG as continuous parameters. We analyze the weight gain in lung cancer patients in dependency of age, sex, ECOG performance score and calories consumed at meals. Weight is categorized into a binary variable for Loss or Gain. The probability modelled is weight_gain.
-
-We fit 3 models. In
-
--   Model 1: Weight Loss (1/0) = Age + Sex + ECOG + Calories
-
--   Model 2: Weight Loss (1/0) = Sex + ECOG + Calories
-
--   Model 3: Using backwards selection to compare models with/without age
-
-```{r eval=FALSE}
-
-title1 "Model 1";                                                                                                             
-proc logistic data=lung;                                                                                                    
-  model  wt_grp (event="weight_gain")  = age sex ph_ecog meal_cal;                                                                                    
-run;  
 
 Response Profile
-Ordered value     wt_grp         Total Frequency
+Ordered value     wt_gain         Total Frequency
 -----------------------------------------------------------------------------
-1                 weight_gain     122 
-2                 weight_loss     48
+1                 0                122 
+2                 1                48
 -----------------------------------------------------------------------------
+Probability modeled is wt_gain=1
 
-Model 1 Results
+Note: 58 observations were deleted due to missing values fro the repsonse or
+explanatory variables.
+
+Class Level Information
+Class     Levels      Design Variables
+-----------------------------------------------------------------------------
+trt01pn   2           1  0 
+          1           0  1
+sex       2           1  0
+          1           0  1
+-----------------------------------------------------------------------------
+Convergence criterion (GCONV=1E-8) satisfied.
+
                     Analysis of Maximum Likelihood Estimates                 
 
-Parameter   DF     Estimate       Standard Error    Wald Chi-Square  Pr>ChiSq
+Parameter   DF  Estimate  Standard     Wald         Pr>ChiSq
+                          Error        Chi-Square
 -----------------------------------------------------------------------------
-Intercept   1      3.2632         1.6488            3.9168            0.0478
-Age         1     -0.0102         0.0208            0.2389            0.6250
-Sex         1     -0.8717         0.3714            5.5090            0.0189
-ph_ecog     1      0.4180         0.2589            2.6069            0.1064
-meal_cal    1     -0.00089        0.000447          3.9417            0.0471
+Intercept   1   -2.6415   1.5140       3.0440       0.0810
+trt01pn 2   1    0.3888   0.3782       1.0569       0.3039
+trt01pn 1   0    0.0000   .            .            .
+age         1    0.0123   0.0212       0.3356       0.5624    
+sex 2       1    0.8321   0.3744       4.9400       0.0262  
+sex 1       0    0.0000   .            .            .
+ph_ecog     1   -0.3764   0.2638       2.0349       0.1537   
+meal_cal    1   -0.000850 0.000449     3.5895       0.0581  
 ----------------------------------------------------------------------------
+  
+                   Odds Ratio Estimates                
+
+Effect           Point Estimate    95% Wald Confidence Limits
+-----------------------------------------------------------------------------
+trt01pn 2 vs 1   1.475             0.703   3.095
+age              1.012             0.971   1.055
+sex     2 vs 1   2.298             1.103   4.787    
+ph_ecog          0.686             0.409   1.151  
+meal_cal         1.001             1.000   1.002 
+----------------------------------------------------------------------------
+
+
+```
+
+## **Model Comparison**
+
+To compare two logistic models, the -2 \* Log Likelihood from each model can be compared against a $\chi^2$-distribution with degrees of freedom calculated using the difference in the two models' parameters.
+
+```{r eval=FALSE}
+Model 1:  model  wt_gain(event="1") = trt01pn age sex ph_ecog2 meal_caln;
 
 Model Fit Statistics
 Criterion   Intercept Only     Intercept and Covariates       
 --------------------------------------------------------
-AIC         204.355            201.505
-SC          207.491            217.184
--2 Log L    202.355            191.505   
+AIC         204.355            202.460
+SC          207.491            221.274
+-2 Log L    202.355            190.460   
 --------------------------------------------------------
-```
-
-```{r eval=FALSE}
-title1 "Model 2";                                                    
-proc logistic data=lung2;
-model  wt_grp (event="weight_gain") = sex ph_ecog meal_cal;
-run;             
-
-Model 2 Results
-                    Analysis of Maximum Likelihood Estimates                 
-
-Parameter   DF     Estimate       Standard Error    Wald Chi-Square  Pr>ChiSq
------------------------------------------------------------------------------
-Intercept   1      2.5607         0.7977           10.3047            0.0013
-Sex         1     -0.8359         0.3637            5.2815            0.0216
-ph_ecog     1      0.3794         0.2469            2.3616            0.1244
-meal_cal    1     -0.00083        0.000435          3.6770            0.0552
-----------------------------------------------------------------------------
+  
+Model 2:  model  wt_gain(event="1") = trt01pn sex ph_ecog2 meal_caln;
 
 Model Fit Statistics
 Criterion   Intercept Only     Intercept and Covariates       
 --------------------------------------------------------
-AIC         204.355            201.505
-SC          207.491            217.184
--2 Log L    202.355            191.505   
+AIC         204.355            200.798
+SC          207.491            216.477
+-2 Log L    202.355            190.798   
 --------------------------------------------------------
 ```
 
+190.460 - 190.798 = -0.338 which using a $\chi^2$-distribution corresponds to p=0.5606
+
+SAS also allows us to fit forward or backwards stepwise selection. Below we specify to stop when we have 4 variables left in the model. This is not commonly done in practice but is included to highlight the difference in using a selection procedure compared to doing the difference betweeen the -2 \* log likelihood models using a $\chi^2$-distribution.
+
 ```{r eval=FALSE}
-title1 "Using selection=backward to get model comparison stats"; 
-proc logistic data=lung2;  
-model  wt_grp (event="weight_gain")  = age sex ph_ecog meal_cal / selection = backward stop=3; 
-run;   
+proc logistic data=lung;  
+    class trt01pn (ref="1") sex (ref="1") /param=glm;
+    model  wt_gain(event="1") = trt01pn age sex ph_ecog2 meal_caln/ 
+           selection=backward stop=4;
+run;  
 
 Step 1: Effect age is removed
 Summary of Backward Elimination
 Step   Effect Removed   DF     Number In     Wald Chi-Square   Pr>ChiSq
 -----------------------------------------------------------------------------
-1      Age              1      3             0.2389            0.6250   
+1      Age              1      4             0.3356            0.5624   
 -----------------------------------------------------------------------------
 ```
 
-Note: The number of effects in the model has reached STOP=3, (when 3 variables remain in the model, it will not proceed to remove any more even if the ones left are not significant)
+NOTE: the chi-square test summary of backward elimination, p=0.5624 is slightly different to using the -2 \* log likelihood models using a $\chi^2$-distribution p=0.5606.
+
+This is because the backward elimination process in SAS uses the residual sums of squares and the F statistic. Starting with the full model, it removes the parameter with the least significant F statistic until all effects in the model have F statistics significant as a certain level. The F statistic is calculated as:
+
+$$F=\frac{(RSS_{p-k}-RSS_p)/k}{RSS_p /(n-p-k)}$$ where RSS = Residual sums of squares, n=number of observations in the analysis, p=number of parameters in fuller model (exc. intercept), k=number of degrees of freedom associated with the effect you are dropping, $$RSS_p$$ =RSS for the fuller model, $$RSS_{p-k}$$ = RSS for the reduced model.
+
+## Parameterization of model effects (categorical covariates) in SAS
+
+The most common problem when fitting logistic regression in SAS, is getting SAS to model the binary variable (events) and any categorical covariates correctly. Using `proc genmod` (using dist=bin and link=logit options), there is no issue as SAS defaults to using GLM parameterization. However using `proc logistic` there are three ways to parameterize categorical variables, and the default is `/PARAM=EFFECT` which can cause confusion when interpreting your model.
+
+To demonstrate, we will now model a categorical variable called Dose, which has 3 treatment levels (1=10mg Active, 2=20 mg Active, 3=Placebo). The reference is now dose=3. You must pay close attention to the table of Class level information in order to understand how SAS is modelling your data.
+
+### CLASS X Y Z /PARAM=Effect
+
+This is the SAS default such that if you do not specify the `/param` option, SAS defaults to using this method.
+
+With the EFFECT option, dose_id has 3 levels, and so needs 2 design variables (β1 and β2). Sex has 2 levels so uses just 1 design variable (β1). For dose_id, the reference level (Placebo) is given values of "-1" for both of the β1 and β2 parameters. General model: Y= α + β1x1 + β2x1 {+β3x3} etc, representing each parameter in the model.
 
 ```{r eval=FALSE}
-Model 3 Results
-                    Analysis of Maximum Likelihood Estimates                 
-
-Parameter   DF     Estimate       Standard Error    Wald Chi-Square  Pr>ChiSq
------------------------------------------------------------------------------
-Intercept   1      2.5607         0.7977           10.3047            0.0013
-Sex         1     -0.8359         0.3637            5.2815            0.0216
-ph_ecog     1      0.3794         0.2469            2.3616            0.1244
-meal_cal    1     -0.00083        0.000435          3.6770            0.0552
-----------------------------------------------------------------------------
-```
-
-NOTE: the chi-square test summary of backward elimination, p=0.6250 is different to the results in R, which gave a difference in deviance of -0.24046, p=0.6239. This difference is currently being investigated.
-
-### Parameterization of model effects (categorical covariates) in SAS
-
-The most common problem when fitting logistic regression in SAS, is getting SAS to model the binary variable (events) and any categorical covariates correctly.
-
-There are two procedures which can be used to perform logistic regression in SAS, `proc logistic`, and `proc genmod` (using dist=bin and link=logit options). They obtain the same results when parameterized correctly. However `proc logistic` has three ways to parameterize categorical variables, and failure to parameterize correctly can lead to incorrect interpretation of results. Parameterization is what SAS does when you include a categorical variable in your model. It codes that variable using new parameters and it fits those into your model.
-
-The default parameterization is `/PARAM=EFFECT` - This is shown as Example A in the design matrix example figure below.
-
-For the example of a categorical variable trt - which has 3 treatment levels (Active 1, Active 2, Placebo). With the EFFECT option, the reference level (Placebo) is given values of "-1" for both of the x1 and x2 parameters. The design matrix consists of 1 less parameter than the number of levels of your variable (so that for 3 treatment groups you have x1 and x2 - 2 parameters in the model). Which reference category is selected is specified either by using the `ref='X'` option, or the default which would be the last value of the variable. In our example (as we have not specified `ref='X'` this is Placebo (as this is last in the alphabet after Active 1 and Active 2).
-
-```{r eval=FALSE}
-proc logistic data=dataset; 
-      CLASS TRTP /PARAM=EFFECT; 
-      MODEL resp (event="Y") = TRTP ;
+proc logistic data=lung;  
+    class dose_id (ref="3") sex (ref="1") /param=effect;
+    model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
 run;
 
-or 
-
-proc logistic data=dataset; 
-      CLASS TRTP; 
-      MODEL resp (event="Y") = TRTP ;
-run;
-
-```
-
-Alternatively, you change the parameterization in SAS using the following options:
-
-`PARAM=REF` - This is shown as Example B below - reference parameter values "0", n-1 variables
-
-```{r eval=FALSE}
-proc logistic data=dataset; 
-      CLASS TRTP /PARAM=REF; 
-      MODEL resp (event="Y") = TRTP ;
-run;
-```
-
-`PARAM=GLM` - This is shown as Example C below - no reference parameter as such (output compares against last value of treatment group), n variables.
-
-```{r eval=FALSE}
-proc logistic data=dataset;  
-      CLASS TRTP /PARAM=GLM; 
-      MODEL resp (event="Y") = TRTP ;
-run;
-```
-
-**Design Matrix Examples**
-
-```{r, echo=FALSE, fig.align='center', out.width="75%"}
-knitr::include_graphics("../images/logistic_regression/parameterization.png")
-```
-
-Depending on which parameterization you use, you have to interpret the estimates you obtains from the model carefully. It is also very important to check the reference assigned is the correct one.
-
-This is also particularly important if you are using any contrast, estimate or lsmestimate statements since the coefficients used for the contrasts must be in line with the parameterization.
-
-### Example of deriving contrast statements in SAS
-
-The table below shows the how the parameterizations using EFFECT, REF or GLM, translate to the model being fitted.
-
-Using General model: Y= α + β1x1 + β2x1 {+β3x3}, the treatments are represented as follows:
-
-```{r eval=FALSE}
-
-Treatment  Effect(A)          REF (B)       GLM (C)
+Class Level Information
+Class       Value            Design Variables
 --------------------------------------------------------
-Active A   Y = α + β1         Y = α + β1    Y = α + β1 
-Active B   Y = α + β2         Y = α + β2    Y = α + β2 
-Placebo    Y = α - β1 - β2    Y = α         Y = α + β3 
+                             dose_β1  dose_β2
+dose_id      1                1           0
+             2                0           1
+             3               -1          -1
+             
+                             sex_β3      
+SEX          1               -1
+             2                1
 --------------------------------------------------------
-```
 
-Now let's suppose we wanted to compare the average of the Active Treatment groups versus the Placebo treatment group. (A+B)/2 compared to Placebo.
+If we want to estimate the effect of treatment (ignoring the other covariates), the Class Level Information can be translated into the table below, which is then used to form contrast statements.
+α is the intercept, and β1 and β2 (including the sign +/-) are from the design variables above.
+                              
+Dose_id       Effect          
+------------------------------
+10mg Active   Y = α + β1          
+20mg Active   Y = α + β2          
+Placebo       Y = α - β1 - β2    
+------------------------------
+  
+To compare 10mg Active vs Placebo, we would do the following:
+ (α + β1 ) - (α - β1 - β2)
+= 2 β1 + β2  
+= 2 β1 + 1 β2
 
-**EFFECT (A) parameterization**
-
-```{r eval=FALSE}
-
+This equates to a contrast statement as follows:
+proc logistic data=lung;  
+    class dose_id (ref="3") sex (ref="1") /param=effect;
+    model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
+    CONTRAST "10mg vs. Placebo" dose_id 2 1 / e; 
+run;
+  
+To compare the average of (10mg Active and 20mg Active) vs Placebo, we would do the following:
 ((α + β1 + α + β2 ) /2 ) - (α - β1 - β2)
 = α + 0.5 β1 + 0.5 β2 - α + β1 + β2  
 = 1.5 β1 + 1.5 β2
+
+This equates to a contrast statement as follows:
+proc logistic data=lung;  
+    class dose_id (ref="3") sex (ref="1") /param=effect;
+    model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
+    CONTRAST "Active (10mg + 20mg) vs. Placebo" dose_id 1.5 1.5 / e; 
+run;
+
+As you can see, these contrasts are not very intuitive and hence it is not reccomended to use the default SAS option of /param=effect, since its easy to end up with the wrong contrasts.
+
+Contract Test Results
+Contrast                           DF        Wald Chi-Square      Pr>ChiSq
+--------------------------------------------------------
+Active (10mg +20mg) vs Placebo     1          1.1610               0.2813
+              
 ```
 
-Therefore, to apply this contrast in SAS we would use:
+### CLASS X Y Z /PARAM=glm
+
+Now let's look at the `param=glm` option. GLM parameterization has a design variable for each level of a parameter. Hence for dose with 3 levels, we have 3 design variables (β1, β2 and β3).
 
 ```{r eval=FALSE}
-PROC LOGISTIC data=dataset;
-CLASS trt ; -default PARAM=EFFECT option is used so last trt is reference 
-MODEL resp (event="Y") = trt ; 
-CONTRAST "Active (A & B) vs. Placebo" trt 1.5 1.5 / e; 
-RUN;
-```
+proc logistic data=lung;  
+    class dose_id (ref="3") sex (ref="1") /param=glm;
+    model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
+run;
 
-**GLM (C) parameterization**
+Class Level Information
+Class       Value            Design Variables
+--------------------------------------------------------
+                             dose_β1  dose_β2 dose_β3
+dose_id      1                1           0       0
+             2                0           1       0  
+             3                0           0       1
+             
+                             sex_β3   sex_β4   
+SEX          1                1           0
+             2                0           1
+--------------------------------------------------------
 
-The GLM parameterization can be more intuitive.
+If we want to estimate the effect of treatment (ignoring the other covariates), the Class Level Information can be translated into the table below, which is then used to form contrast statements.
+α is the intercept, and β1 and β2 and β3 (including the sign +/-) are from the design variables above.
+                              
+Dose_id       Effect          
+------------------------------
+10mg Active   Y = α + β1          
+20mg Active   Y = α + β2          
+Placebo       Y = α - β3    
+--------------------------------------------------------
+  
+To compare 10mg Active vs Placebo, we would do the following:
+ (α + β1 ) - (α - β3)
+=  β1 - β3  
+= 1 β1 - 1 β3
 
-```{r eval=FALSE}
+This equates to a contrast statement as follows:
+proc logistic data=lung;  
+    class dose_id (ref="3") sex (ref="1") /param=glm;
+    model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
+    CONTRAST "10mg vs. Placebo" trt 1 -1 / e; 
+run;
+  
+As you can see, this contrast is much more intuitive. If you want to compare the effect of Active (10mg) compared to placebo,  you take the effect of 10mg and subtract the effect of placebo !
+
+To compare the average of (10mg Active and 20mg Active) vs Placebo, we would do the following:
 ((α + β1 + α + β2)/2 - (α + β3) 
 = α + 0.5 β1 + 0.5 β2 - α - β3 
 = 0.5 β1 + 0.5 β2 - β3
+
+This equates to a contrast statement as follows:
+proc logistic data=lung;  
+    class dose_id (ref="3") sex (ref="1") /param=glm;
+    model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
+CONTRAST "Active (10mg + 20mg) vs. Placebo (1)" trt 0.5 0.5 -1 / e; 
+run;
+
+As you can see, this contrast is much more intuitive. If you want to compare the average of Active (10mg + 20mg) compared to placebo,  you take half the effect of 10mg plus half the effect of 20mg and substract the effect of placebo !
+  
+Contract Test Results
+Contrast                           DF        Wald Chi-Square      Pr>ChiSq
+--------------------------------------------------------
+Active (10mg +20mg) vs Placebo     1          1.1610               0.2813
 ```
 
-Therefore, to apply this contrast in SAS we would use:
+### CLASS X Y Z /PARAM=Ref
+
+Now let's look at the `param=ref` option. Similar to param=effect, ref parameterization uses 1 less design variable compared to the number of levels each parameter has, but the parameterization is different. For dose with 3 levels, we have 2 design variables (β1 and β2).
 
 ```{r eval=FALSE}
-PROC LOGISTIC data=dataset; 
-CLASS trt / param=glm; 
-MODEL resp (event="Y") = trt ; 
-CONTRAST "Active (2 & 3) vs. Placebo (1)" trt 0.5 0.5 -1 / e; 
-RUN;
+proc logistic data=lung;   
+class dose_id (ref="3") sex (ref="1") /param=ref;
+model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
+run;
+
+Class Level Information
+Class       Value            Design Variables
+--------------------------------------------------------
+                             dose_β1  dose_β2 
+dose_id      1                1           0       
+             2                0           1         
+             3                0           0       
+             
+                             sex_β3     
+SEX          1                0           
+             2                1           
+--------------------------------------------------------
+
+If we want to estimate the effect of treatment (ignoring the other covariates), the Class Level Information can be translated into the table below, which is then used to form contrast statements.
+α is the intercept, and β1 and β2 and β3 (including the sign +/-) are from the design variables above.
+                              
+Dose_id       Effect          
+------------------------------
+10mg Active   Y = α + β1          
+20mg Active   Y = α + β2          
+Placebo       Y = α     
+--------------------------------------------------------
+  
+To compare 10mg Active vs Placebo, we would do the following:
+ (α + β1 ) - (α )
+=  β1  
+
+This equates to a contrast statement as follows:
+proc logistic data=lung;  
+    class dose_id (ref="3") sex (ref="1") /param=glm;
+    model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
+    CONTRAST "10mg vs. Placebo" trt 1  / e; 
+run;
+  
+To compare the average of (10mg Active and 20mg Active) vs Placebo, we would do the following:
+((α + β1 + α + β2)/2 -  α  
+= α + 0.5 β1 + 0.5 β2 - α  
+= 0.5 β1 + 0.5 β2 
+
+This equates to a contrast statement as follows:
+proc logistic data=lung;  
+    class dose_id (ref="3") sex (ref="1") /param=glm;
+    model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
+CONTRAST "Active (10mg + 20mg) vs. Placebo (1)" trt 0.5 0.5  / e; 
+run;
+
+Again this is less intuitive than the param=glm parameterization,  but the same results are obtained.
+  
+Contract Test Results
+Contrast                           DF        Wald Chi-Square      Pr>ChiSq
+--------------------------------------------------------
+Active (10mg +20mg) vs Placebo     1          1.1610               0.2813
 ```
 
-For this reason, it is common to either use the default PARAM=Effect with ref="X" option. or to use the param=GLM with no ref="X" option. It is very important to check the output design matrix so you know what parameterization and reference groups are being used.
+# Contrast statements for 2 or more treatments
 
-### Ensuring you are modelling the correct Binary event in SAS
+The Contrast statement, only outputs the p-value for the contrast, but it is common to also require an estimate of the difference between the treatments, with associated 95% CI. You can do this by changing `contrast` to an `estimate` statement. Note that the parameterization of the contrast remains the same as when using a contrast statement as shown below. These estimates and 95% CI's can be back transformed to give you the Odds ratio of the contrast and associated 95% CI. The estimate coefficients table should be checked for accuracy versus the contrast you are trying to do.
+
+```{r eval=FALSE}
+proc logistic data=lung;
+class dose_id (ref="3") sex (ref="1") /param=glm;
+model wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln; 
+Estimate "Active (10mg + 20mg) vs. Placebo (1)" dose_id 0.5 0.5 -1 / e cl; 
+run;
+
+Estimate Coefficients
+Parameter   dose_id    sex    Row1
+--------------------------------------------------------
+dose_id 1   1                 0.5
+dose_id 2   2                 0.5 
+dose_id 3   3                 -1
+--------------------------------------------------------
+  
+Estimate
+Label      estimate   Std Err   Z value   Pr>|z| Alpha  Lower  Upper
+--------------------------------------------------------------------------
+Active (10mg +20mg) vs. Placebo (1)
+           -0.4096    0.3802    -1.08     0.2813  0.05  -1.1547  0.3355  
+--------------------------------------------------------------------------
+
+The odds ratio for the comparison of Active (10mg +20mg) vs. Placebo is 
+  exp(-0.4096) (95% CI: exp(-1.1547) to exp(0.3355))
+= OR: 0.664 (95%CI for OR: 0.315 to 1.399)
+```
+
+# Ensuring you are modelling the correct Binary event in SAS
 
 With logistic regression, we often want to model the number of "Successes". However, by default, SAS sorts alphabetically/numerically and selects the first occurring EVENT alphabetically as the one it's going to model.
 
@@ -278,3 +450,7 @@ It's a common mistake, and we find SAS modelling the number of failures instead 
 For this reason, It is recommended to always use the event="Y" option.
 
 Options such as `ORDER=DATA|FORMATTED|FREQ|INTERNAL` as well as descending can be used to ensure the correct levels of classification variables are being modelled. More detail [here](https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_logistic_sect006.htm)
+
+# References
+
+Created using : SAS release:9.04.01M7P08062020"

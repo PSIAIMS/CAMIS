@@ -1,0 +1,48 @@
+---
+title: "R vs SAS - Estimating and Testing Cause-Specific Hazard"
+---
+
+# Comparison of R and SAS
+
+The following table shows the options available in R and SAS for estimating and testing cause-specific hazard in a competing risk analysis, especially the capabilities and whether the results match.
+
+| Analysis                                                                      | Supported in R package `survival`                                                                                      | Supported in SAS `PROC PHREG`                                      | Results Match            |
+|-------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|--------------------------|
+| Cause-specific hazard ratio estimates                                         | Yes: with `coxph()`                                                                                                    | Yes                                                                | Yes                      |
+| Stratified cause-specific hazard ratio estimates                              | Yes: with the stratification variable `x` specified as `strata(factor(x))` on the right-hand side of the input formula | Yes: with `strata` statement                                       | Yes                      |
+| Variance estimates for the parameter estimates with robust sandwich estimator | Yes: default (`robust = TRUE)`                                                                                         | Yes: with `covsandwich` or `covs` option in `proc phreg` statement | Yes                      |
+| Confidence intervals for hazard ratio estimates                               | Yes: Wald's method by default                                                                                          | Yes: Wald's method by default                                      | Yes                      |
+| Estimating cause specific hazard for multiple events                          | Yes                                                                                                                    | Yes                                                                | Depends (see note below) |
+
+Additional details for using `survival` in R are given [here](https://psiaims.github.io/CAMIS/R/survival_csh.html "csh in r") and for SAS `PROC PHREG` [here](https://psiaims.github.io/CAMIS/SAS/survival_csh.html "csh in sas") .
+
+### Estimating cause specific hazard ratios for multiple events
+
+R and SAS have different approach when it comes to estimating the hazard ratios for multiple events. Results for the hazard ratio estimates are the same between the two; what is different is the global hypothesis:
+
+-   The global hypothesis per `coxph()` in this case is "There is no difference in the hazards of experiencing any of the events."
+
+-   In `PROC PHREG`, one syntax allows the hazard ratio estimates to be generated for all events. However, there is no corresponding global hypothesis as in `coxph()` in R. In SAS, there are only individual global hypotheses, one for each event. In addition, currently, when this syntax is used in SAS, stratified analysis cannot be implemented.
+
+## Summary
+
+-   Most of the functionality of `survival::coxph()` and `proc phreg` also apply to estimating cause-specific hazards in competing risks settings.
+
+-   Due to the different internal numerical estimation methods of R and SAS, results only match up to the 4th decimal places. However, overall consistency can be established between the two for estimating and testing cause-specific hazard ratio using Cox's PH model.
+
+::: {.callout-note collapse="true" title="Session Info"}
+```{r}
+#| echo: false
+si <- sessioninfo::session_info(
+ c("survival"), #Vector of packages used 
+ dependencies = FALSE)
+si$external <- structure(list("SAS" = "9.04.01M7P080520"), class = c("external_info", "list"))
+si
+```
+:::
+
+# References
+
+[SAS PROC LIFETEST Documentation on CIF estimates](https://documentation.sas.com/doc/en/statug/15.2/statug_lifetest_details25.htm#statug.lifetest.lftcifest "cif in sas")
+
+[R package 'tidycmprsk' Documentation](https://github.com/MSKCC-Epi-Bio/tidycmprsk "cif in r")

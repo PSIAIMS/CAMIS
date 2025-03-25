@@ -1,0 +1,187 @@
+---
+title: "Marginal Homogeneity Tests"
+---
+
+This page is solely based on **coin** package documentation including data samples which are generated inline.
+
+`coin::mh_test()` provides the McNemar test, the Cochran Q test, the Stuart(-Maxwell) test and the Madansky test of interchangeability. A general description of these methods is given by Agresti (2002).
+
+The null hypothesis of marginal homogeneity is tested. If formula interface is used, the response variable and the measurement conditions are given by `y` and `x`, respectively, and `block` is a factor where each level corresponds to exactly one subject with repeated measurements: `coin::mh_test(y ~ x | block, data, subset = NULL, ...)`. We can also directly pass an object of class `"table"`.
+
+`coin::mh_test()` computes different tests depending on `x` and `y`:
+
+-   McNemar test (McNemar, 1947) when both `y` and `x` are binary factors;
+
+-   Cochran Q test (Cochran, 1950) when `y` is a binary factor and `x` is a factor with an arbitrary number of levels;
+
+-   Stuart-Maxwell test (Stuart, 1955; Maxwell, 1970) when `y` is a factor with an arbitrary number of levels and `x` is a binary factor;
+
+-   Madansky test of interchangeability (Madansky, 1963), which implies marginal homogeneity, when both `y` and `x` are factors with an arbitrary number of levels.
+
+The conditional null distribution of the test statistic is used to obtain p-values and an asymptotic approximation of the exact distribution is used by default (`distribution = "asymptotic"`). Alternatively, the distribution can be approximated via Monte Carlo resampling or computed exactly for univariate two-sample problems (McNemar test) by setting distribution to `"approximate"` or `"exact"`, respectively.
+
+## McNemar test
+
+For more information on the McNemar see the [McNemar’s test](https://psiaims.github.io/CAMIS/R/r_mcnemar.html) page.
+
+
+## Cochran Q test
+
+```{r}
+## Effectiveness of different media for the growth of diphtheria
+## Cochran (1950, Tab. 2)
+cases <- c(4, 2, 3, 1, 59)
+n <- sum(cases)
+cochran <- data.frame(
+  diphtheria = factor(
+    unlist(rep(list(c(1, 1, 1, 1),
+                    c(1, 1, 0, 1),
+                    c(0, 1, 1, 1),
+                    c(0, 1, 0, 1),
+                    c(0, 0, 0, 0)),
+                cases)
+    )
+  ),
+  media = factor(rep(LETTERS[1:4], n)),
+  case =  factor(rep(seq_len(n), each = 4))
+)
+
+head(cochran)
+
+## Asymptotic Cochran Q test (Cochran, 1950, p. 260)
+coin::mh_test(
+  diphtheria ~ media | case, 
+  data = cochran
+) 
+
+## Approximative Cochran Q test
+mt <- coin::mh_test(
+  diphtheria ~ media | case, 
+  data = cochran,
+  distribution = coin::approximate(nresample = 10000)
+)
+coin::pvalue(mt)             # standard p-value
+coin::midpvalue(mt)          # mid-p-value
+coin::pvalue_interval(mt)    # p-value interval
+coin::size(mt, alpha = 0.05) # test size at alpha = 0.05 using the p-value
+```
+
+## Stuart-Maxwell test
+
+```{r}
+## Opinions on Pre- and Extramarital Sex
+## Agresti (2002, p. 421)
+opinions <- c("Always wrong", "Almost always wrong",
+              "Wrong only sometimes", "Not wrong at all")
+PreExSex <- matrix(
+  c(144, 33, 84, 126,
+    2,  4, 14,  29,
+    0,  2,  6,  25,
+    0,  0,  1,   5),
+  nrow = 4,
+  dimnames = list(
+    "Premarital Sex" = opinions,
+    "Extramarital Sex" = opinions
+  )
+)
+PreExSex <- as.table(PreExSex)
+
+PreExSex
+
+## Asymptotic Stuart test
+coin::mh_test(PreExSex)
+
+## Asymptotic Stuart-Birch test
+## Note: response as ordinal
+coin::mh_test(
+  PreExSex, 
+  scores = list(response = 1:length(opinions))
+)
+```
+
+## Madansky test of interchangeability
+
+```{r}
+## Vote intention
+## Madansky (1963, pp. 107-108)
+vote <- array(
+    c(120, 1,  8, 2,   2,  1, 2, 1,  7,
+        6, 2,  1, 1, 103,  5, 1, 4,  8,
+       20, 3, 31, 1,   6, 30, 2, 1, 81),
+    dim = c(3, 3, 3),
+    dimnames = list(
+          "July" = c("Republican", "Democratic", "Uncertain"),
+        "August" = c("Republican", "Democratic", "Uncertain"),
+          "June" = c("Republican", "Democratic", "Uncertain")
+    )
+)
+vote <- as.table(vote)
+
+vote
+
+## Asymptotic Madansky test (Q = 70.77)
+coin::mh_test(vote)
+
+## Cross-over study
+## http://www.nesug.org/proceedings/nesug00/st/st9005.pdf (link is dead now)
+dysmenorrhea <- array(
+  c(6, 2, 1,  3, 1, 0,  1, 2, 1,
+    4, 3, 0, 13, 3, 0,  8, 1, 1,
+    5, 2, 2, 10, 1, 0, 14, 2, 0),
+  dim = c(3, 3, 3),
+  dimnames =  list(
+    "Placebo" = c("None", "Moderate", "Complete"),
+    "Low dose" = c("None", "Moderate", "Complete"),
+    "High dose" = c("None", "Moderate", "Complete")
+  )
+)
+dysmenorrhea <- as.table(dysmenorrhea)
+
+dysmenorrhea
+
+## Asymptotic Madansky-Birch test (Q = 53.76)
+## Note: response as ordinal
+coin::mh_test(
+  dysmenorrhea, 
+  scores = list(response = 1:3)
+)
+
+## Asymptotic Madansky-Birch test (Q = 47.29)
+## Note: response and measurement conditions as ordinal
+coin::mh_test(
+  dysmenorrhea, 
+  scores = list(response = 1:3, conditions = 1:3)
+)
+```
+
+## Reference
+
+Hothorn T, Hornik K, van de Wiel MA, Zeileis A (2006). A Lego system for conditional inference. The American Statistician, 60 (3), 257-263. doi:10.1198/000313006X118430 <https://doi.org/10.1198/000313006X118430>
+
+Agresti, A. (2002). Categorical Data Analysis, Second Edition. Hoboken, New Jersey: John Wiley & Sons.
+
+Birch, M. W. (1965). The detection of partial association, II: The general case. Journal of the Royal Statistical Society B 27(1), 111–124. doi:10.1111/j.2517-6161.1965.tb00593.x
+
+Cochran, W. G. (1950). The comparison of percentages in matched samples. Biometrika 37(3/4), 256–266. doi:10.1093/biomet/37.3-4.256
+
+Madansky, A. (1963). Tests of homogeneity for correlated samples. Journal of the American Statistical Association 58(301), 97–119. doi:10.1080/01621459.1963.10500835
+
+Maxwell, A. E. (1970). Comparing the classification of subjects by two independent judges. British Journal of Psychiatry 116(535), 651–655. doi:10.1192/bjp.116.535.651
+
+McNemar, Q. (1947). Note on the sampling error of the difference between correlated proportions or percentages. Psychometrika 12(2), 153–157. doi:10.1007/BF02295996
+
+Stuart, A. (1955). A test for homogeneity of the marginal distributions in a two-way classification. Biometrika 42(3/4), 412–416. doi:10.1093/biomet/42.3-4.412
+
+White, A. A., Landis, J. R. and Cooper, M. M. (1982). A note on the equivalence of several marginal homogeneity test criteria for categorical data. International Statistical Review 50(1), 27–34. doi:10.2307/1402457
+
+::: {.callout-note collapse="true" title="Session Info"}
+```{r}
+#| echo: false
+
+# List all the packages needed 
+si <- sessioninfo::session_info(c(
+  "coin"
+))
+si
+```
+:::

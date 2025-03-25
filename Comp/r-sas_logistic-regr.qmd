@@ -42,7 +42,13 @@ Below are summary of findings from a numerical comparison using example data, wh
 ::: {.callout-note appearance="minimal" collapse="false"}
 ### Logistic regression
 
-Exact match (at 0.001 level) can be obtained using `glm` in R vs `PROC LOGISTIC` procedure (without Firth option) in SAS.
+Maximum Likelihood Estimates and p-values for the Model Parameters have an exact match (at 0.001 level) using `glm` in R vs `PROC LOGISTIC` procedure (without Firth option) in SAS.
+
+When using GLM parameterization (see [SAS page](https://psiaims.github.io/CAMIS/SAS/logistic-regr.html) for explanation of parameterization types), the parameters estimates (and 95% CIs) can be exponentiated to provide odds ratios and 95% CIs for odds ratios.
+
+An exact match (at 0.001 level) is obtained for the Odds ratios and CIs when the same method is used, however SAS Proc Logistic can only calculate Wald CI's. Profile likelihood CIs are not available.
+
+R using glm() function, can use the confint() function to calculate CI's using the profile likelihood method or the confint.default() function to calculate CIs using the Wald method.
 :::
 
 ::: {.callout-note appearance="minimal" collapse="false"}
@@ -102,7 +108,7 @@ trial01 <- trial01 %>% filter(!is.na(aval)) ## remove missing data i.e complete 
 # write.csv(trial01, file = "data/trial01.csv", na = ".")
 ```
 
-# Logisitic Regression
+# Logistic Regression
 
 ## Parameterisation Comparison
 
@@ -120,7 +126,7 @@ The following set of tables compare how to configure particular parameters / att
 
 ## Numerical Comparison {#sec-num-comp}
 
-Every effort is made to ensure that the R code employs estimation methods/ optimization algorithms/ other components that closely match (as much as possible) those used in the SAS code. 
+Every effort is made to ensure that the R code employs estimation methods/ optimization algorithms/ other components that closely match (as much as possible) those used in the SAS code.
 
 ### `glm` in R
 
@@ -135,12 +141,14 @@ m1 <- glm(wt_grp ~ age + sex + ph.ecog + meal.cal, data = lung2, family = binomi
 # model coefficients summary
 summary(m1)$coefficients
 ```
+
 Note, function `confint.default` gives the Wald confidence limits, which is the default option in SAS `PROC LOGISTIC` procedure; whereas `confint` gives the profile-likelihood limits. Conditional odds ratio is calculated by taking the exponential of the model parameters.
 
 ```{r}
 cbind(est = coef(m1), 
           confint.default(m1))
 ```
+
 ### `PROC LOGISTIC` in SAS (without firth option)
 
 ```{sas, eval = FALSE}
@@ -158,7 +166,7 @@ Below is screenshot of output tables summarizing coefficient estimates and confi
 
 ### Comment on model selection
 
-As indicated in [Logistic regression in R](https://psiaims.github.io/CAMIS/R/logistic_regr.html) and [Logistic regression in SAS](https://psiaims.github.io/CAMIS/SAS/logistic-regr.html), the chi-Sq test statistics and p-values are different when performing model selections in R vs. SAS. The reason for this discrepancy is that the chi-Sq statistics from `anova()` in R is based on deviance test using residual deviance while the chi-Sq statistics from `PROC LOGISTIC` w/ `SELECTION` option in SAS is based on Wald test using z-values squared. 
+As indicated in [Logistic regression in R](https://psiaims.github.io/CAMIS/R/logistic_regr.html) and [Logistic regression in SAS](https://psiaims.github.io/CAMIS/SAS/logistic-regr.html), the chi-Sq test statistics and p-values are different when performing model selections in R vs. SAS. The reason for this discrepancy is that the chi-Sq statistics from `anova()` in R is based on deviance test using residual deviance while the chi-Sq statistics from `PROC LOGISTIC` w/ `SELECTION` option in SAS is based on Wald test using z-values squared.
 
 ::: {.callout-note appearance="minimal" collapse="false"}
 ### Conclusion for logistic regression
@@ -275,7 +283,7 @@ cat("Marginal treatment effect = ", fit1$marginal_est, "\n",
 
 ### `%Margins` macro in SAS
 
-We now use the SAS [`%Margins`] (https://support.sas.com/kb/63/038.html) macro to perform the Ge et al. (2011) method on `trial01` to estimate the marginal risk difference and it's standard error.
+We now use the SAS \[`%Margins`\] (https://support.sas.com/kb/63/038.html) macro to perform the Ge et al. (2011) method on `trial01` to estimate the marginal risk difference and it's standard error.
 
 ```{r engine='sas', eval=FALSE}
 %Margins(data      = myWork.trial01,
@@ -328,7 +336,7 @@ Exact match at the 0.001 level.
 
 # Final remarks
 
-In summary, there are a few things to be aware of when comparing logistic regression results in R vs SAS. It is crucial to carefully manage the input parameters for each model to ensure they are configured similarly for logistic regression analyses. As highlighted also in [Logistic Regression in SAS](https://psiaims.github.io/CAMIS/SAS/logistic-regr.html), the variable parameterization is also important for modelling and interpretation, ensuring the types of variable (continuous vs. categorical) and reference values of categorical variable are applied as expected. 
+In summary, there are a few things to be aware of when comparing logistic regression results in R vs SAS. It is crucial to carefully manage the input parameters for each model to ensure they are configured similarly for logistic regression analyses. As highlighted also in [Logistic Regression in SAS](https://psiaims.github.io/CAMIS/SAS/logistic-regr.html), the variable parameterization is also important for modelling and interpretation, ensuring the types of variable (continuous vs. categorical) and reference values of categorical variable are applied as expected.
 
 1.  **Likelihood optimization method**
 

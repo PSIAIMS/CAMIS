@@ -1,0 +1,124 @@
+---
+title: "Estimating and Testing Cause Specific Hazard Ratio Using SAS"
+---
+
+## Objective
+
+In this document we present how to estimate and test cause specific hazard ratio for the probability of experiencing a certain event at a given time in a competing risks model in SAS (version 9.4). We focus on the basic model where each subject experiences only one out of *k* possible events as depicted in the figure below.
+
+```{r, echo=FALSE, fig.align='center', out.width="25%"}
+knitr::include_graphics("../images/survival_competing_risks/cr.jpg")
+```
+
+As this document aims to provide syntax for estimating and testing cause-specific hazard ratios using Cox's PH model for competing risks, we assume that readers have working knowledge of a competing risks framework. The [Reference] below list a few literature for a quick refresher on this topic.
+
+The syntax given here produce results match that by R package `survival`, in particular with function `coxph()` (see the companion R document). This is usually necessary if validating results from the two software is the objective.
+
+## SAS procedure
+
+We use `PROC PHREG` in this document.
+
+### Data used
+
+The bone marrow transplant (BTM) dataset as presented by Guo & So (2018) is used. The dataset has the following variables:
+
+-   `Group` has three levels, indicating three disease groups.
+
+-   `T` is the disease-free survival time in days. A derived variable `TYears = T/365.25` is used in the analysis.
+
+-   `Status` has value 0 if `T` is censored; 1 if `T` is time to relapse; 2 if `T` is time to death.
+
+-   `WaitTime` is the waiting time to transplant in days.
+
+-   For illustration, a categorical variable `waitCat` is created from `waitTime` as `waitCat = TRUE` if `waitTime > 200`, and `FALSE` otherwise.
+
+```{r eval=FALSE}
+proc format;
+  value DiseaseGroup 1='ALL'
+                     2='AML-Low Risk'
+                     3='AML-High Risk';
+  value EventStatus  0='Censored'
+                     1='Relapse'
+                     2='Death';
+run;
+libname datalib "..\data";
+data bmt;
+  set datalib.bmt;
+  TYears = T / 365.25;
+  waitCat = (waitTime>200);
+  ID = _n_;
+  format Group DiseaseGroup.;
+  format Status EventStatus.;
+run;
+```
+
+## Estimating and testing the cause specific hazard ratio
+
+### Syntax 1: all events in one go
+
+Starting in SAS/STAT 14.3, all competing events can be estimated together. However, currently this syntax does not allow the `strata` statement.
+
+```{r eval=FALSE}
+proc phreg data=Bmt;
+	title 'Cause-Specific Hazard Regression for Relapse and Death without strata';
+	class Group (order=internal ref=first);
+	model T*Status(0)=Group / eventcode(cox)=1;
+run;
+```
+
+The results for both events are given below:
+
+```{r, echo=FALSE, fig.align='center', out.width="100%", out.height="120%"}
+knitr::include_graphics("../images/survival_competing_risks/cshSAS_1.png")
+```
+
+Three points to note:
+
+1.  The option `eventcode(cox)=1` tells PHREG that `Relapse` (event 1) is the event of interest, and `Death` (event 2) is the competing risk.
+
+2.  This results are essentially the same as modeling `Relapse` and `Death` separately: there are two global hypotheses, one for each event.
+
+3.  This is different from fitting all events in one model that is done in R `coxph()`. In other words, *this is entirely a different model from what R does when modeling all competing events together.* (See Syntax 1 in the Companion R document.)
+
+4.  Additionally, since `strata` statement cannot be incorporated, the results for each event are different from that produced by Syntax 1 in the R document.
+
+For more information, please see [Guo C and So Y. (2018)](https://support.sas.com/resources/papers/proceedings18/2159-2018.pdf).
+
+### Syntax 2: Estimating one event at a time
+
+We use `Relapse` as an example.
+
+```{r eval=FALSE}
+ods output ParameterEstimates=p1;
+proc phreg data=bmt; 
+  title 'Cause-Specific Hazard Regression for Relapse with strata';
+	class Group (order=internal ref=first) waitCat;
+	strata waitCat;
+	model TYears*Status(0,2) = Group / risklimits alpha = 0.05;
+run;
+quit;
+```
+
+The results for event `Relapse` are given below:
+
+```{r, echo=FALSE, fig.align='center', out.width="100%"}
+knitr::include_graphics("../images/survival_competing_risks/cshSAS_2.png")
+```
+
+Note that if there is no stratification, the results will be the same as from Syntax 1 above but for `Relapse` only.
+
+## Summary
+
+-   In `PROC PHREG`, by default Breslow's method is used for handling ties. To match the default results with R `survival::coxph()` which uses Efron's method, this needs to be requested via `ties = efron` option in the `model` statement.
+
+-   For multi-state models such as a competing risk analysis, the R function `survival::coxph()` by default estimate the standard errors of parameter estimates with a robust sandwich estimator. To match results with R, the option `covsandwich` or `covs` for short, need to be added to the `proc phreg` statement.
+
+-   Due to the different internal numerical estimation methods of R and SAS, results only match up to the 4th decimal places. However, overall consistency can be established between the two for estimating and testing cause-specific hazard ratio using Cox's PH model.
+
+## Reference
+
+Guo C and So Y. (2018). "Cause-specific analysis of competing risks using the PHREG procedure." In *Proceedings of the SAS Global Forum 2018 Conference*. Cary, NC: SAS Institute Inc. <https://support.sas.com/resources/papers/proceedings18/2159-2018.pdf>
+
+Pintilie M. (2006). *Competing Risks: A Practical Perspective*. Wiley. <http://dx.doi.org/10.1002/9780470870709>
+
+Therneau T, Crowson C, and Atkinson E. (2024). "Multi-state models and competing risks." <https://cran.r-project.org/web/packages/survival/vignettes/compete.pdf>

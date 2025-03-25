@@ -6,19 +6,21 @@ title: "R vs SAS - Kaplan Meier and Cox-proportion hazards modelling"
 
 The following table shows the options available in SAS and R for Kaplan Meier and Cox Proportional Hazards modelling, the capabilities of each language, and whether or not the results from each language match.
 
-+--------------------------------------------------------------+----------------------------------------------+-------------------------------------+---------------+--------------------------------------------------------------------------------------------------------------------------------------+
-| Analysis                                                     | Supported in R                               | Supported in SAS                    | Results Match | Notes                                                                                                                                |
-+==============================================================+==============================================+=====================================+===============+======================================================================================================================================+
-| Kaplan Meier with confidence intervals using log-log method  | Yes (using the option conf.type = "log-log") | Yes (Default)                       | Mostly        | 1\) Survival estimates can disagree when last event is censored and survival estimate does not cross the percentile being estimated. |
-|                                                              |                                              |                                     |               |                                                                                                                                      |
-|                                                              |                                              |                                     |               | 2\) Survival estimates at time X can disagree when the time X is after the last observed censored time                               |
-+--------------------------------------------------------------+----------------------------------------------+-------------------------------------+---------------+--------------------------------------------------------------------------------------------------------------------------------------+
-| Kaplan Meier with confidence intervals using log method      | Yes (Default)                                | Yes (using the option conftype=log) | Mostly        | As above.                                                                                                                            |
-+--------------------------------------------------------------+----------------------------------------------+-------------------------------------+---------------+--------------------------------------------------------------------------------------------------------------------------------------+
-| Cox Proportional Hazards Model using breslow method for ties | Yes (using the option ties="breslow")        | Yes (Default)                       | Yes           |                                                                                                                                      |
-+--------------------------------------------------------------+----------------------------------------------+-------------------------------------+---------------+--------------------------------------------------------------------------------------------------------------------------------------+
-| Cox Proportional Hazards Model using efron method for ties   | Yes (Default)                                | Yes (using the option ties=efron)   | Yes           |                                                                                                                                      |
-+--------------------------------------------------------------+----------------------------------------------+-------------------------------------+---------------+--------------------------------------------------------------------------------------------------------------------------------------+
++-------------------------------------------------------------------------------+----------------------------------------------+----------------------------------------+---------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| Analysis                                                                      | Supported in R                               | Supported in SAS                       | Results Match | Notes                                                                                                                                |
++===============================================================================+==============================================+========================================+===============+======================================================================================================================================+
+| Kaplan Meier with confidence intervals using log-log method                   | Yes (using the option conf.type = "log-log") | Yes (Default)                          | Mostly        | 1\) Survival estimates can disagree when last event is censored and survival estimate does not cross the percentile being estimated. |
+|                                                                               |                                              |                                        |               |                                                                                                                                      |
+|                                                                               |                                              |                                        |               | 2\) Survival estimates at time X can disagree when the time X is after the last observed censored time                               |
++-------------------------------------------------------------------------------+----------------------------------------------+----------------------------------------+---------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| Kaplan Meier with confidence intervals using log method                       | Yes (Default)                                | Yes (using the option conftype=log)    | Mostly        | As above.                                                                                                                            |
++-------------------------------------------------------------------------------+----------------------------------------------+----------------------------------------+---------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| Cox Proportional Hazards Model using breslow method for ties                  | Yes (using the option ties="breslow")        | Yes (Default)                          | Yes           |                                                                                                                                      |
++-------------------------------------------------------------------------------+----------------------------------------------+----------------------------------------+---------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| Cox Proportional Hazards Model using efron method for ties                    | Yes (Default)                                | Yes (using the option ties=efron)      | Yes           |                                                                                                                                      |
++-------------------------------------------------------------------------------+----------------------------------------------+----------------------------------------+---------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| Cox Proportional Hazards Model using exact partial likelihood method for ties | Yes (using the option ties="exact")          | Yes (using the option ties="discrete") | Yes           | The option ties="exact" in SAS uses the exact marginal likelihood which is not available in R                                        |
++-------------------------------------------------------------------------------+----------------------------------------------+----------------------------------------+---------------+--------------------------------------------------------------------------------------------------------------------------------------+
 
 Results from the examples shown for R [here](https://psiaims.github.io/CAMIS/R/survival.html) and SAS [here](https://psiaims.github.io/CAMIS/SAS/survival.html) were compared below.
 
@@ -54,7 +56,7 @@ If there are no tied event times, then the methods are equivalent.
 
 The Breslow approximation is the easiest to program and hence it historically became the first option coded for almost all software. It then ended up as the default option when other options were added in order to maintain "backwards compatibility". The Efron option is more accurate if there are a large number of ties, and it was therefore selected as the default option in R. In practice the number of ties is usually small, in which case all the methods are statistically indistinguishable.
 
-From the arguments of `coxph` in R, there are three possible choices for handling tied event times 'ties=breslow', 'ties=efron', or 'ties='clogit'. This last option is an exact partial likelihood approach. See [here](https://www.rdocumentation.org/packages/survival/versions/3.5-8/topics/coxph) for more detail.
+From the arguments of `coxph` in R, there are three possible choices for handling tied event times 'ties=breslow', 'ties=efron', or 'ties=exact'. This last option is an exact partial likelihood approach, and corresponds to the "discrete" method in SAS. See [here](https://www.rdocumentation.org/packages/survival/versions/3.5-8/topics/coxph) for more detail. (For {survival} versions prior to 3.2-14, the options are 'ties=breslow', 'ties=efron', or 'ties=logit'.)
 
 ## Reason 2: Kaplan Meier Median Survival Confidence Intervals
 
@@ -92,6 +94,48 @@ Below is the side-by-side comparison for stratified analysis with default method
 ```{r, echo=FALSE, fig.align='center', out.width="75%"}
 knitr::include_graphics("../images/survival/r_sas_stratified.png")   
 ```
+
+## Reason 3: Convergence Criteria in Cox Proportional Hazards Model
+
+Another source of discrepancy between R and SAS in Cox models can arise from
+the default convergence criteria used by the two software packages.
+
+In R, the `survival::coxph()` function has a default convergence criterion
+for the relative change in log partial likelihood set at `1e-9`.
+On the other hand, SAS's `PHREG` procedure uses a default convergence criterion
+for the relative gradient convergence set at `1e-8`. This discrepancy in the
+convergence criteria can lead to slight differences in the hazard ratios (HR)
+obtained from the two software packages.
+
+To achieve comparable results, it is possible to adjust the convergence
+criteria in SAS to match the more stringent criteria used by R.
+This can be done by specifying the `fconv` option in the model statement
+within `PHREG` to change the criteria to relative function convergence
+with a value of `1e-9`.
+
+- R: default convergence criterion
+
+```{r, eval=FALSE}
+fit.cox <- coxph(Surv(LENFOLY, FSTAT) ~ AFB, data = dat)
+```
+
+- SAS: adjust convergence criterion
+
+```{sas, eval=FALSE}
+proc phreg data=dat;
+class afb;
+model lenfol*fstat(0) = afb / rl fconv = 1e-9;
+run;
+```
+
+By making this adjustment, the hazard ratios obtained from SAS will align
+more closely with those from R or even achieve bitwise reproducibility.
+
+The convergence criterion details are described in their documentation:
+
+- [SAS PHREG documentation](https://support.sas.com/documentation/onlinedoc/stat/131/phreg.pdf).
+- [R `survival::coxph()` documentation](https://stat.ethz.ch/R-manual/R-devel/library/survival/html/coxph.html).
+- [R `survival::coxph.control()` ancillary arguments documentation](https://stat.ethz.ch/R-manual/R-devel/library/survival/html/coxph.control.html).
 
 # Other Cases Where Discrepancies Are Found
 

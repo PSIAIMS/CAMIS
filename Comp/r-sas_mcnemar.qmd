@@ -2,33 +2,68 @@
 title: "R v SAS McNemar's test"
 ---
 
-**McNemar's test; R and SAS**
+## Introduction
 
-In R, the `mcNemar` function from the `epibasix` package can be used to perform McNemar's test.
+McNemar's test is a test of marginal homogeneity. That is used with 2x2 contingency tables, when both x and y are binary factors.
 
-```{r, eval=FALSE}
-X<-table(colds$age12,colds$age14)
-summary(mcNemar(X))
+## General Comparison Table
 
+The following table provides an overview of the support and results comparability between R and SAS for the new analysis point.
+
+| Analysis | Supported in R | Supported in SAS | Results Match | Notes |
+|---------------|---------------|---------------|---------------|---------------|
+| McNemar's Chi-Squared test | [Yes](../R/mcnemar.qmd) | [Yes](../SAS/mcnemar.qmd) | ✅ | By default SAS doesn't include the continuity correction. |
+| Cohen's Kappa CI | [Yes](../R/mcnemar.qmd) | [Yes](../SAS/mcnemar.qmd) | ✅ |  |
+
+In R,the {stats} or the {coin} package can be used to calculate McNemar. The {coin} package has the same defaults as SAS. But, using either of these packages, the first step is to calculate a frequency table, using the table function.
+
+```{r}
+library(coin)
+colds <- 
+  read.csv(
+    file = "../data/colds.csv")
+freq_tbl <- table("age12" = colds$age12, "age14" = colds$age14)
+freq_tbl
+coin::mh_test(freq_tbl)
+
+```
+
+In order to get Cohen's Kappa an additional package is needed.
+
+```{r}
+library(vcd)
+cohen_kappa <- Kappa(freq_tbl)
+cohen_kappa
+confint(cohen_kappa, level = 0.95)
 ```
 
 The FREQ procedure can be used in SAS with the AGREE option to run the McNemar test, with OR, and RISKDIFF options stated for production of odds ratios and risk difference. These options were added as `epibasix::mcNemar` outputs the odds ratio and risk difference with confidence limits as default. In contrast to R, SAS outputs the Kappa coefficients with confident limits as default.
 
-```{r, eval=FALSE}
+``` sas
 proc freq data=colds;
-	tables age12*age14 / agree or riskdiff;
+    tables age12*age14 / agree or riskdiff;
 run;
 ```
 
+```{r, echo=FALSE, fig.align='center', out.width="40%"}
+knitr::include_graphics("../images/mcnemar/sas-mcnemar.png")
+```
+
+## Summary and Recommendation
 When calculating the odds ratio and risk difference confidence limits, SAS is not treating the data as matched-pairs. There is advice on the SAS blog and SAS support page to amend this, which requires a lot of additional coding.
 
-R is using Edward's continuity correction with no option to remove this. In contrast, there is no option to include Edward's continuity correction in SAS, but this can be manually coded to agree with R. However, its use is controversial due to being seen as overly conservative.
+{stats} is using Edward's continuity correction by default, but this can be removed. In contrast, there is no option to include Edward's continuity correction in SAS, but this can be manually coded to agree with R. However, its use is controversial due to being seen as overly conservative.
 
-R's use of the continuity correction is consistent with other functions within the `epibasix` package, which was categorised as 'High Risk' by the Risk Assessment Shiny App created by the R Validation Hub. Risk is quantified by the app through a number of metrics relating to maintenance and community usage. It was found that the author is no longer maintaining the package and there was no documentation available for certain methods used. Therefore, the use of the `epibasix` package is advised against and other packages may be more suitable.
+There is another R package that is sometimes used to calculate McNemar's, called `epibasix`. This package is no longer being maintained, and there was no documentation available for certain methods used. Therefore, the use of the `epibasix` package is advised against and other packages may be more suitable.
 
-The `mcnemar.test` function in the `stats` package provides the option to remove continuity corrections which results in a match with SAS. This function does not output any other coefficients for agreement/difference in proportions etc. but (if required) these can be achieved within other functions and/or packages.
-
-```{r, eval=FALSE}
-mcnemar.test(X, correct = FALSE)
-
+::: {.callout-note collapse="true" title="Session Info"}
+```{r}
+#| echo: false
+si <- sessioninfo::session_info(
+  c("coin", "stats"), #Vector of packages used 
+  dependencies = FALSE)
+si$external <- structure(list("SAS" = "9.04.01M7P080520"), class = c("external_info", "list"))
+si
 ```
+:::
+
