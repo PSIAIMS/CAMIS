@@ -1,0 +1,39 @@
+---
+title: "A Brief Guide to Statistics and Machine Learning Methods"
+---
+
+# The crux of the matter
+
+Whatever book about machine learning you take, it begins with more or less detailed classification of algorithms. The depths of classification varies from simple "supervised vs unsupervised" dichotomy to much more confusing partitioning consists of supervised, un-, semi- and self-supervised methods as well as reinforcement learning. Supervised learning commonly divides to classification and regression, and we still have enough stuff beyond it including learning to rank or specific computer vision tasks like image segmentation (actually, pixel-wise classification) and object detection (required solving classification and regression tasks simultaneously).
+
+At the same time, all kinds of supervised learning are not so different as one would consider. Generalized linear models, random forest and various implementation of gradient boosting (xgboost/lightgbm/catboost/etc.) can be used for both classification and regression.
+
+A more notable problem in studying machine learning is its opposition to "traditional" statistics. Fundamental theoretical textbooks clearly point the origin of machine learning in approx. 100-years-old statistical algorithms but contain significant amount of math details making it barely suitable for non-STEM specialists. On the other hand, more practically-oriented manuals often start from programming perspective and describe machine learning as completely separated universe, so no p-values and confidence intervals here. And of course we will unlikely find any mentions about cross-validation in all but most recent statistics textbooks.
+
+# Bridging the gap
+
+We propose to use the intention-based models classification presented in  [Tidy Modeling with R](https://www.tmwr.org/) book by Max Kuhn and Julia Silge:
+
+1.  **Descriptive models** - effectively any model when no predictions or statistical inference is made with it even if the model is capable to do both. Common examples are adding LOESS smoothing on ggplot2 scatterplots and plotting data in PCA coordinates or in coordinates of some embedding space like t-SNE. The key point is to make no assumptions and conclusions about how this model works for new, unseen samples.
+
+2.  **Inferential models** - models that can produce p-values, confidence intervals and/or Bayesian estimates when we use it to answer pre-formulated questions via some kind of hypothesis testing. It is worth noting that machine learning approaches like cross-validation are fully applicable for inferential model selection, because they help to reduce the risk of overfitting. Even if a researcher isn't interested in prediction quality for new samples, estimating model characteristics using out-of-fold samples using k-fold cross-validation is valuable and somewhat undervalued opportunity. See [Inferential Analysis](https://www.tmwr.org/inferential#inferential) and Chapter 11 in [Regression and Other Stories](https://avehtari.github.io/ROS-Examples/) for details.
+
+3. **Predictive models** - any model created with optimal prediction quality in mind and with intention to make prediction for new samples ensuring certain error rate. If model can serve as inferential, it also can be used as predictive (e.g. generalized linear model), but not vice versa. There are bunch of models like clustering, decision trees and gradient boosting intended for prediction task only.
+
+As was already mentioned, all models suffer from overfitting when repetitively modelling procedures with different settings are made on the same data. For inferential models it can lead to higher than expected type I and type II error rates or simply incorrect parameters estimations. Predictive models will report overestimated prediction quality if validation and test sets violate representativity or contain data leakage even if formal model selection procedure with (cross-)validation was done.
+
+Сommon aspect of criticism in machine learning pipelines concerns the point estimation of performance. Best model are selected by mean/median validation folds scores during model tuning with k-fold cross-validation (or other resampling methods) without taking into account confidence intervals for the scores. This issue is easy to fix because existing procedures already provide the set of validation scores ready to do the math. So we came back to statistical inference, but in terms of model performance metrics rather than model itself. It's also possible to generate multiple resamples from single test dataset and obtain interval estimates for metrics of interest, although this approach is not widely adopted yet.
+
+# Software infrastructure to make it work
+
+While Python programmers don't need anything but [scikit-learn](https://scikit-learn.org/stable/) to begin machine learning models development (at least for structured tabular data), R admirers have too much choice: deprecated [caret](https://github.com/topepo/caret) and [mlr](https://github.com/mlr-org/mlr) packages as well as more recent, actively developing [mlr3](https://mlr3.mlr-org.com/) and [tidymodels](https://www.tidymodels.org/). We recommend focusing on studying the latest despite so many **caret**/**mlr** use cases can be found on the Internet. 
+
+Both **mlr3** and **tidymodels** packages provide general framework for machine leaning models development, including interfaces for vast majority of ML algorithms implementations, (cross-)validation schemes, preprocessing steps and performance metrics. The choice between them is highly opinionated. Suggested simple rule of thumb:
+
+* if you prefer more functional, less object-oriented programming and/or relies on [tidyverse](https://www.tidyverse.org/) in your work, **tidymodels** is the choice;
+
+* if you are familiar with Python **scikit-learn** and object-oriented programming paradigm with mutable objects, **mlr3** will be the best match.
+
+It's necessary to point out one important difference between **scikit-learn** and R frameworks with similar functionality. **scikit-learn** itself implements bunch of ML algorithms, and many external implementations like **xgboost** are created with sklearn-compatible interface included. On the contrary, R packages mentioned above are solely wrappers over algorithms provided by the other packages. But even these packages are developed without regard of interfacing with **mlr3**/**tidymodels**/etc., all required unification is already done. So we can use any supported model without memorizing multiple names for the equivalent model parameter (like number of iterations in **xgboost**, **catboost** and **lightgbm**) or doing input data types conversion.
+
+We haven't said anything about many important topics like model interpretation, reproducibility, deep learning and MLOps to keep things simple and to save some room for further publications. This guide should be considered just as starting point for mastering machine learning, particularly in biomedical research applications.
