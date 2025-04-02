@@ -219,9 +219,9 @@ ul.task-list li input[type="checkbox"] {
 <h2 class="anchored" data-anchor-id="naming-convention">Naming Convention</h2>
 <p>For the remainder of this document, we adopt the following naming convention when referring to variables of a contingency table:</p>
 <ul>
-<li><p>X = exposure</p></li>
-<li><p>Y = response</p></li>
-<li><p>K = control</p></li>
+<li><p>X = exposure (Often the treatment variable)</p></li>
+<li><p>Y = response (the variable of interest)</p></li>
+<li><p>K = control (often a potential confounder you want to control for)</p></li>
 </ul>
 </section>
 <section id="scale" class="level2">
@@ -241,21 +241,41 @@ ul.task-list li input[type="checkbox"] {
 <p>To begin investigating the differences in the SAS and R implementations of the CMH test, we decided to use the CDISC Pilot data set, which is publicly available on the PHUSE Test Data Factory repository. We applied very basic filtering conditions upfront (see below) and this data set served as the basis of the examples to follow.</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 6 × 36
-  STUDYID  SITEID SITEGR1 USUBJID TRTSDT     TRTEDT     TRTP  TRTPN   AGE AGEGR1
-  &lt;chr&gt;    &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt;   &lt;date&gt;     &lt;date&gt;     &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; 
-1 CDISCPI… 701    701     01-701… 2014-01-02 2014-07-02 Plac…     0    63 &lt;65   
-2 CDISCPI… 701    701     01-701… 2012-08-05 2012-09-01 Plac…     0    64 &lt;65   
-3 CDISCPI… 701    701     01-701… 2013-07-19 2014-01-14 Xano…    81    71 65-80 
-4 CDISCPI… 701    701     01-701… 2014-03-18 2014-03-31 Xano…    54    74 65-80 
-5 CDISCPI… 701    701     01-701… 2014-07-01 2014-12-30 Xano…    81    77 65-80 
-6 CDISCPI… 701    701     01-701… 2013-02-12 2013-03-09 Plac…     0    85 &gt;80   
-# ℹ 26 more variables: AGEGR1N &lt;dbl&gt;, RACE &lt;chr&gt;, RACEN &lt;dbl&gt;, SEX &lt;chr&gt;,
-#   ITTFL &lt;chr&gt;, EFFFL &lt;chr&gt;, COMP24FL &lt;chr&gt;, AVISIT &lt;chr&gt;, AVISITN &lt;dbl&gt;,
-#   VISIT &lt;chr&gt;, VISITNUM &lt;dbl&gt;, ADY &lt;dbl&gt;, ADT &lt;date&gt;, PARAMCD &lt;chr&gt;,
-#   PARAM &lt;chr&gt;, PARAMN &lt;dbl&gt;, AVAL &lt;dbl&gt;, ANL01FL &lt;chr&gt;, DTYPE &lt;chr&gt;,
-#   AWRANGE &lt;chr&gt;, AWTARGET &lt;dbl&gt;, AWTDIFF &lt;dbl&gt;, AWLO &lt;dbl&gt;, AWHI &lt;dbl&gt;,
-#   AWU &lt;chr&gt;, QSSEQ &lt;dbl&gt;</code></pre>
+<pre><code>  X      STUDYID SITEID SITEGR1     USUBJID     TRTSDT     TRTEDT
+1 1 CDISCPILOT01    701     701 01-701-1015 2014-01-02 2014-07-02
+2 2 CDISCPILOT01    701     701 01-701-1023 2012-08-05 2012-09-01
+3 3 CDISCPILOT01    701     701 01-701-1028 2013-07-19 2014-01-14
+4 4 CDISCPILOT01    701     701 01-701-1033 2014-03-18 2014-03-31
+5 5 CDISCPILOT01    701     701 01-701-1034 2014-07-01 2014-12-30
+6 6 CDISCPILOT01    701     701 01-701-1047 2013-02-12 2013-03-09
+                  TRTP TRTPN AGE AGEGR1 AGEGR1N  RACE RACEN SEX ITTFL EFFFL
+1              Placebo     0  63    &lt;65       1 WHITE     1   F     Y     Y
+2              Placebo     0  64    &lt;65       1 WHITE     1   M     Y     Y
+3 Xanomeline High Dose    81  71  65-80       2 WHITE     1   M     Y     Y
+4  Xanomeline Low Dose    54  74  65-80       2 WHITE     1   M     Y     Y
+5 Xanomeline High Dose    81  77  65-80       2 WHITE     1   F     Y     Y
+6              Placebo     0  85    &gt;80       3 WHITE     1   F     Y     Y
+  COMP24FL AVISIT AVISITN             VISIT VISITNUM ADY        ADT  PARAMCD
+1        Y Week 8       8            WEEK 8        8  63 2014-03-05 CIBICVAL
+2        N Week 8       8            WEEK 4        5  29 2012-09-02 CIBICVAL
+3        Y Week 8       8            WEEK 8        8  54 2013-09-10 CIBICVAL
+4        N Week 8       8            WEEK 4        5  28 2014-04-14 CIBICVAL
+5        Y Week 8       8            WEEK 8        8  57 2014-08-26 CIBICVAL
+6        N Week 8       8 AMBUL ECG REMOVAL        6  46 2013-03-29 CIBICVAL
+        PARAM PARAMN AVAL ANL01FL DTYPE AWRANGE AWTARGET AWTDIFF AWLO AWHI  AWU
+1 CIBIC Score      1    4       Y    NA    2-84       56       7    2   84 DAYS
+2 CIBIC Score      1    3       Y    NA    2-84       56      27    2   84 DAYS
+3 CIBIC Score      1    4       Y    NA    2-84       56       2    2   84 DAYS
+4 CIBIC Score      1    4       Y    NA    2-84       56      28    2   84 DAYS
+5 CIBIC Score      1    4       Y    NA    2-84       56       1    2   84 DAYS
+6 CIBIC Score      1    4       Y    NA    2-84       56      10    2   84 DAYS
+  QSSEQ
+1  6001
+2  6001
+3  6001
+4  6001
+5  6001
+6  6001</code></pre>
 </div>
 </div>
 </section>
@@ -274,7 +294,7 @@ ul.task-list li input[type="checkbox"] {
 <thead>
 <tr class="header">
 <th>Number</th>
-<th>Schema</th>
+<th>Schema (XxYxK)</th>
 <th>Variables</th>
 <th>Relevant Test</th>
 <th>Description</th>
@@ -286,30 +306,37 @@ ul.task-list li input[type="checkbox"] {
 <td>2x2x2</td>
 <td>X = TRTP, Y = SEX, K = AGEGR1</td>
 <td>General Association</td>
-<td>TRTP and AGEGR1 were limited to two categories, overall the the groups were rather balanced</td>
+<td>TRTP and AGEGR1 were limited to two categories (removing the low dose and &gt;80 year group), overall the the groups were rather balanced</td>
 </tr>
 <tr class="even">
+<td>2</td>
+<td>3x2x3</td>
+<td>X = TRTP, Y = SEX, K = AGEGR1</td>
+<td>General Association</td>
+<td>TRTP and AGEGR1 each have 3 levels, SEX has 2 levels, overall the the groups were rather balanced</td>
+</tr>
+<tr class="odd">
 <td>3</td>
 <td>2x2x3</td>
 <td>X = TRTP, Y = SEX, K = RACE</td>
 <td>General Association</td>
 <td>Gives back NaN in R because RACE is very imbalanced</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>6</td>
 <td>2x5x2</td>
 <td>X = TRTP, Y = AVAL, K = SEX</td>
 <td>Row Means</td>
 <td>Compare Row Means results for R and SAS because Y is ordinal</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>9</td>
 <td>3x5x17</td>
 <td>X = TRTP, Y = AVAL, K = SITEID</td>
 <td>Row Means</td>
 <td>SITEID has many strata and provokes sparse groups, AVAL is ordinal, therefore row means statistic applies here, R threw an error</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>10</td>
 <td>5x3x3</td>
 <td>X = AVAL, Y = AGEGR1, K = TRTP</td>
@@ -349,23 +376,23 @@ Attaching package: 'vcdExtra'</code></pre>
 <p>As it can be seen, there are two schemata where R does not provide any results:</p>
 <div class="cell">
 <div class="cell-output-display">
-<div id="azimnvquox" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#azimnvquox table {
+<div id="dphkbtspzh" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#dphkbtspzh table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#azimnvquox thead, #azimnvquox tbody, #azimnvquox tfoot, #azimnvquox tr, #azimnvquox td, #azimnvquox th {
+#dphkbtspzh thead, #dphkbtspzh tbody, #dphkbtspzh tfoot, #dphkbtspzh tr, #dphkbtspzh td, #dphkbtspzh th {
   border-style: none;
 }
 
-#azimnvquox p {
+#dphkbtspzh p {
   margin: 0;
   padding: 0;
 }
 
-#azimnvquox .gt_table {
+#dphkbtspzh .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -391,12 +418,12 @@ Attaching package: 'vcdExtra'</code></pre>
   border-left-color: #D3D3D3;
 }
 
-#azimnvquox .gt_caption {
+#dphkbtspzh .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#azimnvquox .gt_title {
+#dphkbtspzh .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -408,7 +435,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-bottom-width: 0;
 }
 
-#azimnvquox .gt_subtitle {
+#dphkbtspzh .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -420,7 +447,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-top-width: 0;
 }
 
-#azimnvquox .gt_heading {
+#dphkbtspzh .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -432,13 +459,13 @@ Attaching package: 'vcdExtra'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#azimnvquox .gt_bottom_border {
+#dphkbtspzh .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#azimnvquox .gt_col_headings {
+#dphkbtspzh .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -453,7 +480,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#azimnvquox .gt_col_heading {
+#dphkbtspzh .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -473,7 +500,7 @@ Attaching package: 'vcdExtra'</code></pre>
   overflow-x: hidden;
 }
 
-#azimnvquox .gt_column_spanner_outer {
+#dphkbtspzh .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -485,15 +512,15 @@ Attaching package: 'vcdExtra'</code></pre>
   padding-right: 4px;
 }
 
-#azimnvquox .gt_column_spanner_outer:first-child {
+#dphkbtspzh .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#azimnvquox .gt_column_spanner_outer:last-child {
+#dphkbtspzh .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#azimnvquox .gt_column_spanner {
+#dphkbtspzh .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -505,11 +532,11 @@ Attaching package: 'vcdExtra'</code></pre>
   width: 100%;
 }
 
-#azimnvquox .gt_spanner_row {
+#dphkbtspzh .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#azimnvquox .gt_group_heading {
+#dphkbtspzh .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -535,7 +562,7 @@ Attaching package: 'vcdExtra'</code></pre>
   text-align: left;
 }
 
-#azimnvquox .gt_empty_group_heading {
+#dphkbtspzh .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -550,15 +577,15 @@ Attaching package: 'vcdExtra'</code></pre>
   vertical-align: middle;
 }
 
-#azimnvquox .gt_from_md > :first-child {
+#dphkbtspzh .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#azimnvquox .gt_from_md > :last-child {
+#dphkbtspzh .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#azimnvquox .gt_row {
+#dphkbtspzh .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -577,7 +604,7 @@ Attaching package: 'vcdExtra'</code></pre>
   overflow-x: hidden;
 }
 
-#azimnvquox .gt_stub {
+#dphkbtspzh .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -590,7 +617,7 @@ Attaching package: 'vcdExtra'</code></pre>
   padding-right: 5px;
 }
 
-#azimnvquox .gt_stub_row_group {
+#dphkbtspzh .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -604,15 +631,15 @@ Attaching package: 'vcdExtra'</code></pre>
   vertical-align: top;
 }
 
-#azimnvquox .gt_row_group_first td {
+#dphkbtspzh .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#azimnvquox .gt_row_group_first th {
+#dphkbtspzh .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#azimnvquox .gt_summary_row {
+#dphkbtspzh .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -622,16 +649,16 @@ Attaching package: 'vcdExtra'</code></pre>
   padding-right: 5px;
 }
 
-#azimnvquox .gt_first_summary_row {
+#dphkbtspzh .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#azimnvquox .gt_first_summary_row.thick {
+#dphkbtspzh .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#azimnvquox .gt_last_summary_row {
+#dphkbtspzh .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -641,7 +668,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#azimnvquox .gt_grand_summary_row {
+#dphkbtspzh .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -651,7 +678,7 @@ Attaching package: 'vcdExtra'</code></pre>
   padding-right: 5px;
 }
 
-#azimnvquox .gt_first_grand_summary_row {
+#dphkbtspzh .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -661,7 +688,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-top-color: #D3D3D3;
 }
 
-#azimnvquox .gt_last_grand_summary_row_top {
+#dphkbtspzh .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -671,11 +698,11 @@ Attaching package: 'vcdExtra'</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#azimnvquox .gt_striped {
+#dphkbtspzh .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#azimnvquox .gt_table_body {
+#dphkbtspzh .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -684,7 +711,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#azimnvquox .gt_footnotes {
+#dphkbtspzh .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -698,7 +725,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#azimnvquox .gt_footnote {
+#dphkbtspzh .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -707,7 +734,7 @@ Attaching package: 'vcdExtra'</code></pre>
   padding-right: 5px;
 }
 
-#azimnvquox .gt_sourcenotes {
+#dphkbtspzh .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -721,7 +748,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#azimnvquox .gt_sourcenote {
+#dphkbtspzh .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -729,72 +756,72 @@ Attaching package: 'vcdExtra'</code></pre>
   padding-right: 5px;
 }
 
-#azimnvquox .gt_left {
+#dphkbtspzh .gt_left {
   text-align: left;
 }
 
-#azimnvquox .gt_center {
+#dphkbtspzh .gt_center {
   text-align: center;
 }
 
-#azimnvquox .gt_right {
+#dphkbtspzh .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#azimnvquox .gt_font_normal {
+#dphkbtspzh .gt_font_normal {
   font-weight: normal;
 }
 
-#azimnvquox .gt_font_bold {
+#dphkbtspzh .gt_font_bold {
   font-weight: bold;
 }
 
-#azimnvquox .gt_font_italic {
+#dphkbtspzh .gt_font_italic {
   font-style: italic;
 }
 
-#azimnvquox .gt_super {
+#dphkbtspzh .gt_super {
   font-size: 65%;
 }
 
-#azimnvquox .gt_footnote_marks {
+#dphkbtspzh .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#azimnvquox .gt_asterisk {
+#dphkbtspzh .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#azimnvquox .gt_indent_1 {
+#dphkbtspzh .gt_indent_1 {
   text-indent: 5px;
 }
 
-#azimnvquox .gt_indent_2 {
+#dphkbtspzh .gt_indent_2 {
   text-indent: 10px;
 }
 
-#azimnvquox .gt_indent_3 {
+#dphkbtspzh .gt_indent_3 {
   text-indent: 15px;
 }
 
-#azimnvquox .gt_indent_4 {
+#dphkbtspzh .gt_indent_4 {
   text-indent: 20px;
 }
 
-#azimnvquox .gt_indent_5 {
+#dphkbtspzh .gt_indent_5 {
   text-indent: 25px;
 }
 
-#azimnvquox .katex-display {
+#dphkbtspzh .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#azimnvquox div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#dphkbtspzh div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -837,142 +864,170 @@ p-value
 <tr class="gt_row_group_first odd">
 <td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="1 stub_1_1 stub_1">1</td>
 <td class="gt_row gt_left" headers="1 stub_1_1 Test">Correlation</td>
-<td class="gt_row gt_right" headers="1 stub_1_1 Chisq_SAS">0.01767040</td>
-<td class="gt_row gt_right" headers="1 stub_1_1 Chisq_R">0.0008689711</td>
+<td class="gt_row gt_right" headers="1 stub_1_1 Chisq_SAS">0.21660000</td>
+<td class="gt_row gt_right" headers="1 stub_1_1 Chisq_R">0.2165549886</td>
 <td class="gt_row gt_right" headers="1 stub_1_1 Df_SAS">1</td>
 <td class="gt_row gt_right" headers="1 stub_1_1 Df_R">1</td>
-<td class="gt_row gt_right" headers="1 stub_1_1 Prob_SAS">0.89424870</td>
-<td class="gt_row gt_right" headers="1 stub_1_1 Prob_R">0.9764831</td>
+<td class="gt_row gt_right" headers="1 stub_1_1 Prob_SAS">0.61700000</td>
+<td class="gt_row gt_right" headers="1 stub_1_1 Prob_R">0.6416775</td>
 </tr>
 <tr class="even">
 <td class="gt_row gt_left" headers="1 Test_2 Test">Row Means</td>
-<td class="gt_row gt_right" headers="1 Test_2 Chisq_SAS">0.01767040</td>
-<td class="gt_row gt_right" headers="1 Test_2 Chisq_R">2.4820278527</td>
+<td class="gt_row gt_right" headers="1 Test_2 Chisq_SAS">0.21660000</td>
+<td class="gt_row gt_right" headers="1 Test_2 Chisq_R">0.2165549886</td>
 <td class="gt_row gt_right" headers="1 Test_2 Df_SAS">1</td>
-<td class="gt_row gt_right" headers="1 Test_2 Df_R">2</td>
-<td class="gt_row gt_right" headers="1 Test_2 Prob_SAS">0.89424870</td>
-<td class="gt_row gt_right" headers="1 Test_2 Prob_R">0.2890910</td>
+<td class="gt_row gt_right" headers="1 Test_2 Df_R">1</td>
+<td class="gt_row gt_right" headers="1 Test_2 Prob_SAS">0.61700000</td>
+<td class="gt_row gt_right" headers="1 Test_2 Prob_R">0.6416775</td>
 </tr>
 <tr class="odd">
 <td class="gt_row gt_left" headers="1 Test_3 Test">General Association</td>
-<td class="gt_row gt_right" headers="1 Test_3 Chisq_SAS">0.01767040</td>
-<td class="gt_row gt_right" headers="1 Test_3 Chisq_R">2.4820278527</td>
+<td class="gt_row gt_right" headers="1 Test_3 Chisq_SAS">0.21660000</td>
+<td class="gt_row gt_right" headers="1 Test_3 Chisq_R">0.2165549886</td>
 <td class="gt_row gt_right" headers="1 Test_3 Df_SAS">1</td>
-<td class="gt_row gt_right" headers="1 Test_3 Df_R">2</td>
-<td class="gt_row gt_right" headers="1 Test_3 Prob_SAS">0.89424870</td>
-<td class="gt_row gt_right" headers="1 Test_3 Prob_R">0.2890910</td>
+<td class="gt_row gt_right" headers="1 Test_3 Df_R">1</td>
+<td class="gt_row gt_right" headers="1 Test_3 Prob_SAS">0.61700000</td>
+<td class="gt_row gt_right" headers="1 Test_3 Prob_R">0.6416775</td>
 </tr>
 <tr class="gt_row_group_first even">
-<td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="3 stub_1_4 stub_1">3<span class="gt_footnote_marks gt_asterisk" style="white-space:nowrap;font-style:italic;font-weight:normal;line-height:0;"><sup>*</sup></span></td>
-<td class="gt_row gt_left" headers="3 stub_1_4 Test">Correlation</td>
-<td class="gt_row gt_right" headers="3 stub_1_4 Chisq_SAS">0.00278713</td>
-<td class="gt_row gt_right" headers="3 stub_1_4 Chisq_R">NaN</td>
-<td class="gt_row gt_right" headers="3 stub_1_4 Df_SAS">1</td>
-<td class="gt_row gt_right" headers="3 stub_1_4 Df_R">1</td>
-<td class="gt_row gt_right" headers="3 stub_1_4 Prob_SAS">0.95789662</td>
-<td class="gt_row gt_right" headers="3 stub_1_4 Prob_R">NaN</td>
+<td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="2 stub_1_4 stub_1">2</td>
+<td class="gt_row gt_left" headers="2 stub_1_4 Test">Correlation</td>
+<td class="gt_row gt_right" headers="2 stub_1_4 Chisq_SAS">0.00090000</td>
+<td class="gt_row gt_right" headers="2 stub_1_4 Chisq_R">0.0008689711</td>
+<td class="gt_row gt_right" headers="2 stub_1_4 Df_SAS">1</td>
+<td class="gt_row gt_right" headers="2 stub_1_4 Df_R">1</td>
+<td class="gt_row gt_right" headers="2 stub_1_4 Prob_SAS">0.97650000</td>
+<td class="gt_row gt_right" headers="2 stub_1_4 Prob_R">0.9764831</td>
 </tr>
 <tr class="odd">
-<td class="gt_row gt_left" headers="3 Test_5 Test">Row Means</td>
-<td class="gt_row gt_right" headers="3 Test_5 Chisq_SAS">2.38606985</td>
-<td class="gt_row gt_right" headers="3 Test_5 Chisq_R">NaN</td>
-<td class="gt_row gt_right" headers="3 Test_5 Df_SAS">2</td>
-<td class="gt_row gt_right" headers="3 Test_5 Df_R">2</td>
-<td class="gt_row gt_right" headers="3 Test_5 Prob_SAS">0.30329938</td>
-<td class="gt_row gt_right" headers="3 Test_5 Prob_R">NaN</td>
+<td class="gt_row gt_left" headers="2 Test_5 Test">Row Means</td>
+<td class="gt_row gt_right" headers="2 Test_5 Chisq_SAS">2.48200000</td>
+<td class="gt_row gt_right" headers="2 Test_5 Chisq_R">2.4820278527</td>
+<td class="gt_row gt_right" headers="2 Test_5 Df_SAS">1</td>
+<td class="gt_row gt_right" headers="2 Test_5 Df_R">2</td>
+<td class="gt_row gt_right" headers="2 Test_5 Prob_SAS">0.28910000</td>
+<td class="gt_row gt_right" headers="2 Test_5 Prob_R">0.2890910</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="3 Test_6 Test">General Association</td>
-<td class="gt_row gt_right" headers="3 Test_6 Chisq_SAS">2.38606985</td>
-<td class="gt_row gt_right" headers="3 Test_6 Chisq_R">NaN</td>
-<td class="gt_row gt_right" headers="3 Test_6 Df_SAS">2</td>
-<td class="gt_row gt_right" headers="3 Test_6 Df_R">2</td>
-<td class="gt_row gt_right" headers="3 Test_6 Prob_SAS">0.30329938</td>
-<td class="gt_row gt_right" headers="3 Test_6 Prob_R">NaN</td>
+<td class="gt_row gt_left" headers="2 Test_6 Test">General Association</td>
+<td class="gt_row gt_right" headers="2 Test_6 Chisq_SAS">2.48200000</td>
+<td class="gt_row gt_right" headers="2 Test_6 Chisq_R">2.4820278527</td>
+<td class="gt_row gt_right" headers="2 Test_6 Df_SAS">1</td>
+<td class="gt_row gt_right" headers="2 Test_6 Df_R">2</td>
+<td class="gt_row gt_right" headers="2 Test_6 Prob_SAS">0.28910000</td>
+<td class="gt_row gt_right" headers="2 Test_6 Prob_R">0.2890910</td>
 </tr>
 <tr class="gt_row_group_first odd">
-<td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="6 stub_1_7 stub_1">6</td>
-<td class="gt_row gt_left" headers="6 stub_1_7 Test">Correlation</td>
-<td class="gt_row gt_right" headers="6 stub_1_7 Chisq_SAS">1.14720000</td>
-<td class="gt_row gt_right" headers="6 stub_1_7 Chisq_R">0.1115439738</td>
-<td class="gt_row gt_right" headers="6 stub_1_7 Df_SAS">1</td>
-<td class="gt_row gt_right" headers="6 stub_1_7 Df_R">1</td>
-<td class="gt_row gt_right" headers="6 stub_1_7 Prob_SAS">0.28410000</td>
-<td class="gt_row gt_right" headers="6 stub_1_7 Prob_R">0.7383931</td>
+<td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="3 stub_1_7 stub_1">3<span class="gt_footnote_marks gt_asterisk" style="white-space:nowrap;font-style:italic;font-weight:normal;line-height:0;"><sup>*</sup></span></td>
+<td class="gt_row gt_left" headers="3 stub_1_7 Test">Correlation</td>
+<td class="gt_row gt_right" headers="3 stub_1_7 Chisq_SAS">0.00278713</td>
+<td class="gt_row gt_right" headers="3 stub_1_7 Chisq_R">NaN</td>
+<td class="gt_row gt_right" headers="3 stub_1_7 Df_SAS">1</td>
+<td class="gt_row gt_right" headers="3 stub_1_7 Df_R">1</td>
+<td class="gt_row gt_right" headers="3 stub_1_7 Prob_SAS">0.95789662</td>
+<td class="gt_row gt_right" headers="3 stub_1_7 Prob_R">NaN</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="6 Test_8 Test">Row Means</td>
-<td class="gt_row gt_right" headers="6 Test_8 Chisq_SAS">1.14720000</td>
-<td class="gt_row gt_right" headers="6 Test_8 Chisq_R">2.6632420358</td>
-<td class="gt_row gt_right" headers="6 Test_8 Df_SAS">1</td>
-<td class="gt_row gt_right" headers="6 Test_8 Df_R">2</td>
-<td class="gt_row gt_right" headers="6 Test_8 Prob_SAS">0.28410000</td>
-<td class="gt_row gt_right" headers="6 Test_8 Prob_R">0.2640489</td>
+<td class="gt_row gt_left" headers="3 Test_8 Test">Row Means</td>
+<td class="gt_row gt_right" headers="3 Test_8 Chisq_SAS">2.38606985</td>
+<td class="gt_row gt_right" headers="3 Test_8 Chisq_R">NaN</td>
+<td class="gt_row gt_right" headers="3 Test_8 Df_SAS">2</td>
+<td class="gt_row gt_right" headers="3 Test_8 Df_R">2</td>
+<td class="gt_row gt_right" headers="3 Test_8 Prob_SAS">0.30329938</td>
+<td class="gt_row gt_right" headers="3 Test_8 Prob_R">NaN</td>
 </tr>
 <tr class="odd">
-<td class="gt_row gt_left" headers="6 Test_9 Test">General Association</td>
-<td class="gt_row gt_right" headers="6 Test_9 Chisq_SAS">2.56720000</td>
-<td class="gt_row gt_right" headers="6 Test_9 Chisq_R">6.5238474681</td>
-<td class="gt_row gt_right" headers="6 Test_9 Df_SAS">4</td>
-<td class="gt_row gt_right" headers="6 Test_9 Df_R">8</td>
-<td class="gt_row gt_right" headers="6 Test_9 Prob_SAS">0.63260000</td>
-<td class="gt_row gt_right" headers="6 Test_9 Prob_R">0.5887637</td>
+<td class="gt_row gt_left" headers="3 Test_9 Test">General Association</td>
+<td class="gt_row gt_right" headers="3 Test_9 Chisq_SAS">2.38606985</td>
+<td class="gt_row gt_right" headers="3 Test_9 Chisq_R">NaN</td>
+<td class="gt_row gt_right" headers="3 Test_9 Df_SAS">2</td>
+<td class="gt_row gt_right" headers="3 Test_9 Df_R">2</td>
+<td class="gt_row gt_right" headers="3 Test_9 Prob_SAS">0.30329938</td>
+<td class="gt_row gt_right" headers="3 Test_9 Prob_R">NaN</td>
 </tr>
 <tr class="gt_row_group_first even">
-<td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="9 stub_1_10 stub_1">9<span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;line-height:0;"><sup>†</sup></span></td>
-<td class="gt_row gt_left" headers="9 stub_1_10 Test">Correlation</td>
-<td class="gt_row gt_right" headers="9 stub_1_10 Chisq_SAS">0.08544312</td>
-<td class="gt_row gt_right" headers="9 stub_1_10 Chisq_R">NA</td>
-<td class="gt_row gt_right" headers="9 stub_1_10 Df_SAS">1</td>
-<td class="gt_row gt_right" headers="9 stub_1_10 Df_R">NA</td>
-<td class="gt_row gt_right" headers="9 stub_1_10 Prob_SAS">0.77005225</td>
-<td class="gt_row gt_right" headers="9 stub_1_10 Prob_R">NA</td>
+<td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="6 stub_1_10 stub_1">6</td>
+<td class="gt_row gt_left" headers="6 stub_1_10 Test">Correlation</td>
+<td class="gt_row gt_right" headers="6 stub_1_10 Chisq_SAS">1.14720000</td>
+<td class="gt_row gt_right" headers="6 stub_1_10 Chisq_R">0.1115439738</td>
+<td class="gt_row gt_right" headers="6 stub_1_10 Df_SAS">1</td>
+<td class="gt_row gt_right" headers="6 stub_1_10 Df_R">1</td>
+<td class="gt_row gt_right" headers="6 stub_1_10 Prob_SAS">0.28410000</td>
+<td class="gt_row gt_right" headers="6 stub_1_10 Prob_R">0.7383931</td>
 </tr>
 <tr class="odd">
-<td class="gt_row gt_left" headers="9 Test_11 Test">Row Means</td>
-<td class="gt_row gt_right" headers="9 Test_11 Chisq_SAS">2.47631367</td>
-<td class="gt_row gt_right" headers="9 Test_11 Chisq_R">NA</td>
-<td class="gt_row gt_right" headers="9 Test_11 Df_SAS">2</td>
-<td class="gt_row gt_right" headers="9 Test_11 Df_R">NA</td>
-<td class="gt_row gt_right" headers="9 Test_11 Prob_SAS">0.28991809</td>
-<td class="gt_row gt_right" headers="9 Test_11 Prob_R">NA</td>
+<td class="gt_row gt_left" headers="6 Test_11 Test">Row Means</td>
+<td class="gt_row gt_right" headers="6 Test_11 Chisq_SAS">1.14720000</td>
+<td class="gt_row gt_right" headers="6 Test_11 Chisq_R">2.6632420358</td>
+<td class="gt_row gt_right" headers="6 Test_11 Df_SAS">1</td>
+<td class="gt_row gt_right" headers="6 Test_11 Df_R">2</td>
+<td class="gt_row gt_right" headers="6 Test_11 Prob_SAS">0.28410000</td>
+<td class="gt_row gt_right" headers="6 Test_11 Prob_R">0.2640489</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="9 Test_12 Test">General Association</td>
-<td class="gt_row gt_right" headers="9 Test_12 Chisq_SAS">7.03387844</td>
-<td class="gt_row gt_right" headers="9 Test_12 Chisq_R">NA</td>
-<td class="gt_row gt_right" headers="9 Test_12 Df_SAS">8</td>
-<td class="gt_row gt_right" headers="9 Test_12 Df_R">NA</td>
-<td class="gt_row gt_right" headers="9 Test_12 Prob_SAS">0.53298189</td>
-<td class="gt_row gt_right" headers="9 Test_12 Prob_R">NA</td>
+<td class="gt_row gt_left" headers="6 Test_12 Test">General Association</td>
+<td class="gt_row gt_right" headers="6 Test_12 Chisq_SAS">2.56720000</td>
+<td class="gt_row gt_right" headers="6 Test_12 Chisq_R">6.5238474681</td>
+<td class="gt_row gt_right" headers="6 Test_12 Df_SAS">4</td>
+<td class="gt_row gt_right" headers="6 Test_12 Df_R">8</td>
+<td class="gt_row gt_right" headers="6 Test_12 Prob_SAS">0.63260000</td>
+<td class="gt_row gt_right" headers="6 Test_12 Prob_R">0.5887637</td>
 </tr>
 <tr class="gt_row_group_first odd">
-<td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="10 stub_1_13 stub_1">10</td>
-<td class="gt_row gt_left" headers="10 stub_1_13 Test">Correlation</td>
-<td class="gt_row gt_right" headers="10 stub_1_13 Chisq_SAS">2.73816085</td>
-<td class="gt_row gt_right" headers="10 stub_1_13 Chisq_R">0.8715295423</td>
-<td class="gt_row gt_right" headers="10 stub_1_13 Df_SAS">1</td>
-<td class="gt_row gt_right" headers="10 stub_1_13 Df_R">1</td>
-<td class="gt_row gt_right" headers="10 stub_1_13 Prob_SAS">0.09797747</td>
-<td class="gt_row gt_right" headers="10 stub_1_13 Prob_R">0.3505322</td>
+<td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="9 stub_1_13 stub_1">9<span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;line-height:0;"><sup>†</sup></span></td>
+<td class="gt_row gt_left" headers="9 stub_1_13 Test">Correlation</td>
+<td class="gt_row gt_right" headers="9 stub_1_13 Chisq_SAS">0.08544312</td>
+<td class="gt_row gt_right" headers="9 stub_1_13 Chisq_R">NA</td>
+<td class="gt_row gt_right" headers="9 stub_1_13 Df_SAS">1</td>
+<td class="gt_row gt_right" headers="9 stub_1_13 Df_R">NA</td>
+<td class="gt_row gt_right" headers="9 stub_1_13 Prob_SAS">0.77005225</td>
+<td class="gt_row gt_right" headers="9 stub_1_13 Prob_R">NA</td>
 </tr>
 <tr class="even">
-<td class="gt_row gt_left" headers="10 Test_14 Test">Row Means</td>
-<td class="gt_row gt_right" headers="10 Test_14 Chisq_SAS">4.40701092</td>
-<td class="gt_row gt_right" headers="10 Test_14 Chisq_R">3.0445270087</td>
-<td class="gt_row gt_right" headers="10 Test_14 Df_SAS">4</td>
-<td class="gt_row gt_right" headers="10 Test_14 Df_R">4</td>
-<td class="gt_row gt_right" headers="10 Test_14 Prob_SAS">0.35371641</td>
-<td class="gt_row gt_right" headers="10 Test_14 Prob_R">0.5504018</td>
+<td class="gt_row gt_left" headers="9 Test_14 Test">Row Means</td>
+<td class="gt_row gt_right" headers="9 Test_14 Chisq_SAS">2.47631367</td>
+<td class="gt_row gt_right" headers="9 Test_14 Chisq_R">NA</td>
+<td class="gt_row gt_right" headers="9 Test_14 Df_SAS">2</td>
+<td class="gt_row gt_right" headers="9 Test_14 Df_R">NA</td>
+<td class="gt_row gt_right" headers="9 Test_14 Prob_SAS">0.28991809</td>
+<td class="gt_row gt_right" headers="9 Test_14 Prob_R">NA</td>
 </tr>
 <tr class="odd">
-<td class="gt_row gt_left" headers="10 Test_15 Test">General Association</td>
-<td class="gt_row gt_right" headers="10 Test_15 Chisq_SAS">5.73053819</td>
-<td class="gt_row gt_right" headers="10 Test_15 Chisq_R">5.7305381934</td>
-<td class="gt_row gt_right" headers="10 Test_15 Df_SAS">8</td>
-<td class="gt_row gt_right" headers="10 Test_15 Df_R">8</td>
-<td class="gt_row gt_right" headers="10 Test_15 Prob_SAS">0.67738613</td>
-<td class="gt_row gt_right" headers="10 Test_15 Prob_R">0.6773861</td>
+<td class="gt_row gt_left" headers="9 Test_15 Test">General Association</td>
+<td class="gt_row gt_right" headers="9 Test_15 Chisq_SAS">7.03387844</td>
+<td class="gt_row gt_right" headers="9 Test_15 Chisq_R">NA</td>
+<td class="gt_row gt_right" headers="9 Test_15 Df_SAS">8</td>
+<td class="gt_row gt_right" headers="9 Test_15 Df_R">NA</td>
+<td class="gt_row gt_right" headers="9 Test_15 Prob_SAS">0.53298189</td>
+<td class="gt_row gt_right" headers="9 Test_15 Prob_R">NA</td>
+</tr>
+<tr class="gt_row_group_first even">
+<td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="10 stub_1_16 stub_1">10</td>
+<td class="gt_row gt_left" headers="10 stub_1_16 Test">Correlation</td>
+<td class="gt_row gt_right" headers="10 stub_1_16 Chisq_SAS">2.73816085</td>
+<td class="gt_row gt_right" headers="10 stub_1_16 Chisq_R">0.8715295423</td>
+<td class="gt_row gt_right" headers="10 stub_1_16 Df_SAS">1</td>
+<td class="gt_row gt_right" headers="10 stub_1_16 Df_R">1</td>
+<td class="gt_row gt_right" headers="10 stub_1_16 Prob_SAS">0.09797747</td>
+<td class="gt_row gt_right" headers="10 stub_1_16 Prob_R">0.3505322</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="10 Test_17 Test">Row Means</td>
+<td class="gt_row gt_right" headers="10 Test_17 Chisq_SAS">4.40701092</td>
+<td class="gt_row gt_right" headers="10 Test_17 Chisq_R">3.0445270087</td>
+<td class="gt_row gt_right" headers="10 Test_17 Df_SAS">4</td>
+<td class="gt_row gt_right" headers="10 Test_17 Df_R">4</td>
+<td class="gt_row gt_right" headers="10 Test_17 Prob_SAS">0.35371641</td>
+<td class="gt_row gt_right" headers="10 Test_17 Prob_R">0.5504018</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="10 Test_18 Test">General Association</td>
+<td class="gt_row gt_right" headers="10 Test_18 Chisq_SAS">5.73053819</td>
+<td class="gt_row gt_right" headers="10 Test_18 Chisq_R">5.7305381934</td>
+<td class="gt_row gt_right" headers="10 Test_18 Df_SAS">8</td>
+<td class="gt_row gt_right" headers="10 Test_18 Df_R">8</td>
+<td class="gt_row gt_right" headers="10 Test_18 Prob_SAS">0.67738613</td>
+<td class="gt_row gt_right" headers="10 Test_18 Prob_R">0.6773861</td>
 </tr>
 </tbody><tfoot class="gt_footnotes">
 <tr class="odd">
