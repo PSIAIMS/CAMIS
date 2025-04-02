@@ -196,8 +196,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#data-used" id="toc-data-used" class="nav-link active" data-scroll-target="#data-used">Data used</a></li>
-  <li><a href="#example-code-using-proc-rmstreg" id="toc-example-code-using-proc-rmstreg" class="nav-link" data-scroll-target="#example-code-using-proc-rmstreg">Example Code using proc rmstreg</a></li>
+  <li><a href="#common-mistakes-doing-rmst-in-sas" id="toc-common-mistakes-doing-rmst-in-sas" class="nav-link active" data-scroll-target="#common-mistakes-doing-rmst-in-sas">Common Mistakes doing RMST in SAS</a></li>
+  <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data used</a></li>
+  <li><a href="#view-your-data---kaplan-meier-curves" id="toc-view-your-data---kaplan-meier-curves" class="nav-link" data-scroll-target="#view-your-data---kaplan-meier-curves">View your data - Kaplan-Meier Curves</a></li>
+  <li><a href="#setting-tau" id="toc-setting-tau" class="nav-link" data-scroll-target="#setting-tau">Setting tau</a></li>
+  <li><a href="#method-1-inverse-probability-censoring-weighting-ipcw-estimation-proc-rmstreg" id="toc-method-1-inverse-probability-censoring-weighting-ipcw-estimation-proc-rmstreg" class="nav-link" data-scroll-target="#method-1-inverse-probability-censoring-weighting-ipcw-estimation-proc-rmstreg">Method 1: Inverse Probability Censoring Weighting (IPCW) Estimation (proc rmstreg)</a>
+  <ul class="collapse">
+  <li><a href="#linear-link-model---provides-estimates-of-treatment-differences" id="toc-linear-link-model---provides-estimates-of-treatment-differences" class="nav-link" data-scroll-target="#linear-link-model---provides-estimates-of-treatment-differences">Linear link model - provides estimates of treatment differences</a></li>
+  <li><a href="#log-link-model---provides-estimates-of-treatment-ratios" id="toc-log-link-model---provides-estimates-of-treatment-ratios" class="nav-link" data-scroll-target="#log-link-model---provides-estimates-of-treatment-ratios">Log link model - provides estimates of treatment ratios</a></li>
+  </ul></li>
+  <li><a href="#method-2-pseudo-value-estimation-proc-rmstreg" id="toc-method-2-pseudo-value-estimation-proc-rmstreg" class="nav-link" data-scroll-target="#method-2-pseudo-value-estimation-proc-rmstreg">Method 2: Pseudo Value Estimation (proc rmstreg)</a></li>
+  <li><a href="#method-3-rmst-area-under-the-curve-method-proc-lifetest" id="toc-method-3-rmst-area-under-the-curve-method-proc-lifetest" class="nav-link" data-scroll-target="#method-3-rmst-area-under-the-curve-method-proc-lifetest">Method 3: RMST Area under the curve method (proc lifetest)</a>
+  <ul class="collapse">
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  <li><a href="#version" id="toc-version" class="nav-link" data-scroll-target="#version">Version</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -229,12 +242,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>SAS have a User’s Guide for RMSTREG Procedure <a href="https://support.sas.com/documentation/onlinedoc/stat/151/rmstreg.pdf">here</a> which explains RMST analysis.</p>
-<p>There are two things you need to be aware of in the SAS documentation.</p>
-<p><strong>Issue 1:</strong> page 8615 SAS says it expects the event indicator (Status) to be 1=event (death time) and 0=censor. If you follow this guidance, then you must ensure that you use:</p>
-<p><code>model time*status(0)</code> as the model to ensure SAS knows that 0 is the censored observation.</p>
-<p>This is a little confusing, because firstly the information in brackets is asking for what is the indicator of censored observations, which is contrary to the name of the variable being ‘status’ !</p>
-<p>In other survival procedures, we often have a variable <code>cnsr</code> which we set to 1=censored or 0=event, and hence we use <code>model time*cnsr(1)</code>. We find this more straight forward that using <code>status</code> and hence that is used throughout this example.</p>
+<p>Under the situation where you time to event outcome has non-proportional hazards over time, the commonly used Cox Proportional Hazards regression analysis and the log-rank test can be invalid - especially when the survival curves are crossing. One alternative is to analyse the Restricted Mean Survival Time (RMST).</p>
+<p>There are a few ways in SAS to estimate the RMST. A parametric approach is to use general estimating equations(GEE) modelling using linear or log-linear link functions and the IPCW or pseudo-value approach as described in Methods 1 and 2 below. Alternatively you can use a non-parametric approach using an Area Under the Curve (AUC) calculated for the Kaplan-Meier curves.</p>
+<p>For treatment comparisons, the RMST can be compared across treatments and it was recommended by the FDA in draft guidance in 2020 for analysis of Acute Myeloid Leukemia (AML) <a href="https://www.fda.gov/regulatory-information/search-fda-guidance-documents/acute-myeloid-leukemia-developing-drugs-and-biological-products-treatment">here</a>. AML commonly has an initial higher rate of death following randomization, followed by a plateauing rate of death over time (Non-proportional hazards).</p>
+<p>The main advantage of this method is its easy clinical interpretation (e.g.&nbsp;with an endpoint of time to death - we are measuring average time to death). The biggest disadvantage is you have to select a time at which to calculated the average over: this time is called <code>tau</code>. If data is not mature enough, you may get a unreliable result. In addition, one could accuse analysts of selecting <code>tau</code> such that you get the ‘most significant’ result in the direction you desire!</p>
+<p>References are found at the end of this page.</p>
+<section id="common-mistakes-doing-rmst-in-sas" class="level3">
+<h3 class="anchored" data-anchor-id="common-mistakes-doing-rmst-in-sas">Common Mistakes doing RMST in SAS</h3>
+<p><strong>Issue 1:</strong> page 8615 of User’s Guide for RMSTREG Procedure <a href="https://support.sas.com/documentation/onlinedoc/stat/151/rmstreg.pdf">here</a> says it expects the event indicator (Status) to be 1=event (death time) and 0=censor. If you follow this guidance, then you must ensure that you use: <code>model time*status(0)</code> to ensure SAS knows that 0 is the censored observation.</p>
+<p>A common mistake is to get the (0) or (1) indicator the wrong way around. For example, it’s common to use a <code>cnsr</code> variable which is set to 1=censored or 0=event. If this is used, then you must use<br>
+<code>model time*cnsr(1)</code>! Always make sure you check the SAS output to verify your counts of Events and Censored observations is the correct way around.</p>
+<p>Throughout this page, we will use cnsr(1) approach.</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
@@ -244,7 +262,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p><strong>Issue 2:</strong> page 8616 tells us that if we omit the option <code>tau=xx</code> then SAS sets tau using the largest <strong>event</strong> time. However, what SAS actually does is use the largest <code>time</code> from either events or censored observations which will result in an incorrect analysis. Therefore, you must calculate tau yourself (using events only) and include it as an option in the SAS code.</p>
+<p><strong>Issue 2:</strong> page 8616 of User’s Guide for RMSTREG Procedure <a href="https://support.sas.com/documentation/onlinedoc/stat/151/rmstreg.pdf">here</a> tells us that if we omit the option <code>tau=xx</code> then SAS sets <code>tau</code> using the largest <strong>event</strong> time. However, what SAS actually does is use the largest <code>time</code> from either events or censored observations.</p>
+<p>The selection of <code>tau</code> for RMST analysis is very important. It’s the period of time the average (or AUC for proc lifetest) is calculated over. If events are no longer occurring on both treatment groups, then you may not be looking at the key time period of interest. Therefore, it is better practice, to calculate <code>tau</code> yourself and set this as an option in the SAS code, (commonly based on the minimum time of the last event observed in each treatment group).</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
@@ -254,27 +273,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
+</section>
 <section id="data-used" class="level2">
 <h2 class="anchored" data-anchor-id="data-used">Data used</h2>
-<p>We are using the lung_cancer.csv dataset found <a href="CAMIS/data at main · PSIAIMS/CAMIS">here</a> with some manipulation as shown below.</p>
-<p>We just create a <code>cnsr</code> variable to use in the analysis which has 165 events, and 63 censored values.</p>
-<div class="cell">
-<pre class="eval cell-code"><code>data adcibc (keep=age sex trt time cnsr);
-  set lung_cancer;
-  if _N_&lt;=100 then trt="PBO";
-  else trt="Active";
-  if status=1 then cnsr=1;
-  else cnsr=0;
-run; </code></pre>
-</div>
-<p>The data consist of:</p>
+<p>We are using the lung_cancer.csv dataset found <a href="CAMIS/data at main · PSIAIMS/CAMIS">here</a>. If you tabulate the censoring flag variable <code>cnsr</code><br>
+(1: censored, 0=event), we have 165 events, and 63 censored values.</p>
+<p>We only need the variables listed below</p>
 <ul>
 <li><p>time - Time(days) to event</p></li>
 <li><p>cnsr - 1=censored, 0=event</p></li>
 <li><p>age - Age of subject</p></li>
 <li><p>sex - 1=male, 2 = female</p></li>
-<li><p>trt - PBO or Act</p></li>
-<li><p>ref- column of 1’s just used for sorting</p></li>
+<li><p>trt01pn - 1=Active, 2=Placebo</p></li>
 </ul>
 <p>For example:</p>
 <table class="caption-top table">
@@ -282,72 +292,107 @@ run; </code></pre>
 <tr class="header">
 <th>time</th>
 <th>cnsr</th>
-<th>trt</th>
+<th>trt01pn</th>
 <th>age</th>
 <th>sex</th>
-<th>ref</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>279</td>
+<td>306</td>
+<td>0</td>
 <td>1</td>
-<td>Act</td>
-<td>64</td>
-<td>1</td>
+<td>74</td>
 <td>1</td>
 </tr>
 <tr class="even">
-<td>276</td>
+<td>455</td>
+<td>0</td>
 <td>1</td>
-<td>Act</td>
-<td>52</td>
-<td>2</td>
+<td>68</td>
 <td>1</td>
 </tr>
 <tr class="odd">
-<td>79</td>
-<td>0</td>
-<td>Act</td>
-<td>64</td>
-<td>2</td>
+<td>1010</td>
+<td>1</td>
+<td>1</td>
+<td>56</td>
 <td>1</td>
 </tr>
 <tr class="even">
-<td>654</td>
+<td>210</td>
 <td>0</td>
-<td>PBO</td>
-<td>68</td>
-<td>2</td>
+<td>1</td>
+<td>57</td>
 <td>1</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="example-code-using-proc-rmstreg" class="level2">
-<h2 class="anchored" data-anchor-id="example-code-using-proc-rmstreg">Example Code using proc rmstreg</h2>
-<p>Firstly we have to calculate tau from the data we have (using events only - cnsr=0). As explained in issue 2 above, if you do not do this SAS uses both events and censored observations to calculate tau, which is incorrect. The below calculates <code>tau</code> as 883 (highest event time). Following the calculation of tau, we then fit the proc rmstreg as shown.</p>
+<section id="view-your-data---kaplan-meier-curves" class="level2">
+<h2 class="anchored" data-anchor-id="view-your-data---kaplan-meier-curves">View your data - Kaplan-Meier Curves</h2>
+<p>It is good practice to first view the shape of your Kaplan-Meier curves. As you can see our treatment curves are crossing at approximately 300 days.</p>
+<p>It is very important to pre-specify your approach for selection of <code>tau</code>. As you can see from the curves, if we compared the period 0 to 6 months, vs 0 to 18 months, we would get very different results for the treatment comparison.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>proc sort data<span class="ot">=</span><span class="fu">adcibc</span> (<span class="at">where=</span>(<span class="at">cnsr=</span><span class="dv">0</span>)) out<span class="ot">=</span>timord;</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  by ref time;</span>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>proc lifetest data<span class="ot">=</span>adcibc  conftype<span class="ot">=</span>log ;</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a> time time<span class="sc">*</span><span class="fu">cnsr</span>(<span class="dv">1</span>) ;</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a> strata trt01pn;</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>Run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/rmst/kmplot.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="setting-tau" class="level2">
+<h2 class="anchored" data-anchor-id="setting-tau">Setting tau</h2>
+<p>The code below calculates <code>tau</code> as the minimum time of the last event observed in each treatment group. This will be the period of time, our AUC will be calculated over. As cnsr=0 are events, we only select these observations. Below, the maximum event in treatment 1 = 883 days and in treatment 2 = 350 days. We therefore set <code>tau</code> = 350. This method avoids including in the AUC a period of time where events are no longer occurring in both treatments. You can see why setting <code>tau</code> is very important as we are likely to get very different AUCs calculating over the 350 day as opposed to the 883 day period!</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>proc sort data<span class="ot">=</span><span class="fu">lung_cancer</span> (<span class="at">where=</span>(<span class="at">cnsr=</span><span class="dv">0</span>)) out<span class="ot">=</span>tau1;</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  by  trt01pn time;</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>run;</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>data adcibc2;</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  set adcibc ;</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  by ref time;</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> last.ref then call <span class="fu">symput</span>(<span class="st">"_tau"</span>,<span class="fu">put</span>(time,best8.));</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>data <span class="fu">tau1</span> (<span class="at">keep=</span>studyid trt01pn time);</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  set tau1 ;</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  by trt01pn time;</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> last.trt01pn then output;</span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>run;</span>
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>%put <span class="sc">&amp;</span>_tau;</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>proc rmstreg data<span class="ot">=</span>adtte tau<span class="ot">=</span><span class="er">&amp;</span>_tau;</span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>class trtp sex;</span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a> model aval<span class="sc">*</span><span class="fu">cnsr</span>(<span class="dv">1</span>) <span class="ot">=</span>trtp sex age <span class="sc">/</span>link<span class="ot">=</span>linear method<span class="ot">=</span><span class="fu">ipcw</span> (<span class="at">strata=</span>trtp);</span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a> lsmeans trtp<span class="sc">/</span>pdiff<span class="ot">=</span><span class="fu">control</span>(<span class="st">'Placebo'</span>) cl alpha<span class="ot">=</span><span class="fl">0.05</span>;</span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>ods output lsmeans<span class="ot">=</span>lsm diffs<span class="ot">=</span> diff;</span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>Run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>proc sort data<span class="ot">=</span>tau1;</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>by descending time;</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>data tau2;</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  set tau1 end<span class="ot">=</span>last;</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  by descending time;</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> last then call <span class="fu">symput</span>(<span class="st">"_tau"</span>,<span class="fu">put</span>(time,best8.));</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>%put <span class="sc">&amp;</span>_tau;</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a> <span class="dv">350</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>To ensure you have the cnsr/event flag the right way around and tau set correctly, check the output closely. As you can see in the images below, tau=883 and number of events = 165 which is correct.</p>
+</section>
+<section id="method-1-inverse-probability-censoring-weighting-ipcw-estimation-proc-rmstreg" class="level2">
+<h2 class="anchored" data-anchor-id="method-1-inverse-probability-censoring-weighting-ipcw-estimation-proc-rmstreg">Method 1: Inverse Probability Censoring Weighting (IPCW) Estimation (proc rmstreg)</h2>
+<p>The Inverse probability censoring weighting estimation as per <a href="https://pubmed.ncbi.nlm.nih.gov/24292992/">Tian L, Zhao L, Wei LJ. Biostatistics 2014, 15, 222-233</a> is found in SAS using <code>Proc rmstreg</code> and <code>method=ipcw</code>. This is using a generalized linear model (linear or log-linear options are available) to model right censored data over time. The estimation method uses : Generalized estimating equations (GEE).</p>
+<p>This method uses Kaplan-Meier estimation to obtain weights and it has been shown that weighting in this way provides an unbiased estimate for an adjusted survival curve <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5845164/">Calkins 2018</a>. See <a href="https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/1471-2288-13-152">Royston &amp; Parmar (2013)</a> for more detail.</p>
+<p>To calculate the stratified weights by treatment and use them in the iterative estimation process, you need to specify <code>strata=trt01pn</code></p>
+<p>In the output, its important to check that your event/censoring flag is the right was around and tau is set as expected. (165 events and tau=335)</p>
+<section id="linear-link-model---provides-estimates-of-treatment-differences" class="level3">
+<h3 class="anchored" data-anchor-id="linear-link-model---provides-estimates-of-treatment-differences">Linear link model - provides estimates of treatment differences</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>proc rmstreg data<span class="ot">=</span>adcibc tau<span class="ot">=</span><span class="er">&amp;</span>_tau;</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>class trt01pn sex;</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>model time<span class="sc">*</span><span class="fu">cnsr</span>(<span class="dv">1</span>) <span class="ot">=</span>trt01pn sex age <span class="sc">/</span>link<span class="ot">=</span>linear method<span class="ot">=</span><span class="fu">ipcw</span> (<span class="at">strata=</span>trt01pn);</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>lsmeans trt01pn<span class="sc">/</span>pdiff<span class="ot">=</span><span class="fu">control</span>(<span class="st">'2'</span>) cl alpha<span class="ot">=</span><span class="fl">0.05</span>;</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>ods output lsmeans<span class="ot">=</span>lsm diffs<span class="ot">=</span> diff;</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>Run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
@@ -357,7 +402,7 @@ run; </code></pre>
 </div>
 </div>
 </div>
-<p>The above model results in a difference in expected value of the time-to-event (Active-Placebo) of -57 days.</p>
+<p>The above model results in a <code>restricted mean survival time</code> estimate of 257.16 days on treatment 1 vs 267.04 days on treatment 2. The difference (Active-Placebo) is -9.88 days (95% CI: -39.0 to 19.25, p=0.5061). Hence, there is no evidence of a difference between the treatments with respect to RMST when we look over the Kaplan-Meier plot from 0 to 350 days.</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
@@ -367,14 +412,18 @@ run; </code></pre>
 </div>
 </div>
 </div>
-<p>However, fitting the analysis without the tau=XX option, you can see that the output shows tau =1022 which is the highest censored observation. This can radically change the analysis and should not be used. In this example, the difference in expected value of the time-to-event for Active-Placebo estimated at -65 days.</p>
+</section>
+<section id="log-link-model---provides-estimates-of-treatment-ratios" class="level3">
+<h3 class="anchored" data-anchor-id="log-link-model---provides-estimates-of-treatment-ratios">Log link model - provides estimates of treatment ratios</h3>
+<p>The code is similar to above. We include the option <code>exp</code> on the lsmeans row, since this back transforms (exponentiates) the estimates of the RMST (and 95% CI) for each treatment and for the treatment difference back onto the days scale (rather than log(days) scale). NOTE: if you use the <code>ilink</code> option and link=log method, this does the same (given the link is log), however, does not back transform the treatment differences. It is currently believed that SAS is using the delta method from the treatment arm RMSTs, to estimate the standard error for the RMST ratio.</p>
+<p>Similar to the linear model, we obtain results of a <code>restricted mean survival time</code> estimate of 255.21 days on treatment 1 vs 264.75 days on treatment 2. The difference (Active-Placebo) on the log scale is -0.03667 (95% CI: -0.1493 to 0.07596, p=0.5234) but this is hard to interpret. Hence, once back transformed, the treatment ratio (Active/Placebo) is 0.9640 (95% CI: 0.8613 to 1.0789, p=0.5234).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>proc rmstreg data<span class="ot">=</span>adtte ;</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>class trtp sex;</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a> model aval<span class="sc">*</span><span class="fu">cnsr</span>(<span class="dv">0</span>) <span class="ot">=</span>trtp sex age <span class="sc">/</span>link<span class="ot">=</span>linear method<span class="ot">=</span><span class="fu">ipcw</span> (<span class="at">strata=</span>trtp);</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a> lsmeans trtp<span class="sc">/</span>pdiff<span class="ot">=</span><span class="fu">control</span>(<span class="st">'Placebo'</span>) cl alpha<span class="ot">=</span><span class="fl">0.05</span>;</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>ods output lsmeans<span class="ot">=</span>lsm diffs<span class="ot">=</span> diff;</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>Run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>proc rmstreg data<span class="ot">=</span>adcibc tau<span class="ot">=</span><span class="er">&amp;</span>_tau;</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>class trt01pn sex;</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>model time<span class="sc">*</span><span class="fu">cnsr</span>(<span class="dv">1</span>) <span class="ot">=</span>trt01pn sex age <span class="sc">/</span>link<span class="ot">=</span>log method<span class="ot">=</span><span class="fu">ipcw</span> (<span class="at">strata=</span>trt01pn);</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>lsmeans trt01pn<span class="sc">/</span>pdiff<span class="ot">=</span><span class="fu">control</span>(<span class="st">'2'</span>) cl alpha<span class="ot">=</span><span class="fl">0.05</span> exp;</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>ods output lsmeans<span class="ot">=</span>lsm diffs<span class="ot">=</span> diff;</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>Run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
@@ -385,6 +434,32 @@ run; </code></pre>
 </div>
 </div>
 </div>
+</section>
+</section>
+<section id="method-2-pseudo-value-estimation-proc-rmstreg" class="level2">
+<h2 class="anchored" data-anchor-id="method-2-pseudo-value-estimation-proc-rmstreg">Method 2: Pseudo Value Estimation (proc rmstreg)</h2>
+<p>The pseudo-observations method <a href="https://pubmed.ncbi.nlm.nih.gov/15690989/">Andersen, Hansen and Klein 2004</a>, is available in SAS using the method=pv option. You use the link=linear or link=log options and output is similarly interpreted as described for Method 1 IPCW method.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>proc rmstreg data<span class="ot">=</span>adcibc tau<span class="ot">=</span><span class="er">&amp;</span>_tau;</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>class trt01pn sex ;</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a> model time<span class="sc">*</span><span class="fu">cnsr</span>(<span class="dv">1</span>) <span class="ot">=</span>trt01pn sex age <span class="sc">/</span>link<span class="ot">=</span>linear  method<span class="ot">=</span>pv;</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a> lsmeans trt01pn<span class="sc">/</span>pdiff<span class="ot">=</span><span class="fu">control</span>(<span class="st">'2'</span>) cl alpha<span class="ot">=</span><span class="fl">0.05</span>;</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a> ods output lsmeans<span class="ot">=</span>lsm diffs<span class="ot">=</span> diff;</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>Run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="method-3-rmst-area-under-the-curve-method-proc-lifetest" class="level2">
+<h2 class="anchored" data-anchor-id="method-3-rmst-area-under-the-curve-method-proc-lifetest">Method 3: RMST Area under the curve method (proc lifetest)</h2>
+<p>A non-parametric method to calculate the RMST is available using the AUC Kaplan-Meier curves.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>proc lifetest data<span class="ot">=</span>adcibc plots<span class="ot">=</span>(rmst  s) <span class="fu">rmst</span>  (<span class="at">tau=</span><span class="sc">&amp;</span>_tau);</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a> time time<span class="sc">*</span><span class="fu">cnsr</span>(<span class="dv">1</span>) ;</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a> strata trt01pn <span class="sc">/</span> diff<span class="ot">=</span><span class="fu">control</span>(<span class="st">'2'</span>) ;</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>Run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>As shown below, SAS only outputs the estimates and SEs. However, a 95% CI (assuming a normal distribution) can be calculated in an additional datastep using estimate +/- 1.96 * SE.</p>
+<p>The AUC method results in a <code>restricted mean survival time</code> estimate of 248.2156 days on treatment 1 vs 272.9520 days on treatment 2. The difference (Active-Placebo) is -24.7364. Calculating 95% CIs, for this results in 95% CI: -54.3971 to 4.9243, p=0.1021). Hence, there is no evidence of a difference between the treatments with respect to RMST when we look over the Kaplan-Meier plot from 0 to 350 days.</p>
+<p>Various multiple testing p-value adjustments are also available using this method.</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
@@ -394,8 +469,56 @@ run; </code></pre>
 </div>
 </div>
 </div>
+<section id="references" class="level3">
+<h3 class="anchored" data-anchor-id="references">References</h3>
+<ol type="1">
+<li><a href="https://onbiostatistics.blogspot.com/2021/04/restricted-mean-survival-time-rmst-for.html">On Biostatistics and Clinical trials Monday April 19 2021</a></li>
+<li><a href="https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/1471-2288-13-152">Royston &amp; Parmar (2013)</a></li>
+<li><a href="https://support.sas.com/documentation/onlinedoc/stat/151/rmstreg.pdf">SAS User’s Guide for RMSTREG Procedure</a></li>
+<li><a href="https://support.sas.com/resources/papers/proceedings19/3013-20">Analyzing RMST using SAS/STAT, Changbin Guo and Yu LIang, SAS Institute, Paper SAS3013-2019</a></li>
+<li><a href="https://onlinelibrary.wiley.com/doi/abs/10.1002/pst.1846">Huang &amp; Kuan (2017)</a></li>
+<li><a href="https://pubmed.ncbi.nlm.nih.gov/24292992/">Tian L, Zhao L, Wei LJ. Biostatistics 2014, 15, 222-233</a></li>
+<li><a href="https://www.fda.gov/regulatory-information/search-fda-guidance-documents/acute-myeloid-leukemia-developing-drugs-and-biological-products-treatment">FDA 2020 guidance</a> and <a href="https://www.fda.gov/media/140821/download">download</a></li>
+<li><a href="https://pubmed.ncbi.nlm.nih.gov/15690989/">Andersen, Hansen and Klein 2004</a></li>
+<li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5845164/">Calkins KL, Canan CE, Moore RD, Lesko CR, Lau B. An application of restricted mean survival time in a competing risks setting: comparing time to ART initiation by injection drug use. BMC Med Res Methodol. 2018;18:27. doi: 10.1186/s12874-018-0484-z</a></li>
+</ol>
+</section>
+<section id="version" class="level3">
+<h3 class="anchored" data-anchor-id="version">Version</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>─ Session info ───────────────────────────────────────────────────────────────
+ setting  value
+ version  R version 4.4.2 (2024-10-31)
+ os       Ubuntu 24.04.2 LTS
+ system   x86_64, linux-gnu
+ ui       X11
+ language (EN)
+ collate  C.UTF-8
+ ctype    C.UTF-8
+ tz       UTC
+ date     2025-04-02
+ pandoc   3.4 @ /opt/quarto/bin/tools/ (via rmarkdown)
+
+─ Packages ───────────────────────────────────────────────────────────────────
+ ! package * version date (UTC) lib source
+ R rmst      &lt;NA&gt;    &lt;NA&gt;       [?] &lt;NA&gt;
+
+ [1] /home/runner/work/CAMIS/CAMIS/renv/library/linux-ubuntu-noble/R-4.4/x86_64-pc-linux-gnu
+ [2] /opt/R/4.4.2/lib/R/library
+
+ R ── Package was removed from disk.
+
+─ External software ──────────────────────────────────────────────────────────
+ setting value
+ SAS     9.04.01M7P08062020
+
+──────────────────────────────────────────────────────────────────────────────</code></pre>
+</div>
+</div>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
