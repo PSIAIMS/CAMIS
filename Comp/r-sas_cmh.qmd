@@ -22,11 +22,11 @@ knitr::include_graphics('../images/cmh/img.png')
 
 For the remainder of this document, we adopt the following naming convention when referring to variables of a contingency table:
 
--   X = exposure
+-   X = exposure (Often the treatment variable)
 
--   Y = response
+-   Y = response (the variable of interest)
 
--   K = control
+-   K = control (often a potential confounder you want to control for)
 
 ## Scale
 
@@ -45,11 +45,7 @@ The `scale` of the exposure (X) and response (Y) variables dictate which test st
 To begin investigating the differences in the SAS and R implementations of the CMH test, we decided to use the CDISC Pilot data set, which is publicly available on the PHUSE Test Data Factory repository. We applied very basic filtering conditions upfront (see below) and this data set served as the basis of the examples to follow.
 
 ```{r, echo=FALSE}
-# Download CDISC Pilot Dataset
-# Perform filtering
-library(haven)
-data <- read_xpt("https://github.com/phuse-org/TestDataFactory/raw/main/Updated/TDF_ADaM/adcibc.xpt") |> 
-  filter(EFFFL == 'Y' & ITTFL == 'Y', AVISITN == 8 & ANL01FL=='Y') 
+data<-read.csv("../data/adcibc.csv")
 head(data)
 
 ```
@@ -60,13 +56,14 @@ In order to follow a systematic approach to testing, and to cover variations in 
 
 We present 5 archetype test scenarios that illustrate diverging results, possibly related to sparse data and possibly considered edge cases.
 
-| Number | Schema | Variables                      | Relevant Test       | Description                                                                                                                      |
+| Number | Schema (XxYxK) | Variables                      | Relevant Test       | Description                                                                                                                             |
 |---------------|---------------|---------------|---------------|---------------|
-| 1      | 2x2x2  | X = TRTP, Y = SEX, K = AGEGR1  | General Association | TRTP and AGEGR1 were limited to two categories, overall the the groups were rather balanced                                      |
-| 3      | 2x2x3  | X = TRTP, Y = SEX, K = RACE    | General Association | Gives back NaN in R because RACE is very imbalanced                                                                              |
-| 6      | 2x5x2  | X = TRTP, Y = AVAL, K = SEX    | Row Means           | Compare Row Means results for R and SAS because Y is ordinal                                                                     |
-| 9      | 3x5x17 | X = TRTP, Y = AVAL, K = SITEID | Row Means           | SITEID has many strata and provokes sparse groups, AVAL is ordinal, therefore row means statistic applies here, R threw an error |
-| 10     | 5x3x3  | X = AVAL, Y = AGEGR1, K = TRTP | Correlation         | X and Y are ordinal variables and therefore the correlation statistics has to be taken here                                      |
+| 1      | 2x2x2          | X = TRTP, Y = SEX, K = AGEGR1  | General Association | TRTP and AGEGR1 were limited to two categories (removing the low dose and \>80 year group), overall the the groups were rather balanced |
+| 2      | 3x2x3          | X = TRTP, Y = SEX, K = AGEGR1  | General Association | TRTP and AGEGR1 each have 3 levels, SEX has 2 levels, overall the the groups were rather balanced                                       |
+| 3      | 2x2x3          | X = TRTP, Y = SEX, K = RACE    | General Association | Gives back NaN in R because RACE is very imbalanced                                                                                     |
+| 6      | 2x5x2          | X = TRTP, Y = AVAL, K = SEX    | Row Means           | Compare Row Means results for R and SAS because Y is ordinal                                                                            |
+| 9      | 3x5x17         | X = TRTP, Y = AVAL, K = SITEID | Row Means           | SITEID has many strata and provokes sparse groups, AVAL is ordinal, therefore row means statistic applies here, R threw an error        |
+| 10     | 5x3x3          | X = AVAL, Y = AGEGR1, K = TRTP | Correlation         | X and Y are ordinal variables and therefore the correlation statistics has to be taken here                                             |
 
 # Results
 
@@ -77,9 +74,12 @@ Here the results can be seen:
 ```{r, echo = FALSE, warning = FALSE}
 sas_results <- tribble(
   ~Scenario, ~Test, ~Chisq, ~Df, ~Prob,
-  1L ,"Correlation",         0.017670400, 1, 0.89424870,
-  1L ,"Row Means",           0.017670400, 1, 0.89424870,
-  1L ,"General Association", 0.017670400, 1, 0.89424870,
+  1L ,"Correlation",         0.2166, 1, 0.617,
+  1L ,"Row Means",           0.2166, 1, 0.617,
+  1L ,"General Association", 0.2166, 1, 0.617,
+  2L ,"Correlation",         0.0009, 1, 0.9765,
+  2L ,"Row Means",           2.4820, 1, 0.2891,
+  2L ,"General Association", 2.4820, 1, 0.2891,
   6L ,"Correlation",         1.1472, 1, 0.2841,
   6L ,"Row Means",           1.1472, 1, 0.2841,
   6L ,"General Association", 2.5672, 4, 0.6326,
@@ -98,8 +98,10 @@ sas_results <- tribble(
 
 ```{r, echo=FALSE}
 library(vcdExtra)
-
-s1 <- CMHtest(Freq ~ TRTP + SEX | AGEGR1, data = data, overall = TRUE)$ALL$table
+data2 <- data %>% 
+         filter(TRTPN !="54" & AGEGR1 !=">80")
+s1 <- CMHtest(Freq ~ TRTP + SEX | AGEGR1, data = data2, overall = TRUE)$ALL$table
+s2 <- CMHtest(Freq ~ TRTP + SEX | AGEGR1, data = data, overall = TRUE)$ALL$table
 s3 <- CMHtest(Freq ~ TRTP + SEX | RACE, data = data, overall = TRUE)$ALL$table
 s6 <- CMHtest(Freq ~ TRTP + AVAL | SEX, data = data, overall = TRUE)$ALL$table
 # Unable to run 
@@ -107,14 +109,14 @@ s6 <- CMHtest(Freq ~ TRTP + AVAL | SEX, data = data, overall = TRUE)$ALL$table
 # s9 <- CMHtest(Freq ~ TRTP + AVAL | SITEID, data = data, overall = TRUE)$ALL$table
 s10 <- CMHtest(Freq ~ AVAL + AGEGR1 | TRTP, data = data, overall = TRUE)$ALL$table
 
-r_results <- list(s1, s3, s6, s10) |>
+r_results <- list(s1, s2, s3, s6, s10) |>
   map(function(x){
     as_tibble(x) |> 
       mutate(across(everything(), unlist),
              Test = rownames(x))
   }) |> 
   reduce(bind_rows) |> 
-  mutate(Scenario = rep(c(1,3,6,10), each = 4), 
+  mutate(Scenario = rep(c(1,2,3,6,10), each = 4), 
          Test = case_when(
            Test == "cor" ~ "Correlation",       
            Test == "rmeans" ~ "Row Means",         
