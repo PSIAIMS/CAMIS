@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Rounding in SAS</title>
+<title>Sample size (and power) calculation – theoretical intro</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,40 +19,6 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -191,15 +157,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#hypotheses" id="toc-hypotheses" class="nav-link active" data-scroll-target="#hypotheses">Hypotheses</a></li>
+  <li><a href="#study-design" id="toc-study-design" class="nav-link" data-scroll-target="#study-design">Study design</a></li>
+  <li><a href="#required-paramaters" id="toc-required-paramaters" class="nav-link" data-scroll-target="#required-paramaters">Required paramaters</a></li>
+  <li><a href="#packages-in-r" id="toc-packages-in-r" class="nav-link" data-scroll-target="#packages-in-r">Packages in R</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Rounding in SAS</h1>
+<h1 class="title">Sample size (and power) calculation – theoretical intro</h1>
 </div>
 
 
@@ -216,211 +192,63 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>There are two rounding functions in SAS.</p>
-<p>The <strong>round()</strong> function in SAS will round to the nearest whole number and ‘away from zero’ or ‘rounding up’ when equidistant meaning that exactly 12.5 rounds to the integer 13.</p>
-<p>The <strong>rounde()</strong> function in SAS will round to the nearest whole number and ‘rounding to the even number’ when equidistant, meaning that exactly 12.5 rounds to the integer 12.</p>
-<p>Both functions allow you to specify the number of decimal places you want to round to.</p>
-<p>For example (See references for source of the example)</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>    <span class="co">#Example code</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    data XXX;</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>      my_number<span class="ot">=</span><span class="fl">2.2</span>;   decimal_paces<span class="ot">=</span><span class="dv">1</span>; output;</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      my_number<span class="ot">=</span><span class="fl">2.2</span>;   decimal_paces<span class="ot">=</span><span class="dv">2</span>;  output;</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>      my_number<span class="ot">=</span><span class="fl">2.2</span>;;  decimal_paces<span class="ot">=</span><span class="dv">3</span> output;</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>      my_number<span class="ot">=</span><span class="fl">3.99</span>;  decimal_paces<span class="ot">=</span><span class="dv">1</span>;  output;</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>      my_number<span class="ot">=</span><span class="fl">3.99</span>;  decimal_paces<span class="ot">=</span><span class="dv">2</span>; output;</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>      my_number<span class="ot">=</span><span class="fl">3.99</span>;  decimal_paces<span class="ot">=</span><span class="dv">3</span>; output;</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>      my_number<span class="ot">=</span><span class="fl">1.2345</span>; decimal_paces<span class="ot">=</span><span class="dv">1</span>;  output;</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>      my_number<span class="ot">=</span><span class="fl">1.2345</span>; decimal_paces<span class="ot">=</span><span class="dv">2</span>; output;</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>      my_number<span class="ot">=</span><span class="fl">1.2345</span>; decimal_paces<span class="ot">=</span><span class="dv">3</span>; output;</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>      my_number<span class="ot">=</span><span class="fl">7.876</span>; decimal_paces<span class="ot">=</span><span class="dv">1</span>;  output;</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>      my_number<span class="ot">=</span><span class="fl">7.876</span>; decimal_paces<span class="ot">=</span><span class="dv">2</span>; output;</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>      my_number<span class="ot">=</span><span class="fl">7.876</span>; decimal_paces<span class="ot">=</span><span class="dv">3</span>; output;</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>      my_number<span class="ot">=</span><span class="fl">13.8739</span>; decimal_paces<span class="ot">=</span><span class="dv">1</span>;   output;</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>      my_number<span class="ot">=</span><span class="fl">13.8739</span>; decimal_paces<span class="ot">=</span><span class="dv">2</span>;  output;</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>      my_number<span class="ot">=</span><span class="fl">13.8739</span>; decimal_paces<span class="ot">=</span><span class="dv">3</span>;  output;</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    run;</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    data xxx2;</span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>      set xxx;</span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>        round <span class="ot">=</span> <span class="fu">round</span>(my_number, decimal_places);</span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>      rounde <span class="ot">=</span> <span class="fu">rounde</span>(my_number, decimal_places);</span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Sample size calculation plays a key role in the planning stage of most clinical trials, to ensure sufficient number of subjects for providing accurate and reliable results using statistical methods. A valid sample size calculation can only be done based on the appropriate statistical test for the hypotheses that reflect the study objective under a valid study design. Sample size calculation can be classified into: sample size estimation/determination, sample size justification, sample size adjustment, sample size reestimation. We will mainly focus on the determination, which is calculation of the required sample size for achieving the desired statistical accuracy and reliability, such as e.g.&nbsp;80% power.</p>
+<p>On CAMIS we will cover most commonly used tests in clinical trials and it’s calculations in R, SAS (if available), EAST and StatXact (e.g.&nbsp;if not available in SAS).</p>
+<section id="hypotheses" class="level3 unnumbered">
+<h3 class="unnumbered anchored" data-anchor-id="hypotheses">Hypotheses</h3>
+<p>In most clinical trials, the primary objective is usually related to the evaluation of the effectiveness and safety. Commonly considered hypotheses include point hypotheses for equality and interval hypothesis for testing equivalence, non-inferiority and superiority.</p>
+<p>Superiority trials aim to prove that the investigated treatment is better than the comparator. The null hypothesis states that is no difference between the treatments and the alternative that there is some difference between the treatments (difference ≠ 0).</p>
+<p>Equivalence trials are defined as trials that test whether a drug has the same (or similar) efficacy as an active agent or standard therapy. In practice, this is done by defining an “equivalence margin”, or limits, within which the treatment effect must lie to be considered equivalent.</p>
+<p>Non-inferiority trials aim to prove that the investigated treatment is better than the comparator.</p>
+<p>Each of the hypotheses has different requirements for sample size to achieve the desired statistical assurance.</p>
+</section>
+<section id="study-design" class="level3 unnumbered">
+<h3 class="unnumbered anchored" data-anchor-id="study-design">Study design</h3>
+<p>For examples based on superiority, equivalence and non-inferiority studies, crossover vs parallel designs will be considered. Additionally examples of sample size calculations for selected subgroup/interim analyses are provided based on group sequential designs.</p>
+<p>A crossover (paired) design is a modified randomised block design in which each block receives more than one treatment in different dosing periods. Subjects are assigned to receive a sequence of treatments, which contains all the treatments in the study. For example, is a 2-sequence, 2-period study 2x2 crossover design, subjects are randomly assigned to one of the 2 sequences (AB, BA). The main advantage is that it allows a within-subject (intrasubject) comparison between treatments.</p>
+<p>A parallel (unpaired) design is a complete randomised design in which each subject receives one and only one treatment in a random fashion. The parallel design doe not provide independent estimates for the subject variability for each treatment – assessment of treatment effect is made based on the total variability (including intersubject and intrasubject variability).</p>
+</section>
+<section id="required-paramaters" class="level3 unnumbered">
+<h3 class="unnumbered anchored" data-anchor-id="required-paramaters">Required paramaters</h3>
+<p>For determination of the sample size, in most cases, all of the below parameters will be required to perform the calculations:</p>
+<ul>
+<li><p>Power</p></li>
+<li><p>clinically relevant/significant difference</p></li>
+<li><p>alpha (α)</p></li>
+<li><p>beta (β)</p></li>
+<li><p>Effect size (Cohen’s d) (required only in some R packages), can be defined as:</p>
+<p>Difference between the means divided by the pooled standard deviation. In general, 0.2 can be considered a small effect, 0.5 a medium effect and 0.8 a large effect.</p></li>
+</ul>
+</section>
+<section id="packages-in-r" class="level3 unnumbered">
+<h3 class="unnumbered anchored" data-anchor-id="packages-in-r">Packages in R</h3>
+<p>Depending on the study design and the endpoint multiple packages in R can be used. The below table [1] summarises the most popular tests and R packages where the sample size calculation is available. However, only the superiority hypothesis is considered.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/samplesize/ss1.PNG" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
+</figure>
 </div>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>my_number</th>
-<th>decimal_places</th>
-<th>round</th>
-<th>rounde</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>2.2</td>
-<td>0.1</td>
-<td>2.2</td>
-<td>2.2</td>
-</tr>
-<tr class="even">
-<td>2.2</td>
-<td>0.01</td>
-<td>2.2</td>
-<td>2.2</td>
-</tr>
-<tr class="odd">
-<td>2.2</td>
-<td>0.001</td>
-<td>2.2</td>
-<td>2.2</td>
-</tr>
-<tr class="even">
-<td>3.99</td>
-<td>0.1</td>
-<td>4</td>
-<td>4</td>
-</tr>
-<tr class="odd">
-<td>3.99</td>
-<td>0.01</td>
-<td>3.99</td>
-<td>3.99</td>
-</tr>
-<tr class="even">
-<td>3.99</td>
-<td>0.001</td>
-<td>3.99</td>
-<td>3.99</td>
-</tr>
-<tr class="odd">
-<td><strong>1.2345</strong></td>
-<td>0.1</td>
-<td>1.2</td>
-<td>1.2</td>
-</tr>
-<tr class="even">
-<td><strong>1.2345</strong></td>
-<td>0.01</td>
-<td>1.23</td>
-<td>1.23</td>
-</tr>
-<tr class="odd">
-<td><strong>1.2345</strong></td>
-<td>0.001</td>
-<td><strong>1.235</strong></td>
-<td><strong>1.234</strong></td>
-</tr>
-<tr class="even">
-<td>7.876</td>
-<td>0.1</td>
-<td>7.9</td>
-<td>7.9</td>
-</tr>
-<tr class="odd">
-<td>7.876</td>
-<td>0.01</td>
-<td>7.88</td>
-<td>7.89</td>
-</tr>
-<tr class="even">
-<td>7.876</td>
-<td>0.001</td>
-<td>7.876</td>
-<td>7.876</td>
-</tr>
-<tr class="odd">
-<td>13.8739</td>
-<td>0.1</td>
-<td>13.9</td>
-<td>13.9</td>
-</tr>
-<tr class="even">
-<td>13.8739</td>
-<td>0.01</td>
-<td>13.87</td>
-<td>13.87</td>
-</tr>
-<tr class="odd">
-<td>13.8739</td>
-<td>0.001</td>
-<td>13.874</td>
-<td>13.874</td>
-</tr>
-</tbody>
-</table>
-<p>In some rare cases, <code>round()</code> does not return result as expected. For example below.</p>
-<div class="cell">
-<pre class="sas cell-code"><code>data incorrect_round;
-  *rounded=32768.015625, but it should be 32768.015626;
-  rounded=round(32768.0156255,1e-6); output;
-  *rounded=0.137, but it should be 0.138;
-  rounded=round(2048.1375-2048,1e-3); output;
-run;</code></pre>
 </div>
-<p>You can find a little more by the code below. It creates dummy numbers with different numbers of decimal digits, and filter incorrect results. Note, the incorrect results are expected when the input number is near or beyond the precision level, i.e.&nbsp;the last decimal of the input number is near or less than the number multiplied by <code>constant('maceps')</code>.</p>
-<div class="cell">
-<pre class="sas cell-code"><code>data dum1;
-  int1=0; output;
-  do i=1 to 25;
-    int1=2**i; output;
-  end;
-  keep int1;
-run;
-
-data dum2;
-  do round_digits=1 to 7;
-    *x.xxx5 should be rounded up, or replace 5 to 4.99 which should be rounded down;
-    dec1=2**(-round_digits)+10**(-round_digits-1)*5;
-    output;
-  end;
-  keep dec1 round_digits;
-run;
-
-proc sql;
-  create table incorrect_round2(where=(rounded&lt;num1)) as
-  select dum1.*,dum2.*,int1+dec1 as num1,round(calculated num1,10**(-round_digits)) as rounded
-  from dum1, dum2;
-quit;</code></pre>
 </div>
-<p>Or more by the code below and comparing with results from another language, e.g.&nbsp;R.</p>
-<div class="cell">
-<pre class="sas cell-code"><code>data dum1;
-  dec1=0; int1=0; output;
-  do i=0 to 12;
-    dec1=2**(-i);
-    dec1=dec1*1.1;
-    int1=2**i;
-    output;
-  end;
-run;
-
-proc sql;
-  create table dum3 as select dec1+int1 as num1 from dum1(keep=dec1) a, dum1(keep=int1) b
-  ;
-  create table dat1 as select a.num1,b.num1 as num2 from dum3 a, dum3 b
-;quit;
-
-data dat2;
-  set dat1;
-  operator='+'; num3=num1+num2; output;
-  operator='-'; num3=num1-num2; output;
-  if num1^=0 and num2^=0 then do;
-    operator='*'; num3=num1*num2; output;
-    operator='/'; num3=num1/num2; output;
-  end;
-run;
-
-data dat3;
-  set dat2;
-  rounded=round(num3,1e-3);
-run;</code></pre>
-</div>
-<p>As the incorrect rounding all occur on large number, <code>round()</code> is still reliable in most of cases.</p>
-<p><strong>References</strong></p>
-<p><a href="https://sasexamplecode.com/how-to-round-numbers-in-sas/">How to Round Numbers in SAS - SAS Example Code</a></p>
+<p>There are some more interesting packages, particularly focused on clinical trials applications, with different hypotheses or designed available:</p>
+<ul>
+<li><p>samplesize: Sample Size Calculation for Various t-Tests and Wilcoxon-Test <a href="https://cran.r-project.org/web/packages/samplesize/samplesize.pdf">package docs</a></p></li>
+<li><p>epiR: Tools for the Analysis of Epidemiological Data <a href="https://cran.r-project.org/web/packages/epiR/epiR.pdf">package docs</a></p></li>
+<li><p>TrialSize: R Functions for Chapter 3,4,6,7,9,10,11,12,14,15 of Sample Size Calculation in Clinical Research [2] <a href="https://cran.r-project.org/web/packages/TrialSize/TrialSize.pdf">package docs</a></p></li>
+<li><p>SampleSize4ClinicalTrials: Sample Size Calculation for the Comparison of Means or Proportions in Phase III Clinical Trials <a href="https://cran.r-project.org/web/packages/SampleSize4ClinicalTrials/SampleSize4ClinicalTrials.pdf">package docs</a></p></li>
+</ul>
+</section>
+<section id="references" class="level3 unnumbered">
+<h3 class="unnumbered anchored" data-anchor-id="references">References</h3>
+<ul>
+<li><p>[1] Park S, Kim YH, Bang HI, Park Y. Sample size calculation in clinical trial using R. J Minim Invasive Surg. 2023 Mar 15;26(1):9-18. doi: 10.7602/jmis.2023.26.1.9. PMID: 36936043; PMCID: PMC10020745.</p></li>
+<li><p>[2] for theoretical section and examples: Chow, S.-C., Shao, J., Wang, H., &amp; Lokhnygina, Y. (2017). Sample Size Calculations in Clinical Research (3rd ed.). Chapman and Hall/CRC. https://doi.org/10.1201/9781315183084.</p></li>
+</ul>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
