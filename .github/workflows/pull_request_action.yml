@@ -1,5 +1,10 @@
 on:
   pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - closed
     branches: main
 
 name: Test Rendering
@@ -50,4 +55,11 @@ jobs:
       - name: Build site 🔧
         run: |
           quarto render
+
+      - name: Deploy preview 🔍
+        # Ensure this step only runs if we aren't on a fork, as otherwise it will fail with permissions errors
+        if: ${{ github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name }}
+        uses: rossjrw/pr-preview-action@v1
+        with:
+          source-dir: ./_site/
     
