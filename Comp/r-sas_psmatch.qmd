@@ -1,0 +1,205 @@
+---
+title: "Propensity Score Matching"
+---
+
+# Introduction
+
+Propensity score (PS) matching is a statistical technique widely employed in Real World Evidence (RWE) studies to address confounding bias and facilitate the estimation of causal treatment effects. By estimating the probability of treatment assignment based on observed covariates, PS matching aims to create comparable treatment and control groups. While both SAS and R provide methods to do PS matching, the syntax and available options differ considerably, potentially leading to variations in analytical outcomes. The PS matching process generally involves several key stages: first, the estimation of propensity scores using a regression model; second, the specification of a region of common support to ensure overlap between treatment and control groups; and third, the matching of treated and control subjects based on their calculated propensity scores.
+
+# Differences
+
+Given the extensive number of parameters and arguments available in both `PROC PSMATCH` and `matchit()`, we will focus only on the observed differences.
+
+## Options
+
++-------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Option                                                | PROC PSMATCH                                                                                                              | matchit                                                                                                                                                                                                                   |
++=======================================================+===========================================================================================================================+===========================================================================================================================================================================================================================+
+| Distance                                              | *PS, LPS*; only for matching: *mahalanobis*, *euclidean*                                                                  | *PS*, *euclidean*, *scaled_euclidean*, *mahalanobis*, *robust_mahalanobis*                                                                                                                                                |
++-------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| PS methods                                            | logistic regression                                                                                                       | glm, gam, gbm, lasso, ridge, elasticnet with different links, partitioning tree, RF, single-hidden-layer neural network, covariate balancing propensity score (CBPS) algorithm, Bayesian additive regression trees (BART) |
++-------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Region                                                | Always used; *allobs*, *treated* or *cs* (common support), with allowed extension                                         | *none*, *treated*, *control*, *both* (common support)                                                                                                                                                                     |
++-------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Caliper                                               | Applies only to the distance metric, such that distance\<=caliper                                                         | Can be applied to both covariates and distance metric. If a positive value is supplied, it functions as in SAS; If a negative value is supplied, it imposes the condition distance \> abs(caliper).                       |
++-------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| PS std.dev formula when caliper applied as multiplier | sqrt((sd(PS~trt~)^2^+sd(P~control~)^2^)/2)                                                                                | sd(PS~all~)                                                                                                                                                                                                               |
++-------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Matching methods                                      | *greedy* (greedy nn), *full*, *optimal*, *replace*, *varratio*                                                            | *nearest* (greedy nn), *full*, *optimal*, *quick*, *genetic*, *cem*, *exact*, *cardinality*, *subclass*                                                                                                                   |
++-------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Method=optimal options                                | Only K should be supplied                                                                                                 | In addition to k (number of matches), the tol option can also be specified, and its value can significantly impact the matching results.                                                                                  |
++-------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Method=full options                                   | n max controls, n max treated, mean n treated, n controls, pct controls                                                   | n min controls, n max controls, mean n controls, fraction to omit, tol, solver                                                                                                                                            |
++-------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Mahalanobis distance                                  | PS are always calculated to determine the region; only numeric covariates are allowed in MAHVARS option                   | mahvars accepts any var type; region calculation is ommited when distance=*mahalanobis*, but can be performed when distance=*glm* and mahvars is supplied with a formula                                                  |
++-------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Covariance matrix for mahalanobis distance            | Computed from trt obs and control obs                                                                                     | Is pooled within-group, computed from trt mean-centered covariates of the full sample                                                                                                                                     |
++-------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Replace                                               | Could be specified only as method=*replace*; in the output, match IDs are shared among all subjects within a matched set. | Could be specified as an argument (e.g. replace=*TRUE*). In the output, each treated subject receives up to K matched controls                                                                                            |
++-------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Estimands                                             | ATT, ATE                                                                                                                  | ATT, ATE, ATC                                                                                                                                                                                                             |
++-------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Reestimate                                            | Not available                                                                                                             | Could be specified as an argument (e.g. reestimate=*TRUE*)                                                                                                                                                                |
++-------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Exact, anti-exact                                     | Only exact matching is available and can only be performed on variables listed in the CLASS statement.                    | Both exact and anti-exact matching are available, with no restrictions on the variable types.                                                                                                                             |
++-------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Normalization                                         | Not available                                                                                                             | Could be specified as an argument (e.g. normalize=*TRUE*)                                                                                                                                                                 |
++-------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+## Output
+
+The way SAS and R show the results of matching is different. The output from SAS matching is presented as a dataset where each treated subject (or all subjects) is given a row, and a match ID column containing a unique pair (or group) identifier is included:
+
+|     | TRTP    | \_MatchID |
+|-----|---------|-----------|
+| 1   | trt     | 1         |
+| 2   | trt     | 2         |
+| 3   | control | 1         |
+| 4   | control | 2         |
+
+In contrast, the `matchit()` function in R returns a matrix, where each treated unit's identifier is associated with the identifiers of its k matched control units:
+
+|     | \[,1\] |
+|-----|--------|
+| 1   | "3"    |
+| 2   | "4"    |
+
+### Statistics
+
+In SAS, descriptive statistics for assessing balance are primarily generated through the `ASSESS` statement within `PROC PSMATCH`. Conversely, in R, balance diagnostics could be obtained by applying the `summary()` function to the output object returned by the `matchit()`. The following table summarizes the balance statistics available in SAS and R:
+
+| Stat                   |   All   | Region | Matched |
+|:-----------------------|:-------:|:------:|:-------:|
+| N                      | SAS & R |  SAS   | SAS & R |
+| PS mean                | SAS & R |  SAS   | SAS & R |
+| PS std                 |   SAS   |  SAS   |   SAS   |
+| PS min                 |   SAS   |  SAS   |   SAS   |
+| PS max                 |   SAS   |  SAS   |   SAS   |
+| Vars mean              | SAS & R |  SAS   | SAS & R |
+| Vars std               |   SAS   |  SAS   |   SAS   |
+| Vars min               |   SAS   |  SAS   |   SAS   |
+| Vars max               |   SAS   |  SAS   |   SAS   |
+| PS mean diff           |   SAS   |  SAS   |   SAS   |
+| PS SMD                 | SAS & R |  SAS   | SAS & R |
+| PS perc. red.          |   SAS   |  SAS   |   SAS   |
+| PS var ratio           | SAS & R |  SAS   | SAS & R |
+| Vars mean diff         |   SAS   |  SAS   |   SAS   |
+| Vars SMD               | SAS & R |  SAS   | SAS & R |
+| Vars perc. red.        |   SAS   |  SAS   |   SAS   |
+| Vars var ratio         | SAS & R |  SAS   | SAS & R |
+| PS eCDF min            |    R    |   \-   |    R    |
+| PS eCDF max            |    R    |   \-   |    R    |
+| Vars eCDF min          |    R    |   \-   |    R    |
+| Vars eCDF max          |    R    |   \-   |    R    |
+| PS std pair distance   |    R    |   \-   |    R    |
+| Vars std pair distance |    R    |   \-   |    R    |
+
+### Figures
+
++----------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------+
+| Plot type                  | R                                                                                                                                                      | SAS                                                                  |
++============================+========================================================================================================================================================+======================================================================+
+| Love plot                  | -   [plot()]{.underline}: -                                                                                                                            | **Displayed for:** all/region/matched/weighted matched, trt/control. |
+|                            |                                                                                                                                                        |                                                                      |
+|                            | -   [cobalt:]{.underline} many different settings.                                                                                                     | **Includes** PS, all numeric and binary variables.                   |
++----------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------+
+| General distribution plots | -   [plot():]{.underline} **Displayed for:** all/matched. **Includes** all variables; numeric - distribution plots, character and factor - histograms. | **Displayed for:** all/region/matched/weighted matched, trt/control. |
+|                            |                                                                                                                                                        |                                                                      |
+|                            | -   [cobalt]{.underline} : Highly customizable plots.                                                                                                  | **Includes** PS and all variables.                                   |
+|                            |                                                                                                                                                        |                                                                      |
+|                            |                                                                                                                                                        | For PS and numeric - boxplots, character - barplots.                 |
++----------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------+
+| eCDF plots                 | [plot():]{.underline}                                                                                                                                  | **Displayed for:** all/region/matched/weighted matched, trt/control. |
+|                            |                                                                                                                                                        |                                                                      |
+|                            | **Displayed for:** all/matched.                                                                                                                        | **Includes** PS and all numeric variables.                           |
+|                            |                                                                                                                                                        |                                                                      |
+|                            | **Includes** all variables.                                                                                                                            |                                                                      |
++----------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------+
+| eQQ plots                  | [plot():]{.underline}                                                                                                                                  | \-                                                                   |
+|                            |                                                                                                                                                        |                                                                      |
+|                            | **Displayed for:** all/matched.                                                                                                                        |                                                                      |
+|                            |                                                                                                                                                        |                                                                      |
+|                            | **Includes** all variables.                                                                                                                            |                                                                      |
++----------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------+
+| Cloud plots                | [plot():]{.underline}                                                                                                                                  | **Displayed for:** all/region/matched/weighted matched, trt/control. |
+|                            |                                                                                                                                                        |                                                                      |
+|                            | **Displayed for:** all/matched, trt/control.                                                                                                           | **Includes** PS and all numeric variables.                           |
+|                            |                                                                                                                                                        |                                                                      |
+|                            | **Includes** PS.                                                                                                                                       | Presented as 2 separate clouds per variable.                         |
+|                            |                                                                                                                                                        |                                                                      |
+|                            | Presented as 4 separate clouds.                                                                                                                        |                                                                      |
++----------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------+
+| PS histogram               | -   [plot()]{.underline}: **Displayed for:** all/matched, trt/control. **Includes** PS.                                                                | \-                                                                   |
+|                            |                                                                                                                                                        |                                                                      |
+|                            | -   [cobalt]{.underline}: Highly customizable plots.                                                                                                   |                                                                      |
++----------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------+
+
+# Dataset
+
+Data description
+
+```         
+
+                           trt              control       Standardized
+Characteristic          (N = 120)          (N = 180)       Mean Diff.
+
+  sex                                                        0.1690
+    F                  70 (58.3 %)        90 (50.0 %)        
+    M                  50 (41.7 %)        90 (50.0 %)
+    
+  age                 61.5 (17.12)       49.4 (10.55)        0.7057
+  
+  weight              67.3 ( 7.33)       63.8 ( 9.64)        0.4741
+  
+  bmi_cat   
+    underweight        34 (28.3 %)        63 (35.0 %)       -0.1479  
+    normal             57 (47.5 %)        61 (33.9 %)        0.2726
+    overweight         29 (24.2 %)        56 (31.1 %)       -0.1622
+    
+```
+
+# Matching Examples
+
+## Greedy Nearest Neighbor 1 to 1 matching with common support region
+
+### SAS
+
+```         
+proc psmatch data=data region=cs(extend=0);
+    class trtp sex bmi_cat;
+    psmodel trtp(Treated="trt")= sex weight age bmi_cat;
+    match distance=PS 
+        method=greedy(k=1 order=descending) 
+        caliper(MULT=ONE)=0.25;
+    output out(obs=match)=ps_res matchid=_MatchID ps=_PScore;
+run;
+```
+
+### R
+
+```         
+ps_res <- matchit(trtp ~ sex + weight + age + bmi_cat, 
+                  data=data, 
+                  method="nearest", 
+                  distance="glm", 
+                  link="logit", 
+                  discard="both",
+                  m.order="largest",
+                  replace=FALSE,
+                  caliper=0.25, 
+                  std.caliper=FALSE,
+                  ratio=1,
+                  normalize=FALSE)
+```
+
+The following arguments, when altered in the previous example, can still produce matching results comparable between SAS and R:
+
+-   `region` (`discard`)
+
+-   `caliper` value
+
+-   `order`
+
+-   `k` (`ratio`)
+
+-   `exact`
