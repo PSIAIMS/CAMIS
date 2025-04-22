@@ -1,0 +1,166 @@
+
+---
+title: "Binomial Test on Coin Flips and Clinical Data"
+format: html
+execute:
+  echo: true
+---
+
+## Simulating Coin Flips
+
+Set the seed for reproducibility and simulate 1000 coin flips using a Bernoulli distribution.
+
+```sas
+/* Set the seed for reproducibility */
+%let seed = 19;
+
+data coin_flips;
+    call streaminit(&seed);
+    do i = 1 to 1000;
+        /* Simulate coin flips: 1 for Heads (H), 0 for Tails (T) */
+        flip = rand("Bernoulli", 0.5);
+/*         flip = rand("BINOMIAL", 0.5,1); */
+        if flip = 1 then result = "H";
+        else result = "T";
+        output;
+    end;
+run;
+```
+
+## Counting Heads and Tails
+
+Use SQL to count how many heads and tails were observed in the simulation.
+
+```sas
+proc sql;
+    select 
+        sum(result = "H") as heads_count,
+        sum(result = "T") as tails_count,
+        count(*) as total_flips
+    into :heads_count, :tails_count, :total_flips
+    from coin_flips;
+quit;
+```
+
+## Display the Results
+
+Print the counts using `%put` statements.
+
+```sas
+%put Heads Count: &heads_count;
+%put Tails Count: &tails_count;
+%put Total Flips: &total_flips;
+```
+
+## Perform Binomial Test on Coin Flip Results
+
+Use `proc freq` to check if the observed results differ significantly from the expected probability of 0.5.
+
+```sas
+proc freq data=coin_flips;
+    tables result / binomial(p=0.5);
+run;
+```
+
+---
+
+## Example: Binomial Test in Clinical Trial Data
+
+We load a clinical dataset and test if the observed death proportion is significantly different from a hypothesized value (e.g., 19%).
+
+### Import Dataset
+
+```sas
+proc import datafile='/home/u63532805/CAMIS/lung_cancer.csv'
+    out=lung_cancer
+    dbms=csv
+    replace;
+    getnames=yes;
+run;
+```
+
+### Create Binary Flag for Deaths
+
+```sas
+data lung_cancer;
+    set lung_cancer;
+    death_flag = (status = 1);
+run;
+```
+
+### Perform Exact Binomial Test
+
+```sas
+proc freq data=lung_cancer;
+    tables death_flag / binomial(p=0.19 level='1');
+    title "Exact Binomial Test for Death Proportion";
+run;
+```
+
+## SAS Output
+
+### Coin Flip Summary
+
+| heads_count | tails_count | total_flips |
+|-------------|-------------|-------------|
+| 520         | 480         | 1000        |
+
+### Binomial Test on Coin Flips
+
+**The FREQ Procedure**
+
+| result | Frequency | Percent | Cumulative Frequency | Cumulative Percent |
+|--------|-----------|---------|----------------------|---------------------|
+| H      | 520       | 52.00   | 520                  | 52.00               |
+| T      | 480       | 48.00   | 1000                 | 100.00              |
+
+**Binomial Proportion for result = H**
+
+- Proportion: 0.5200  
+- ASE: 0.0158  
+- 95% Lower Conf Limit: 0.4890  
+- 95% Upper Conf Limit: 0.5510  
+
+**Exact Confidence Limits**
+
+- 95% Lower Conf Limit: 0.4885  
+- 95% Upper Conf Limit: 0.5514  
+
+**Test of H0: Proportion = 0.5**
+
+- ASE under H0: 0.0158  
+- Z: 1.2649  
+- One-sided Pr > Z: 0.1030  
+- Two-sided Pr > |Z|: 0.2059  
+- Sample Size: 1000  
+
+---
+
+### Exact Binomial Test for Death Proportion
+
+**The FREQ Procedure**
+
+| death_flag | Frequency | Percent | Cumulative Frequency | Cumulative Percent |
+|------------|-----------|---------|----------------------|---------------------|
+| 0          | 165       | 72.37   | 165                  | 72.37               |
+| 1          | 63        | 27.63   | 228                  | 100.00              |
+
+**Binomial Proportion for death_flag = 1**
+
+- Proportion: 0.2763  
+- ASE: 0.0296  
+- 95% Lower Conf Limit: 0.2183  
+- 95% Upper Conf Limit: 0.3344  
+
+**Exact Confidence Limits**
+
+- 95% Lower Conf Limit: 0.2193  
+- 95% Upper Conf Limit: 0.3392  
+
+**Test of H0: Proportion = 0.19**
+
+- ASE under H0: 0.0260  
+- Z: 3.3223  
+- One-sided Pr > Z: 0.0004  
+- Two-sided Pr > |Z|: 0.0009  
+- Sample Size: 228  
