@@ -5,54 +5,94 @@ date: last-modified
 date-format: D MMMM, YYYY
 ---
 
-SAS has 2 procedures for doing Sample size. A basic summary is provided here based on Jenny Cody's paper^1^ , but see the paper itself for more details. There are also many available options to best to consult SAS online support for [PROC POWER](PROC%20POWER:%20Simple%20AB/BA%20Crossover%20Designs%20::%20SAS/STAT(R)%209.3%20User's%20Guide)^2^ and [PROC GLMPOWER](https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_glmpower_a0000000154.htm)^3^.
+PROC POWER^2^ is used for sample size calculations for equivalence testing^1^. It can calculate
 
-PROC POWER is used for sample size calculations for tests such as:
+-   one sample test of mean (i.e. 1 treatment mean is equivalent to a target value)
 
--   t tests, equivalence tests, and confidence intervals for means,
+-   two-sample comparison of means (i.e. 2 treatment means recorded on 2 independent groups of patients are equivalent within a set tolerance)
 
--   tests, equivalence tests, and confidence intervals for binomial proportions,
+-   Paired-sample comparison of means (i.e. 2 treatment means recorded on 1 group of patients are equivalent within a set tolerance)
 
--   multiple regression,
+-   One sample test of proportion (i.e. 1 treatment proportion is equivalent to a target value)
 
--   tests of correlation and partial correlation,
+-   **However, PROC POWER CANNOT calculate sample size for two-sample comparisons of proportions** (i.e. 2 treatment proportions recorded on 2 independent groups of patients are equivalent within a set tolerance)
 
--   one-way analysis of variance,
+### **One-sample equivalence test**
 
--   rank tests for comparing two survival curves,
-
--   logistic regression with binary response,
-
--   Wilcoxon-Mann-Whitney (rank-sum) test (SAS, 2010).
-
-PROC GLMPOWER is used for sample size calculations for more complex linear models, and cover Type III tests and contrasts of fixed effects in univariate linear models with or without covariates. (SAS, 2011).
-
-### **Comparing means for parallel design (unpaired)**
-
-In the most common scenario SDs are assumed known and the same in both treatment groups. Otherwise Student t distribution is used instead of the normal distribution. SAS follows the Satterthwaite method.
-
-#### Example: Sample size for comparison of 2 independant treatment group means with same known SDs
-
-*It is anticipated that patients will have the same mean diastolic BP of 96 mmHg on both the new drug and the active comparator.  It is also anticipated that the SD (ơ) of the diastolic BP is approximately 8 mmHg.  The decision is made by clinical to accept equivalence if the difference found between the treatments is less than 5 mmHg. How many patients are required for an 80% power and an overall significance level of 5%?*
-
-The code below estimates the sample size in SAS. NOTE: you can either specify the MEANDIFF=8 or if you know the separate group means X and Y, you can use GROUPMEANS =X\|Y code instead. SAS also assume a default alpha level of 0.05, a 1:1 balanced randomization and a Normal distribution.
+Suppose a reformulation of a treatment pill, needs to have a weight equivalent to a target value of 130 milligrams. Weight is assumed normally distributed and an acceptable weight is between 110 milligrams and 150 milligrams. The standard deviation of the weight is 50 milligrams. What sample size is needed assuming an alpha level of 5% with 80% power to conclude the weight is within the margin (the tablet weight is equivalent to 130 milligram).
+The below shows a sample size of 55 pills is required.
 
 ```{r eval=FALSE}
 PROC POWER  ;
- TWOSAMPLEMEANS TEST=DIFF
- MEANDIFF=8
- STDDEV=15
- NTOTAL=.
- POWER=0.8
- ;
+   onesamplemeans test=equiv   
+   lower  = 110          
+   upper  = 150         
+   mean   = 130     
+   stddev = 50      
+   ntotal = .       
+   power  = 0.8      
+   alpha  = 0.05;    
+RUN;
+```         
+```{r, echo=FALSE, fig.align='center', out.width="50%"}
+knitr::include_graphics("../images/sample_s_equivalence/SAS1mean.png")
+```
+
+### **Comparing means for parallel design (unpaired)**
+
+Next lets look at having 2 independent samples. In the most common scenario SDs are assumed known and the same in both treatment groups. 
+
+#### Example 1: Sample size for comparison of 2 independant treatment group means with same known SDs
+
+It is anticipated that patients will have the same mean diastolic BP of 96 mmHg on both the new drug and the active comparator. It is also anticipated that the SD (ơ) of the diastolic BP is approximately 8 mmHg. The decision is made by clinical to accept equivalence if the difference found between the treatments is less than 5 mmHg. How many patients are required for an 80% power and an overall significance level of 5%?
+
+The below shows a sample size of 45 patients per treatment group is required (90 patients in total).
+
+```{r eval=FALSE}
+PROC POWER  ;
+   twosamplemeans test=equiv_diff   
+   lower  = 91          
+   upper  = 101   
+   meandiff=96 
+   stddev = 8      
+   ntotal = .       
+   power  = 0.8      
+   alpha  = 0.05;    
 RUN;
 ```
 
-As shown below, a total sample size of 114 is recommended, which equates to 57 in each group.
+As shown below, a total sample size of 90 is recommended, which equates to 45 in each group.
 
 ```{r, echo=FALSE, fig.align='center', out.width="50%"}
-knitr::include_graphics("../images/sample_s_superiority/SAS2sampmeans.png")
+knitr::include_graphics("../images/sample_s_equivalence/SAS2mean_independant.png")
 ```
+
+
+#### Example 2: Sample size for comparison of 2 independant treatment group mean ratios with same known SDs
+
+A client is interested in conducting a clinical trial to compare two cholesterol lowering agents for treatment of hypercholesterolemic patients through a parallel design.  The primary efficacy parameter is a low-density lipidprotein cholesterol (LDL-C). For establishing equivalence, suppose the true mean difference is 0.01 (1%) and the equivalence limit is 0.05 (5%). Assuming SD = 0.01, how many patients are required for an 80% power and an overall significance level of 5%?
+
+The below shows a sample size of 2 patients per treatment group is required (4 patients in total).
+
+```{r eval=FALSE}
+PROC POWER  ;
+   twosamplemeans test=equiv_diff  
+   lower  = -0.04         
+   upper  = 0.06  
+   meandiff=0.01 
+   stddev=0.01     
+   ntotal = .       
+   power  = 0.8      
+   alpha  = 0.05;    
+RUN;
+```
+
+
+```{r, echo=FALSE, fig.align='center', out.width="50%"}
+knitr::include_graphics("../images/sample_s_equivalence/SAS2.png")
+```
+
+
 
 ### **Comparing means for crossover design (paired)**
 
@@ -62,30 +102,40 @@ Variance of the difference = 2x Variance within patient. Vardiff=2∗Varpatient
 
 #### Example
 
-We wish to run an AB/BA single dose crossover to compare two brochodilators. The primary outcome is peak expiratory flow, and a clinically relevant difference of 30 l/min is sought with 80% power, the significance level is 5% and the best estimate of the within patient standard deviation is 32 l/min. What size of trial do we require? (After recalculating: 32∗2=45 and assuming no period effect and assuming between each pair of measurements on the same subject that we have a 0.5 correlation)
+Let’s consider a standard standard two-sequence, two period crossover design for trials to establish therapeutic equivalence between a test drug and a standard therapy. The sponsor is interested in heaving an 80% power for establishing equivalence. Based on the results from previous trials, it is estimated that the variance (of the difference) is 0.02 (20%). Suppose that the  true mean difference is -0.01 (-10%) and the equivalence limit is 0.25 (25%). What is the required sample size, assuming significance level of 5%?
+
+NOTE: It is important to differentiate here between the within patient SD and the SD of the difference. We may need to recalculate one to the other, depending on the case.
+
+Variance of the difference = 2x Variance within patient. Vardiff=2∗Varpatient
+
+In SAS, we also have to assume the correlation between each pair of measurements on the same subject. Here we assume this is 0.5 correlation.
+
+The below shows a sample size of 8 patients is required.
 
 ```{r eval=FALSE}
-PROC POWER  ;
- PAIREDMEANS TEST=DIFF
- NPAIRS=.
- corr=0.5
- MEANDIFF=30
- STDDEV=45
- POWER=0.8
- ;
+PROC POWER;
+   pairedmeans test=equiv_diff   
+   lower  = -35          
+   upper  = 15   
+   meandiff=-10 
+   stddev = 20      
+   npairs = .  
+   corr=0.5
+   power  = 0.8      
+   alpha  = 0.05; 
 RUN;
 ```
 
 ```{r, echo=FALSE, fig.align='center', out.width="50%"}
-knitr::include_graphics("../images/sample_s_superiority/SAScrossovermeans.png")
+knitr::include_graphics("../images/sample_s_equivalence/SAS2crossovermeans.png")
 
 ```
 
 ### References
 
-1.  [Sample Size Calculation Using SAS®, R, and nQuery Software, 2020 Jenna Cody, Paper 4675-2020](https://support.sas.com/resources/papers/proceedings20/4675-2020.pdf)
+1.  [Sample Size Calculation Using SAS® for equivalence](https://support.sas.com/kb/50/700.html#:~:text=Power%20analysis%20and%20sample%20size%20determination%20for%20equivalence,be%20conducted%20using%20PROC%20FREQ%20or%20PROC%20TTEST.)
 2.  PROC POWER SAS online help https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_power_sect010.htm
-3.  PROC GLMPOWER SAS online helphttps://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_glmpower_a0000000154.htm
+
 
 ### Version
 
