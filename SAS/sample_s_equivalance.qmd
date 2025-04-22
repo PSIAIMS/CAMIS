@@ -1,0 +1,98 @@
+---
+title: "Sample Size for Equivalence Trials in SAS"
+output: html_document
+date: last-modified
+date-format: D MMMM, YYYY
+---
+
+SAS has 2 procedures for doing Sample size. A basic summary is provided here based on Jenny Cody's paper^1^ , but see the paper itself for more details. There are also many available options to best to consult SAS online support for [PROC POWER](PROC%20POWER:%20Simple%20AB/BA%20Crossover%20Designs%20::%20SAS/STAT(R)%209.3%20User's%20Guide)^2^ and [PROC GLMPOWER](https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_glmpower_a0000000154.htm)^3^.
+
+PROC POWER is used for sample size calculations for tests such as:
+
+-   t tests, equivalence tests, and confidence intervals for means,
+
+-   tests, equivalence tests, and confidence intervals for binomial proportions,
+
+-   multiple regression,
+
+-   tests of correlation and partial correlation,
+
+-   one-way analysis of variance,
+
+-   rank tests for comparing two survival curves,
+
+-   logistic regression with binary response,
+
+-   Wilcoxon-Mann-Whitney (rank-sum) test (SAS, 2010).
+
+PROC GLMPOWER is used for sample size calculations for more complex linear models, and cover Type III tests and contrasts of fixed effects in univariate linear models with or without covariates. (SAS, 2011).
+
+### **Comparing means for parallel design (unpaired)**
+
+In the most common scenario SDs are assumed known and the same in both treatment groups. Otherwise Student t distribution is used instead of the normal distribution. SAS follows the Satterthwaite method.
+
+#### Example: Sample size for comparison of 2 independant treatment group means with same known SDs
+
+*It is anticipated that patients will have the same mean diastolic BP of 96 mmHg on both the new drug and the active comparator.  It is also anticipated that the SD (ơ) of the diastolic BP is approximately 8 mmHg.  The decision is made by clinical to accept equivalence if the difference found between the treatments is less than 5 mmHg. How many patients are required for an 80% power and an overall significance level of 5%?*
+
+The code below estimates the sample size in SAS. NOTE: you can either specify the MEANDIFF=8 or if you know the separate group means X and Y, you can use GROUPMEANS =X\|Y code instead. SAS also assume a default alpha level of 0.05, a 1:1 balanced randomization and a Normal distribution.
+
+```{r eval=FALSE}
+PROC POWER  ;
+ TWOSAMPLEMEANS TEST=DIFF
+ MEANDIFF=8
+ STDDEV=15
+ NTOTAL=.
+ POWER=0.8
+ ;
+RUN;
+```
+
+As shown below, a total sample size of 114 is recommended, which equates to 57 in each group.
+
+```{r, echo=FALSE, fig.align='center', out.width="50%"}
+knitr::include_graphics("../images/sample_s_superiority/SAS2sampmeans.png")
+```
+
+### **Comparing means for crossover design (paired)**
+
+It is important to differentiate here between the within patient SD and the SD of the difference. We may need to recalculate one to the other, depending on the case.
+
+Variance of the difference = 2x Variance within patient. Vardiff=2∗Varpatient
+
+#### Example
+
+We wish to run an AB/BA single dose crossover to compare two brochodilators. The primary outcome is peak expiratory flow, and a clinically relevant difference of 30 l/min is sought with 80% power, the significance level is 5% and the best estimate of the within patient standard deviation is 32 l/min. What size of trial do we require? (After recalculating: 32∗2=45 and assuming no period effect and assuming between each pair of measurements on the same subject that we have a 0.5 correlation)
+
+```{r eval=FALSE}
+PROC POWER  ;
+ PAIREDMEANS TEST=DIFF
+ NPAIRS=.
+ corr=0.5
+ MEANDIFF=30
+ STDDEV=45
+ POWER=0.8
+ ;
+RUN;
+```
+
+```{r, echo=FALSE, fig.align='center', out.width="50%"}
+knitr::include_graphics("../images/sample_s_superiority/SAScrossovermeans.png")
+
+```
+
+### References
+
+1.  [Sample Size Calculation Using SAS®, R, and nQuery Software, 2020 Jenna Cody, Paper 4675-2020](https://support.sas.com/resources/papers/proceedings20/4675-2020.pdf)
+2.  PROC POWER SAS online help https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_power_sect010.htm
+3.  PROC GLMPOWER SAS online helphttps://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_glmpower_a0000000154.htm
+
+### Version
+
+```{r}
+#| echo: false
+si <- sessioninfo::session_info("sample_s_superiority", dependencies = FALSE) 
+si$external <- structure(list("SAS" = "9.04.01M7P08062020"), 
+                         class = c("external_info", "list")) 
+si
+```
