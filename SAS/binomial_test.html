@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Blogs</title>
+<title>Binomial Test on Coin Flips and Clinical Data</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -31,8 +31,6 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
 <link href="../images/logo.png" rel="icon" type="image/png">
-<script src="../site_libs/quarto-listing/list.min.js"></script>
-<script src="../site_libs/quarto-listing/quarto-listing.js"></script>
 <script src="../site_libs/quarto-html/quarto.js"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -69,65 +67,7 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
-<script>
 
-  window.document.addEventListener("DOMContentLoaded", function (_event) {
-    const listingTargetEl = window.document.querySelector('#listing-blog .list');
-    if (!listingTargetEl) {
-      // No listing discovered, do not attach.
-      return; 
-    }
-
-    const options = {
-      valueNames: ['listing-title','listing-description','listing-image','listing-date',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
-      
-      searchColumns: ["listing-title","listing-author","listing-image","listing-description"],
-    };
-
-    window['quarto-listings'] = window['quarto-listings'] || {};
-    window['quarto-listings']['listing-blog'] = new List('listing-blog', options);
-
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  });
-
-  window.addEventListener('hashchange',() => {
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  })
-  </script>
-
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
-
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN") {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -214,23 +154,44 @@ window.Quarto = {
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#simulating-coin-flips" id="toc-simulating-coin-flips" class="nav-link active" data-scroll-target="#simulating-coin-flips">Simulating Coin Flips</a></li>
+  <li><a href="#counting-heads-and-tails" id="toc-counting-heads-and-tails" class="nav-link" data-scroll-target="#counting-heads-and-tails">Counting Heads and Tails</a></li>
+  <li><a href="#display-the-results" id="toc-display-the-results" class="nav-link" data-scroll-target="#display-the-results">Display the Results</a></li>
+  <li><a href="#perform-binomial-test-on-coin-flip-results" id="toc-perform-binomial-test-on-coin-flip-results" class="nav-link" data-scroll-target="#perform-binomial-test-on-coin-flip-results">Perform Binomial Test on Coin Flip Results</a></li>
+  <li><a href="#example-binomial-test-in-clinical-trial-data" id="toc-example-binomial-test-in-clinical-trial-data" class="nav-link" data-scroll-target="#example-binomial-test-in-clinical-trial-data">Example: Binomial Test in Clinical Trial Data</a>
+  <ul class="collapse">
+  <li><a href="#import-dataset" id="toc-import-dataset" class="nav-link" data-scroll-target="#import-dataset">Import Dataset</a></li>
+  <li><a href="#create-binary-flag-for-deaths" id="toc-create-binary-flag-for-deaths" class="nav-link" data-scroll-target="#create-binary-flag-for-deaths">Create Binary Flag for Deaths</a></li>
+  <li><a href="#perform-exact-binomial-test" id="toc-perform-exact-binomial-test" class="nav-link" data-scroll-target="#perform-exact-binomial-test">Perform Exact Binomial Test</a></li>
+  </ul></li>
+  <li><a href="#sas-output" id="toc-sas-output" class="nav-link" data-scroll-target="#sas-output">SAS Output</a>
+  <ul class="collapse">
+  <li><a href="#coin-flip-summary" id="toc-coin-flip-summary" class="nav-link" data-scroll-target="#coin-flip-summary">Coin Flip Summary</a></li>
+  <li><a href="#binomial-test-on-coin-flips" id="toc-binomial-test-on-coin-flips" class="nav-link" data-scroll-target="#binomial-test-on-coin-flips">Binomial Test on Coin Flips</a></li>
+  <li><a href="#exact-binomial-test-for-death-proportion" id="toc-exact-binomial-test-for-death-proportion" class="nav-link" data-scroll-target="#exact-binomial-test-for-death-proportion">Exact Binomial Test for Death Proportion</a></li>
+  </ul></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
-<main class="content column-page" id="quarto-document-content">
+<main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Blogs</h1>
+<h1 class="title">Binomial Test on Coin Flips and Clinical Data</h1>
 </div>
 
 
 
-<div class="quarto-title-meta column-page">
+<div class="quarto-title-meta">
 
     
   
@@ -242,104 +203,235 @@ window.Quarto = {
 </header>
 
 
-<div id="listing-blog" class="quarto-listing quarto-listing-container-default">
-<div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-listing-file-modified-sort="1745328107399" data-listing-reading-time-sort="2" data-listing-word-count-sort="214">
-<div class="thumbnail">
-<p><a href="../blogs/posts/202305_introduction_to_CAMIS_blog.html" class="no-external"></a></p><a href="../blogs/posts/202305_introduction_to_CAMIS_blog.html" class="no-external">
-<p class="card-img-top"><img src="../images/logo.png" style="height: 130px;"  class="thumbnail-image card-img"/></p>
-</a><p><a href="../blogs/posts/202305_introduction_to_CAMIS_blog.html" class="no-external"></a></p>
-</div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/202305_introduction_to_CAMIS_blog.html" class="no-external">Introduction Comparing Analysis Method Implementations in Software (CAMIS)</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/202305_introduction_to_CAMIS_blog.html" class="no-external"></a>
-</div>
-<div class="listing-description">
-<a href="../blogs/posts/202305_introduction_to_CAMIS_blog.html" class="no-external">Are you trying to replicate results using different software/languages and struggling to find out why you can’t match the results? Check out the CAMIS repository!</a>
-</div>
-</div>
-<div class="metadata">
-<p><a href="../blogs/posts/202305_introduction_to_CAMIS_blog.html" class="no-external"></a></p><a href="../blogs/posts/202305_introduction_to_CAMIS_blog.html" class="no-external">
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="1" data-listing-file-modified-sort="1745328107399" data-listing-reading-time-sort="2" data-listing-word-count-sort="315">
-<div class="thumbnail">
-<p><a href="../blogs/posts/202312_highlights_blog.html" class="no-external"></a></p><a href="../blogs/posts/202312_highlights_blog.html" class="no-external">
-<p class="card-img-top"><img src="images/202312 highlights.jpg" style="height: 130px;"  class="thumbnail-image card-img"/></p>
-</a><p><a href="../blogs/posts/202312_highlights_blog.html" class="no-external"></a></p>
-</div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/202312_highlights_blog.html" class="no-external">2023: A Year of Progress for the PHUSE CAMIS Working Group Project</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/202312_highlights_blog.html" class="no-external"></a>
-</div>
-<div class="listing-description">
-<a href="../blogs/posts/202312_highlights_blog.html" class="no-external">As we draw towards the end of 2023, the PHUSE DVOST CAMIS Working Group Project reflect on their key progress and successes this year.</a>
-</div>
-</div>
-<div class="metadata">
-<p><a href="../blogs/posts/202312_highlights_blog.html" class="no-external"></a></p><a href="../blogs/posts/202312_highlights_blog.html" class="no-external">
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="2" data-listing-file-modified-sort="1745328107399" data-listing-reading-time-sort="1" data-listing-word-count-sort="48">
-<div class="thumbnail">
-<p><a href="../blogs/posts/202403_phuseUS2024.html" class="no-external"></a></p><a href="../blogs/posts/202403_phuseUS2024.html" class="no-external">
-<p class="card-img-top"><img src="images/202403PHUSE_US_CONNECT24_Soma_PP.jpeg" style="height: 130px;"  class="thumbnail-image card-img"/></p>
-</a><p><a href="../blogs/posts/202403_phuseUS2024.html" class="no-external"></a></p>
-</div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/202403_phuseUS2024.html" class="no-external">PHUSE US connect 2024 Poster Presentation by Soma &amp; Vikash</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/202403_phuseUS2024.html" class="no-external"></a>
-</div>
-<div class="listing-description">
-<a href="../blogs/posts/202403_phuseUS2024.html" class="no-external">Congratulations, Soma Sekhar Sriadibhatla,&nbsp;on&nbsp;your&nbsp;poster&nbsp;presentation&nbsp;“CAMIS-An&nbsp;open&nbsp;source&nbsp;repository&nbsp;to&nbsp;document&nbsp;differences&nbsp;in&nbsp;statistical&nbsp;methodology&nbsp;software”&nbsp;at PHUSE US&nbsp;Connect&nbsp;2024.</a>
-</div>
-</div>
-<div class="metadata">
-<p><a href="../blogs/posts/202403_phuseUS2024.html" class="no-external"></a></p><a href="../blogs/posts/202403_phuseUS2024.html" class="no-external">
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="3" data-listing-file-modified-sort="1745328107399" data-listing-reading-time-sort="2" data-listing-word-count-sort="274">
-<div class="thumbnail">
-<p><a href="../blogs/posts/202503_Tobit_regression.html" class="no-external"></a></p><a href="../blogs/posts/202503_Tobit_regression.html" class="no-external">
-<p class="card-img-top"><img src="images/Tobit_comparison.jpg" style="height: 130px;"  class="thumbnail-image card-img"/></p>
-</a><p><a href="../blogs/posts/202503_Tobit_regression.html" class="no-external"></a></p>
-</div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/202503_Tobit_regression.html" class="no-external">Tobit Regression Comparison between R and SAS</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/202503_Tobit_regression.html" class="no-external"></a>
-</div>
-<div class="listing-description">
-<a href="../blogs/posts/202503_Tobit_regression.html" class="no-external">A recent CAMIS contribution explored the standard Tobit model for a virology endpoint (viral load) with a lower detection limit.</a>
-</div>
-</div>
-<div class="metadata">
-<p><a href="../blogs/posts/202503_Tobit_regression.html" class="no-external"></a></p><a href="../blogs/posts/202503_Tobit_regression.html" class="no-external">
-</a>
-</div>
-</div>
-</div>
-<div class="listing-no-matching d-none">
-No matching items
-</div>
-</div>
+<section id="simulating-coin-flips" class="level2">
+<h2 class="anchored" data-anchor-id="simulating-coin-flips">Simulating Coin Flips</h2>
+<p>Set the seed for reproducibility and simulate 1000 coin flips using a Bernoulli distribution.</p>
+<pre class="sas"><code>/* Set the seed for reproducibility */
+%let seed = 19;
+
+data coin_flips;
+    call streaminit(&amp;seed);
+    do i = 1 to 1000;
+        /* Simulate coin flips: 1 for Heads (H), 0 for Tails (T) */
+        flip = rand("Bernoulli", 0.5);
+/*         flip = rand("BINOMIAL", 0.5,1); */
+        if flip = 1 then result = "H";
+        else result = "T";
+        output;
+    end;
+run;</code></pre>
+</section>
+<section id="counting-heads-and-tails" class="level2">
+<h2 class="anchored" data-anchor-id="counting-heads-and-tails">Counting Heads and Tails</h2>
+<p>Use SQL to count how many heads and tails were observed in the simulation.</p>
+<pre class="sas"><code>proc sql;
+    select 
+        sum(result = "H") as heads_count,
+        sum(result = "T") as tails_count,
+        count(*) as total_flips
+    into :heads_count, :tails_count, :total_flips
+    from coin_flips;
+quit;</code></pre>
+</section>
+<section id="display-the-results" class="level2">
+<h2 class="anchored" data-anchor-id="display-the-results">Display the Results</h2>
+<p>Print the counts using <code>%put</code> statements.</p>
+<pre class="sas"><code>%put Heads Count: &amp;heads_count;
+%put Tails Count: &amp;tails_count;
+%put Total Flips: &amp;total_flips;</code></pre>
+</section>
+<section id="perform-binomial-test-on-coin-flip-results" class="level2">
+<h2 class="anchored" data-anchor-id="perform-binomial-test-on-coin-flip-results">Perform Binomial Test on Coin Flip Results</h2>
+<p>Use <code>proc freq</code> to check if the observed results differ significantly from the expected probability of 0.5.</p>
+<pre class="sas"><code>proc freq data=coin_flips;
+    tables result / binomial(p=0.5);
+run;</code></pre>
+<hr>
+</section>
+<section id="example-binomial-test-in-clinical-trial-data" class="level2">
+<h2 class="anchored" data-anchor-id="example-binomial-test-in-clinical-trial-data">Example: Binomial Test in Clinical Trial Data</h2>
+<p>We load a clinical dataset and test if the observed death proportion is significantly different from a hypothesized value (e.g., 19%).</p>
+<section id="import-dataset" class="level3">
+<h3 class="anchored" data-anchor-id="import-dataset">Import Dataset</h3>
+<pre class="sas"><code>proc import datafile='/home/u63532805/CAMIS/lung_cancer.csv'
+    out=lung_cancer
+    dbms=csv
+    replace;
+    getnames=yes;
+run;</code></pre>
+</section>
+<section id="create-binary-flag-for-deaths" class="level3">
+<h3 class="anchored" data-anchor-id="create-binary-flag-for-deaths">Create Binary Flag for Deaths</h3>
+<pre class="sas"><code>data lung_cancer;
+    set lung_cancer;
+    death_flag = (status = 1);
+run;</code></pre>
+</section>
+<section id="perform-exact-binomial-test" class="level3">
+<h3 class="anchored" data-anchor-id="perform-exact-binomial-test">Perform Exact Binomial Test</h3>
+<pre class="sas"><code>proc freq data=lung_cancer;
+    tables death_flag / binomial(p=0.19 level='1');
+    title "Exact Binomial Test for Death Proportion";
+run;</code></pre>
+</section>
+</section>
+<section id="sas-output" class="level2">
+<h2 class="anchored" data-anchor-id="sas-output">SAS Output</h2>
+<section id="coin-flip-summary" class="level3">
+<h3 class="anchored" data-anchor-id="coin-flip-summary">Coin Flip Summary</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>heads_count</th>
+<th>tails_count</th>
+<th>total_flips</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>520</td>
+<td>480</td>
+<td>1000</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="binomial-test-on-coin-flips" class="level3">
+<h3 class="anchored" data-anchor-id="binomial-test-on-coin-flips">Binomial Test on Coin Flips</h3>
+<p><strong>The FREQ Procedure</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 15%">
+<col style="width: 12%">
+<col style="width: 30%">
+<col style="width: 29%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>result</th>
+<th>Frequency</th>
+<th>Percent</th>
+<th>Cumulative Frequency</th>
+<th>Cumulative Percent</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>H</td>
+<td>520</td>
+<td>52.00</td>
+<td>520</td>
+<td>52.00</td>
+</tr>
+<tr class="even">
+<td>T</td>
+<td>480</td>
+<td>48.00</td>
+<td>1000</td>
+<td>100.00</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Binomial Proportion for result = H</strong></p>
+<ul>
+<li>Proportion: 0.5200<br>
+</li>
+<li>ASE: 0.0158<br>
+</li>
+<li>95% Lower Conf Limit: 0.4890<br>
+</li>
+<li>95% Upper Conf Limit: 0.5510</li>
+</ul>
+<p><strong>Exact Confidence Limits</strong></p>
+<ul>
+<li>95% Lower Conf Limit: 0.4885<br>
+</li>
+<li>95% Upper Conf Limit: 0.5514</li>
+</ul>
+<p><strong>Test of H0: Proportion = 0.5</strong></p>
+<ul>
+<li>ASE under H0: 0.0158<br>
+</li>
+<li>Z: 1.2649<br>
+</li>
+<li>One-sided Pr &gt; Z: 0.1030<br>
+</li>
+<li>Two-sided Pr &gt; |Z|: 0.2059<br>
+</li>
+<li>Sample Size: 1000</li>
+</ul>
+<hr>
+</section>
+<section id="exact-binomial-test-for-death-proportion" class="level3">
+<h3 class="anchored" data-anchor-id="exact-binomial-test-for-death-proportion">Exact Binomial Test for Death Proportion</h3>
+<p><strong>The FREQ Procedure</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 14%">
+<col style="width: 12%">
+<col style="width: 29%">
+<col style="width: 28%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>death_flag</th>
+<th>Frequency</th>
+<th>Percent</th>
+<th>Cumulative Frequency</th>
+<th>Cumulative Percent</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>165</td>
+<td>72.37</td>
+<td>165</td>
+<td>72.37</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>63</td>
+<td>27.63</td>
+<td>228</td>
+<td>100.00</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Binomial Proportion for death_flag = 1</strong></p>
+<ul>
+<li>Proportion: 0.2763<br>
+</li>
+<li>ASE: 0.0296<br>
+</li>
+<li>95% Lower Conf Limit: 0.2183<br>
+</li>
+<li>95% Upper Conf Limit: 0.3344</li>
+</ul>
+<p><strong>Exact Confidence Limits</strong></p>
+<ul>
+<li>95% Lower Conf Limit: 0.2193<br>
+</li>
+<li>95% Upper Conf Limit: 0.3392</li>
+</ul>
+<p><strong>Test of H0: Proportion = 0.19</strong></p>
+<ul>
+<li>ASE under H0: 0.0260<br>
+</li>
+<li>Z: 3.3223<br>
+</li>
+<li>One-sided Pr &gt; Z: 0.0004<br>
+</li>
+<li>Two-sided Pr &gt; |Z|: 0.0009<br>
+</li>
+<li>Sample Size: 228</li>
+</ul>
 
 
-
+</section>
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
