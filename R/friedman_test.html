@@ -6,8 +6,9 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="dcterms.date" content="2025-04-09">
 
-<title>XGBoost</title>
+<title>Friedman Test Analysis</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -196,17 +197,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#xgboost" id="toc-xgboost" class="nav-link active" data-scroll-target="#xgboost">XGBoost</a>
+  <li><a href="#friedman-test-analysis" id="toc-friedman-test-analysis" class="nav-link active" data-scroll-target="#friedman-test-analysis">Friedman Test Analysis</a>
   <ul class="collapse">
-  <li><a href="#available-r-packages" id="toc-available-r-packages" class="nav-link" data-scroll-target="#available-r-packages">Available R packages</a></li>
-  <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data used</a></li>
-  <li><a href="#example-code" id="toc-example-code" class="nav-link" data-scroll-target="#example-code">Example Code</a>
-  <ul class="collapse">
-  <li><a href="#classification" id="toc-classification" class="nav-link" data-scroll-target="#classification">Classification</a></li>
-  <li><a href="#regression" id="toc-regression" class="nav-link" data-scroll-target="#regression">Regression</a></li>
+  <li><a href="#hypotheses" id="toc-hypotheses" class="nav-link" data-scroll-target="#hypotheses">Hypotheses</a></li>
+  <li><a href="#base-r-stats" id="toc-base-r-stats" class="nav-link" data-scroll-target="#base-r-stats">Base R {stats}</a></li>
+  <li><a href="#rstatix" id="toc-rstatix" class="nav-link" data-scroll-target="#rstatix">{rstatix}</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
   </ul></li>
   <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">Reference</a></li>
-  </ul></li>
   </ul>
 </nav>
     </div>
@@ -215,7 +213,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">XGBoost</h1>
+<h1 class="title">Friedman Test Analysis</h1>
 </div>
 
 
@@ -223,6 +221,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="quarto-title-meta">
 
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">April 9, 2025</p>
+    </div>
+  </div>
   
     
   </div>
@@ -232,195 +236,127 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="xgboost" class="level1">
-<h1>XGBoost</h1>
-<p>XGBoost which stands for eXtreme Gradient Boosting is an efficent implementation of gradient boosting. Gradient boosting is an ensemble technique in machine learning. Unlike traditional models that learn from the data independently, boosting combines the predictions of multiple weak learners to create a single, more accurate strong learner.</p>
-<p>An XGBoost model is based on trees, so we don’t need to do much preprocessing for our data; we don’t need to worry about the factors or centering or scaling our data.</p>
-<section id="available-r-packages" class="level2">
-<h2 class="anchored" data-anchor-id="available-r-packages">Available R packages</h2>
-<p>There are multiple packages that can be used to to implement xgboost in R.</p>
-<ul>
-<li><a href="https://www.tidymodels.org/">{tidymodels}</a></li>
-<li><a href="https://cran.r-project.org/web/packages/xgboost/index.html">{xgboost}</a></li>
-<li><a href="https://cran.r-project.org/web/packages/caret/index.html">{caret}</a></li>
-</ul>
-<p>{tidymodels} and {caret} easy ways to access xgboost easily. This example will use {tidymodels} because of the functionality included in {tidymodels} and is being heavily supported by Posit. {caret} was the precursor to {tidymodels} and it is recommended that you use {tidymodels} over {caret} as no new features are being added.</p>
-</section>
-<section id="data-used" class="level2">
-<h2 class="anchored" data-anchor-id="data-used">Data used</h2>
-<p>Data used for this example is <code>birthwt</code> which is part of the {MASS} package. This data-set considers a number of risk factors associated with birth weight in infants.</p>
+<section id="friedman-test-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="friedman-test-analysis">Friedman Test Analysis</h2>
+<p>Friedman’s test is a non-parametric statistical test used to detect differences in treatments across multiple test attempts. It is often used when the assumptions of ANOVA are not met, particularly the assumption of normality. The test is applicable for repeated measures, or matched groups, making it useful for situations where the same subjects are subjected to different treatments.</p>
+<p>Friedman’s test ranks the data points within each block (or subject) separately, and then analyzes these ranks to see if the mean ranks differ between the groups and conditions. If the test shows significant differences, this suggests that at least one of the treatments differs from the others. Because it is non-parametric, it does not assume the normal distribution of data, which makes it robust for skewed or ordinal data.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MASS)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidymodels)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(xgboost)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(birthwt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load required packages</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rstatix) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Our modeling goal using the <code>birthwt</code> dataset is to predict whether the birth weight is low or not low based on factors such as mother’s age, smoking status, and history of hypertension.</p>
-</section>
-<section id="example-code" class="level2">
-<h2 class="anchored" data-anchor-id="example-code">Example Code</h2>
-<p>Use {tidymodels} metadata package to split the data into training and testing data. For classification, we need to change the Low variable into a factor, since currently coded as an integer (0,1).</p>
+<section id="hypotheses" class="level3">
+<h3 class="anchored" data-anchor-id="hypotheses">Hypotheses</h3>
+<p>H₀ (Null Hypothesis): There are no significant differences in weight outcomes between the three diets</p>
+<p>H₁ (Alternative Hypothesis): There are significant differences in weight outcomes between at least two diets</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>birthwt <span class="ot">&lt;-</span> </span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  birthwt <span class="sc">%&gt;%</span> </span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">low_f =</span> <span class="fu">lvls_revalue</span>(<span class="fu">factor</span>(low), <span class="fu">c</span>(<span class="st">"Not Low"</span>, <span class="st">"Low"</span>)),</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">smoke_f =</span> <span class="fu">lvls_revalue</span>(<span class="fu">factor</span>(smoke), <span class="fu">c</span>(<span class="st">"Non-smoker"</span>, <span class="st">"Smoker"</span>))</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  )</span>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the dataset</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>Diet_A <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">75</span>, <span class="dv">68</span>, <span class="dv">80</span>, <span class="dv">72</span>, <span class="dv">85</span>, <span class="dv">70</span>, <span class="dv">82</span>, <span class="dv">78</span>, <span class="dv">75</span>, <span class="dv">83</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>Diet_B <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">82</span>, <span class="dv">70</span>, <span class="dv">85</span>, <span class="dv">78</span>, <span class="dv">88</span>, <span class="dv">75</span>, <span class="dv">85</span>, <span class="dv">80</span>, <span class="dv">79</span>, <span class="dv">87</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>Diet_C <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">78</span>, <span class="dv">65</span>, <span class="dv">82</span>, <span class="dv">75</span>, <span class="dv">84</span>, <span class="dv">72</span>, <span class="dv">80</span>, <span class="dv">76</span>, <span class="dv">77</span>, <span class="dv">84</span>)</span>
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>brthwt_split <span class="ot">&lt;-</span> <span class="fu">initial_split</span>(birthwt, <span class="at">strata =</span> low)</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>brthwt_train <span class="ot">&lt;-</span> <span class="fu">training</span>(brthwt_split)</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>brthwt_test <span class="ot">&lt;-</span> <span class="fu">testing</span>(brthwt_split)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">subjid =</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="dv">3</span>),</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">diet =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"C"</span>), <span class="at">each =</span> <span class="dv">10</span>), </span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">weight =</span> <span class="fu">c</span>(Diet_A, Diet_B, Diet_C)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<section id="classification" class="level3">
-<h3 class="anchored" data-anchor-id="classification">Classification</h3>
-<p>After creating the data split, we setup the params of the model.</p>
+</section>
+<section id="base-r-stats" class="level3">
+<h3 class="anchored" data-anchor-id="base-r-stats">Base R {stats}</h3>
+<p>To run a Friedman’s test in R you can use the {stats} package. This will return the chi-squared test statistic and p-value.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>xgboost_spec <span class="ot">&lt;-</span> </span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">boost_tree</span>(<span class="at">trees =</span> <span class="dv">15</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># This model can be used for classification or regression, so set mode</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"xgboost"</span>)</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>xgboost_spec</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform Friedman test</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>friedman_test <span class="ot">&lt;-</span> <span class="fu">friedman.test</span>(weight <span class="sc">~</span> diet <span class="sc">|</span> subjid, <span class="at">data =</span> data)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>friedman_test</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Boosted Tree Model Specification (classification)
+<pre><code>
+    Friedman rank sum test
 
-Main Arguments:
-  trees = 15
-
-Computational engine: xgboost </code></pre>
+data:  weight and diet and subjid
+Friedman chi-squared = 15.2, df = 2, p-value = 0.0005005</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>xgboost_cls_fit <span class="ot">&lt;-</span> xgboost_spec <span class="sc">%&gt;%</span> <span class="fu">fit</span>(low_f <span class="sc">~</span> ., <span class="at">data =</span> brthwt_train)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>xgboost_cls_fit</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>parsnip model object
-
-##### xgb.Booster
-raw: 15.2 Kb 
-call:
-  xgboost::xgb.train(params = list(eta = 0.3, max_depth = 6, gamma = 0, 
-    colsample_bytree = 1, colsample_bynode = 1, min_child_weight = 1, 
-    subsample = 1), data = x$data, nrounds = 15, watchlist = x$watchlist, 
-    verbose = 0, nthread = 1, objective = "binary:logistic")
-params (as set within xgb.train):
-  eta = "0.3", max_depth = "6", gamma = "0", colsample_bytree = "1", colsample_bynode = "1", min_child_weight = "1", subsample = "1", nthread = "1", objective = "binary:logistic", validate_parameters = "TRUE"
-xgb.attributes:
-  niter
-callbacks:
-  cb.evaluation.log()
-# of features: 12 
-niter: 15
-nfeatures : 12 
-evaluation_log:
-  iter training_logloss
- &lt;num&gt;            &lt;num&gt;
-     1       0.44894346
-     2       0.31033704
-   ---              ---
-    14       0.01571681
-    15       0.01396153</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bind_cols</span>(</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">predict</span>(xgboost_cls_fit, brthwt_test),</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">predict</span>(xgboost_cls_fit, brthwt_test, <span class="at">type =</span> <span class="st">"prob"</span>)</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>To get these values easily into a data.frame you can use the <code>tidy()</code> function from {broom}.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(friedman_test)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 48 × 3
-   .pred_class `.pred_Not Low` .pred_Low
-   &lt;fct&gt;                 &lt;dbl&gt;     &lt;dbl&gt;
- 1 Not Low               0.979    0.0209
- 2 Not Low               0.985    0.0151
- 3 Not Low               0.985    0.0151
- 4 Not Low               0.988    0.0116
- 5 Not Low               0.988    0.0116
- 6 Not Low               0.988    0.0116
- 7 Not Low               0.988    0.0116
- 8 Not Low               0.988    0.0116
- 9 Not Low               0.988    0.0116
-10 Not Low               0.988    0.0116
-# ℹ 38 more rows</code></pre>
+<pre><code># A tibble: 1 × 4
+  statistic  p.value parameter method                
+      &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;                 
+1      15.2 0.000500         2 Friedman rank sum test</code></pre>
 </div>
 </div>
 </section>
-<section id="regression" class="level3">
-<h3 class="anchored" data-anchor-id="regression">Regression</h3>
-<p>To perform xgboost with regression, when setting up the parameter of the model, set the mode of xgboost to regression. After that switch and then changing the variable of interest back to an integer, the rest of the code is the same.</p>
+<section id="rstatix" class="level3">
+<h3 class="anchored" data-anchor-id="rstatix">{rstatix}</h3>
+<p>Alternatively, you can use the {rstatix} package. While these packages give the same results, the {rstatix} results come as a tibble we can easily use.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>xgboost_reg_spec <span class="ot">&lt;-</span> </span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">boost_tree</span>(<span class="at">trees =</span> <span class="dv">15</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># This model can be used for classification or regression, so set mode</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"regression"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"xgboost"</span>)</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>xgboost_reg_spec</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span> </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">friedman_test</span>(weight <span class="sc">~</span> diet <span class="sc">|</span> subjid)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>test</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Boosted Tree Model Specification (regression)
-
-Main Arguments:
-  trees = 15
-
-Computational engine: xgboost </code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For a regression model, the outcome should be `numeric`, not a `factor`.</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>xgboost_reg_fit <span class="ot">&lt;-</span> xgboost_reg_spec <span class="sc">%&gt;%</span> <span class="fu">fit</span>(low<span class="sc">~</span> ., <span class="at">data =</span> brthwt_train)</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>xgboost_reg_fit </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>parsnip model object
-
-##### xgb.Booster
-raw: 15.2 Kb 
-call:
-  xgboost::xgb.train(params = list(eta = 0.3, max_depth = 6, gamma = 0, 
-    colsample_bytree = 1, colsample_bynode = 1, min_child_weight = 1, 
-    subsample = 1), data = x$data, nrounds = 15, watchlist = x$watchlist, 
-    verbose = 0, nthread = 1, objective = "reg:squarederror")
-params (as set within xgb.train):
-  eta = "0.3", max_depth = "6", gamma = "0", colsample_bytree = "1", colsample_bynode = "1", min_child_weight = "1", subsample = "1", nthread = "1", objective = "reg:squarederror", validate_parameters = "TRUE"
-xgb.attributes:
-  niter
-callbacks:
-  cb.evaluation.log()
-# of features: 13 
-niter: 15
-nfeatures : 13 
-evaluation_log:
-  iter training_rmse
- &lt;num&gt;         &lt;num&gt;
-     1   0.352094163
-     2   0.247943366
-   ---           ---
-    14   0.003690328
-    15   0.002599106</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">predict</span>(xgboost_reg_fit , brthwt_test)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 48 × 1
-     .pred
-     &lt;dbl&gt;
- 1 0.00253
- 2 0.00253
- 3 0.00253
- 4 0.00253
- 5 0.00253
- 6 0.00253
- 7 0.00253
- 8 0.00253
- 9 0.00253
-10 0.00253
-# ℹ 38 more rows</code></pre>
+<pre><code># A tibble: 1 × 6
+  .y.        n statistic    df        p method       
+* &lt;chr&gt;  &lt;int&gt;     &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;        
+1 weight    10      15.2     2 0.000500 Friedman test</code></pre>
 </div>
 </div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create boxplot</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(data, <span class="fu">aes</span>(<span class="at">x =</span> diet, <span class="at">y =</span> weight, <span class="at">fill =</span> diet)) <span class="sc">+</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Weight Distribution Across Different Diets"</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Diet Type"</span>,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Weight"</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="friedman_test_files/figure-html/visualization-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="conclusion" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion">Conclusion</h3>
+<p>Based on the analysis:</p>
+<ol type="1">
+<li><strong>Statistical Test Results:</strong></li>
+</ol>
+<ul>
+<li>The Friedman test yielded a p-value of 5.0045143^{-4}</li>
+</ul>
+<p>[If p &lt; 0.05, we reject the null hypothesis</p>
+<p>If p &gt; 0.05, we fail to reject the null hypothesis]</p>
+<ol start="2" type="1">
+<li><strong>Visual Analysis:</strong></li>
+</ol>
+<ul>
+<li><p>From the boxplot, Diet B shows the highest median weight</p></li>
+<li><p>Diet B also appears to have the highest overall weight distribution</p></li>
+<li><p>Diet A and Diet C show similar distributions but lower than Diet B</p></li>
+</ul>
+<ol start="3" type="1">
+<li><strong>Interpretation:</strong></li>
+</ol>
+<ul>
+<li><p>If the goal is weight gain: Diet B appears most effective</p></li>
+<li><p>If the goal is weight maintenance: Diet A or C might be more suitable</p></li>
+<li><p>However, individual responses vary, as shown by the overlapping distributions</p></li>
+</ul>
 </section>
 </section>
 <section id="reference" class="level2">
 <h2 class="anchored" data-anchor-id="reference">Reference</h2>
-<ul>
-<li><a href="https://juliasilge.com/blog/xgboost-tune-volleyball/">XGBoost with tidymodels by Julia Silge</a></li>
-</ul>
+<p><em>Cite all sources and references used in the analysis.</em></p>
 <div class="callout callout-style-default callout-note callout-titled" title="Session Info">
 <div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -449,93 +385,136 @@ Session Info
  pandoc   3.4 @ /opt/quarto/bin/tools/ (via rmarkdown)
 
 ─ Packages ───────────────────────────────────────────────────────────────────
- ! package      * version    date (UTC) lib source
- P backports      1.5.0      2024-05-23 [?] RSPM (R 4.4.0)
- P broom        * 1.0.7      2024-09-26 [?] RSPM (R 4.4.0)
-   class          7.3-22     2023-05-03 [2] CRAN (R 4.4.2)
- P cli            3.6.3      2024-06-21 [?] RSPM (R 4.4.0)
-   codetools      0.2-20     2024-03-31 [2] CRAN (R 4.4.2)
- P colorspace     2.1-1      2024-07-26 [?] RSPM (R 4.4.0)
- P data.table     1.16.0     2024-08-27 [?] RSPM (R 4.4.0)
- P dials        * 1.3.0      2024-07-30 [?] RSPM (R 4.4.0)
- P DiceDesign     1.10       2023-12-07 [?] RSPM (R 4.4.0)
- P digest         0.6.37     2024-08-19 [?] RSPM (R 4.4.0)
- P dplyr        * 1.1.4      2023-11-17 [?] RSPM (R 4.4.0)
- P evaluate       1.0.0      2024-09-17 [?] RSPM (R 4.4.0)
- P fansi          1.0.6      2023-12-08 [?] RSPM (R 4.4.0)
- P fastmap        1.2.0      2024-05-15 [?] RSPM (R 4.4.0)
- P forcats      * 1.0.0      2023-01-29 [?] RSPM (R 4.4.0)
- P foreach        1.5.2      2022-02-02 [?] RSPM (R 4.4.0)
- P furrr          0.3.1      2022-08-15 [?] RSPM (R 4.4.0)
- P future         1.34.0     2024-07-29 [?] RSPM (R 4.4.0)
- P future.apply   1.11.2     2024-03-28 [?] RSPM (R 4.4.0)
- P generics       0.1.3      2022-07-05 [?] RSPM (R 4.4.0)
- P ggplot2      * 3.5.1      2024-04-23 [?] RSPM (R 4.4.0)
- P globals        0.16.3     2024-03-08 [?] RSPM (R 4.4.0)
- P glue           1.8.0      2024-09-30 [?] RSPM (R 4.4.0)
- P gower          1.0.1      2022-12-22 [?] RSPM (R 4.4.0)
- P GPfit          1.0-8      2019-02-08 [?] RSPM (R 4.4.0)
- P gtable         0.3.5      2024-04-22 [?] RSPM (R 4.4.0)
- P hardhat        1.4.0      2024-06-02 [?] RSPM (R 4.4.0)
- P hms            1.1.3      2023-03-21 [?] RSPM (R 4.4.0)
- P htmltools      0.5.8.1    2024-04-04 [?] RSPM (R 4.4.0)
- P htmlwidgets    1.6.4      2023-12-06 [?] RSPM (R 4.4.0)
- P infer        * 1.0.7      2024-03-25 [?] RSPM (R 4.4.0)
- P ipred          0.9-15     2024-07-18 [?] RSPM (R 4.4.0)
- P iterators      1.0.14     2022-02-05 [?] RSPM (R 4.4.0)
- P jsonlite       1.8.9      2024-09-20 [?] RSPM (R 4.4.0)
- P knitr          1.48       2024-07-07 [?] RSPM (R 4.4.0)
-   lattice        0.22-6     2024-03-20 [2] CRAN (R 4.4.2)
- P lava           1.8.0      2024-03-05 [?] RSPM (R 4.4.0)
- P lhs            1.2.0      2024-06-30 [?] RSPM (R 4.4.0)
- P lifecycle      1.0.4      2023-11-07 [?] RSPM (R 4.4.0)
- P listenv        0.9.1      2024-01-29 [?] RSPM (R 4.4.0)
- P lubridate    * 1.9.3      2023-09-27 [?] RSPM (R 4.4.0)
- P magrittr       2.0.3      2022-03-30 [?] RSPM (R 4.4.0)
-   MASS         * 7.3-61     2024-06-13 [2] CRAN (R 4.4.2)
-   Matrix         1.7-1      2024-10-18 [2] CRAN (R 4.4.2)
- P modeldata    * 1.4.0      2024-06-19 [?] RSPM (R 4.4.0)
- P munsell        0.5.1      2024-04-01 [?] RSPM (R 4.4.0)
-   nnet           7.3-19     2023-05-03 [2] CRAN (R 4.4.2)
- P parallelly     1.38.0     2024-07-27 [?] RSPM (R 4.4.0)
- P parsnip      * 1.2.1      2024-03-22 [?] RSPM (R 4.4.0)
- P pillar         1.9.0      2023-03-22 [?] RSPM (R 4.4.0)
- P pkgconfig      2.0.3      2019-09-22 [?] RSPM (R 4.4.0)
- P prodlim        2024.06.25 2024-06-24 [?] RSPM (R 4.4.0)
- P purrr        * 1.0.2      2023-08-10 [?] RSPM (R 4.4.0)
- P R6             2.5.1      2021-08-19 [?] RSPM (R 4.4.0)
- P Rcpp           1.0.13     2024-07-17 [?] RSPM (R 4.4.0)
- P readr        * 2.1.5      2024-01-10 [?] RSPM (R 4.4.0)
- P recipes      * 1.1.0      2024-07-04 [?] RSPM (R 4.4.0)
-   renv           1.0.10     2024-10-05 [1] RSPM (R 4.4.0)
- P rlang          1.1.4      2024-06-04 [?] RSPM (R 4.4.0)
- P rmarkdown      2.28       2024-08-17 [?] RSPM (R 4.4.0)
-   rpart          4.1.23     2023-12-05 [2] CRAN (R 4.4.2)
- P rsample      * 1.2.1      2024-03-25 [?] RSPM (R 4.4.0)
- P rstudioapi     0.16.0     2024-03-24 [?] RSPM (R 4.4.0)
- P scales       * 1.3.0      2023-11-28 [?] RSPM (R 4.4.0)
- P sessioninfo    1.2.2      2021-12-06 [?] RSPM (R 4.4.0)
- P stringi        1.8.4      2024-05-06 [?] RSPM (R 4.4.0)
- P stringr      * 1.5.1      2023-11-14 [?] RSPM (R 4.4.0)
-   survival       3.7-0      2024-06-05 [2] CRAN (R 4.4.2)
- P tibble       * 3.2.1      2023-03-20 [?] RSPM (R 4.4.0)
- P tidymodels   * 1.2.0      2024-03-25 [?] RSPM (R 4.4.0)
- P tidyr        * 1.3.1      2024-01-24 [?] RSPM (R 4.4.0)
- P tidyselect     1.2.1      2024-03-11 [?] RSPM (R 4.4.0)
- P tidyverse    * 2.0.0      2023-02-22 [?] RSPM (R 4.4.0)
- P timechange     0.3.0      2024-01-18 [?] RSPM (R 4.4.0)
- P timeDate       4041.110   2024-09-22 [?] RSPM (R 4.4.0)
- P tune         * 1.2.1      2024-04-18 [?] RSPM (R 4.4.0)
- P tzdb           0.4.0      2023-05-12 [?] RSPM (R 4.4.0)
- P utf8           1.2.4      2023-10-22 [?] RSPM (R 4.4.0)
- P vctrs          0.6.5      2023-12-01 [?] RSPM (R 4.4.0)
- P withr          3.0.1      2024-07-31 [?] RSPM (R 4.4.0)
- P workflows    * 1.1.4      2024-02-19 [?] RSPM (R 4.4.0)
- P workflowsets * 1.1.0      2024-03-21 [?] RSPM (R 4.4.0)
- P xfun           0.48       2024-10-03 [?] RSPM (R 4.4.0)
- P xgboost      * 1.7.8.1    2024-07-24 [?] RSPM (R 4.4.0)
- P yaml           2.3.10     2024-07-26 [?] RSPM (R 4.4.0)
- P yardstick    * 1.3.1      2024-03-21 [?] RSPM (R 4.4.0)
+ ! package        * version    date (UTC) lib source
+ P abind            1.4-8      2024-09-12 [?] RSPM (R 4.4.0)
+   askpass          1.2.1      2024-10-04 [1] RSPM (R 4.4.0)
+ P backports        1.5.0      2024-05-23 [?] RSPM (R 4.4.0)
+   base64enc        0.1-3      2015-07-28 [1] RSPM (R 4.4.0)
+   bit              4.5.0      2024-09-20 [1] RSPM (R 4.4.0)
+   bit64            4.5.2      2024-09-22 [1] RSPM (R 4.4.0)
+   blob             1.2.4      2023-03-17 [1] RSPM (R 4.4.0)
+   boot             1.3-31     2024-08-28 [2] CRAN (R 4.4.2)
+ P broom          * 1.0.7      2024-09-26 [?] RSPM (R 4.4.0)
+   bslib            0.8.0      2024-07-29 [1] RSPM (R 4.4.0)
+   cachem           1.1.0      2024-05-16 [1] RSPM (R 4.4.0)
+   callr            3.7.6      2024-03-25 [1] RSPM (R 4.4.0)
+ P car              3.1-3      2024-09-27 [?] RSPM (R 4.4.0)
+ P carData          3.0-5      2022-01-06 [?] RSPM (R 4.4.0)
+   cellranger       1.1.0      2016-07-27 [1] RSPM (R 4.4.0)
+ P cli              3.6.3      2024-06-21 [?] RSPM (R 4.4.0)
+   clipr            0.8.0      2022-02-22 [1] RSPM (R 4.4.0)
+ P colorspace       2.1-1      2024-07-26 [?] RSPM (R 4.4.0)
+   conflicted       1.2.0      2023-02-01 [1] RSPM (R 4.4.0)
+   corrplot         0.94       2024-08-17 [1] RSPM (R 4.4.0)
+   cowplot          1.1.3      2024-01-22 [1] RSPM (R 4.4.0)
+   cpp11            0.5.0      2024-08-27 [1] RSPM (R 4.4.0)
+   crayon           1.5.3      2024-06-20 [1] RSPM (R 4.4.0)
+   curl             5.2.3      2024-09-20 [1] RSPM (R 4.4.0)
+   data.table       1.16.0     2024-08-27 [1] RSPM (R 4.4.0)
+   DBI              1.2.3      2024-06-02 [1] RSPM (R 4.4.0)
+   dbplyr           2.5.0      2024-03-19 [1] RSPM (R 4.4.0)
+   Deriv            4.1.6      2024-09-13 [1] RSPM (R 4.4.0)
+ P digest           0.6.37     2024-08-19 [?] RSPM (R 4.4.0)
+   doBy             4.6.24     2024-10-07 [1] RSPM (R 4.4.0)
+ P dplyr          * 1.1.4      2023-11-17 [?] RSPM (R 4.4.0)
+   dtplyr           1.3.1      2023-03-22 [1] RSPM (R 4.4.0)
+ P evaluate         1.0.0      2024-09-17 [?] RSPM (R 4.4.0)
+ P fansi            1.0.6      2023-12-08 [?] RSPM (R 4.4.0)
+ P farver           2.1.2      2024-05-13 [?] RSPM (R 4.4.0)
+ P fastmap          1.2.0      2024-05-15 [?] RSPM (R 4.4.0)
+   fontawesome      0.5.2      2023-08-19 [1] RSPM (R 4.4.0)
+ P forcats        * 1.0.0      2023-01-29 [?] RSPM (R 4.4.0)
+ P Formula          1.2-5      2023-02-24 [?] RSPM (R 4.4.0)
+   fs               1.6.4      2024-04-25 [1] RSPM (R 4.4.0)
+   gargle           1.5.2      2023-07-20 [1] RSPM (R 4.4.0)
+ P generics         0.1.3      2022-07-05 [?] RSPM (R 4.4.0)
+ P ggplot2        * 3.5.1      2024-04-23 [?] RSPM (R 4.4.0)
+ P glue             1.8.0      2024-09-30 [?] RSPM (R 4.4.0)
+   googledrive      2.1.1      2023-06-11 [1] RSPM (R 4.4.0)
+   googlesheets4    1.1.1      2023-06-11 [1] RSPM (R 4.4.0)
+ P gtable           0.3.5      2024-04-22 [?] RSPM (R 4.4.0)
+   haven            2.5.4      2023-11-30 [1] RSPM (R 4.4.0)
+   highr            0.11       2024-05-26 [1] RSPM (R 4.4.0)
+ P hms              1.1.3      2023-03-21 [?] RSPM (R 4.4.0)
+ P htmltools        0.5.8.1    2024-04-04 [?] RSPM (R 4.4.0)
+   httr             1.4.7      2023-08-15 [1] RSPM (R 4.4.0)
+   ids              1.0.1      2017-05-31 [1] RSPM (R 4.4.0)
+   isoband          0.2.7      2022-12-20 [1] RSPM (R 4.4.0)
+   jquerylib        0.1.4      2021-04-26 [1] RSPM (R 4.4.0)
+ P jsonlite         1.8.9      2024-09-20 [?] RSPM (R 4.4.0)
+ P knitr            1.48       2024-07-07 [?] RSPM (R 4.4.0)
+ P labeling         0.4.3      2023-08-29 [?] RSPM (R 4.4.0)
+   lattice          0.22-6     2024-03-20 [2] CRAN (R 4.4.2)
+ P lifecycle        1.0.4      2023-11-07 [?] RSPM (R 4.4.0)
+   lme4             1.1-35.5   2024-07-03 [1] RSPM (R 4.4.0)
+ P lubridate      * 1.9.3      2023-09-27 [?] RSPM (R 4.4.0)
+ P magrittr         2.0.3      2022-03-30 [?] RSPM (R 4.4.0)
+   MASS             7.3-61     2024-06-13 [2] CRAN (R 4.4.2)
+   Matrix           1.7-1      2024-10-18 [2] CRAN (R 4.4.2)
+   MatrixModels     0.5-3      2023-11-06 [1] RSPM (R 4.4.0)
+   memoise          2.0.1      2021-11-26 [1] RSPM (R 4.4.0)
+   mgcv             1.9-1      2023-12-21 [2] CRAN (R 4.4.2)
+   microbenchmark   1.5.0      2024-09-04 [1] RSPM (R 4.4.0)
+   mime             0.12       2021-09-28 [1] RSPM (R 4.4.0)
+   minqa            1.2.8      2024-08-17 [1] RSPM (R 4.4.0)
+   modelr           0.1.11     2023-03-22 [1] RSPM (R 4.4.0)
+ P munsell          0.5.1      2024-04-01 [?] RSPM (R 4.4.0)
+   nlme             3.1-166    2024-08-14 [2] CRAN (R 4.4.2)
+   nloptr           2.1.1      2024-06-25 [1] RSPM (R 4.4.0)
+   nnet             7.3-19     2023-05-03 [2] CRAN (R 4.4.2)
+   numDeriv         2016.8-1.1 2019-06-06 [1] RSPM (R 4.4.0)
+   openssl          2.2.2      2024-09-20 [1] RSPM (R 4.4.0)
+   pbkrtest         0.5.3      2024-06-26 [1] RSPM (R 4.4.0)
+ P pillar           1.9.0      2023-03-22 [?] RSPM (R 4.4.0)
+ P pkgconfig        2.0.3      2019-09-22 [?] RSPM (R 4.4.0)
+   prettyunits      1.2.0      2023-09-24 [1] RSPM (R 4.4.0)
+   processx         3.8.4      2024-03-16 [1] RSPM (R 4.4.0)
+   progress         1.2.3      2023-12-06 [1] RSPM (R 4.4.0)
+   ps               1.8.0      2024-09-12 [1] RSPM (R 4.4.0)
+ P purrr          * 1.0.2      2023-08-10 [?] RSPM (R 4.4.0)
+   quantreg         5.98       2024-05-26 [1] RSPM (R 4.4.0)
+ P R6               2.5.1      2021-08-19 [?] RSPM (R 4.4.0)
+   ragg             1.3.3      2024-09-11 [1] RSPM (R 4.4.0)
+   rappdirs         0.3.3      2021-01-31 [1] RSPM (R 4.4.0)
+   RColorBrewer     1.1-3      2022-04-03 [1] RSPM (R 4.4.0)
+   Rcpp             1.0.13     2024-07-17 [1] RSPM (R 4.4.0)
+   RcppEigen        0.3.4.0.2  2024-08-24 [1] RSPM (R 4.4.0)
+ P readr          * 2.1.5      2024-01-10 [?] RSPM (R 4.4.0)
+   readxl           1.4.3      2023-07-06 [1] RSPM (R 4.4.0)
+   rematch          2.0.0      2023-08-30 [1] RSPM (R 4.4.0)
+   rematch2         2.1.2      2020-05-01 [1] RSPM (R 4.4.0)
+   reprex           2.1.1      2024-07-06 [1] RSPM (R 4.4.0)
+ P rlang            1.1.4      2024-06-04 [?] RSPM (R 4.4.0)
+ P rmarkdown        2.28       2024-08-17 [?] RSPM (R 4.4.0)
+ P rstatix        * 0.7.2      2023-02-01 [?] RSPM (R 4.4.0)
+   rstudioapi       0.16.0     2024-03-24 [1] RSPM (R 4.4.0)
+   rvest            1.0.4      2024-02-12 [1] RSPM (R 4.4.0)
+   sass             0.4.9      2024-03-15 [1] RSPM (R 4.4.0)
+ P scales           1.3.0      2023-11-28 [?] RSPM (R 4.4.0)
+   selectr          0.4-2      2019-11-20 [1] RSPM (R 4.4.0)
+   SparseM          1.84-2     2024-07-17 [1] RSPM (R 4.4.0)
+ P stringi          1.8.4      2024-05-06 [?] RSPM (R 4.4.0)
+ P stringr        * 1.5.1      2023-11-14 [?] RSPM (R 4.4.0)
+   survival         3.7-0      2024-06-05 [2] CRAN (R 4.4.2)
+   sys              3.4.3      2024-10-04 [1] RSPM (R 4.4.0)
+   systemfonts      1.1.0      2024-05-15 [1] RSPM (R 4.4.0)
+   textshaping      0.4.0      2024-05-24 [1] RSPM (R 4.4.0)
+ P tibble         * 3.2.1      2023-03-20 [?] RSPM (R 4.4.0)
+ P tidyr          * 1.3.1      2024-01-24 [?] RSPM (R 4.4.0)
+ P tidyselect       1.2.1      2024-03-11 [?] RSPM (R 4.4.0)
+ P tidyverse      * 2.0.0      2023-02-22 [?] RSPM (R 4.4.0)
+ P timechange       0.3.0      2024-01-18 [?] RSPM (R 4.4.0)
+   tinytex          0.53       2024-09-15 [1] RSPM (R 4.4.0)
+ P tzdb             0.4.0      2023-05-12 [?] RSPM (R 4.4.0)
+ P utf8             1.2.4      2023-10-22 [?] RSPM (R 4.4.0)
+   uuid             1.2-1      2024-07-29 [1] RSPM (R 4.4.0)
+ P vctrs            0.6.5      2023-12-01 [?] RSPM (R 4.4.0)
+   viridisLite      0.4.2      2023-05-02 [1] RSPM (R 4.4.0)
+   vroom            1.6.5      2023-12-05 [1] RSPM (R 4.4.0)
+ P withr            3.0.1      2024-07-31 [?] RSPM (R 4.4.0)
+ P xfun             0.48       2024-10-03 [?] RSPM (R 4.4.0)
+   xml2             1.3.6      2023-12-04 [1] RSPM (R 4.4.0)
+ P yaml             2.3.10     2024-07-26 [?] RSPM (R 4.4.0)
 
  [1] /home/runner/work/CAMIS/CAMIS/renv/library/linux-ubuntu-noble/R-4.4/x86_64-pc-linux-gnu
  [2] /opt/R/4.4.2/lib/R/library
@@ -550,7 +529,6 @@ Session Info
 </div>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->
