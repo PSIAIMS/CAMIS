@@ -1,0 +1,134 @@
+---
+title: "Sample size for K ordered binomial populations - Cochran-Armitage trend test"
+---
+
+```{r}
+#| echo: false
+#| include: false
+library(multiCA)
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+
+```{r}
+# samplesize:
+n.ttest(power = 0.8, alpha = 0.05, mean.diff = 8, sd1 = 15,
+        k = 1, design = "unpaired", fraction = "balanced", variance = "equal")
+
+```
+### Cochran-Armitage trend test {.unnumbered}
+
+See the StatXact [page](../R/wilcoxonsr_hodges_lehman.qmd) for the details of the calculations in StatXact and some background theory of the Cochran-Armitage trend test. We will attempt to replicate the results in R for the same examples. Power and sample size calculations for Cochran-Armitage trend test in R are available only in the multiCA [package](https://cran.r-project.org/web/packages/multiCA/multiCA.pdf)
+
+#### Example 1 - Power for dose finding pilot study {.unnumbered}
+
+Let's consider an example of a dose-finding phase I clinical trial of patients with advanced chronic disease. At the lowest dose level the response probability is known to be 0.001. The drug will be considered useful if the log odds of response increase by 0.5 per unit increase in dose (that defines the lambda). The study design assumes doubling the dose up to maximum of 16 units. Sample sizes of 10, 10, 10, 5 and 2, are proposed for the five dose levels, to restrict the total number of subjects at the two highest dose levels due to possible side effects. A one-sided Cochran-Armitage trend test at the 2.5% significance level will performed at the end of the study. What is the power?
+
+Design parameter are as below:
+
+```{r, echo=FALSE, fig.align='center', out.width="75%"}
+knitr::include_graphics("../images/samplesize/StatXact3.PNG")
+```
+
+SAS code:
+
+```{r}
+#| eval: false
+proc sxpowerbin;
+tr/ex;
+palpha 0.025;
+k 5;
+H0 0.001;
+H1 logodds /val=0.5;
+scores 1 2 4 8 16;
+size1 10;
+size2 10;
+size3 10;
+size4 5;
+size5 2;
+run;
+```
+
+Output from StatXact and results:
+
+```{r, echo=FALSE, fig.align='center', out.width="75%"}
+knitr::include_graphics("../images/samplesize/StatXact1.PNG")
+```
+
+The exact power is 48%, whilst the asymptotic power is 84%. Here, using the asymptotic power would have led to a false sense of security concerning the adequacy of the proposed sample sizes for carrying out this pilot study.
+
+#### Example 2 - Power for cohort study of effects of low dose radiation {.unnumbered}
+
+Let's consider an example of a long-term follow-up study of subjects exposed to low-dose radiation in Japan (adapted from Landis, Heyman and Koch, 1978). The cohort was partitioned into four groups based on average radiation exposures of 0, 5, 30 and 75 rads. There were 2500, 3600, 1450 and 410 subjects, respectively, in the four dose groups. Subjects were classified as responders if they died from leukemia and non-responders if they died from other causes. We want detect a trend parameter of 0.049 on the logit scale, given a background response rate of 1 in 10,000. A one-sided Cochran-Armitage trend test at the 5% significance level was performed at the end of the study. What was the power?
+
+Design parameter are as below:
+
+```{r, echo=FALSE, fig.align='center', out.width="75%"}
+knitr::include_graphics("../images/samplesize/StatXact5.PNG")
+```
+
+SAS code:
+
+```{r}
+#| eval: false
+proc sxpowerbin;
+tr/ex dist_file=tr;
+palpha 0.05;
+k 4;
+H0 0.0001;
+H1 logodds /val=0.049;
+scores 0 5 30 75;
+size1 2500;
+size2 3600;
+size3 1450;
+size4 410;
+run;
+```
+
+Output from StatXact and results:
+
+```{r, echo=FALSE, fig.align='center', out.width="75%"}
+knitr::include_graphics("../images/samplesize/StatXact4.PNG")
+```
+
+Asymptotic power of the test is 77%, a considerable overestimate of the actual power, 60%.
+
+#### Example 3 - Sample size calculation for trend test {.unnumbered}
+
+Let's consider an example of the study where the design parameters are as below:
+
+```{r, echo=FALSE, fig.align='center', out.width="75%"}
+knitr::include_graphics("../images/samplesize/StatXact6.PNG")
+```
+
+What is the required sample size to achieve the power of 80% with the significance level 5%?
+
+SAS code:
+
+```{r}
+#| eval: false
+proc sxpowerbin ti =15;
+tr/ex;
+palpha 0.05;
+beta 0.8;
+k 5;
+H0 0.10;
+H1 user/val=0.13 0.16 0.19 0.22;
+scores 0 1 2 4 8;
+run;
+```
+
+(option ti = 15 limits the maximum time of computation to 15 min)
+
+Output from StatXact and results:
+
+```{r, echo=FALSE, fig.align='center', out.width="75%"}
+knitr::include_graphics("../images/samplesize/StatXact7.PNG")
+```
+
+Sample size of 108 is needed to obtain the required power.
+
+#### References {.unnumbered}
+
+All of the examples are adapted from StatXact 12 PROCs Manual.
