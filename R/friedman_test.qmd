@@ -1,0 +1,135 @@
+---
+title: "Friedman Test Analysis"
+date: "2025-04-09"
+output: html_document
+---
+
+## Friedman Test Analysis
+
+Friedman's test is a non-parametric statistical test used to detect differences in treatments across multiple test attempts. It is often used when the assumptions of ANOVA are not met, particularly the assumption of normality. The test is applicable for repeated measures, or matched groups, making it useful for situations where the same subjects are subjected to different treatments.
+
+Friedman’s test ranks the data points within each block (or subject) separately, and then analyzes these ranks to see if the mean ranks differ between the groups and conditions. If the test shows significant differences, this suggests that at least one of the treatments differs from the others. Because it is non-parametric, it does not assume the normal distribution of data, which makes it robust for skewed or ordinal data.
+
+
+```{r load-packages}
+#| message: FALSE
+#| warning: FALSE
+#| eval: TRUE
+
+# Load required packages
+library(tidyverse)
+library(broom)
+library(rstatix) 
+
+```
+
+
+### Hypotheses
+
+H₀ (Null Hypothesis): There are no significant differences in weight outcomes between the three diets
+
+H₁ (Alternative Hypothesis): There are significant differences in weight outcomes between at least two diets 
+
+```{r create-data}
+
+# Create the dataset
+Diet_A = c(75, 68, 80, 72, 85, 70, 82, 78, 75, 83)
+
+Diet_B = c(82, 70, 85, 78, 88, 75, 85, 80, 79, 87)
+
+Diet_C = c(78, 65, 82, 75, 84, 72, 80, 76, 77, 84)
+
+data <- tibble(
+  subjid = rep(1:10, 3),
+  diet = rep(c("A", "B", "C"), each = 10), 
+  weight = c(Diet_A, Diet_B, Diet_C)
+)
+
+```
+
+### Base R {stats}
+
+To run a Friedman's test in R you can use the {stats} package. This will return the chi-squared test statistic and p-value. 
+```{r friedman-test}
+
+# Perform Friedman test
+
+friedman_test <- friedman.test(weight ~ diet | subjid, data = data)
+
+friedman_test
+
+```
+To get these values easily into a data.frame you can use the `tidy()` function from {broom}.
+```{r}
+tidy(friedman_test)
+```
+
+### {rstatix}
+
+Alternatively, you can use the {rstatix} package. While these packages give the same results, the {rstatix} results come as a tibble we can easily use. 
+```{r}
+test <- data %>% 
+  friedman_test(weight ~ diet | subjid)
+test
+```
+
+```{r visualization, fig.width=8, fig.height=6}
+
+# Create boxplot
+
+ggplot(data, aes(x = diet, y = weight, fill = diet)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Weight Distribution Across Different Diets",
+       x = "Diet Type",
+       y = "Weight") 
+
+```
+
+### Conclusion
+
+Based on the analysis:
+
+1.  **Statistical Test Results:**
+
+-   The Friedman test yielded a p-value of `r friedman_test$p.value`
+
+\[If p \< 0.05, we reject the null hypothesis
+
+If p \> 0.05, we fail to reject the null hypothesis\]
+
+2.  **Visual Analysis:**
+
+-   From the boxplot, Diet B shows the highest median weight
+
+-   Diet B also appears to have the highest overall weight distribution
+
+-   Diet A and Diet C show similar distributions but lower than Diet B
+
+
+3.  **Interpretation:**
+
+-   If the goal is weight gain: Diet B appears most effective
+
+-   If the goal is weight maintenance: Diet A or C might be more suitable
+
+-   However, individual responses vary, as shown by the overlapping distributions
+
+## Reference
+
+*Cite all sources and references used in the analysis.*
+
+::: {.callout-note collapse="true" title="Session Info"}
+```{r}
+#| echo: false
+# List all the packages needed 
+si <- sessioninfo::session_info(c(
+  #Create a vector of all the packages used in this file 
+  "tidyverse",
+  "broom",
+  "rstatix"
+))
+si
+```
+:::
+
