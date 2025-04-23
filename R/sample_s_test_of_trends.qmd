@@ -10,16 +10,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```
 
-
-```{r}
-# samplesize:
-n.ttest(power = 0.8, alpha = 0.05, mean.diff = 8, sd1 = 15,
-        k = 1, design = "unpaired", fraction = "balanced", variance = "equal")
-
-```
 ### Cochran-Armitage trend test {.unnumbered}
 
-See the StatXact [page](../R/wilcoxonsr_hodges_lehman.qmd) for the details of the calculations in StatXact and some background theory of the Cochran-Armitage trend test. We will attempt to replicate the results in R for the same examples. Power and sample size calculations for Cochran-Armitage trend test in R are available only in the multiCA [package](https://cran.r-project.org/web/packages/multiCA/multiCA.pdf)
+See the StatXact [page](../SAS/sample_s_StatXact_test_of_trends.qmd) for the details of the calculations in StatXact and some background theory of the Cochran-Armitage trend test. We will attempt to replicate the results in R for the same examples. Power and sample size calculations for Cochran-Armitage trend test in R are available only in the multiCA [package](https://cran.r-project.org/web/packages/multiCA/multiCA.pdf)
 
 #### Example 1 - Power for dose finding pilot study {.unnumbered}
 
@@ -31,32 +24,53 @@ Design parameter are as below:
 knitr::include_graphics("../images/samplesize/StatXact3.PNG")
 ```
 
-SAS code:
+Initially, we need to compute probabilities by defining the logit trend model (unless they are defined by linear trend, which is not the case here):
 
 ```{r}
-#| eval: false
-proc sxpowerbin;
-tr/ex;
-palpha 0.025;
-k 5;
-H0 0.001;
-H1 logodds /val=0.5;
-scores 1 2 4 8 16;
-size1 10;
-size2 10;
-size3 10;
-size4 5;
-size5 2;
-run;
+# logit function of trend to compute probabilities
+logit_trend <- function(p0, slope, xvec){
+    logit0 <- log(p0/(1-p0))
+    logit_seq <- logit0 + (xvec - xvec[1]) * slope
+    pvec <- 1/(1+exp(-logit_seq))
+    pvec
+}
+
+# vector of probabilities (from the logit model):
+p0 <- logit_trend(0.001, slope=0.5, x=c(1,2,4,8,16))
+
+# or simply (based on the study design table):
+p0 <- c(0.001, 0.016, 0.0045, 0.0321, 0.6441)
+
 ```
 
-Output from StatXact and results:
+Now, function power.CA.test can be used:
 
-```{r, echo=FALSE, fig.align='center', out.width="75%"}
-knitr::include_graphics("../images/samplesize/StatXact1.PNG")
+```{r}
+power.CA.test(N = 37, 
+              pvec=p0, 
+              n.prop = c(10,10,10,5,2), 
+              scores = c(1,2,4,8,16),
+              alternative = "greater",
+              sig.level=0.025)
+
 ```
 
-The exact power is 48%, whilst the asymptotic power is 84%. Here, using the asymptotic power would have led to a false sense of security concerning the adequacy of the proposed sample sizes for carrying out this pilot study.
+Asymptotic power is equal to 82%.
+
+Note: We can obtain the same results using **alternative = "two.sided"** and **sig.level=0.05**.
+
+Function power.multiCA.test is designed to calculate power of detecting trend in a categorical (multinomial) outcome. It does work as well in the special case of a binary outcome. However, the computation uses an approximation that is difficult to avoid for the multinomial setting but is not strictly necessary with the binary setting -- as a result power may slightly biased away from 50%. Additionally, only two-sided power is implemented there, but we can still use it knowing that 5% is the two-sided significance level corresponding to the one-sided test with 2.5% significance level.
+
+```{r}
+power.multiCA.test(N=37, 
+                   pmatrix=rbind(p0, 1-p0),  
+                   scores = c(1,2,4,8,16), 
+                   n.prop = c(10,10,10,5,2),
+                   sig.level=0.05)
+
+```
+
+Asymptotic power is equal to 96%. Result is much higher than the one from power.CA.test function, which is designed for binary outcomes.
 
 #### Example 2 - Power for cohort study of effects of low dose radiation {.unnumbered}
 
@@ -68,31 +82,21 @@ Design parameter are as below:
 knitr::include_graphics("../images/samplesize/StatXact5.PNG")
 ```
 
-SAS code:
+R code:
 
 ```{r}
-#| eval: false
-proc sxpowerbin;
-tr/ex dist_file=tr;
-palpha 0.05;
-k 4;
-H0 0.0001;
-H1 logodds /val=0.049;
-scores 0 5 30 75;
-size1 2500;
-size2 3600;
-size3 1450;
-size4 410;
-run;
+# only using the power.CA.test and previously defined logit model:
+p1 <- logit_trend(0.0001, slope=0.049, x=c(0, 5, 30, 75))
+
+power.CA.test(N = 7960, 
+              pvec=p1, 
+              n.prop = c(2500, 3600, 1450, 410), 
+              scores = c(0, 5, 30, 75),
+              alternative = "greater",
+              sig.level=0.025)
 ```
 
-Output from StatXact and results:
-
-```{r, echo=FALSE, fig.align='center', out.width="75%"}
-knitr::include_graphics("../images/samplesize/StatXact4.PNG")
-```
-
-Asymptotic power of the test is 77%, a considerable overestimate of the actual power, 60%.
+Asymptotic power is equal to 72%.
 
 #### Example 3 - Sample size calculation for trend test {.unnumbered}
 
@@ -104,31 +108,26 @@ knitr::include_graphics("../images/samplesize/StatXact6.PNG")
 
 What is the required sample size to achieve the power of 80% with the significance level 5%?
 
-SAS code:
+R code:
 
 ```{r}
-#| eval: false
-proc sxpowerbin ti =15;
-tr/ex;
-palpha 0.05;
-beta 0.8;
-k 5;
-H0 0.10;
-H1 user/val=0.13 0.16 0.19 0.22;
-scores 0 1 2 4 8;
-run;
+power.CA.test(power=0.8, 
+              pvec=c(0.10, 0.13, 0.16, 0.19, 0.22), 
+              scores = c(0, 1, 2, 4, 8),
+              alternative = "greater", 
+              sig.level=0.05)
 ```
 
-(option ti = 15 limits the maximum time of computation to 15 min)
+Sample size N=527 subjects is required to achieve asymptotic power of 80%. That is the total sample size, including all the treatment arms/groups.
 
-Output from StatXact and results:
+#### Additional notes {.unnumbered}
 
-```{r, echo=FALSE, fig.align='center', out.width="75%"}
-knitr::include_graphics("../images/samplesize/StatXact7.PNG")
-```
+-   There are 2 methods to compute the asymptotic power:
 
-Sample size of 108 is needed to obtain the required power.
+o Lachin, John M. 2011. "Power and Sample Size Evaluation for the Cochran-Mantel-Haenszel Mean Score (Wilcoxon Rank Sum) Test and the Cochran-Armitage Test for Trend." Stat Med 30 (25): 3057--66. https://doi.org/10.1002/sim.4330.
 
-#### References {.unnumbered}
+o Nam, Jun-mo. 1987. "A Simple Approximation for Calculating Sample Sizes Detecting Linear Trend in Proportions." Biometrics, 701--5. In R, power.multiCA.test uses the first one and power.CA.test the second.
 
-All of the examples are adapted from StatXact 12 PROCs Manual.
+-   StatXact is calculating the (exact or asymptotic) power of the exact CA test, and not the exact power of the asymptotic test. That is not implemented in multiCA package in R.
+
+-   Kudos to Aniko, author of the package, for extra detailed explanations and her continuous work on that unique and extremely useful package!
