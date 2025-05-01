@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.29">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Propensity Score Matching</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../images/logo.png" rel="icon" type="image/png">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-0815c480559380816a4d1ea211a47e91.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-5c6cb2aec0d5161c76be6e2a7220dc2f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../images/logo.png" alt="" class="navbar-logo">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../contribution/contribution.html"> 
+<span class="menu-text">Contribute</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-publications-and-projects" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Publications and projects</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-publications-and-projects">    
+        <li>
+    <a class="dropdown-item" href="../publication/white_paper.html">
+ <span class="dropdown-text">White paper</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/conference.html">
+ <span class="dropdown-text">Conferences</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/dissertation.html">
+ <span class="dropdown-text">Academic projects</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-news" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">News</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-news">    
+        <li>
+    <a class="dropdown-item" href="../minutes/index.html">
+ <span class="dropdown-text">Meeting minutes</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../blogs/index.html">
+ <span class="dropdown-text">Blogs</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+    <div class="dropdown">
+      <a href="" title="" id="quarto-navigation-tool-dropdown-0" class="quarto-navigation-tool dropdown-toggle px-1" data-bs-toggle="dropdown" aria-expanded="false" role="link" aria-label=""><i class="bi bi-github"></i></a>
+      <ul class="dropdown-menu" aria-labelledby="quarto-navigation-tool-dropdown-0">
+          <li>
+            <a class="dropdown-item quarto-navbar-tools-item" href="https://github.com/PSIAIMS/CAMIS/">
+            Source Code
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item quarto-navbar-tools-item" href="https://github.com/PSIAIMS/CAMIS/issues/">
+            Report a Difference
+            </a>
+          </li>
+      </ul>
+    </div>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#differences" id="toc-differences" class="nav-link" data-scroll-target="#differences">Differences</a>
+  <ul class="collapse">
+  <li><a href="#options" id="toc-options" class="nav-link" data-scroll-target="#options">Options</a></li>
+  <li><a href="#output" id="toc-output" class="nav-link" data-scroll-target="#output">Output</a>
+  <ul class="collapse">
+  <li><a href="#statistics" id="toc-statistics" class="nav-link" data-scroll-target="#statistics">Statistics</a></li>
+  <li><a href="#figures" id="toc-figures" class="nav-link" data-scroll-target="#figures">Figures</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#dataset" id="toc-dataset" class="nav-link" data-scroll-target="#dataset">Dataset</a></li>
+  <li><a href="#matching-examples" id="toc-matching-examples" class="nav-link" data-scroll-target="#matching-examples">Matching Examples</a>
+  <ul class="collapse">
+  <li><a href="#greedy-nearest-neighbor-1-to-1-matching-with-common-support-region" id="toc-greedy-nearest-neighbor-1-to-1-matching-with-common-support-region" class="nav-link" data-scroll-target="#greedy-nearest-neighbor-1-to-1-matching-with-common-support-region">Greedy Nearest Neighbor 1 to 1 matching with common support region</a>
+  <ul class="collapse">
+  <li><a href="#sas" id="toc-sas" class="nav-link" data-scroll-target="#sas">SAS</a></li>
+  <li><a href="#r" id="toc-r" class="nav-link" data-scroll-target="#r">R</a></li>
+  </ul></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Propensity Score Matching</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Propensity score (PS) matching is a statistical technique widely employed in Real World Evidence (RWE) studies to address confounding bias and facilitate the estimation of causal treatment effects. By estimating the probability of treatment assignment based on observed covariates, PS matching aims to create comparable treatment and control groups. While both SAS and R provide methods to do PS matching, the syntax and available options differ considerably, potentially leading to variations in analytical outcomes. The PS matching process generally involves several key stages: first, the estimation of propensity scores using a regression model; second, the specification of a region of common support to ensure overlap between treatment and control groups; and third, the matching of treated and control subjects based on their calculated propensity scores.</p>
+</section>
+<section id="differences" class="level1">
+<h1>Differences</h1>
+<p>Given the extensive number of parameters and arguments available in both <code>PROC PSMATCH</code> and <code>matchit()</code>, we will focus only on the observed differences.</p>
+<section id="options" class="level2">
+<h2 class="anchored" data-anchor-id="options">Options</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 30%">
+<col style="width: 54%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Option</th>
+<th>PROC PSMATCH</th>
+<th>matchit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Distance</td>
+<td><em>PS, LPS</em>; only for matching: <em>mahalanobis</em>, <em>euclidean</em></td>
+<td><em>PS</em>, <em>euclidean</em>, <em>scaled_euclidean</em>, <em>mahalanobis</em>, <em>robust_mahalanobis</em></td>
+</tr>
+<tr class="even">
+<td>PS methods</td>
+<td>logistic regression</td>
+<td>glm, gam, gbm, lasso, ridge, elasticnet with different links, partitioning tree, RF, single-hidden-layer neural network, covariate balancing propensity score (CBPS) algorithm, Bayesian additive regression trees (BART)</td>
+</tr>
+<tr class="odd">
+<td>Region</td>
+<td>Always used; <em>allobs</em>, <em>treated</em> or <em>cs</em> (common support), with allowed extension</td>
+<td><em>none</em>, <em>treated</em>, <em>control</em>, <em>both</em> (common support)</td>
+</tr>
+<tr class="even">
+<td>Caliper</td>
+<td>Applies only to the distance metric, such that distance&lt;=caliper</td>
+<td>Can be applied to both covariates and distance metric. If a positive value is supplied, it functions as in SAS; If a negative value is supplied, it imposes the condition distance &gt; abs(caliper).</td>
+</tr>
+<tr class="odd">
+<td>PS std.dev formula when caliper applied as multiplier</td>
+<td>sqrt((sd(PS<sub>trt</sub>)<sup>2</sup>+sd(P<sub>control</sub>)<sup>2</sup>)/2)</td>
+<td>sd(PS<sub>all</sub>)</td>
+</tr>
+<tr class="even">
+<td>Matching methods</td>
+<td><em>greedy</em> (greedy nn), <em>full</em>, <em>optimal</em>, <em>replace</em>, <em>varratio</em></td>
+<td><em>nearest</em> (greedy nn), <em>full</em>, <em>optimal</em>, <em>quick</em>, <em>genetic</em>, <em>cem</em>, <em>exact</em>, <em>cardinality</em>, <em>subclass</em></td>
+</tr>
+<tr class="odd">
+<td>Method=optimal options</td>
+<td>Only K should be supplied</td>
+<td>In addition to k (number of matches), the tol option can also be specified, and its value can significantly impact the matching results.</td>
+</tr>
+<tr class="even">
+<td>Method=full options</td>
+<td>n max controls, n max treated, mean n treated, n controls, pct controls</td>
+<td>n min controls, n max controls, mean n controls, fraction to omit, tol, solver</td>
+</tr>
+<tr class="odd">
+<td>Mahalanobis distance</td>
+<td>PS are always calculated to determine the region; only numeric covariates are allowed in MAHVARS option</td>
+<td>mahvars accepts any var type; region calculation is ommited when distance=<em>mahalanobis</em>, but can be performed when distance=<em>glm</em> and mahvars is supplied with a formula</td>
+</tr>
+<tr class="even">
+<td>Covariance matrix for mahalanobis distance</td>
+<td>Computed from trt obs and control obs</td>
+<td>Is pooled within-group, computed from trt mean-centered covariates of the full sample</td>
+</tr>
+<tr class="odd">
+<td>Replace</td>
+<td>Could be specified only as method=<em>replace</em>; in the output, match IDs are shared among all subjects within a matched set.</td>
+<td>Could be specified as an argument (e.g.&nbsp;replace=<em>TRUE</em>). In the output, each treated subject receives up to K matched controls</td>
+</tr>
+<tr class="even">
+<td>Estimands</td>
+<td>ATT, ATE</td>
+<td>ATT, ATE, ATC</td>
+</tr>
+<tr class="odd">
+<td>Reestimate</td>
+<td>Not available</td>
+<td>Could be specified as an argument (e.g.&nbsp;reestimate=<em>TRUE</em>)</td>
+</tr>
+<tr class="even">
+<td>Exact, anti-exact</td>
+<td>Only exact matching is available and can only be performed on variables listed in the CLASS statement.</td>
+<td>Both exact and anti-exact matching are available, with no restrictions on the variable types.</td>
+</tr>
+<tr class="odd">
+<td>Normalization</td>
+<td>Not available</td>
+<td>Could be specified as an argument (e.g.&nbsp;normalize=<em>TRUE</em>)</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="output" class="level2">
+<h2 class="anchored" data-anchor-id="output">Output</h2>
+<p>The way SAS and R show the results of matching is different. The output from SAS matching is presented as a dataset where each treated subject (or all subjects) is given a row, and a match ID column containing a unique pair (or group) identifier is included:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th></th>
+<th>TRTP</th>
+<th>_MatchID</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>trt</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>trt</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>control</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>control</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<p>In contrast, the <code>matchit()</code> function in R returns a matrix, where each treated unit’s identifier is associated with the identifiers of its k matched control units:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th></th>
+<th>[,1]</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>“3”</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>“4”</td>
+</tr>
+</tbody>
+</table>
+<section id="statistics" class="level3">
+<h3 class="anchored" data-anchor-id="statistics">Statistics</h3>
+<p>In SAS, descriptive statistics for assessing balance are primarily generated through the <code>ASSESS</code> statement within <code>PROC PSMATCH</code>. Conversely, in R, balance diagnostics could be obtained by applying the <code>summary()</code> function to the output object returned by the <code>matchit()</code>. The following table summarizes the balance statistics available in SAS and R:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Stat</th>
+<th style="text-align: center;">All</th>
+<th style="text-align: center;">Region</th>
+<th style="text-align: center;">Matched</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">N</td>
+<td style="text-align: center;">SAS &amp; R</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS &amp; R</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PS mean</td>
+<td style="text-align: center;">SAS &amp; R</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS &amp; R</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PS std</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PS min</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PS max</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Vars mean</td>
+<td style="text-align: center;">SAS &amp; R</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS &amp; R</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Vars std</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Vars min</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Vars max</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PS mean diff</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PS SMD</td>
+<td style="text-align: center;">SAS &amp; R</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS &amp; R</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PS perc. red.</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PS var ratio</td>
+<td style="text-align: center;">SAS &amp; R</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS &amp; R</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Vars mean diff</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Vars SMD</td>
+<td style="text-align: center;">SAS &amp; R</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS &amp; R</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Vars perc. red.</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Vars var ratio</td>
+<td style="text-align: center;">SAS &amp; R</td>
+<td style="text-align: center;">SAS</td>
+<td style="text-align: center;">SAS &amp; R</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PS eCDF min</td>
+<td style="text-align: center;">R</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">R</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PS eCDF max</td>
+<td style="text-align: center;">R</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">R</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Vars eCDF min</td>
+<td style="text-align: center;">R</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">R</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Vars eCDF max</td>
+<td style="text-align: center;">R</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">R</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PS std pair distance</td>
+<td style="text-align: center;">R</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">R</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Vars std pair distance</td>
+<td style="text-align: center;">R</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">R</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="figures" class="level3">
+<h3 class="anchored" data-anchor-id="figures">Figures</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 60%">
+<col style="width: 27%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Plot type</th>
+<th>R</th>
+<th>SAS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Love plot</td>
+<td><ul>
+<li><p><u>plot()</u>: -</p></li>
+<li><p><u>cobalt:</u> many different settings.</p></li>
+</ul></td>
+<td><p><strong>Displayed for:</strong> all/region/matched/weighted matched, trt/control.</p>
+<p><strong>Includes</strong> PS, all numeric and binary variables.</p></td>
+</tr>
+<tr class="even">
+<td>General distribution plots</td>
+<td><ul>
+<li><p><u>plot():</u> <strong>Displayed for:</strong> all/matched. <strong>Includes</strong> all variables; numeric - distribution plots, character and factor - histograms.</p></li>
+<li><p><u>cobalt</u> : Highly customizable plots.</p></li>
+</ul></td>
+<td><p><strong>Displayed for:</strong> all/region/matched/weighted matched, trt/control.</p>
+<p><strong>Includes</strong> PS and all variables.</p>
+<p>For PS and numeric - boxplots, character - barplots.</p></td>
+</tr>
+<tr class="odd">
+<td>eCDF plots</td>
+<td><p><u>plot():</u></p>
+<p><strong>Displayed for:</strong> all/matched.</p>
+<p><strong>Includes</strong> all variables.</p></td>
+<td><p><strong>Displayed for:</strong> all/region/matched/weighted matched, trt/control.</p>
+<p><strong>Includes</strong> PS and all numeric variables.</p></td>
+</tr>
+<tr class="even">
+<td>eQQ plots</td>
+<td><p><u>plot():</u></p>
+<p><strong>Displayed for:</strong> all/matched.</p>
+<p><strong>Includes</strong> all variables.</p></td>
+<td>-</td>
+</tr>
+<tr class="odd">
+<td>Cloud plots</td>
+<td><p><u>plot():</u></p>
+<p><strong>Displayed for:</strong> all/matched, trt/control.</p>
+<p><strong>Includes</strong> PS.</p>
+<p>Presented as 4 separate clouds.</p></td>
+<td><p><strong>Displayed for:</strong> all/region/matched/weighted matched, trt/control.</p>
+<p><strong>Includes</strong> PS and all numeric variables.</p>
+<p>Presented as 2 separate clouds per variable.</p></td>
+</tr>
+<tr class="even">
+<td>PS histogram</td>
+<td><ul>
+<li><p><u>plot()</u>: <strong>Displayed for:</strong> all/matched, trt/control. <strong>Includes</strong> PS.</p></li>
+<li><p><u>cobalt</u>: Highly customizable plots.</p></li>
+</ul></td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+<section id="dataset" class="level1">
+<h1>Dataset</h1>
+<p>Data description</p>
+<pre><code>
+                           trt              control       Standardized
+Characteristic          (N = 120)          (N = 180)       Mean Diff.
+
+  sex                                                        0.1690
+    F                  70 (58.3 %)        90 (50.0 %)        
+    M                  50 (41.7 %)        90 (50.0 %)
+    
+  age                 61.5 (17.12)       49.4 (10.55)        0.7057
+  
+  weight              67.3 ( 7.33)       63.8 ( 9.64)        0.4741
+  
+  bmi_cat   
+    underweight        34 (28.3 %)        63 (35.0 %)       -0.1479  
+    normal             57 (47.5 %)        61 (33.9 %)        0.2726
+    overweight         29 (24.2 %)        56 (31.1 %)       -0.1622
+    </code></pre>
+</section>
+<section id="matching-examples" class="level1">
+<h1>Matching Examples</h1>
+<section id="greedy-nearest-neighbor-1-to-1-matching-with-common-support-region" class="level2">
+<h2 class="anchored" data-anchor-id="greedy-nearest-neighbor-1-to-1-matching-with-common-support-region">Greedy Nearest Neighbor 1 to 1 matching with common support region</h2>
+<section id="sas" class="level3">
+<h3 class="anchored" data-anchor-id="sas">SAS</h3>
+<pre><code>proc psmatch data=data region=cs(extend=0);
+    class trtp sex bmi_cat;
+    psmodel trtp(Treated="trt")= sex weight age bmi_cat;
+    match distance=PS 
+        method=greedy(k=1 order=descending) 
+        caliper(MULT=ONE)=0.25;
+    output out(obs=match)=ps_res matchid=_MatchID ps=_PScore;
+run;</code></pre>
+</section>
+<section id="r" class="level3">
+<h3 class="anchored" data-anchor-id="r">R</h3>
+<pre><code>ps_res &lt;- matchit(trtp ~ sex + weight + age + bmi_cat, 
+                  data=data, 
+                  method="nearest", 
+                  distance="glm", 
+                  link="logit", 
+                  discard="both",
+                  m.order="largest",
+                  replace=FALSE,
+                  caliper=0.25, 
+                  std.caliper=FALSE,
+                  ratio=1,
+                  normalize=FALSE)</code></pre>
+<p>The following arguments, when altered in the previous example, can still produce matching results comparable between SAS and R:</p>
+<ul>
+<li><p><code>region</code> (<code>discard</code>)</p></li>
+<li><p><code>caliper</code> value</p></li>
+<li><p><code>order</code></p></li>
+<li><p><code>k</code> (<code>ratio</code>)</p></li>
+<li><p><code>exact</code></p></li>
+</ul>
+
+
+</section>
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
