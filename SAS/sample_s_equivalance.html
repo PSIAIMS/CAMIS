@@ -6,9 +6,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="dcterms.date" content="2025-04-09">
 
-<title>Friedman Test Analysis</title>
+<title>Sample Size for Equivalence Trials in SAS</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -105,6 +104,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -199,14 +227,28 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#friedman-test-analysis" id="toc-friedman-test-analysis" class="nav-link active" data-scroll-target="#friedman-test-analysis">Friedman Test Analysis</a>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#one-sample-equivalence-test" id="toc-one-sample-equivalence-test" class="nav-link" data-scroll-target="#one-sample-equivalence-test"><strong>One-sample equivalence test</strong></a></li>
+  <li><a href="#two-sample-equality-test-comparing-means-for-parallel-design-unpaired" id="toc-two-sample-equality-test-comparing-means-for-parallel-design-unpaired" class="nav-link" data-scroll-target="#two-sample-equality-test-comparing-means-for-parallel-design-unpaired"><strong>Two Sample Equality test: Comparing means for parallel design (unpaired)</strong></a>
   <ul class="collapse">
-  <li><a href="#hypotheses" id="toc-hypotheses" class="nav-link" data-scroll-target="#hypotheses">Hypotheses</a></li>
-  <li><a href="#base-r-stats" id="toc-base-r-stats" class="nav-link" data-scroll-target="#base-r-stats">Base R {stats}</a></li>
-  <li><a href="#rstatix" id="toc-rstatix" class="nav-link" data-scroll-target="#rstatix">{rstatix}</a></li>
-  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  <li><a href="#example-1-equality-equivalence-test" id="toc-example-1-equality-equivalence-test" class="nav-link" data-scroll-target="#example-1-equality-equivalence-test">Example 1: Equality equivalence test</a>
+  <ul class="collapse">
+  <li><a href="#sample-size-for-comparison-of-2-independent-treatment-group-means-with-same-known-sds-and-assuming-a-true-difference-between-the-treatments-is-zero" id="toc-sample-size-for-comparison-of-2-independent-treatment-group-means-with-same-known-sds-and-assuming-a-true-difference-between-the-treatments-is-zero" class="nav-link" data-scroll-target="#sample-size-for-comparison-of-2-independent-treatment-group-means-with-same-known-sds-and-assuming-a-true-difference-between-the-treatments-is-zero">Sample size for comparison of 2 independent treatment group means with same known SDs and assuming a true difference between the treatments is zero</a></li>
   </ul></li>
-  <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">Reference</a></li>
+  <li><a href="#example-2-tost-bio-equivalence" id="toc-example-2-tost-bio-equivalence" class="nav-link" data-scroll-target="#example-2-tost-bio-equivalence">Example 2: TOST Bio-Equivalence</a>
+  <ul class="collapse">
+  <li><a href="#sample-size-for-comparison-of-2-independent-treatment-group-mean-differences-with-same-known-sds-true-difference-not-believed-to-be-0-eg.-perhaps-a-1-difference-but-we-want-to-know-if-the-drugs-are-bio-equivalent-within-5." id="toc-sample-size-for-comparison-of-2-independent-treatment-group-mean-differences-with-same-known-sds-true-difference-not-believed-to-be-0-eg.-perhaps-a-1-difference-but-we-want-to-know-if-the-drugs-are-bio-equivalent-within-5." class="nav-link" data-scroll-target="#sample-size-for-comparison-of-2-independent-treatment-group-mean-differences-with-same-known-sds-true-difference-not-believed-to-be-0-eg.-perhaps-a-1-difference-but-we-want-to-know-if-the-drugs-are-bio-equivalent-within-5.">Sample size for comparison of 2 independent treatment group mean differences with same known SDs, ‘true’ difference not believed to be 0 (eg. perhaps a 1% difference), but we want to know if the drugs are bio-equivalent within 5%.</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#comparing-means-for-crossover-design-paired" id="toc-comparing-means-for-crossover-design-paired" class="nav-link" data-scroll-target="#comparing-means-for-crossover-design-paired"><strong>Comparing means for crossover design (paired)</strong></a>
+  <ul class="collapse">
+  <li><a href="#estimating-the-within-patient-variance-and-correlation." id="toc-estimating-the-within-patient-variance-and-correlation." class="nav-link" data-scroll-target="#estimating-the-within-patient-variance-and-correlation."><strong>Estimating the within patient variance and correlation.</strong></a>
+  <ul class="collapse">
+  <li><a href="#example" id="toc-example" class="nav-link" data-scroll-target="#example">Example</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  <li><a href="#version" id="toc-version" class="nav-link" data-scroll-target="#version">Version</a></li>
+  </ul></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -215,7 +257,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Friedman Test Analysis</h1>
+<h1 class="title">Sample Size for Equivalence Trials in SAS</h1>
 </div>
 
 
@@ -226,7 +268,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">April 9, 2025</p>
+      <p class="date">1 May, 2025</p>
     </div>
   </div>
   
@@ -238,127 +280,155 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="friedman-test-analysis" class="level2">
-<h2 class="anchored" data-anchor-id="friedman-test-analysis">Friedman Test Analysis</h2>
-<p>Friedman’s test is a non-parametric statistical test used to detect differences in treatments across multiple test attempts. It is often used when the assumptions of ANOVA are not met, particularly the assumption of normality. The test is applicable for repeated measures, or matched groups, making it useful for situations where the same subjects are subjected to different treatments.</p>
-<p>Friedman’s test ranks the data points within each block (or subject) separately, and then analyzes these ranks to see if the mean ranks differ between the groups and conditions. If the test shows significant differences, this suggests that at least one of the treatments differs from the others. Because it is non-parametric, it does not assume the normal distribution of data, which makes it robust for skewed or ordinal data.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load required packages</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rstatix) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<section id="hypotheses" class="level3">
-<h3 class="anchored" data-anchor-id="hypotheses">Hypotheses</h3>
-<p>H₀ (Null Hypothesis): There are no significant differences in weight outcomes between the three diets</p>
-<p>H₁ (Alternative Hypothesis): There are significant differences in weight outcomes between at least two diets</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the dataset</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>Diet_A <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">75</span>, <span class="dv">68</span>, <span class="dv">80</span>, <span class="dv">72</span>, <span class="dv">85</span>, <span class="dv">70</span>, <span class="dv">82</span>, <span class="dv">78</span>, <span class="dv">75</span>, <span class="dv">83</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>Diet_B <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">82</span>, <span class="dv">70</span>, <span class="dv">85</span>, <span class="dv">78</span>, <span class="dv">88</span>, <span class="dv">75</span>, <span class="dv">85</span>, <span class="dv">80</span>, <span class="dv">79</span>, <span class="dv">87</span>)</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>Diet_C <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">78</span>, <span class="dv">65</span>, <span class="dv">82</span>, <span class="dv">75</span>, <span class="dv">84</span>, <span class="dv">72</span>, <span class="dv">80</span>, <span class="dv">76</span>, <span class="dv">77</span>, <span class="dv">84</span>)</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">subjid =</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="dv">3</span>),</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">diet =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"C"</span>), <span class="at">each =</span> <span class="dv">10</span>), </span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">weight =</span> <span class="fu">c</span>(Diet_A, Diet_B, Diet_C)</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>PROC POWER<sup>1</sup> can be used for sample size calculations for equivalence testing<sup>2</sup>. It can calculate sample size for:</p>
+<ul>
+<li><p>one sample test of mean (i.e.&nbsp;1 treatment mean is equivalent to a target value)</p></li>
+<li><p>two-sample comparison of means for equality (i.e.&nbsp;testing if 2 treatment means recorded on 2 independent groups of patients are the same, eg. the true mean difference is zero, but within a set tolerance).</p></li>
+<li><p>Paired-sample comparison of means (i.e.&nbsp;2 treatment means recorded on 1 group of patients are equivalent within a set tolerance)</p></li>
+<li><p>One sample test of proportion (i.e.&nbsp;1 treatment proportion is equivalent to a target value)</p></li>
+<li><p><strong>PROC POWER CANNOT calculate sample size for two-sample comparisons of proportions</strong> (i.e.&nbsp;2 treatment proportions recorded on 2 independent groups of patients are equivalent within a set tolerance)</p></li>
+<li><p><strong>PROC POWER CANNOT do two-sample comparison of means for equivalence</strong> (i.e.&nbsp;2 treatment means recorded on 2 independent groups of patients are equivalent, eg, the true mean difference is not necessarily thought to be a difference of zero, but the means are equivalent within a set tolerance). <strong>NOTE: PROC POWER ONLY DOES two one sided significant tests (TOST), this is a test for Bioequivalence. More info below and on the <a href="Sample Size Calculation for Average Bioequivalence">TOST page</a>!</strong></p></li>
+</ul>
 </section>
-<section id="base-r-stats" class="level3">
-<h3 class="anchored" data-anchor-id="base-r-stats">Base R {stats}</h3>
-<p>To run a Friedman’s test in R you can use the {stats} package. This will return the chi-squared test statistic and p-value.</p>
+<section id="one-sample-equivalence-test" class="level1">
+<h1><strong>One-sample equivalence test</strong></h1>
+<p>Suppose a reformulation of a treatment pill, needs to have a weight equivalent to a target value of 130 milligrams. Weight is assumed normally distributed and an acceptable weight is between 110 milligrams and 150 milligrams. The standard deviation of the weight is 50 milligrams. What sample size is needed assuming an alpha level of 5% with 80% power to conclude the weight is within the margin (the tablet weight is equivalent to 130 milligram). The below shows a sample size of 55 pills is required.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform Friedman test</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>friedman_test <span class="ot">&lt;-</span> <span class="fu">friedman.test</span>(weight <span class="sc">~</span> diet <span class="sc">|</span> subjid, <span class="at">data =</span> data)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>friedman_test</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-    Friedman rank sum test
-
-data:  weight and diet and subjid
-Friedman chi-squared = 15.2, df = 2, p-value = 0.0005005</code></pre>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>PROC POWER  ;</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>   onesamplemeans test<span class="ot">=</span>equiv   </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>   lower  <span class="ot">=</span> <span class="dv">110</span>          </span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>   upper  <span class="ot">=</span> <span class="dv">150</span>         </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>   mean   <span class="ot">=</span> <span class="dv">130</span>     </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>   stddev <span class="ot">=</span> <span class="dv">50</span>      </span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>   ntotal <span class="ot">=</span> .       </span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>   power  <span class="ot">=</span> <span class="fl">0.8</span>      </span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>   alpha  <span class="ot">=</span> <span class="fl">0.05</span>;    </span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>RUN;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-</div>
-<p>To get these values easily into a data.frame you can use the <code>tidy()</code> function from {broom}.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(friedman_test)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 4
-  statistic  p.value parameter method                
-      &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;                 
-1      15.2 0.000500         2 Friedman rank sum test</code></pre>
-</div>
-</div>
-</section>
-<section id="rstatix" class="level3">
-<h3 class="anchored" data-anchor-id="rstatix">{rstatix}</h3>
-<p>Alternatively, you can use the {rstatix} package. While these packages give the same results, the {rstatix} results come as a tibble we can easily use.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span> </span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">friedman_test</span>(weight <span class="sc">~</span> diet <span class="sc">|</span> subjid)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>test</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 6
-  .y.        n statistic    df        p method       
-* &lt;chr&gt;  &lt;int&gt;     &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;        
-1 weight    10      15.2     2 0.000500 Friedman test</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create boxplot</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(data, <span class="fu">aes</span>(<span class="at">x =</span> diet, <span class="at">y =</span> weight, <span class="at">fill =</span> diet)) <span class="sc">+</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Weight Distribution Across Different Diets"</span>,</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Diet Type"</span>,</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Weight"</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell" data-layout-align="center">
 <div class="cell-output-display">
-<div>
+<div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="friedman_test_files/figure-html/visualization-1.png" class="img-fluid figure-img" width="768"></p>
+<p><img src="../images/sample_s_equivalence/SAS1mean.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
 </figure>
 </div>
 </div>
 </div>
 </section>
-<section id="conclusion" class="level3">
-<h3 class="anchored" data-anchor-id="conclusion">Conclusion</h3>
-<p>Based on the analysis:</p>
+<section id="two-sample-equality-test-comparing-means-for-parallel-design-unpaired" class="level1">
+<h1><strong>Two Sample Equality test: Comparing means for parallel design (unpaired)</strong></h1>
+<p>Next we will look at having 2 independent samples. In the most common scenario SDs are assumed known and the same in both treatment groups.</p>
+<p>In example 1, we look at an equality test, when the true difference between treatment groups is assumed to be equal to 0, then SAS assumes you are doing a 2-sided test, <span class="math inline">\(H_0:|\mu2-\mu1|\geq \theta\)</span> versus <span class="math inline">\(H_1: |\mu2-\mu1|\lt \theta\)</span>.</p>
+<p>Remember that does not give correct sample sizes, for equivalence tests when the true difference is non-zero.</p>
+<p>Example 2 is provided as a contrast, since it shows a bio-equivalence test (TOST), when the true difference between treatment groups is assumed not to be equal to 0, SAS assumes you are doing two one-sided t-tests (TOST). This is represented by the following 2x null and alternative hypotheses.</p>
+<p><span class="math inline">\(H_0:\mu2-\mu1 \leq -\theta\)</span> or <span class="math inline">\(\mu2-\mu1 \geq -\theta\)</span> versus <span class="math inline">\(H_1: -\theta \lt \mu2 - \mu1 \lt \theta\)</span></p>
+<section id="example-1-equality-equivalence-test" class="level2">
+<h2 class="anchored" data-anchor-id="example-1-equality-equivalence-test">Example 1: Equality equivalence test</h2>
+<section id="sample-size-for-comparison-of-2-independent-treatment-group-means-with-same-known-sds-and-assuming-a-true-difference-between-the-treatments-is-zero" class="level3">
+<h3 class="anchored" data-anchor-id="sample-size-for-comparison-of-2-independent-treatment-group-means-with-same-known-sds-and-assuming-a-true-difference-between-the-treatments-is-zero">Sample size for comparison of 2 independent treatment group means with same known SDs and assuming a true difference between the treatments is zero</h3>
+<p>It is anticipated that patients will have the same mean diastolic BP of 96 mmHg on both the new drug and the active comparater. It is also anticipated that the SD (<span class="math inline">\(\sigma\)</span>) of the diastolic BP is approximately 8 mmHg. The decision is made by clinical to accept equivalence if the difference found between the treatments is less than 5 mmHg. How many patients are required for an 80% power and an overall significance level of 5%?</p>
+<p>The below shows a sample size of 45 patients per treatment group is required (90 patients in total). Notice how SAS asks for the lower &amp; upper bounds, these are derived by using the meandiff + /- the acceptable equivalence limit (which is stated as 5 mmHg above).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>PROC POWER  ;</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>   twosamplemeans test<span class="ot">=</span>equiv_diff   </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>   lower  <span class="ot">=</span> <span class="dv">91</span>          </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>   upper  <span class="ot">=</span> <span class="dv">101</span>   </span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>   meandiff<span class="ot">=</span><span class="dv">96</span> </span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>   stddev <span class="ot">=</span> <span class="dv">8</span>      </span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>   ntotal <span class="ot">=</span> .       </span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>   power  <span class="ot">=</span> <span class="fl">0.8</span>      </span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>   alpha  <span class="ot">=</span> <span class="fl">0.05</span>;    </span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>RUN;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>As shown below, a total sample size of 90 is recommended, which equates to 45 in each group.</p>
+<p>Note: that instead of meandiff=96, and lower=91, upper=101, you can also use: meandiff=0, lower=-5 and upper=5 to get the same answer.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/sample_s_equivalence/SAS2mean_independant.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="example-2-tost-bio-equivalence" class="level2">
+<h2 class="anchored" data-anchor-id="example-2-tost-bio-equivalence">Example 2: TOST Bio-Equivalence</h2>
+<section id="sample-size-for-comparison-of-2-independent-treatment-group-mean-differences-with-same-known-sds-true-difference-not-believed-to-be-0-eg.-perhaps-a-1-difference-but-we-want-to-know-if-the-drugs-are-bio-equivalent-within-5." class="level3">
+<h3 class="anchored" data-anchor-id="sample-size-for-comparison-of-2-independent-treatment-group-mean-differences-with-same-known-sds-true-difference-not-believed-to-be-0-eg.-perhaps-a-1-difference-but-we-want-to-know-if-the-drugs-are-bio-equivalent-within-5.">Sample size for comparison of 2 independent treatment group mean differences with same known SDs, ‘true’ difference not believed to be 0 (eg. perhaps a 1% difference), but we want to know if the drugs are bio-equivalent within 5%.</h3>
+<p>A client is interested in conducting a clinical trial to compare two cholesterol lowering agents for treatment of hypercholesterolemic patients through a parallel design. The primary efficacy parameter is a low-density lipidprotein cholesterol (LDL-C). For establishing equivalence, suppose the true mean difference is 0.01 (1%) and the equivalence limit is 0.05 (5%). Assuming SD = 0.1, how many patients are required for an 80% power and an overall significance level of 5%?</p>
+<p>Below shows a sample size of 140 patients in Total (70 per treatment group). See <a href="Sample Size Calculation for Average Bioequivalence">TOST CAMIS PAGE</a> for more details, including equiv_ratio instead of difference.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>PROC POWER  ;</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>   twosamplemeans test<span class="ot">=</span>equiv_diff  </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>   lower  <span class="ot">=</span> <span class="sc">-</span><span class="fl">0.04</span>         </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>   upper  <span class="ot">=</span> <span class="fl">0.06</span>  </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>   meandiff <span class="ot">=</span> <span class="fl">0.01</span> </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>   stddev <span class="ot">=</span> <span class="fl">0.1</span>     </span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>   ntotal <span class="ot">=</span> .       </span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>   power  <span class="ot">=</span> <span class="fl">0.8</span>      </span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>   alpha  <span class="ot">=</span> <span class="fl">0.05</span>;    </span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>RUN;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/sample_s_equivalence/SAS2mean_tost1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="comparing-means-for-crossover-design-paired" class="level1">
+<h1><strong>Comparing means for crossover design (paired)</strong></h1>
+<p>Here we assume there is no carry-over effect and that the variance is known.</p>
+<section id="estimating-the-within-patient-variance-and-correlation." class="level2">
+<h2 class="anchored" data-anchor-id="estimating-the-within-patient-variance-and-correlation."><strong>Estimating the within patient variance and correlation.</strong></h2>
+<p>It is important to differentiate here between the within patient SD and the SD of the difference. We may need to recalculate one to the other, depending on the case.</p>
+<p>With no carry-over, then an approximation could be: Variance of the difference = 2x Within Patient Variance. The variance within a patient can be estimated from the within subject residual mean square after fitting the model including visit, period and treatment. For example, using Proc mixed <code>repeated visit / r  sub=usubjid</code>, and <code>ods select r</code>, gives you blocks of the estimate R matrix (covariances between residuals).</p>
+<p>SAS cannot do sample size in this scenario without also having the within subject correlation. It’s common in this scenario to set this equivalent to 0.5. More investigation is required to determine why this is also need to be specified as in this scenario, the correlation should not be required.</p>
+<section id="example" class="level3">
+<h3 class="anchored" data-anchor-id="example">Example</h3>
+<p>Let’s consider a standard standard two-sequence, two period crossover design for trials to establish therapeutic equivalence between a test drug and a standard therapy. The sponsor is interested in having an 80% power for establishing equivalence. Based on the results from previous trials, it is estimated that the variance (of the difference) is 0.2 (20%). Suppose that the true mean difference is -0.1 (-10%) and the equivalence limit is 0.25 (25%). What is the required sample size, assuming significance level of 5%?</p>
+<p>The below shows a sample size of 8 patients is required.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>PROC POWER;</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>   pairedmeans test<span class="ot">=</span>equiv_diff   </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>   lower  <span class="ot">=</span> <span class="sc">-</span><span class="dv">35</span>          </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>   upper  <span class="ot">=</span> <span class="dv">15</span>   </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>   meandiff<span class="ot">=</span><span class="sc">-</span><span class="dv">10</span> </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>   stddev <span class="ot">=</span> <span class="dv">20</span>      </span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>   npairs <span class="ot">=</span> .  </span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>   corr<span class="ot">=</span><span class="fl">0.5</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>   power  <span class="ot">=</span> <span class="fl">0.8</span>      </span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>   alpha  <span class="ot">=</span> <span class="fl">0.05</span>; </span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>RUN;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/sample_s_equivalence/SAS2crossovermeans.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="references" class="level3">
+<h3 class="anchored" data-anchor-id="references">References</h3>
 <ol type="1">
-<li><strong>Statistical Test Results:</strong></li>
+<li><a href="https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_power_sect010.html">PROC POWER SAS online help</a></li>
+<li><a href="https://support.sas.com/kb/50/700.html#:~:text=Power%20analysis%20and%20sample%20size%20determination%20for%20equivalence,be%20conducted%20using%20PROC%20FREQ%20or%20PROC%20TTEST.">Sample Size Calculation Using SAS® for equivalence</a></li>
 </ol>
-<ul>
-<li>The Friedman test yielded a p-value of 5.0045143^{-4}</li>
-</ul>
-<p>[If p &lt; 0.05, we reject the null hypothesis</p>
-<p>If p &gt; 0.05, we fail to reject the null hypothesis]</p>
-<ol start="2" type="1">
-<li><strong>Visual Analysis:</strong></li>
-</ol>
-<ul>
-<li><p>From the boxplot, Diet B shows the highest median weight</p></li>
-<li><p>Diet B also appears to have the highest overall weight distribution</p></li>
-<li><p>Diet A and Diet C show similar distributions but lower than Diet B</p></li>
-</ul>
-<ol start="3" type="1">
-<li><strong>Interpretation:</strong></li>
-</ol>
-<ul>
-<li><p>If the goal is weight gain: Diet B appears most effective</p></li>
-<li><p>If the goal is weight maintenance: Diet A or C might be more suitable</p></li>
-<li><p>However, individual responses vary, as shown by the overlapping distributions</p></li>
-</ul>
 </section>
-</section>
-<section id="reference" class="level2">
-<h2 class="anchored" data-anchor-id="reference">Reference</h2>
-<p><em>Cite all sources and references used in the analysis.</em></p>
+<section id="version" class="level3">
+<h3 class="anchored" data-anchor-id="version">Version</h3>
 <div class="callout callout-style-default callout-note callout-titled" title="Session Info">
 <div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -371,166 +441,14 @@ Session Info
 </div>
 <div id="callout-1" class="callout-1-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>─ Session info ───────────────────────────────────────────────────────────────
- setting  value
- version  R version 4.4.2 (2024-10-31)
- os       Ubuntu 24.04.2 LTS
- system   x86_64, linux-gnu
- ui       X11
- language (EN)
- collate  C.UTF-8
- ctype    C.UTF-8
- tz       UTC
- date     2025-05-01
- pandoc   3.6.3 @ /opt/quarto/bin/tools/ (via rmarkdown)
+<p>#| echo: false si &lt;- sessioninfo::session_info(“sample_s_superiority”, dependencies = FALSE) si$external &lt;- structure(list(“SAS” = “9.04.01M7P08062020”), class = c(“external_info”, “list”)) si</p>
 
-─ Packages ───────────────────────────────────────────────────────────────────
- ! package        * version    date (UTC) lib source
- P abind            1.4-8      2024-09-12 [?] RSPM (R 4.4.0)
-   askpass          1.2.1      2024-10-04 [1] RSPM (R 4.4.0)
- P backports        1.5.0      2024-05-23 [?] RSPM (R 4.4.0)
-   base64enc        0.1-3      2015-07-28 [1] RSPM (R 4.4.0)
-   bit              4.5.0      2024-09-20 [1] RSPM (R 4.4.0)
-   bit64            4.5.2      2024-09-22 [1] RSPM (R 4.4.0)
-   blob             1.2.4      2023-03-17 [1] RSPM (R 4.4.0)
-   boot             1.3-31     2024-08-28 [2] CRAN (R 4.4.2)
- P broom          * 1.0.7      2024-09-26 [?] RSPM (R 4.4.0)
-   bslib            0.8.0      2024-07-29 [1] RSPM (R 4.4.0)
-   cachem           1.1.0      2024-05-16 [1] RSPM (R 4.4.0)
-   callr            3.7.6      2024-03-25 [1] RSPM (R 4.4.0)
- P car              3.1-3      2024-09-27 [?] RSPM (R 4.4.0)
- P carData          3.0-5      2022-01-06 [?] RSPM (R 4.4.0)
-   cellranger       1.1.0      2016-07-27 [1] RSPM (R 4.4.0)
- P cli              3.6.3      2024-06-21 [?] RSPM (R 4.4.0)
-   clipr            0.8.0      2022-02-22 [1] RSPM (R 4.4.0)
- P colorspace       2.1-1      2024-07-26 [?] RSPM (R 4.4.0)
-   conflicted       1.2.0      2023-02-01 [1] RSPM (R 4.4.0)
-   corrplot         0.94       2024-08-17 [1] RSPM (R 4.4.0)
-   cowplot          1.1.3      2024-01-22 [1] RSPM (R 4.4.0)
-   cpp11            0.5.0      2024-08-27 [1] RSPM (R 4.4.0)
-   crayon           1.5.3      2024-06-20 [1] RSPM (R 4.4.0)
-   curl             5.2.3      2024-09-20 [1] RSPM (R 4.4.0)
-   data.table       1.16.0     2024-08-27 [1] RSPM (R 4.4.0)
-   DBI              1.2.3      2024-06-02 [1] RSPM (R 4.4.0)
-   dbplyr           2.5.0      2024-03-19 [1] RSPM (R 4.4.0)
-   Deriv            4.1.6      2024-09-13 [1] RSPM (R 4.4.0)
- P digest           0.6.37     2024-08-19 [?] RSPM (R 4.4.0)
-   doBy             4.6.24     2024-10-07 [1] RSPM (R 4.4.0)
- P dplyr          * 1.1.4      2023-11-17 [?] RSPM (R 4.4.0)
-   dtplyr           1.3.1      2023-03-22 [1] RSPM (R 4.4.0)
- P evaluate         1.0.0      2024-09-17 [?] RSPM (R 4.4.0)
- P fansi            1.0.6      2023-12-08 [?] RSPM (R 4.4.0)
- P farver           2.1.2      2024-05-13 [?] RSPM (R 4.4.0)
- P fastmap          1.2.0      2024-05-15 [?] RSPM (R 4.4.0)
-   fontawesome      0.5.2      2023-08-19 [1] RSPM (R 4.4.0)
- P forcats        * 1.0.0      2023-01-29 [?] RSPM (R 4.4.0)
- P Formula          1.2-5      2023-02-24 [?] RSPM (R 4.4.0)
-   fs               1.6.4      2024-04-25 [1] RSPM (R 4.4.0)
-   gargle           1.5.2      2023-07-20 [1] RSPM (R 4.4.0)
- P generics         0.1.3      2022-07-05 [?] RSPM (R 4.4.0)
- P ggplot2        * 3.5.1      2024-04-23 [?] RSPM (R 4.4.0)
- P glue             1.8.0      2024-09-30 [?] RSPM (R 4.4.0)
-   googledrive      2.1.1      2023-06-11 [1] RSPM (R 4.4.0)
-   googlesheets4    1.1.1      2023-06-11 [1] RSPM (R 4.4.0)
- P gtable           0.3.5      2024-04-22 [?] RSPM (R 4.4.0)
-   haven            2.5.4      2023-11-30 [1] RSPM (R 4.4.0)
-   highr            0.11       2024-05-26 [1] RSPM (R 4.4.0)
- P hms              1.1.3      2023-03-21 [?] RSPM (R 4.4.0)
- P htmltools        0.5.8.1    2024-04-04 [?] RSPM (R 4.4.0)
-   httr             1.4.7      2023-08-15 [1] RSPM (R 4.4.0)
-   ids              1.0.1      2017-05-31 [1] RSPM (R 4.4.0)
-   isoband          0.2.7      2022-12-20 [1] RSPM (R 4.4.0)
-   jquerylib        0.1.4      2021-04-26 [1] RSPM (R 4.4.0)
- P jsonlite         1.8.9      2024-09-20 [?] RSPM (R 4.4.0)
- P knitr            1.48       2024-07-07 [?] RSPM (R 4.4.0)
- P labeling         0.4.3      2023-08-29 [?] RSPM (R 4.4.0)
-   lattice          0.22-6     2024-03-20 [2] CRAN (R 4.4.2)
- P lifecycle        1.0.4      2023-11-07 [?] RSPM (R 4.4.0)
-   lme4             1.1-35.5   2024-07-03 [1] RSPM (R 4.4.0)
- P lubridate      * 1.9.3      2023-09-27 [?] RSPM (R 4.4.0)
- P magrittr         2.0.3      2022-03-30 [?] RSPM (R 4.4.0)
-   MASS             7.3-61     2024-06-13 [2] CRAN (R 4.4.2)
-   Matrix           1.7-1      2024-10-18 [2] CRAN (R 4.4.2)
-   MatrixModels     0.5-3      2023-11-06 [1] RSPM (R 4.4.0)
-   memoise          2.0.1      2021-11-26 [1] RSPM (R 4.4.0)
-   mgcv             1.9-1      2023-12-21 [2] CRAN (R 4.4.2)
-   microbenchmark   1.5.0      2024-09-04 [1] RSPM (R 4.4.0)
-   mime             0.12       2021-09-28 [1] RSPM (R 4.4.0)
-   minqa            1.2.8      2024-08-17 [1] RSPM (R 4.4.0)
-   modelr           0.1.11     2023-03-22 [1] RSPM (R 4.4.0)
- P munsell          0.5.1      2024-04-01 [?] RSPM (R 4.4.0)
-   nlme             3.1-166    2024-08-14 [2] CRAN (R 4.4.2)
-   nloptr           2.1.1      2024-06-25 [1] RSPM (R 4.4.0)
-   nnet             7.3-19     2023-05-03 [2] CRAN (R 4.4.2)
-   numDeriv         2016.8-1.1 2019-06-06 [1] RSPM (R 4.4.0)
-   openssl          2.2.2      2024-09-20 [1] RSPM (R 4.4.0)
-   pbkrtest         0.5.3      2024-06-26 [1] RSPM (R 4.4.0)
- P pillar           1.9.0      2023-03-22 [?] RSPM (R 4.4.0)
- P pkgconfig        2.0.3      2019-09-22 [?] RSPM (R 4.4.0)
-   prettyunits      1.2.0      2023-09-24 [1] RSPM (R 4.4.0)
-   processx         3.8.4      2024-03-16 [1] RSPM (R 4.4.0)
-   progress         1.2.3      2023-12-06 [1] RSPM (R 4.4.0)
-   ps               1.8.0      2024-09-12 [1] RSPM (R 4.4.0)
- P purrr          * 1.0.2      2023-08-10 [?] RSPM (R 4.4.0)
-   quantreg         5.98       2024-05-26 [1] RSPM (R 4.4.0)
- P R6               2.5.1      2021-08-19 [?] RSPM (R 4.4.0)
-   ragg             1.3.3      2024-09-11 [1] RSPM (R 4.4.0)
-   rappdirs         0.3.3      2021-01-31 [1] RSPM (R 4.4.0)
-   RColorBrewer     1.1-3      2022-04-03 [1] RSPM (R 4.4.0)
-   Rcpp             1.0.13     2024-07-17 [1] RSPM (R 4.4.0)
-   RcppEigen        0.3.4.0.2  2024-08-24 [1] RSPM (R 4.4.0)
- P readr          * 2.1.5      2024-01-10 [?] RSPM (R 4.4.0)
-   readxl           1.4.3      2023-07-06 [1] RSPM (R 4.4.0)
-   rematch          2.0.0      2023-08-30 [1] RSPM (R 4.4.0)
-   rematch2         2.1.2      2020-05-01 [1] RSPM (R 4.4.0)
-   reprex           2.1.1      2024-07-06 [1] RSPM (R 4.4.0)
- P rlang            1.1.4      2024-06-04 [?] RSPM (R 4.4.0)
- P rmarkdown        2.28       2024-08-17 [?] RSPM (R 4.4.0)
- P rstatix        * 0.7.2      2023-02-01 [?] RSPM (R 4.4.0)
-   rstudioapi       0.16.0     2024-03-24 [1] RSPM (R 4.4.0)
-   rvest            1.0.4      2024-02-12 [1] RSPM (R 4.4.0)
-   sass             0.4.9      2024-03-15 [1] RSPM (R 4.4.0)
- P scales           1.3.0      2023-11-28 [?] RSPM (R 4.4.0)
-   selectr          0.4-2      2019-11-20 [1] RSPM (R 4.4.0)
-   SparseM          1.84-2     2024-07-17 [1] RSPM (R 4.4.0)
- P stringi          1.8.4      2024-05-06 [?] RSPM (R 4.4.0)
- P stringr        * 1.5.1      2023-11-14 [?] RSPM (R 4.4.0)
-   survival         3.7-0      2024-06-05 [2] CRAN (R 4.4.2)
-   sys              3.4.3      2024-10-04 [1] RSPM (R 4.4.0)
-   systemfonts      1.1.0      2024-05-15 [1] RSPM (R 4.4.0)
-   textshaping      0.4.0      2024-05-24 [1] RSPM (R 4.4.0)
- P tibble         * 3.2.1      2023-03-20 [?] RSPM (R 4.4.0)
- P tidyr          * 1.3.1      2024-01-24 [?] RSPM (R 4.4.0)
- P tidyselect       1.2.1      2024-03-11 [?] RSPM (R 4.4.0)
- P tidyverse      * 2.0.0      2023-02-22 [?] RSPM (R 4.4.0)
- P timechange       0.3.0      2024-01-18 [?] RSPM (R 4.4.0)
-   tinytex          0.53       2024-09-15 [1] RSPM (R 4.4.0)
- P tzdb             0.4.0      2023-05-12 [?] RSPM (R 4.4.0)
- P utf8             1.2.4      2023-10-22 [?] RSPM (R 4.4.0)
-   uuid             1.2-1      2024-07-29 [1] RSPM (R 4.4.0)
- P vctrs            0.6.5      2023-12-01 [?] RSPM (R 4.4.0)
-   viridisLite      0.4.2      2023-05-02 [1] RSPM (R 4.4.0)
-   vroom            1.6.5      2023-12-05 [1] RSPM (R 4.4.0)
- P withr            3.0.1      2024-07-31 [?] RSPM (R 4.4.0)
- P xfun             0.48       2024-10-03 [?] RSPM (R 4.4.0)
-   xml2             1.3.6      2023-12-04 [1] RSPM (R 4.4.0)
- P yaml             2.3.10     2024-07-26 [?] RSPM (R 4.4.0)
 
- [1] /home/runner/work/CAMIS/CAMIS/renv/library/linux-ubuntu-noble/R-4.4/x86_64-pc-linux-gnu
- [2] /opt/R/4.4.2/lib/R/library
-
- P ── Loaded and on-disk path mismatch.
-
-──────────────────────────────────────────────────────────────────────────────</code></pre>
 </div>
 </div>
 </div>
-</div>
-</div>
-
-
+</section>
+</section>
 </section>
 
 </main> <!-- /main -->
