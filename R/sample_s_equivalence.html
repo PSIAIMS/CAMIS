@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Skewness/Kurtosis</title>
+<title>Sample size for equivalence studies</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,6 +19,41 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -163,18 +198,9 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#skewness-and-kurtosis-sas" id="toc-skewness-and-kurtosis-sas" class="nav-link active" data-scroll-target="#skewness-and-kurtosis-sas"><strong>Skewness and Kurtosis SAS</strong></a>
-  <ul class="collapse">
-  <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data Used</a></li>
-  <li><a href="#sas" id="toc-sas" class="nav-link" data-scroll-target="#sas">Procedures Examination</a>
-  <ul class="collapse">
-  <li><a href="#skewness" id="toc-skewness" class="nav-link" data-scroll-target="#skewness">Skewness</a></li>
-  <li><a href="#kurtosis" id="toc-kurtosis" class="nav-link" data-scroll-target="#kurtosis">Kurtosis</a></li>
-  <li><a href="#df" id="toc-df" class="nav-link" data-scroll-target="#df">VARDEF = DF</a></li>
-  <li><a href="#n" id="toc-n" class="nav-link" data-scroll-target="#n">VARDEF = N</a></li>
-  </ul></li>
-  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
-  </ul></li>
+  <li><a href="#equivalence-studies" id="toc-equivalence-studies" class="nav-link active" data-scroll-target="#equivalence-studies">Equivalence studies</a></li>
+  <li><a href="#comparing-means-for-parallel-design-unpaired" id="toc-comparing-means-for-parallel-design-unpaired" class="nav-link" data-scroll-target="#comparing-means-for-parallel-design-unpaired">Comparing means for parallel design (unpaired)</a></li>
+  <li><a href="#comparing-means-for-crossover-design-paired" id="toc-comparing-means-for-crossover-design-paired" class="nav-link" data-scroll-target="#comparing-means-for-crossover-design-paired">Comparing means for crossover design (paired)</a></li>
   </ul>
 </nav>
     </div>
@@ -183,7 +209,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Skewness/Kurtosis</h1>
+<h1 class="title">Sample size for equivalence studies</h1>
 </div>
 
 
@@ -200,103 +226,67 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="skewness-and-kurtosis-sas" class="level1">
-<h1><strong>Skewness and Kurtosis SAS</strong></h1>
-<p>In SAS, Skewness and Kurtosis are usually calculated using <code>PROC MEANS</code>. The procedures can produce both statistics in the same call. The procedure provides options for different methodologies.</p>
-<section id="data-used" class="level3">
-<h3 class="anchored" data-anchor-id="data-used">Data Used</h3>
-<p>The following data was used in this example.</p>
-<pre><code>  data dat;
-      input team $ points assists;
-      datalines;
-  A 10 2
-  A 17 5
-  A 17 6
-  A 18 3
-  A 15 0
-  B 10 2
-  B 14 5
-  B 13 4
-  B 29 0
-  B 25 2
-  C 12 1
-  C 30 1
-  C 34 3
-  C 12 4
-  C 11 7
-  ;
-  run;</code></pre>
+<section id="equivalence-studies" class="level3 unnumbered">
+<h3 class="unnumbered anchored" data-anchor-id="equivalence-studies">Equivalence studies</h3>
+<p>Equivalence trials are defined as trials that test whether a drug has the same (or similar) efficacy as an active agent or standard therapy. In practice, this is done by defining an “equivalence margin”, or limits, within which the treatment effect must lie to be considered equivalent.</p>
+<section id="calculations-in-r" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="calculations-in-r">Calculations in R</h4>
+<p>Can be performed in 2 packages: <strong>TrialSize</strong> and <strong>SampleSize4ClinicalTrials</strong>.</p>
 </section>
-<section id="sas" class="level2">
-<h2 class="anchored" data-anchor-id="sas">Procedures Examination</h2>
-<p>By default, SAS <code>PROC MEANS</code> uses VARDEF option “DF”. The other options are “N”, “WEIGHT”, and “WDF. Note that the WEIGHT and WDF options produce no results, as weighted calculations are not supported in PROC MEANS for Skewness and Kurtosis.</p>
-<p>The following shows the SAS documentation for the two measures.</p>
-<section id="skewness" class="level3">
-<h3 class="anchored" data-anchor-id="skewness">Skewness</h3>
-<p>The <a href="https://documentation.sas.com/doc/en/vdmmlcdc/8.1/casfedsql/p04x27b92gon3gn10e5y5ybxbvmi.htm">SAS documentation for Skewness</a> is provided here for convenience:</p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/summarystats/sas_skewness.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
-</figure>
+</section>
+<section id="comparing-means-for-parallel-design-unpaired" class="level3 unnumbered">
+<h3 class="unnumbered anchored" data-anchor-id="comparing-means-for-parallel-design-unpaired">Comparing means for parallel design (unpaired)</h3>
+<section id="example-1" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="example-1">Example 1</h4>
+<p>It is anticipated that patients will have the same mean diastolic BP of 96 mmHg on both the new drug and the active comparator. It is also anticipated that the SD (ơ) of the diastolic BP is approximately 8 mmHg. The decision is made by clinical to accept equivalence if the difference found between the treatments is less than 5 mmHg. How many patients are required for an 80% power and an overall significance level of 5%?</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># TrialSize:</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">TwoSampleMean.Equivalence</span>(<span class="fl">0.05</span>,<span class="fl">0.2</span>,<span class="dv">8</span>,<span class="dv">1</span>,<span class="dv">5</span>,<span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 43.8469</code></pre>
 </div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># SampleSize4ClinicalTrials:</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ssc_meancomp</span>(<span class="at">design =</span> <span class="dv">4</span>L, <span class="at">ratio =</span> <span class="dv">1</span>, <span class="at">alpha =</span> <span class="fl">0.05</span>, <span class="at">power =</span> <span class="fl">0.8</span>, <span class="at">sd =</span> <span class="dv">8</span>, <span class="at">theta =</span> <span class="dv">0</span>, <span class="at">delta =</span> <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  Treatment Control
+1        44      44</code></pre>
 </div>
 </div>
 </section>
-<section id="kurtosis" class="level3">
-<h3 class="anchored" data-anchor-id="kurtosis">Kurtosis</h3>
-<p>The SAS documentation for Kurtosis is as follows:</p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/summarystats/sas_kurtosis.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
-</figure>
+<section id="example-2" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="example-2">Example 2</h4>
+<p>A client is interested in conducting a clinical trial to compare two cholesterol lowering agents for treatment of hypercholesterolemic patients through a parallel design. The primary efficacy parameter is a low-density lipidprotein cholesterol (LDL-C). For establishing equivalence, suppose the true mean difference is 0.01 (1%) and the equivalence limit is 0.05 (5%). Assuming SD = 0.1 (10%), how many patients are required for an 80% power and an overall significance level of 5%?</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># TrialSize:</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">TwoSampleMean.Equivalence</span>(<span class="fl">0.05</span>,<span class="fl">0.2</span>,<span class="fl">0.1</span>,<span class="dv">1</span>,<span class="fl">0.05</span>,<span class="fl">0.01</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 107.0481</code></pre>
 </div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># SampleSize4ClinicalTrials:</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ssc_meancomp</span>(<span class="at">design =</span> <span class="dv">4</span>L, <span class="at">ratio =</span> <span class="dv">1</span>, <span class="at">alpha =</span> <span class="fl">0.05</span>, <span class="at">power =</span> <span class="fl">0.8</span>, <span class="at">sd =</span> <span class="fl">0.1</span>, <span class="at">theta =</span> <span class="fl">0.01</span>, <span class="at">delta =</span> <span class="fl">0.05</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  Treatment Control
+1       108     108</code></pre>
 </div>
 </div>
 </section>
-<section id="df" class="level3">
-<h3 class="anchored" data-anchor-id="df">VARDEF = DF</h3>
-<p>Skewness and Kurtosis are commonly calculated in SAS as follows:</p>
-<pre><code>  proc means data=dat SKEWNESS KURTOSIS;
-  var points;
-  run;</code></pre>
-<p>Output:</p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/summarystats/sas_skewness_kurtosis1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:30.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>The above results correspond to the Type 2 methodology in R.</p>
 </section>
-<section id="n" class="level3">
-<h3 class="anchored" data-anchor-id="n">VARDEF = N</h3>
-<p>The N option produces the following results</p>
-<pre><code>  proc means data=dat SKEWNESS KURTOSIS vardef = N;
-  var points;
-  run;</code></pre>
-<p>Output:</p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/summarystats/sas_skewness_kurtosis2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:30.0%"></p>
-</figure>
+<section id="comparing-means-for-crossover-design-paired" class="level3 unnumbered">
+<h3 class="unnumbered anchored" data-anchor-id="comparing-means-for-crossover-design-paired">Comparing means for crossover design (paired)</h3>
+<section id="example" class="level4">
+<h4 class="anchored" data-anchor-id="example">Example</h4>
+<p>Let’s consider a standard standard two-sequence, two period crossover design for trials to establish therapeutic equivalence between a test drug and a standard therapy. The sponsor is interested in heaving an 80% power for stablishing equivalence. Based on the results from previous trials, it is estimated that the variance (of the difference) is 0.2 (20%). Suppose that the true mean difference is -0.1 (-10%) and the equivalence limit is 0.25 (25%). What is the required sample size, assuming significance level of 5%?</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># TrialSize:</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">TwoSampleCrossOver.Equivalence</span>(<span class="fl">0.05</span>,<span class="fl">0.2</span>,<span class="fl">0.2</span>,<span class="fl">0.25</span>,<span class="sc">-</span><span class="fl">0.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 7.612309</code></pre>
 </div>
 </div>
-</div>
-<p>The above results correspond to the Type 1 methodology in R.</p>
 </section>
-</section>
-<section id="summary" class="level2">
-<h2 class="anchored" data-anchor-id="summary">Summary</h2>
-<p>SAS options provide for Type 1 and Type 2 Skewness and Kurtosis. Skewness Type 3 and Kurtosis Type 3 are not supported. Also Pearson’s Kurtosis is not supported.</p>
+<section id="references" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="references">References</h4>
+<p>Majority of the examples are taken from: <em>Chow SC, Liu JP (1998). Design and analysis of clinical trials. Concepts and methodologies. Wiley, New York.</em> and <em>Machin, D., Campbell, M. J., Fayers, P., &amp; Pinol, A. (Eds.) (1997). Sample Size Tables for Clinical Studies. (2nd ed.) Blackwell Science.</em></p>
 
 
 </section>
