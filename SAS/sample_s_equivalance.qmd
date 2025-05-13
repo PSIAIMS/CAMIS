@@ -7,23 +7,27 @@ date-format: D MMMM, YYYY
 
 # Introduction
 
-PROC POWER^1^ can be used for sample size calculations for equivalence testing^2^. It can calculate sample size for:
+PROC POWER^1^ can be used for sample size calculations for equivalence testing^2^. Note that equivalence testing is different to bioequivalence testing. For bioequivalence see [TOST page](Sample%20Size%20Calculation%20for%20Average%20Bioequivalence). SAS can calculate equivalence testing sample size for:
 
--   one sample test of mean (i.e. 1 treatment mean is equivalent to a target value)
+-   One sample test: Is a mean equivalent to a target value, within a set tolerance
 
--   two-sample comparison of means for equality (i.e. testing if 2 treatment means recorded on 2 independent groups of patients are the same, eg. the true mean difference is zero, but within a set tolerance).
+-   Two independent sample test: Comparison of means for equivalence, when the true mean difference is zero, but within a set tolerance.
 
--   Paired-sample comparison of means (i.e. 2 treatment means recorded on 1 group of patients are equivalent within a set tolerance)
+-   One sample test: Is a proportion equivalent to a target value, within a set tolerance
 
--   One sample test of proportion (i.e. 1 treatment proportion is equivalent to a target value)
+-   Paired-sample test: Comparison of means for equivalence, within a set tolerance
 
--   **PROC POWER CANNOT calculate sample size for two-sample comparisons of proportions** (i.e. 2 treatment proportions recorded on 2 independent groups of patients are equivalent within a set tolerance)
+**PROC POWER CANNOT CALCULATE SAMPLE SIZE FOR:**
 
--   **PROC POWER CANNOT do two-sample comparison of means for equivalence** (i.e. 2 treatment means recorded on 2 independent groups of patients are equivalent, eg, the true mean difference is not necessarily thought to be a difference of zero, but the means are equivalent within a set tolerance). **NOTE: PROC POWER ONLY DOES two one sided significant tests (TOST), this is a test for Bioequivalence. More info below and on the [TOST page](Sample Size Calculation for Average Bioequivalence)!**
+-   Two independent sample test: Comparison of means for equivalence, when the true mean difference is non-zero, and within a set tolerance. (It will give you a result, but this doesn't align to other software/books calculations)
 
-# **One-sample equivalence test**
+-   Two independent sample test: Comparison of proportions for equivalence, when the true mean difference is zero or non-zero, and within a set tolerance
 
-Suppose a reformulation of a treatment pill, needs to have a weight equivalent to a target value of 130 milligrams. Weight is assumed normally distributed and an acceptable weight is between 110 milligrams and 150 milligrams. The standard deviation of the weight is 50 milligrams. What sample size is needed assuming an alpha level of 5% with 80% power to conclude the weight is within the margin (the tablet weight is equivalent to 130 milligram). The below shows a sample size of 55 pills is required.
+# **One Sample Equivalence Test of a Mean**
+
+For a mean $\mu1$, we are testing if $\mu1$ is equivalent to some value $\theta$ within a tolerance of $\delta$, in other words: $H_0: |\mu1| \leq \theta+\delta$ versus $H_1: |\mu1|>|\theta+\delta|$
+
+A reformulation of a treatment pill, needs to have a weight equivalent to a target value of $\theta$ =130 mg. Weight is assumed normally distributed and an acceptable weight is between 110 mg and 150 mg, hence$\delta=20mg$. The standard deviation of the weight is 50 mg. What sample size is needed assuming an alpha level of 5% with 80% power to conclude the weight is within the margin $\delta$ (the tablet weight is equivalent to 130 milligram). The below shows a sample size of 55 pills is required.
 
 ```{r eval=FALSE}
 PROC POWER  ;
@@ -42,32 +46,30 @@ RUN;
 knitr::include_graphics("../images/sample_s_equivalence/SAS1mean.png")
 ```
 
-# **Two Sample Equality test: Comparing means for parallel design (unpaired)**
+# **Two Sample Equivalence Test of Means**
 
-Next we will look at having 2 independent samples. In the most common scenario SDs are assumed known and the same in both treatment groups.
+## **Comparing two independent sample means for parallel design (unpaired samples) where true difference between treatments is believed to be zero and within a tolerance**
 
-In example 1, we look at an equality test, when the true difference between treatment groups is assumed to be equal to 0, then SAS assumes you are doing a 2-sided test, $H_0:|\mu2-\mu1|\geq \theta$ versus $H_1: |\mu2-\mu1|\lt \theta$.
+In the most common scenario, SDs are assumed known and the same in both treatment groups.
 
-Remember that does not give correct sample sizes, for equivalence tests when the true difference is non-zero.
+For a mean in group 1 of $\mu1$, and a mean in group 2 of $\mu2$, we are testing if the absolute difference between the treatments, $|\mu2-\mu1|$ is equivalent to some value $\theta$, within a tolerance of $\delta$. In this example $/theta=0$, in other words:
 
-Example 2 is provided as a contrast, since it shows a bio-equivalence test (TOST), when the true difference between treatment groups is assumed not to be equal to 0, SAS assumes you are doing two one-sided t-tests (TOST). This is represented by the following 2x null and alternative hypotheses.
+$H_0:|\mu2-\mu1| \le \theta+\delta$ versus $H_1: |\mu2-\mu1|\gt \theta+\delta$ (where $\theta=0$ ) or
 
-$H_0:\mu2-\mu1 \leq -\theta$ or $\mu2-\mu1 \geq -\theta$ versus $H_1: -\theta \lt \mu2 - \mu1 \lt \theta$
+$H_0:|\mu2-\mu1| \le \delta$ versus $H_1: |\mu2-\mu1|\gt \delta$
 
-## Example 1: Equality equivalence test
+### Example where $\theta = 0$
 
-### Sample size for comparison of 2 independent treatment group means with same known SDs and assuming a true difference between the treatments is zero
+It is anticipated that patients will have the same mean diastolic BP of 96 mmHg on both the new drug and the active comparator, hence $\theta$=0. It is also anticipated that the SD ($\sigma$) of the diastolic BP is approximately 8 mmHg. The decision is made by clinical to accept equivalence if the difference found between the treatments is less than 5 mmHg, hence $\delta$=5. How many patients are required for an 80% power and an overall significance level of 5%?
 
-It is anticipated that patients will have the same mean diastolic BP of 96 mmHg on both the new drug and the active comparater. It is also anticipated that the SD ($\sigma$) of the diastolic BP is approximately 8 mmHg. The decision is made by clinical to accept equivalence if the difference found between the treatments is less than 5 mmHg. How many patients are required for an 80% power and an overall significance level of 5%?
-
-The below shows a sample size of 45 patients per treatment group is required (90 patients in total). Notice how SAS asks for the lower & upper bounds, these are derived by using the meandiff + /- the acceptable equivalence limit (which is stated as 5 mmHg above).
+A total sample size of 90 is recommended, which equates to a sample size of 45 patients per treatment group. Notice how SAS asks for the lower & upper bounds, these are derived by using the meandiff $\theta$+/- the acceptable equivalence limit $\delta$ (which is stated as 5 mmHg above).
 
 ```{r eval=FALSE}
 PROC POWER  ;
    twosamplemeans test=equiv_diff   
-   lower  = 91          
-   upper  = 101   
-   meandiff=96 
+   lower  = -5          
+   upper  = 5   
+   meandiff=0 
    stddev = 8      
    ntotal = .       
    power  = 0.8      
@@ -75,21 +77,34 @@ PROC POWER  ;
 RUN;
 ```
 
-As shown below, a total sample size of 90 is recommended, which equates to 45 in each group.
-
-Note: that instead of meandiff=96, and lower=91, upper=101, you can also use: meandiff=0, lower=-5 and upper=5 to get the same answer.
-
 ```{r, echo=FALSE, fig.align='center', out.width="50%"}
 knitr::include_graphics("../images/sample_s_equivalence/SAS2mean_independant.png")
 ```
 
-## Example 2: TOST Bio-Equivalence
+## **Comparing two independent sample means for parallel design (unpaired samples) where true difference between treatments is believed NOT to be zero and within a tolerance**
 
-### Sample size for comparison of 2 independent treatment group mean differences with same known SDs, 'true' difference not believed to be 0 (eg. perhaps a 1% difference), but we want to know if the drugs are bio-equivalent within 5%.
+In the most common scenario, SDs are assumed known and the same in both treatment groups.
 
-A client is interested in conducting a clinical trial to compare two cholesterol lowering agents for treatment of hypercholesterolemic patients through a parallel design. The primary efficacy parameter is a low-density lipidprotein cholesterol (LDL-C). For establishing equivalence, suppose the true mean difference is 0.01 (1%) and the equivalence limit is 0.05 (5%). Assuming SD = 0.1, how many patients are required for an 80% power and an overall significance level of 5%?
+For a mean in group 1 of $\mu1$, and a mean in group 2 of $\mu2$, we are testing if the absolute difference between the treatments, $|\mu2-\mu1|$ is equivalent to some value $\theta$ within a tolerance of $\delta$, in other words:\
+$H_0:|\mu2-\mu1| \le \theta+\delta$ versus $H_1: |\mu2-\mu1|\gt \theta+\delta$.
 
-Below shows a sample size of 140 patients in Total (70 per treatment group). See [TOST CAMIS PAGE](Sample Size Calculation for Average Bioequivalence) for more details, including equiv_ratio instead of difference.
+### Example where $\theta \neq 0$
+
+In this example, you would expect that you could apply similar code to above, but with `lower` & `upper` not equidistant from the mean difference, however, doing so does not give the right answer. If you consult SAS literature, it states that the below code is doing Two One-Sided Tests (TOST) Bioequivalence testing. To date, we have not been able to program equivalence with $\theta \neq 0$ in SAS and get a sample size that matches the literature.
+
+Instead of the hypothesis: $H_0:|\mu2-\mu1| \le \theta+\delta$ versus $H_1: |\mu2-\mu1|\gt \theta+\delta$.
+
+The sample size calculation in this example is aligned to TOST hypotheses:
+
+$H_01: \mu2 - \mu1 \ge -\theta$ vs $H_11:\mu2-\mu1 \lt -\theta$
+
+AND $H_02: \mu2 - \mu1 \le \theta$ vs $H_12:\mu2-\mu1 \gt \theta$
+
+See [TOST page](Sample%20Size%20Calculation%20for%20Average%20Bioequivalence) for more detail.
+
+A client is interested in conducting a clinical trial to compare two cholesterol lowering agents for treatment of hypercholesterolemic patients through a parallel design. The primary efficacy parameter is a low-density lipidprotein cholesterol (LDL-C). For establishing equivalence, suppose the true mean difference is 0.01 (1%) and the equivalence limit is 0.05 (5%). Assuming SD = 0.1 (10%), how many patients are required for an 80% power and an overall significance level of 5%?
+
+Below shows a sample size of 140 patients in Total (70 per treatment group).
 
 ```{r eval=FALSE}
 PROC POWER  ;
@@ -151,10 +166,5 @@ knitr::include_graphics("../images/sample_s_equivalence/SAS2crossovermeans.png")
 2.  [Sample Size Calculation Using SAS® for equivalence](https://support.sas.com/kb/50/700.html#:~:text=Power%20analysis%20and%20sample%20size%20determination%20for%20equivalence,be%20conducted%20using%20PROC%20FREQ%20or%20PROC%20TTEST.)
 
 ### Version
-::: {.callout-note collapse="true" title="Session Info"}
-```{r}
-#| echo: false
-si <- sessioninfo::session_info("sample_s_superiority", dependencies = FALSE) 
-si$external <- structure(list("SAS" = "9.04.01M7P08062020"), 
-                         class = c("external_info", "list")) 
-si
+
+::: {.callout-note collapse="true" title="Session Info"} \`\`\`{r} #\| echo: false si \<- sessioninfo::session_info("sample_s_superiority", dependencies = FALSE) si\$external \<- structure(list("SAS" = "9.04.01M7P08062020"), class = c("external_info", "list")) si
