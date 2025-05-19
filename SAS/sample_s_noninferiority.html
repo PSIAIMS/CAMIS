@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>XGBoost</title>
+<title>Sample Size for Non-Inferiority Trials in SAS</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -104,6 +104,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -198,16 +227,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#xgboost" id="toc-xgboost" class="nav-link active" data-scroll-target="#xgboost">XGBoost</a>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#two-sample-non-inferiority-test-comparing-means-for-parallel-design-unpaired" id="toc-two-sample-non-inferiority-test-comparing-means-for-parallel-design-unpaired" class="nav-link" data-scroll-target="#two-sample-non-inferiority-test-comparing-means-for-parallel-design-unpaired"><strong>Two Sample Non-inferiority test: Comparing means for parallel design (unpaired)</strong></a></li>
+  <li><a href="#comparing-means-for-crossover-design-paired" id="toc-comparing-means-for-crossover-design-paired" class="nav-link" data-scroll-target="#comparing-means-for-crossover-design-paired"><strong>Comparing means for crossover design (paired)</strong></a>
   <ul class="collapse">
-  <li><a href="#available-r-packages" id="toc-available-r-packages" class="nav-link" data-scroll-target="#available-r-packages">Available R packages</a></li>
-  <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data used</a></li>
-  <li><a href="#example-code" id="toc-example-code" class="nav-link" data-scroll-target="#example-code">Example Code</a>
+  <li><a href="#estimating-the-within-patient-variance-and-correlation." id="toc-estimating-the-within-patient-variance-and-correlation." class="nav-link" data-scroll-target="#estimating-the-within-patient-variance-and-correlation."><strong>Estimating the within patient variance and correlation.</strong></a>
   <ul class="collapse">
-  <li><a href="#classification" id="toc-classification" class="nav-link" data-scroll-target="#classification">Classification</a></li>
-  <li><a href="#regression" id="toc-regression" class="nav-link" data-scroll-target="#regression">Regression</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  <li><a href="#version" id="toc-version" class="nav-link" data-scroll-target="#version">Version</a></li>
   </ul></li>
-  <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">Reference</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -217,7 +245,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">XGBoost</h1>
+<h1 class="title">Sample Size for Non-Inferiority Trials in SAS</h1>
 </div>
 
 
@@ -225,6 +253,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="quarto-title-meta">
 
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">19 May, 2025</p>
+    </div>
+  </div>
   
     
   </div>
@@ -234,324 +268,84 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="xgboost" class="level1">
-<h1>XGBoost</h1>
-<p>XGBoost which stands for eXtreme Gradient Boosting is an efficent implementation of gradient boosting. Gradient boosting is an ensemble technique in machine learning. Unlike traditional models that learn from the data independently, boosting combines the predictions of multiple weak learners to create a single, more accurate strong learner.</p>
-<p>An XGBoost model is based on trees, so we don’t need to do much preprocessing for our data; we don’t need to worry about the factors or centering or scaling our data.</p>
-<section id="available-r-packages" class="level2">
-<h2 class="anchored" data-anchor-id="available-r-packages">Available R packages</h2>
-<p>There are multiple packages that can be used to to implement xgboost in R.</p>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>PROC POWER<sup>1</sup> can be used for sample size calculations for non-inferiority testing. See <sup>2</sup> for explanation of non-inferiority and how to perform Sample size in SAS (including comparing proportions). Below we give 2 sample size examples for the following types of studies:</p>
 <ul>
-<li><a href="https://www.tidymodels.org/">{tidymodels}</a></li>
-<li><a href="https://cran.r-project.org/web/packages/xgboost/index.html">{xgboost}</a></li>
-<li><a href="https://cran.r-project.org/web/packages/caret/index.html">{caret}</a></li>
+<li><p>two-sample comparison of means for Non-inferiority (i.e.&nbsp;testing if one treatment mean is non-inferior to the another treatment mean).</p></li>
+<li><p>Paired-sample comparison of means (i.e.&nbsp;2 treatment means recorded on 1 group of patients are equivalent within a set tolerance)</p></li>
 </ul>
-<p>{tidymodels} and {caret} easy ways to access xgboost easily. This example will use {tidymodels} because of the functionality included in {tidymodels} and is being heavily supported by Posit. {caret} was the precursor to {tidymodels} and it is recommended that you use {tidymodels} over {caret} as no new features are being added.</p>
 </section>
-<section id="data-used" class="level2">
-<h2 class="anchored" data-anchor-id="data-used">Data used</h2>
-<p>Data used for this example is <code>birthwt</code> which is part of the {MASS} package. This data-set considers a number of risk factors associated with birth weight in infants.</p>
+<section id="two-sample-non-inferiority-test-comparing-means-for-parallel-design-unpaired" class="level1">
+<h1><strong>Two Sample Non-inferiority test: Comparing means for parallel design (unpaired)</strong></h1>
+<p>This example is a sample size calculation for the following hypotheses: <span class="math inline">\(H_0:\mu2-\mu1\le -\theta\)</span> versus <span class="math inline">\(H_1: \mu2-\mu1\gt -\theta\)</span>.</p>
+<p>A client is interested in conducting a clinical trial to compare two cholesterol lowering agents for treatment of hypercholesterolemic patients through a parallel design. The primary efficacy parameter is a low-density lipidprotein cholesterol (LDL-C). We will consider the situation where the intended trial is for testing noninferiority. For establishing it, suppose the true mean difference is 0 and the noninferiority margin is chosen to be -0.05 (-5%). Assuming SD = 0.1, how many patients are required for an 80% power and an overall significance level of 5%?</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MASS)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidymodels)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(xgboost)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(birthwt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>PROC POWER  ;    </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  twosamplemeans </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  test<span class="ot">=</span>equiv_diff      </span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  lower  <span class="ot">=</span> <span class="dv">91</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  upper  <span class="ot">=</span> <span class="dv">101</span>  </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  meandiff<span class="ot">=</span><span class="dv">96</span> </span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  stddev <span class="ot">=</span> <span class="dv">8</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  ntotal <span class="ot">=</span> .  </span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  power  <span class="ot">=</span> <span class="fl">0.8</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  alpha  <span class="ot">=</span> <span class="fl">0.05</span>;</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  RUN;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Our modeling goal using the <code>birthwt</code> dataset is to predict whether the birth weight is low or not low based on factors such as mother’s age, smoking status, and history of hypertension.</p>
-</section>
-<section id="example-code" class="level2">
-<h2 class="anchored" data-anchor-id="example-code">Example Code</h2>
-<p>Use {tidymodels} metadata package to split the data into training and testing data. For classification, we need to change the Low variable into a factor, since currently coded as an integer (0,1).</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>birthwt <span class="ot">&lt;-</span> </span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  birthwt <span class="sc">%&gt;%</span> </span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">low_f =</span> <span class="fu">lvls_revalue</span>(<span class="fu">factor</span>(low), <span class="fu">c</span>(<span class="st">"Not Low"</span>, <span class="st">"Low"</span>)),</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">smoke_f =</span> <span class="fu">lvls_revalue</span>(<span class="fu">factor</span>(smoke), <span class="fu">c</span>(<span class="st">"Non-smoker"</span>, <span class="st">"Smoker"</span>))</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>brthwt_split <span class="ot">&lt;-</span> <span class="fu">initial_split</span>(birthwt, <span class="at">strata =</span> low)</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>brthwt_train <span class="ot">&lt;-</span> <span class="fu">training</span>(brthwt_split)</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>brthwt_test <span class="ot">&lt;-</span> <span class="fu">testing</span>(brthwt_split)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>As shown below, a total sample size of 102 is recommended, which equates to 51 in each group.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/sample_s_noninferiority/2_sample_parallelgroup_means.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
 </div>
-<section id="classification" class="level3">
-<h3 class="anchored" data-anchor-id="classification">Classification</h3>
-<p>After creating the data split, we setup the params of the model.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>xgboost_spec <span class="ot">&lt;-</span> </span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">boost_tree</span>(<span class="at">trees =</span> <span class="dv">15</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># This model can be used for classification or regression, so set mode</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"xgboost"</span>)</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>xgboost_spec</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Boosted Tree Model Specification (classification)
-
-Main Arguments:
-  trees = 15
-
-Computational engine: xgboost </code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>xgboost_cls_fit <span class="ot">&lt;-</span> xgboost_spec <span class="sc">%&gt;%</span> <span class="fu">fit</span>(low_f <span class="sc">~</span> ., <span class="at">data =</span> brthwt_train)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>xgboost_cls_fit</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>parsnip model object
-
-##### xgb.Booster
-raw: 15.2 Kb 
-call:
-  xgboost::xgb.train(params = list(eta = 0.3, max_depth = 6, gamma = 0, 
-    colsample_bytree = 1, colsample_bynode = 1, min_child_weight = 1, 
-    subsample = 1), data = x$data, nrounds = 15, watchlist = x$watchlist, 
-    verbose = 0, nthread = 1, objective = "binary:logistic")
-params (as set within xgb.train):
-  eta = "0.3", max_depth = "6", gamma = "0", colsample_bytree = "1", colsample_bynode = "1", min_child_weight = "1", subsample = "1", nthread = "1", objective = "binary:logistic", validate_parameters = "TRUE"
-xgb.attributes:
-  niter
-callbacks:
-  cb.evaluation.log()
-# of features: 12 
-niter: 15
-nfeatures : 12 
-evaluation_log:
-  iter training_logloss
- &lt;num&gt;            &lt;num&gt;
-     1       0.44894346
-     2       0.31033704
-   ---              ---
-    14       0.01571681
-    15       0.01400478</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bind_cols</span>(</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">predict</span>(xgboost_cls_fit, brthwt_test),</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">predict</span>(xgboost_cls_fit, brthwt_test, <span class="at">type =</span> <span class="st">"prob"</span>)</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 48 × 3
-   .pred_class `.pred_Not Low` .pred_Low
-   &lt;fct&gt;                 &lt;dbl&gt;     &lt;dbl&gt;
- 1 Not Low               0.985    0.0150
- 2 Not Low               0.985    0.0150
- 3 Not Low               0.985    0.0150
- 4 Not Low               0.985    0.0150
- 5 Not Low               0.988    0.0116
- 6 Not Low               0.988    0.0116
- 7 Not Low               0.988    0.0116
- 8 Not Low               0.988    0.0116
- 9 Not Low               0.988    0.0116
-10 Not Low               0.988    0.0116
-# ℹ 38 more rows</code></pre>
 </div>
 </div>
 </section>
-<section id="regression" class="level3">
-<h3 class="anchored" data-anchor-id="regression">Regression</h3>
-<p>To perform xgboost with regression, when setting up the parameter of the model, set the mode of xgboost to regression. After that switch and then changing the variable of interest back to an integer, the rest of the code is the same.</p>
+<section id="comparing-means-for-crossover-design-paired" class="level1">
+<h1><strong>Comparing means for crossover design (paired)</strong></h1>
+<p>Here we assume there is no carry-over effect and that the variance is known. For more information see<sup>3</sup>. There is no obvious way in SAS to do cross over non-inferiority, however, given the one sided test, you can half the alpha using the equiv_diff option to give you the non-inferiority sample size.</p>
+<section id="estimating-the-within-patient-variance-and-correlation." class="level2">
+<h2 class="anchored" data-anchor-id="estimating-the-within-patient-variance-and-correlation."><strong>Estimating the within patient variance and correlation.</strong></h2>
+<p>Let’s consider a standard two-sequence, two period crossover design. Suppose that the sponsor is interested in showing non-inferiority of the test drug against the reference with the non-inferiority margin -20%. Assume power of 80%. Based on the results from previous trials, it is estimated that the variance (of the difference) is 0.2 (20%). Suppose that the true mean difference is -0.1 (-10%). What is the required sample size, assuming significance level of 5%?</p>
+<p>Alpha = 0.025 is used below, instead of 0.05 because you are doing non-inferiority (a one sided test). Note that this is still the sample size for alpha=0.05. The below shows a sample size of 13 patients is required.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>xgboost_reg_spec <span class="ot">&lt;-</span> </span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">boost_tree</span>(<span class="at">trees =</span> <span class="dv">15</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># This model can be used for classification or regression, so set mode</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"regression"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"xgboost"</span>)</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>xgboost_reg_spec</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Boosted Tree Model Specification (regression)
-
-Main Arguments:
-  trees = 15
-
-Computational engine: xgboost </code></pre>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>   pairedmeans </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>   test<span class="ot">=</span>equiv_diff</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>      lower<span class="ot">=</span><span class="sc">-</span><span class="fl">0.3</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>      upper<span class="ot">=</span><span class="fl">0.1</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>      meandiff   <span class="ot">=</span> <span class="sc">-</span><span class="fl">0.1</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>      stddev<span class="ot">=</span><span class="fl">0.2</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>      corr          <span class="ot">=</span> <span class="fl">0.5</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>      alpha         <span class="ot">=</span> <span class="fl">0.025</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>      npairs        <span class="ot">=</span> .</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>      power         <span class="ot">=</span> <span class="fl">0.8</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For a regression model, the outcome should be `numeric`, not a `factor`.</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>xgboost_reg_fit <span class="ot">&lt;-</span> xgboost_reg_spec <span class="sc">%&gt;%</span> <span class="fu">fit</span>(low<span class="sc">~</span> ., <span class="at">data =</span> brthwt_train)</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>xgboost_reg_fit </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>parsnip model object
-
-##### xgb.Booster
-raw: 15.2 Kb 
-call:
-  xgboost::xgb.train(params = list(eta = 0.3, max_depth = 6, gamma = 0, 
-    colsample_bytree = 1, colsample_bynode = 1, min_child_weight = 1, 
-    subsample = 1), data = x$data, nrounds = 15, watchlist = x$watchlist, 
-    verbose = 0, nthread = 1, objective = "reg:squarederror")
-params (as set within xgb.train):
-  eta = "0.3", max_depth = "6", gamma = "0", colsample_bytree = "1", colsample_bynode = "1", min_child_weight = "1", subsample = "1", nthread = "1", objective = "reg:squarederror", validate_parameters = "TRUE"
-xgb.attributes:
-  niter
-callbacks:
-  cb.evaluation.log()
-# of features: 13 
-niter: 15
-nfeatures : 13 
-evaluation_log:
-  iter training_rmse
- &lt;num&gt;         &lt;num&gt;
-     1   0.352094163
-     2   0.247943366
-   ---           ---
-    14   0.003690328
-    15   0.002599106</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">predict</span>(xgboost_reg_fit , brthwt_test)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 48 × 1
-     .pred
-     &lt;dbl&gt;
- 1 0.00253
- 2 0.00253
- 3 0.00253
- 4 0.00253
- 5 0.00253
- 6 0.00253
- 7 0.00253
- 8 0.00253
- 9 0.00253
-10 0.00253
-# ℹ 38 more rows</code></pre>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/sample_s_noninferiority/2_sample_crossover_means.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
 </div>
 </div>
+</div>
+<section id="references" class="level3">
+<h3 class="anchored" data-anchor-id="references">References</h3>
+<ol type="1">
+<li><a href="https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_power_sect010.html">PROC POWER SAS online help</a></li>
+<li><a href="https://support.sas.com/kb/48/616.html">Sample Size Calculation Using SAS® for non-inferiority</a></li>
+<li><a href="https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_power_a0000001004.htm">Sample Size for Cross over non-inferiority</a></li>
+</ol>
 </section>
+<section id="version" class="level3">
+<h3 class="anchored" data-anchor-id="version">Version</h3>
+<p>{r} #| echo: false si &lt;- sessioninfo::session_info(“sample_s_noninferiority”, dependencies = FALSE) si$external &lt;- structure(list(“SAS” = “9.04.01M7P08062020”), class = c(“external_info”, “list”)) si</p>
+
+
 </section>
-<section id="reference" class="level2">
-<h2 class="anchored" data-anchor-id="reference">Reference</h2>
-<ul>
-<li><a href="https://juliasilge.com/blog/xgboost-tune-volleyball/">XGBoost with tidymodels by Julia Silge</a></li>
-</ul>
-<div class="callout callout-style-default callout-note callout-titled" title="Session Info">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Session Info
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-1" class="callout-1-contents callout-collapse collapse">
-<div class="callout-body-container callout-body">
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>─ Session info ───────────────────────────────────────────────────────────────
- setting  value
- version  R version 4.4.2 (2024-10-31)
- os       Ubuntu 24.04.2 LTS
- system   x86_64, linux-gnu
- ui       X11
- language (EN)
- collate  C.UTF-8
- ctype    C.UTF-8
- tz       UTC
- date     2025-05-19
- pandoc   3.6.3 @ /opt/quarto/bin/tools/ (via rmarkdown)
-
-─ Packages ───────────────────────────────────────────────────────────────────
- ! package      * version    date (UTC) lib source
- P backports      1.5.0      2024-05-23 [?] RSPM (R 4.4.0)
- P broom        * 1.0.7      2024-09-26 [?] RSPM (R 4.4.0)
-   class          7.3-22     2023-05-03 [2] CRAN (R 4.4.2)
- P cli            3.6.3      2024-06-21 [?] RSPM (R 4.4.0)
-   codetools      0.2-20     2024-03-31 [2] CRAN (R 4.4.2)
- P colorspace     2.1-1      2024-07-26 [?] RSPM (R 4.4.0)
- P data.table     1.16.0     2024-08-27 [?] RSPM (R 4.4.0)
- P dials        * 1.3.0      2024-07-30 [?] RSPM (R 4.4.0)
- P DiceDesign     1.10       2023-12-07 [?] RSPM (R 4.4.0)
- P digest         0.6.37     2024-08-19 [?] RSPM (R 4.4.0)
- P dplyr        * 1.1.4      2023-11-17 [?] RSPM (R 4.4.0)
- P evaluate       1.0.0      2024-09-17 [?] RSPM (R 4.4.0)
- P fansi          1.0.6      2023-12-08 [?] RSPM (R 4.4.0)
- P fastmap        1.2.0      2024-05-15 [?] RSPM (R 4.4.0)
- P forcats      * 1.0.0      2023-01-29 [?] RSPM (R 4.4.0)
- P foreach        1.5.2      2022-02-02 [?] RSPM (R 4.4.0)
- P furrr          0.3.1      2022-08-15 [?] RSPM (R 4.4.0)
- P future         1.34.0     2024-07-29 [?] RSPM (R 4.4.0)
- P future.apply   1.11.2     2024-03-28 [?] RSPM (R 4.4.0)
- P generics       0.1.3      2022-07-05 [?] RSPM (R 4.4.0)
- P ggplot2      * 3.5.1      2024-04-23 [?] RSPM (R 4.4.0)
- P globals        0.16.3     2024-03-08 [?] RSPM (R 4.4.0)
- P glue           1.8.0      2024-09-30 [?] RSPM (R 4.4.0)
- P gower          1.0.1      2022-12-22 [?] RSPM (R 4.4.0)
- P GPfit          1.0-8      2019-02-08 [?] RSPM (R 4.4.0)
- P gtable         0.3.5      2024-04-22 [?] RSPM (R 4.4.0)
- P hardhat        1.4.0      2024-06-02 [?] RSPM (R 4.4.0)
- P hms            1.1.3      2023-03-21 [?] RSPM (R 4.4.0)
- P htmltools      0.5.8.1    2024-04-04 [?] RSPM (R 4.4.0)
- P htmlwidgets    1.6.4      2023-12-06 [?] RSPM (R 4.4.0)
- P infer        * 1.0.7      2024-03-25 [?] RSPM (R 4.4.0)
- P ipred          0.9-15     2024-07-18 [?] RSPM (R 4.4.0)
- P iterators      1.0.14     2022-02-05 [?] RSPM (R 4.4.0)
- P jsonlite       1.8.9      2024-09-20 [?] RSPM (R 4.4.0)
- P knitr          1.48       2024-07-07 [?] RSPM (R 4.4.0)
-   lattice        0.22-6     2024-03-20 [2] CRAN (R 4.4.2)
- P lava           1.8.0      2024-03-05 [?] RSPM (R 4.4.0)
- P lhs            1.2.0      2024-06-30 [?] RSPM (R 4.4.0)
- P lifecycle      1.0.4      2023-11-07 [?] RSPM (R 4.4.0)
- P listenv        0.9.1      2024-01-29 [?] RSPM (R 4.4.0)
- P lubridate    * 1.9.3      2023-09-27 [?] RSPM (R 4.4.0)
- P magrittr       2.0.3      2022-03-30 [?] RSPM (R 4.4.0)
-   MASS         * 7.3-61     2024-06-13 [2] CRAN (R 4.4.2)
-   Matrix         1.7-1      2024-10-18 [2] CRAN (R 4.4.2)
- P modeldata    * 1.4.0      2024-06-19 [?] RSPM (R 4.4.0)
- P munsell        0.5.1      2024-04-01 [?] RSPM (R 4.4.0)
-   nnet           7.3-19     2023-05-03 [2] CRAN (R 4.4.2)
- P parallelly     1.38.0     2024-07-27 [?] RSPM (R 4.4.0)
- P parsnip      * 1.2.1      2024-03-22 [?] RSPM (R 4.4.0)
- P pillar         1.9.0      2023-03-22 [?] RSPM (R 4.4.0)
- P pkgconfig      2.0.3      2019-09-22 [?] RSPM (R 4.4.0)
- P prodlim        2024.06.25 2024-06-24 [?] RSPM (R 4.4.0)
- P purrr        * 1.0.2      2023-08-10 [?] RSPM (R 4.4.0)
- P R6             2.5.1      2021-08-19 [?] RSPM (R 4.4.0)
- P Rcpp           1.0.13     2024-07-17 [?] RSPM (R 4.4.0)
- P readr        * 2.1.5      2024-01-10 [?] RSPM (R 4.4.0)
- P recipes      * 1.1.0      2024-07-04 [?] RSPM (R 4.4.0)
-   renv           1.0.10     2024-10-05 [1] RSPM (R 4.4.0)
- P rlang          1.1.4      2024-06-04 [?] RSPM (R 4.4.0)
- P rmarkdown      2.28       2024-08-17 [?] RSPM (R 4.4.0)
-   rpart          4.1.23     2023-12-05 [2] CRAN (R 4.4.2)
- P rsample      * 1.2.1      2024-03-25 [?] RSPM (R 4.4.0)
- P rstudioapi     0.16.0     2024-03-24 [?] RSPM (R 4.4.0)
- P scales       * 1.3.0      2023-11-28 [?] RSPM (R 4.4.0)
- P sessioninfo    1.2.2      2021-12-06 [?] RSPM (R 4.4.0)
- P stringi        1.8.4      2024-05-06 [?] RSPM (R 4.4.0)
- P stringr      * 1.5.1      2023-11-14 [?] RSPM (R 4.4.0)
-   survival       3.7-0      2024-06-05 [2] CRAN (R 4.4.2)
- P tibble       * 3.2.1      2023-03-20 [?] RSPM (R 4.4.0)
- P tidymodels   * 1.2.0      2024-03-25 [?] RSPM (R 4.4.0)
- P tidyr        * 1.3.1      2024-01-24 [?] RSPM (R 4.4.0)
- P tidyselect     1.2.1      2024-03-11 [?] RSPM (R 4.4.0)
- P tidyverse    * 2.0.0      2023-02-22 [?] RSPM (R 4.4.0)
- P timechange     0.3.0      2024-01-18 [?] RSPM (R 4.4.0)
- P timeDate       4041.110   2024-09-22 [?] RSPM (R 4.4.0)
- P tune         * 1.2.1      2024-04-18 [?] RSPM (R 4.4.0)
- P tzdb           0.4.0      2023-05-12 [?] RSPM (R 4.4.0)
- P utf8           1.2.4      2023-10-22 [?] RSPM (R 4.4.0)
- P vctrs          0.6.5      2023-12-01 [?] RSPM (R 4.4.0)
- P withr          3.0.1      2024-07-31 [?] RSPM (R 4.4.0)
- P workflows    * 1.1.4      2024-02-19 [?] RSPM (R 4.4.0)
- P workflowsets * 1.1.0      2024-03-21 [?] RSPM (R 4.4.0)
- P xfun           0.48       2024-10-03 [?] RSPM (R 4.4.0)
- P xgboost      * 1.7.8.1    2024-07-24 [?] RSPM (R 4.4.0)
- P yaml           2.3.10     2024-07-26 [?] RSPM (R 4.4.0)
- P yardstick    * 1.3.1      2024-03-21 [?] RSPM (R 4.4.0)
-
- [1] /home/runner/work/CAMIS/CAMIS/renv/library/linux-ubuntu-noble/R-4.4/x86_64-pc-linux-gnu
- [2] /opt/R/4.4.2/lib/R/library
-
- P ── Loaded and on-disk path mismatch.
-
-──────────────────────────────────────────────────────────────────────────────</code></pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-
-
 </section>
 </section>
 
