@@ -18,24 +18,16 @@ The Wilcoxon rank sum test is often presented alongside a Hodges-Lehmann estimat
 
 A tie in the data exists when an observation in group A, has the same result as an observation in group B.
 
-## Useful References
-
--   [Methods and Formulae](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/nonparametrics/how-to/1-sample-wilcoxon/methods-and-formulas/methods-and-formulas)
--   [Mann Whitney is not about medians in general](https://github.com/adrianolszewski/Mann-Whitney-is-not-about-medians-in-general)
--   [Relationship between walsh averages and WRS](https://stats.stackexchange.com/questions/215889/prove-the-relationship-between-walsh-averages-and-wilcoxon-signed-rank-test)
--   [Hodges Lehmann Problems](https://aakinshin.net/posts/r-hodges-lehmann-problems)
 
 ## Available R packages
 
-There are three main implementations of the Wilcoxon rank sum test in R.
+There are two main implementations of the Wilcoxon rank sum test in R.
 
 -   [stats::wilcox.test](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/wilcox.test)
 
--   [asht::wmwTest()](https://cran.r-project.org/web/packages/asht/asht.pdf)
-
 -   [coin::wilcox_test()](https://cran.r-project.org/web/packages/coin/coin.pdf)
 
-The `stats` package implements various classic statistical tests, including Wilcoxon rank sum test. Although this is arguably the most commonly applied package, this one does not account for any ties in the data.
+The `stats` package implements various classic statistical tests, including Wilcoxon rank sum test. Although this is arguably the most commonly applied package, this one does not account for any ties in the data. To account for ties in the data, the `coin` package should be used.
 
 ```{r}
 #| eval: false
@@ -83,7 +75,7 @@ The default test is two-sided with confidence level of 0.95, and does continuity
 #| eval: true
 #| echo: true
 # default is two sided
-stats::wilcox.test(bw_ns, bw_s, paired = F)
+stats::wilcox.test(bw_ns, bw_s, paired = FALSE, conf.int = TRUE)
 ```
 
 We can also carry out a one-sided test, by specifying `alternative = greater` (if the first item is greater than the second).
@@ -92,5 +84,43 @@ We can also carry out a one-sided test, by specifying `alternative = greater` (i
 #| eval: true
 #| echo: true
 # default is two sided
-stats::wilcox.test(bw_ns, bw_s, paired = F, alternative = 'greater')
+stats::wilcox.test(bw_ns, bw_s, paired = FALSE, alternative = 'greater')
 ```
+
+In order to account for the ties, `wilcox_test` from the {coin} package should be used. For this function, the data needs to be inputted via a formula where the right hand side is a factor, so we need to create a dataset. In order to get smokers - non-smokers we need to relevel the factors.
+
+```{r}
+#| eval: true
+#| echo: true
+
+smk_data <- data.frame(
+  value = c(bw_ns, bw_s), 
+  smoke = as.factor(rep(c("non", "smoke"), c(length(bw_ns), length(bw_s))))
+) 
+
+smk_data$smoke
+smk_data$smoke <- forcats::fct_relevel(data$smoke, "smoke")
+
+smk_data$smoke
+```
+
+Now the data is in the right shape we can run `wilcox_test`. In order to get the Hodges-Lehmann confidence intervals out, we need to include the `conf.int = TRUE` argument.(NOTE: the `conf.level` argument controls the confidence level, but must be used with `conf.int = TRUE` otherwise you won't get a confidence interval)
+
+```{r}
+coin::wilcox_test(value ~ smoke, data = data, conf.int  = TRUE)
+```
+
+In {coin} there is no option for a continuity correction and it is not done by default. {coin} can calculate exact and Monte Carlo conditional p-values using the `distribtuion` argument. The exact p-value should be used in small sample sizes as the normal approximation does not hold
+
+```{r}
+
+coin::wilcox_test(value ~ smoke, data = data, conf.int  = TRUE,
+                  distribution = "exact")
+```
+
+## Useful References
+
+-   [Methods and Formulae](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/nonparametrics/how-to/1-sample-wilcoxon/methods-and-formulas/methods-and-formulas)
+-   [Mann Whitney is not about medians in general](https://github.com/adrianolszewski/Mann-Whitney-is-not-about-medians-in-general/blob/main/Mann_Whitney_Wilcoxon_fails_as_test_of_medians_literature.md)
+-   [Relationship between walsh averages and WRS](https://stats.stackexchange.com/questions/215889/prove-the-relationship-between-walsh-averages-and-wilcoxon-signed-rank-test)
+-   [Hodges Lehmann Problems](https://aakinshin.net/posts/r-hodges-lehmann-problems)
