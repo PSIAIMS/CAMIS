@@ -18,7 +18,6 @@ The Wilcoxon rank sum test is often presented alongside a Hodges-Lehmann estimat
 
 A tie in the data exists when an observation in group A, has the same result as an observation in group B.
 
-
 ## Available R packages
 
 There are two main implementations of the Wilcoxon rank sum test in R.
@@ -33,7 +32,7 @@ The `stats` package implements various classic statistical tests, including Wilc
 #| eval: false
 #| echo: true
 # x, y are two unpaired vectors. Do not necessary need to be of the same length.
-stats::wilcox.test(x, y, paired = F)
+stats::wilcox.test(x, y, paired = FALSE)
 ```
 
 ## Example: Birth Weight
@@ -75,7 +74,7 @@ The default test is two-sided with confidence level of 0.95, and does continuity
 #| eval: true
 #| echo: true
 # default is two sided
-stats::wilcox.test(bw_ns, bw_s, paired = FALSE, conf.int = TRUE)
+stats::wilcox.test(bw_s, bw_ns, paired = FALSE, conf.int = TRUE)
 ```
 
 We can also carry out a one-sided test, by specifying `alternative = greater` (if the first item is greater than the second).
@@ -85,6 +84,14 @@ We can also carry out a one-sided test, by specifying `alternative = greater` (i
 #| echo: true
 # default is two sided
 stats::wilcox.test(bw_ns, bw_s, paired = FALSE, alternative = 'greater')
+```
+
+In {stats} the exact p-value is computed when there are less than 50 values and no ties otherwise the normal approximation is used. In this cause, because there are ties the normal approximation is used.
+```{r}
+#| eval: true
+#| echo: true
+# force exact
+stats::wilcox.test(bw_s, bw_ns, paired = FALSE, conf.int = TRUE, exact = TRUE)
 ```
 
 In order to account for the ties, `wilcox_test` from the {coin} package should be used. For this function, the data needs to be inputted via a formula where the right hand side is a factor, so we need to create a dataset. In order to get smokers - non-smokers we need to relevel the factors.
@@ -117,6 +124,7 @@ In {coin} there is no option for a continuity correction and it is not done by d
 coin::wilcox_test(value ~ smoke, data = data, conf.int  = TRUE,
                   distribution = "exact")
 ```
+*Note:* the distribution argument only effects the p-value, {coin} consistently calculated the exact Hodges-Lehmann confidence intervals.
 
 ## Useful References
 
