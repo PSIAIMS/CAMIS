@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Wilcoxon Rank Sum (Mann Whitney-U) in R</title>
+<title>R vs SAS Wilcoxon Rank-Sum Test</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -198,12 +198,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a>
-  <ul class="collapse">
-  <li><a href="#available-r-packages" id="toc-available-r-packages" class="nav-link" data-scroll-target="#available-r-packages">Available R packages</a></li>
-  <li><a href="#example-birth-weight" id="toc-example-birth-weight" class="nav-link" data-scroll-target="#example-birth-weight">Example: Birth Weight</a></li>
-  <li><a href="#useful-references" id="toc-useful-references" class="nav-link" data-scroll-target="#useful-references">Useful References</a></li>
-  </ul></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#wilcoxon-rank-sum" id="toc-wilcoxon-rank-sum" class="nav-link" data-scroll-target="#wilcoxon-rank-sum">Wilcoxon-Rank Sum</a></li>
+  <li><a href="#prerequisites-r-packages" id="toc-prerequisites-r-packages" class="nav-link" data-scroll-target="#prerequisites-r-packages">Prerequisites: R Packages</a></li>
+  <li><a href="#example-data" id="toc-example-data" class="nav-link" data-scroll-target="#example-data">Example Data</a></li>
+  <li><a href="#special-considerations" id="toc-special-considerations" class="nav-link" data-scroll-target="#special-considerations">Special Considerations</a></li>
+  <li><a href="#summary-and-recommendation" id="toc-summary-and-recommendation" class="nav-link" data-scroll-target="#summary-and-recommendation">Summary and Recommendation</a></li>
+  <li><a href="#ties" id="toc-ties" class="nav-link" data-scroll-target="#ties">Ties</a></li>
+  <li><a href="#additional-references" id="toc-additional-references" class="nav-link" data-scroll-target="#additional-references">Additional References</a></li>
   </ul>
 </nav>
     </div>
@@ -212,7 +214,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Wilcoxon Rank Sum (Mann Whitney-U) in R</h1>
+<h1 class="title">R vs SAS Wilcoxon Rank-Sum Test</h1>
 </div>
 
 
@@ -229,196 +231,275 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="overview" class="level1">
-<h1>Overview</h1>
-<p>Wilcoxon rank sum test, or equivalently, Mann-Whitney U-test is a rank based non-parametric method. The aim is to compare two independent groups of observations. Under certain scenarios, it can be thought of as a test for median differences, however this is only valid when: 1) both samples are independent and identically distributed (same dispersion, same shape, not necessarily normal) and 2) are symmetric around their medians.</p>
-<p>Generally, with two samples of observations (A and B), the test uses the mean of each possible pair of observations in each group (including the pair of each value with itself) to test if the probability that (A&gt;B) &gt; probability (B&gt;A).</p>
-<p>The Wilcoxon rank sum test is often presented alongside a Hodges-Lehmann estimate of the pseudo-median (the median of the Walsh averages), and an associated confidence interval for the pseudo-median.</p>
-<p>A tie in the data exists when an observation in group A, has the same result as an observation in group B.</p>
-<section id="available-r-packages" class="level2">
-<h2 class="anchored" data-anchor-id="available-r-packages">Available R packages</h2>
-<p>There are two main implementations of the Wilcoxon rank sum test in R.</p>
-<ul>
-<li><p><a href="https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/wilcox.test">stats::wilcox.test</a></p></li>
-<li><p><a href="https://cran.r-project.org/web/packages/coin/coin.pdf">coin::wilcox_test()</a></p></li>
-</ul>
-<p>The <code>stats</code> package implements various classic statistical tests, including Wilcoxon rank sum test. Although this is arguably the most commonly applied package, this one does not account for any ties in the data. To account for ties in the data, the <code>coin</code> package should be used.</p>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>This section compares the wilcoxon rank-sum test.</p>
+<p><strong>Example:</strong> This section compares the implementation of Poisson Regression in R and SAS. Poisson regression is used to model count data and contingency tables. It’s particularly useful for modeling the number of events occurring within a fixed period of time or space.</p>
+</section>
+<section id="wilcoxon-rank-sum" class="level2">
+<h2 class="anchored" data-anchor-id="wilcoxon-rank-sum">Wilcoxon-Rank Sum</h2>
+<p>The following table provides an overview of the support and results comparability between R and SAS for the new analysis point.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 21%">
+<col style="width: 9%">
+<col style="width: 8%">
+<col style="width: 7%">
+<col style="width: 51%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Analysis</th>
+<th>Supported in {stats}</th>
+<th>Supported in {coin}</th>
+<th>Supported in SAS</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p>Wilcoxon Rank-Sum</p>
+<p>Normal Approximation with continuity correction</p></td>
+<td><p>✅</p>
+<p><br>
+</p></td>
+<td>❌</td>
+<td>✅</td>
+<td>If there are ties in the dataset there will be a warning in {stats}, but the warning only refers to doing the exact method</td>
+</tr>
+<tr class="even">
+<td><p>Wilcoxon Rank-Sum</p>
+<p>Normal Approximation without continuity correction</p></td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Wilcoxon Rank-Sum Exact</td>
+<td colspan="4">✔️ | ✅ | ✅ | {stats} can only do the exact method when no ties are present |</td>
+</tr>
+<tr class="even">
+<td><p>Hodges-Lehmann CI</p>
+<p>Asymptotic</p></td>
+<td>✅</td>
+<td>❌</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><p>Hodges-Lehmann CI</p>
+<p>Exact</p></td>
+<td colspan="4">✔️ | ✅ | ✅ | {stats} can only do the exact method when no ties are present | | | | | | |</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="prerequisites-r-packages" class="level2">
+<h2 class="anchored" data-anchor-id="prerequisites-r-packages">Prerequisites: R Packages</h2>
+<p>This test can be run using the {stats} package, but in order to handle ties the {coin} package is recommended.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># x, y are two unpaired vectors. Do not necessary need to be of the same length.</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>stats<span class="sc">::</span><span class="fu">wilcox.test</span>(x, y, <span class="at">paired =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(coin) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: survival</code></pre>
+</div>
 </div>
 </section>
-<section id="example-birth-weight" class="level2">
-<h2 class="anchored" data-anchor-id="example-birth-weight">Example: Birth Weight</h2>
+<section id="example-data" class="level2">
+<h2 class="anchored" data-anchor-id="example-data">Example Data</h2>
+<p>For this example we are using a dataset of birth weights for smoking and non-smoking mothers.</p>
 <p><em>Data source: Table 30.4, Kirkwood BR. and Sterne JAC. Essentials of medical statistics. Second Edition. ISBN 978-0-86542-871-3</em></p>
-<p>Comparison of birth weights (kg) of children born to 15 non-smokers with those of children born to 14 heavy smokers.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># bw_ns: non smokers</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># bw_s: smokers</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>bw_ns <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">3.99</span>, <span class="fl">3.89</span>, <span class="fl">3.6</span>, <span class="fl">3.73</span>, <span class="fl">3.31</span>, </span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>            <span class="fl">3.7</span>, <span class="fl">4.08</span>, <span class="fl">3.61</span>, <span class="fl">3.83</span>, <span class="fl">3.41</span>, </span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>            <span class="fl">4.13</span>, <span class="fl">3.36</span>, <span class="fl">3.54</span>, <span class="fl">3.51</span>, <span class="fl">2.71</span>)</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>bw_s <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">3.18</span>, <span class="fl">2.74</span>, <span class="fl">2.9</span>, <span class="fl">3.27</span>, <span class="fl">3.65</span>, </span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>           <span class="fl">3.42</span>, <span class="fl">3.23</span>, <span class="fl">2.86</span>, <span class="fl">3.6</span>, <span class="fl">3.65</span>, </span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>           <span class="fl">3.69</span>, <span class="fl">3.53</span>, <span class="fl">2.38</span>, <span class="fl">2.34</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>Can visualize the data on two histograms. Red lines indicate the location of medians.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>))</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(bw_ns, <span class="at">main =</span> <span class="st">'Birthweight: non-smokers'</span>)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> <span class="fu">median</span>(bw_ns), <span class="at">col =</span> <span class="st">'red'</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(bw_s, <span class="at">main =</span> <span class="st">'Birthweight: smokers'</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> <span class="fu">median</span>(bw_s), <span class="at">col =</span> <span class="st">'red'</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="nonpara_wilcoxon_ranksum_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>It is possible to see that for non-smokers, the median birthweight is higher than those of smokers. Now we can formally test it with wilcoxon rank sum test.</p>
-<p>The default test is two-sided with confidence level of 0.95, and does continuity correction.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># default is two sided</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>stats<span class="sc">::</span><span class="fu">wilcox.test</span>(bw_s, bw_ns, <span class="at">paired =</span> <span class="cn">FALSE</span>, <span class="at">conf.int =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in wilcox.test.default(bw_s, bw_ns, paired = FALSE, conf.int = TRUE):
-cannot compute exact p-value with ties</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in wilcox.test.default(bw_s, bw_ns, paired = FALSE, conf.int = TRUE):
-cannot compute exact confidence intervals with ties</code></pre>
-</div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>bw_ns <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">3.99</span>, <span class="fl">3.89</span>, <span class="fl">3.6</span>, <span class="fl">3.73</span>, <span class="fl">3.31</span>, </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>            <span class="fl">3.7</span>, <span class="fl">4.08</span>, <span class="fl">3.61</span>, <span class="fl">3.83</span>, <span class="fl">3.41</span>, </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>            <span class="fl">4.13</span>, <span class="fl">3.36</span>, <span class="fl">3.54</span>, <span class="fl">3.51</span>, <span class="fl">2.71</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>bw_s <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">3.18</span>, <span class="fl">2.74</span>, <span class="fl">2.9</span>, <span class="fl">3.27</span>, <span class="fl">3.65</span>, </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>           <span class="fl">3.42</span>, <span class="fl">3.23</span>, <span class="fl">2.86</span>, <span class="fl">3.6</span>, <span class="fl">3.65</span>, </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>           <span class="fl">3.69</span>, <span class="fl">3.53</span>, <span class="fl">2.38</span>, <span class="fl">2.34</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>smk_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">value =</span> <span class="fu">c</span>(bw_ns, bw_s), </span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">smoke =</span> <span class="fu">as.factor</span>(<span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">"non"</span>, <span class="st">"smoke"</span>), <span class="fu">c</span>(<span class="fu">length</span>(bw_ns), <span class="fu">length</span>(bw_s))))</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>) </span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Relevel the factors to make it smoker - non-smokers </span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>smk_data<span class="sc">$</span>smoke <span class="ot">&lt;-</span> forcats<span class="sc">::</span><span class="fu">fct_relevel</span>(smk_data<span class="sc">$</span>smoke, <span class="st">"smoke"</span>)</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(smk_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>
-    Wilcoxon rank sum test with continuity correction
-
-data:  bw_s and bw_ns
-W = 45.5, p-value = 0.01001
-alternative hypothesis: true location shift is not equal to 0
-95 percent confidence interval:
- -0.76995896 -0.09000999
-sample estimates:
-difference in location 
-            -0.4261377 </code></pre>
+<pre><code>  value smoke
+1  3.99   non
+2  3.89   non
+3  3.60   non
+4  3.73   non
+5  3.31   non
+6  3.70   non</code></pre>
 </div>
 </div>
-<p>We can also carry out a one-sided test, by specifying <code>alternative = greater</code> (if the first item is greater than the second).</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># default is two sided</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>stats<span class="sc">::</span><span class="fu">wilcox.test</span>(bw_ns, bw_s, <span class="at">paired =</span> <span class="cn">FALSE</span>, <span class="at">alternative =</span> <span class="st">'greater'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in wilcox.test.default(bw_ns, bw_s, paired = FALSE, alternative =
-"greater"): cannot compute exact p-value with ties</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-    Wilcoxon rank sum test with continuity correction
-
-data:  bw_ns and bw_s
-W = 164.5, p-value = 0.005003
-alternative hypothesis: true location shift is greater than 0</code></pre>
-</div>
-</div>
-<p>In {stats} the exact p-value is computed when there are less than 50 values and no ties otherwise the normal approximation is used. In this cause, because there are ties the normal approximation is used.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># force exact</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>stats<span class="sc">::</span><span class="fu">wilcox.test</span>(bw_s, bw_ns, <span class="at">paired =</span> <span class="cn">FALSE</span>, <span class="at">conf.int =</span> <span class="cn">TRUE</span>, <span class="at">exact =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in wilcox.test.default(bw_s, bw_ns, paired = FALSE, conf.int = TRUE, :
-cannot compute exact p-value with ties</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in wilcox.test.default(bw_s, bw_ns, paired = FALSE, conf.int = TRUE, :
-cannot compute exact confidence intervals with ties</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-    Wilcoxon rank sum test with continuity correction
-
-data:  bw_s and bw_ns
-W = 45.5, p-value = 0.01001
-alternative hypothesis: true location shift is not equal to 0
-95 percent confidence interval:
- -0.76995896 -0.09000999
-sample estimates:
-difference in location 
-            -0.4261377 </code></pre>
-</div>
-</div>
-<p>In order to account for the ties, <code>wilcox_test</code> from the {coin} package should be used. For this function, the data needs to be inputted via a formula where the right hand side is a factor, so we need to create a dataset. In order to get smokers - non-smokers we need to relevel the factors.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>smk_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">value =</span> <span class="fu">c</span>(bw_ns, bw_s), </span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">smoke =</span> <span class="fu">as.factor</span>(<span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">"non"</span>, <span class="st">"smoke"</span>), <span class="fu">c</span>(<span class="fu">length</span>(bw_ns), <span class="fu">length</span>(bw_s))))</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>) </span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>smk_data<span class="sc">$</span>smoke</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code> [1] non   non   non   non   non   non   non   non   non   non   non   non  
-[13] non   non   non   smoke smoke smoke smoke smoke smoke smoke smoke smoke
-[25] smoke smoke smoke smoke smoke
-Levels: non smoke</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>smk_data<span class="sc">$</span>smoke <span class="ot">&lt;-</span> forcats<span class="sc">::</span><span class="fu">fct_relevel</span>(smk_data<span class="sc">$</span>smoke, <span class="st">"smoke"</span>)</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>smk_data<span class="sc">$</span>smoke</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code> [1] non   non   non   non   non   non   non   non   non   non   non   non  
-[13] non   non   non   smoke smoke smoke smoke smoke smoke smoke smoke smoke
-[25] smoke smoke smoke smoke smoke
-Levels: smoke non</code></pre>
-</div>
-</div>
-<p>Now the data is in the right shape we can run <code>wilcox_test</code>. In order to get the Hodges-Lehmann confidence intervals out, we need to include the <code>conf.int = TRUE</code> argument.(NOTE: the <code>conf.level</code> argument controls the confidence level, but must be used with <code>conf.int = TRUE</code> otherwise you won’t get a confidence interval)</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>coin<span class="sc">::</span><span class="fu">wilcox_test</span>(value <span class="sc">~</span> smoke, <span class="at">data =</span> smk_data, <span class="at">conf.int  =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-    Asymptotic Wilcoxon-Mann-Whitney Test
-
-data:  value by smoke (smoke, non)
-Z = -2.5974, p-value = 0.009392
-alternative hypothesis: true mu is not equal to 0
-95 percent confidence interval:
- -0.76000001 -0.09999999
-sample estimates:
-difference in location 
-            -0.4261403 </code></pre>
-</div>
-</div>
-<p>In {coin} there is no option for a continuity correction and it is not done by default. {coin} can calculate exact and Monte Carlo conditional p-values using the <code>distribtuion</code> argument. The exact p-value should be used in small sample sizes as the normal approximation does not hold</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>coin<span class="sc">::</span><span class="fu">wilcox_test</span>(value <span class="sc">~</span> smoke, <span class="at">data =</span> smk_data, <span class="at">conf.int  =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>                  <span class="at">distribution =</span> <span class="st">"exact"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-    Exact Wilcoxon-Mann-Whitney Test
-
-data:  value by smoke (smoke, non)
-Z = -2.5974, p-value = 0.008181
-alternative hypothesis: true mu is not equal to 0
-95 percent confidence interval:
- -0.76 -0.10
-sample estimates:
-difference in location 
-                -0.425 </code></pre>
-</div>
-</div>
-<p><em>Note:</em> the distribution argument only effects the p-value, {coin} consistently calculated the exact Hodges-Lehmann confidence intervals.</p>
+<p>This dataset is both small (so an exact test is recommended) and has ties in it.</p>
+<p>To view the code for this see the <a href="../SAS/ranksum.html">SAS</a> and <a href="../R/nonpara_wilcoxon_ranksum.html">R</a> pages respectively.</p>
+<section id="wilcoxon-rank-sum-tests" class="level4">
+<h4 class="anchored" data-anchor-id="wilcoxon-rank-sum-tests">Wilcoxon Rank Sum tests</h4>
+<p>Below is a table to the p-values from the Wilcoxon Rank Sum Test with different options</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 26%">
+<col style="width: 7%">
+<col style="width: 11%">
+<col style="width: 9%">
+<col style="width: 6%">
+<col style="width: 36%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Statistic</th>
+<th>SAS Result</th>
+<th>{stats} Results</th>
+<th>{coin} Result</th>
+<th>Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Normal Approx with continuity correct</td>
+<td>0.01</td>
+<td>0.01001</td>
+<td>❌</td>
+<td>Yes</td>
+<td>{coin} doesn’t have an option for continuity corrections</td>
+</tr>
+<tr class="even">
+<td>Normal Approx without continuity correct</td>
+<td>0.0094</td>
+<td>0.009392</td>
+<td>0.009392</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Exact (no correction)</td>
+<td>0.0082</td>
+<td>❌</td>
+<td>0.008181</td>
+<td>Yes</td>
+<td>{stats} can’t do an exact method when there are ties</td>
+</tr>
+</tbody>
+</table>
 </section>
-<section id="useful-references" class="level2">
-<h2 class="anchored" data-anchor-id="useful-references">Useful References</h2>
+<section id="hodges-lehmann-ci" class="level4">
+<h4 class="anchored" data-anchor-id="hodges-lehmann-ci">Hodges-Lehmann CI</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 14%">
+<col style="width: 39%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Statistic</th>
+<th>SAS Result</th>
+<th>{stats} Results</th>
+<th>{coin} Result</th>
+<th>Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Asymptotic (Moses)</td>
+<td>(-0.77, -0.09)</td>
+<td>(-0.77, -0.090)</td>
+<td>❌</td>
+<td>Yes - only in {stats}</td>
+<td>the exact argument in {coin} only applies to the rank-sum test</td>
+</tr>
+<tr class="even">
+<td>Exact</td>
+<td>(-0.76, -0.1)</td>
+<td>❌</td>
+<td>(-0.76, -0.10)</td>
+<td>Yes</td>
+<td>{stats} can’t do an exact method when there are ties</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="special-considerations" class="level2">
+<h2 class="anchored" data-anchor-id="special-considerations">Special Considerations</h2>
+<p>If you have a study where you would like to use the exact wilcoxon test and there is the risk of ties, {coin} would be recommended.</p>
+</section>
+<section id="summary-and-recommendation" class="level2">
+<h2 class="anchored" data-anchor-id="summary-and-recommendation">Summary and Recommendation</h2>
+<p>Wilcoxon Rank Sum and the associated Hodges-Lehmann CI are able to be consistenly created in both SAS and R. But, it is worth noting that the test statstic of Wilcoxon Rank Sum does not directly translate into the Hodges-Lehmann CI. Because of this, the exact option in SAS and R can be slightly confusing. In SAS the <code>exact wilcoxon hl;</code> statement is need to get both the exact p-value and CI. In {stats} exact values are only possible when there are no ties and the exact parameter is set to true (<code>exact = TRUE</code>). This will give the exact p-value and CI. In {coin} the exact option only effects the p-values, there is no option for exact CI.</p>
+</section>
+<section id="ties" class="level2">
+<h2 class="anchored" data-anchor-id="ties">Ties</h2>
+<p>In addition to the options discussed here, there are also different method to handle ties. SAS only has one option for handling ties, the <a href="https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_npar1way_details02.htm">average score method</a>. In {coin} by default ties are handled with the “mid-ranks” method.</p>
+</section>
+<section id="additional-references" class="level2">
+<h2 class="anchored" data-anchor-id="additional-references">Additional References</h2>
+<p>Provide references and additional reading materials for both R and SAS documentation related to the analysis.</p>
+<p><strong>R Documentation:</strong></p>
 <ul>
-<li><a href="https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/nonparametrics/how-to/1-sample-wilcoxon/methods-and-formulas/methods-and-formulas">Methods and Formulae</a></li>
-<li><a href="https://github.com/adrianolszewski/Mann-Whitney-is-not-about-medians-in-general/blob/main/Mann_Whitney_Wilcoxon_fails_as_test_of_medians_literature.md">Mann Whitney is not about medians in general</a></li>
-<li><a href="https://stats.stackexchange.com/questions/215889/prove-the-relationship-between-walsh-averages-and-wilcoxon-signed-rank-test">Relationship between walsh averages and WRS</a></li>
-<li><a href="https://aakinshin.net/posts/r-hodges-lehmann-problems">Hodges Lehmann Problems</a></li>
+<li><p><code>wilcox.test</code> function: <a href="https://rdrr.io/r/stats/wilcox.test.html" class="uri">https://rdrr.io/r/stats/wilcox.test.html</a></p></li>
+<li><p><code>wilcox_test</code> function: <a href="https://rdrr.io/cran/coin/man/LocationTests.html" class="uri">https://rdrr.io/cran/coin/man/LocationTests.html</a></p></li>
 </ul>
+<p><strong>SAS Documentation:</strong></p>
+<ul>
+<li><code>PROC npar1way</code>: <a href="https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_npar1way_gettingstarted.htm" class="uri">https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_npar1way_gettingstarted.htm</a></li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled" title="Session Info">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Session Info
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>─ Session info ───────────────────────────────────────────────────────────────
+ setting  value
+ version  R version 4.4.2 (2024-10-31)
+ os       Ubuntu 24.04.2 LTS
+ system   x86_64, linux-gnu
+ ui       X11
+ language (EN)
+ collate  C.UTF-8
+ ctype    C.UTF-8
+ tz       UTC
+ date     2025-06-06
+ pandoc   3.6.3 @ /opt/quarto/bin/tools/ (via rmarkdown)
+
+─ Packages ───────────────────────────────────────────────────────────────────
+ ! package * version date (UTC) lib source
+ P coin    * 1.4-3   2023-09-27 [?] RSPM (R 4.4.0)
+
+ [1] /home/runner/work/CAMIS/CAMIS/renv/library/linux-ubuntu-noble/R-4.4/x86_64-pc-linux-gnu
+ [2] /opt/R/4.4.2/lib/R/library
+
+ P ── Loaded and on-disk path mismatch.
+
+─ External software ──────────────────────────────────────────────────────────
+ setting value
+ SAS     9.04.01M7P080520
+
+──────────────────────────────────────────────────────────────────────────────</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->
