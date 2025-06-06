@@ -1,14 +1,14 @@
 ---
-title: "Mann-Whitney U/Wilcoxon rank sum test"
+title: "Wilcoxon Rank Sum /Mann-Whitney U test"
 ---
 
-# Mann-Whitney U/Wilcoxon rank sum test
+# Wilcoxon Rank Sum / Mann-Whitney U test
 
-The Mann-Whitney U test, also known as the Wilcoxon rank-sum test, is a nonparametric test used to compare differences between two independent samples. It's particularly useful when the sample distributions are not normally distributed and the sample sizes are small (typically less than 30).
+The Wilcoxon rank-sum test, also known as the Mann-Whitney U test, is a nonparametric test used to compare differences between two independent samples. It's particularly useful when the sample distributions are not normally distributed and the sample sizes are small (typically less than 30).
 
-## Mann-Whitney U/Wilcoxon rank sum test in SAS
+## Wilcoxon Rank Sum / Mann-Whitney U in SAS
 
-To perform a Mann-Whitney U test (also known as the Wilcoxon rank-sum test) in SAS, you can use the PROC NPAR1WAY procedure. Here's a step-by-step guide:
+To perform a Wilcoxon rank-sum test in SAS, you can use the PROC NPAR1WAY procedure. Here's a step-by-step guide:
 
 1.  **Create the Dataset**: If there are two groups (smoker and non-smoker) with their respective measurements birth weight, you can input the data as follows:
 
@@ -50,17 +50,17 @@ data bw;
 run;
 ```
 
-2.  **Perform the Mann-Whitney U Test**: Use the PROC NPAR1WAY procedure to perform the test. The wilcoxon option specifies that you want to perform the Wilcoxon rank-sum test. When computing the asymptotic Wilcoxon two-sample test, PROC NPAR1WAY uses a continuity correction by default. If specify the CORRECT=NO option in the PROC NPAR1WAY statement, the procedure does not use a continuity correction.
+2.  **Perform the Wilcoxon rank-sum Test**: Use the PROC NPAR1WAY procedure to perform the test. The wilcoxon option specifies that you want to perform the Wilcoxon rank-sum test. When computing the asymptotic Wilcoxon two-sample test, PROC NPAR1WAY uses a continuity correction by default. If specify the CORRECT=NO option in the PROC NPAR1WAY statement, the procedure does not use a continuity correction. Typically, we will also want the Hodges-Lehman confidence intervals. To get these you will need to add `hl` to the pro npar1way statement.
 
 ``` sas
-/* Perform Mann-Whitney U test - with continuity correction by default*/
-proc npar1way data=BW wilcoxon;
+/* Perform Wilcoxon rank-sum test - with continuity correction by default*/
+proc npar1way data=BW wilcoxon hl;
     class grp;
     var bw;
 run;
 
-/* Perform Mann-Whitney U test - without continuity correction*/
-proc npar1way data=BW wilcoxon CORRECT=NO;
+/* Perform Wilcoxon rank-sum test - without continuity correction*/
+proc npar1way data=BW wilcoxon CORRECT=NO hl;
     class grp;
     var bw;
 run;
@@ -68,7 +68,7 @@ run;
 
 ## Results
 
-### Mann-Whitney U test - with continuity correction by default
+### Wilcoxon rank-sum test - with continuity correction by default
 
 ![](/images/ranksum/ranksum.png)
 
@@ -92,15 +92,39 @@ The t-distribution approximations provide similar p-values, indicating the robus
 
 Since the p-values (both one-tailed and two-tailed) are less than the common significance level (e.g., 0.05), we can reject the null hypothesis. This means there is a significant difference between the two groups (ns and s) for the variable BW.
 
-### Mann-Whitney U test - without continuity correction
+### Wilcoxon rank-sum test - without continuity correction
 
 ![](/images/ranksum/ranksum2.png)
 
 As seen above, Wilcoxon Two-Sample Test results are changed because No continuity correction is used.
 
+### Hodges-Lehman
+
+The correction does not effect the Hodges-Lehman CI. The Location shift is the Hodges-Lehmann estimator. By default the asymptotic (Moses) CI is shown.
+
+![](/images/ranksum/hl-ci.png)
+
+### Wilcoxon rank-sum test - Exact
+
+For sufficiently small sample size, the large-sample normal approximation used by the asymptotic Wilcoxon might not be appropriate, so the exact statement is needed.
+
+``` sas
+/* Perform Wilcoxon rank-sum test - with continuity correction by default*/
+proc npar1way data=BW wilcoxon CORRECT=NO hl;
+    class grp;
+    var bw;
+    exact wilcoxon hl;
+run;
+```
+
+![](/images/ranksum/wrs-exact.png)
+
+The exact hl part of that statement makes the exact and asymptotic Hodges-Lehmann CI appear.
+
+![](/images/ranksum/hl-exact.png)
+
 # References
 
-[SAS Help Center: TWOSAMPLEWILCOXON Statement](https://documentation.sas.com/doc/en/statug/15.2/statug_power_syntax112.htm)
-[SAS Help Center: Overview: NPAR1WAY Procedure](https://documentation.sas.com/doc/en/statug/15.2/statug_npar1way_overview.htm)
+[SAS Help Center: TWOSAMPLEWILCOXON Statement](https://documentation.sas.com/doc/en/statug/15.2/statug_power_syntax112.htm) [SAS Help Center: Overview: NPAR1WAY Procedure](https://documentation.sas.com/doc/en/statug/15.2/statug_npar1way_overview.htm)
 
 *Data source: Table 30.4, Kirkwood BR. and Sterne JAC. Essentials of medical statistics. Second Edition. ISBN 978-0-86542-871-3*
