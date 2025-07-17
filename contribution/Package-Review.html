@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>R vs SAS Wilcoxon Rank-Sum Test</title>
+<title>How to Choose an R Stats Package</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -198,14 +198,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
-  <li><a href="#wilcoxon-rank-sum" id="toc-wilcoxon-rank-sum" class="nav-link" data-scroll-target="#wilcoxon-rank-sum">Wilcoxon-Rank Sum</a></li>
-  <li><a href="#prerequisites-r-packages" id="toc-prerequisites-r-packages" class="nav-link" data-scroll-target="#prerequisites-r-packages">Prerequisites: R Packages</a></li>
-  <li><a href="#example-data" id="toc-example-data" class="nav-link" data-scroll-target="#example-data">Example Data</a></li>
-  <li><a href="#special-considerations" id="toc-special-considerations" class="nav-link" data-scroll-target="#special-considerations">Special Considerations</a></li>
-  <li><a href="#summary-and-recommendation" id="toc-summary-and-recommendation" class="nav-link" data-scroll-target="#summary-and-recommendation">Summary and Recommendation</a></li>
-  <li><a href="#ties" id="toc-ties" class="nav-link" data-scroll-target="#ties">Ties</a></li>
-  <li><a href="#additional-references" id="toc-additional-references" class="nav-link" data-scroll-target="#additional-references">Additional References</a></li>
+  <li><a href="#package-checklist" id="toc-package-checklist" class="nav-link active" data-scroll-target="#package-checklist">Package Checklist</a></li>
+  <li><a href="#worked-example-wilcoxon-rank-sum-test" id="toc-worked-example-wilcoxon-rank-sum-test" class="nav-link" data-scroll-target="#worked-example-wilcoxon-rank-sum-test">Worked Example: Wilcoxon Rank-Sum Test</a>
+  <ul class="collapse">
+  <li><a href="#pairwiseci" id="toc-pairwiseci" class="nav-link" data-scroll-target="#pairwiseci">{pairwiseCI}</a></li>
+  <li><a href="#coin" id="toc-coin" class="nav-link" data-scroll-target="#coin">{coin}</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -214,7 +212,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">R vs SAS Wilcoxon Rank-Sum Test</h1>
+<h1 class="title">How to Choose an R Stats Package</h1>
 </div>
 
 
@@ -231,274 +229,162 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="introduction" class="level2">
-<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>This section compares the wilcoxon rank-sum test.</p>
-</section>
-<section id="wilcoxon-rank-sum" class="level2">
-<h2 class="anchored" data-anchor-id="wilcoxon-rank-sum">Wilcoxon-Rank Sum</h2>
-<p>The following table provides an overview of the support and results comparability between R and SAS for the new analysis point.</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 21%">
-<col style="width: 9%">
-<col style="width: 8%">
-<col style="width: 7%">
-<col style="width: 51%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Analysis</th>
-<th>Supported in {stats}</th>
-<th>Supported in {coin}</th>
-<th>Supported in SAS</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><p>Wilcoxon Rank-Sum</p>
-<p>Normal Approximation with continuity correction</p></td>
-<td><p>✅</p>
-<p><br>
-</p></td>
-<td>❌</td>
-<td>✅</td>
-<td>If there are ties in the dataset there will be a warning in {stats}, but the warning only refers to doing the exact method</td>
-</tr>
-<tr class="even">
-<td><p>Wilcoxon Rank-Sum</p>
-<p>Normal Approximation without continuity correction</p></td>
-<td>✅</td>
-<td>✅</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr class="odd">
-<td>Wilcoxon Rank-Sum Exact</td>
-<td colspan="4">✔️ | ✅ | ✅ | {stats} can only do the exact method when no ties are present |</td>
-</tr>
-<tr class="even">
-<td><p>Hodges-Lehmann CI</p>
-<p>Asymptotic</p></td>
-<td>✅</td>
-<td>❌</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr class="odd">
-<td><p>Hodges-Lehmann CI</p>
-<p>Exact</p></td>
-<td colspan="4">✔️ | ✅ | ✅ | {stats} can only do the exact method when no ties are present | | | | | | |</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="prerequisites-r-packages" class="level2">
-<h2 class="anchored" data-anchor-id="prerequisites-r-packages">Prerequisites: R Packages</h2>
-<p>This test can be run using the {stats} package, but in order to handle ties the {coin} package is recommended.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(coin) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: survival</code></pre>
-</div>
-</div>
-</section>
-<section id="example-data" class="level2">
-<h2 class="anchored" data-anchor-id="example-data">Example Data</h2>
-<p>For this example we are using a dataset of birth weights for smoking and non-smoking mothers.</p>
-<p><em>Data source: Table 30.4, Kirkwood BR. and Sterne JAC. Essentials of medical statistics. Second Edition. ISBN 978-0-86542-871-3</em></p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>bw_ns <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">3.99</span>, <span class="fl">3.89</span>, <span class="fl">3.6</span>, <span class="fl">3.73</span>, <span class="fl">3.31</span>, </span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>            <span class="fl">3.7</span>, <span class="fl">4.08</span>, <span class="fl">3.61</span>, <span class="fl">3.83</span>, <span class="fl">3.41</span>, </span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>            <span class="fl">4.13</span>, <span class="fl">3.36</span>, <span class="fl">3.54</span>, <span class="fl">3.51</span>, <span class="fl">2.71</span>)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>bw_s <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">3.18</span>, <span class="fl">2.74</span>, <span class="fl">2.9</span>, <span class="fl">3.27</span>, <span class="fl">3.65</span>, </span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>           <span class="fl">3.42</span>, <span class="fl">3.23</span>, <span class="fl">2.86</span>, <span class="fl">3.6</span>, <span class="fl">3.65</span>, </span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>           <span class="fl">3.69</span>, <span class="fl">3.53</span>, <span class="fl">2.38</span>, <span class="fl">2.34</span>)</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>smk_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">value =</span> <span class="fu">c</span>(bw_ns, bw_s), </span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">smoke =</span> <span class="fu">as.factor</span>(<span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">"non"</span>, <span class="st">"smoke"</span>), <span class="fu">c</span>(<span class="fu">length</span>(bw_ns), <span class="fu">length</span>(bw_s))))</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>) </span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Relevel the factors to make it smoker - non-smokers </span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>smk_data<span class="sc">$</span>smoke <span class="ot">&lt;-</span> forcats<span class="sc">::</span><span class="fu">fct_relevel</span>(smk_data<span class="sc">$</span>smoke, <span class="st">"smoke"</span>)</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(smk_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>  value smoke
-1  3.99   non
-2  3.89   non
-3  3.60   non
-4  3.73   non
-5  3.31   non
-6  3.70   non</code></pre>
-</div>
-</div>
-<p>This dataset is both small (so an exact test is recommended) and has ties in it.</p>
-<p>To view the code for this see the <a href="../SAS/ranksum.html">SAS</a> and <a href="../R/nonpara_wilcoxon_ranksum.html">R</a> pages respectively.</p>
-<section id="wilcoxon-rank-sum-tests" class="level4">
-<h4 class="anchored" data-anchor-id="wilcoxon-rank-sum-tests">Wilcoxon Rank Sum tests</h4>
-<p>Below is a table to the p-values from the Wilcoxon Rank Sum Test with different options</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 26%">
-<col style="width: 7%">
-<col style="width: 11%">
-<col style="width: 9%">
-<col style="width: 6%">
-<col style="width: 36%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Statistic</th>
-<th>SAS Result</th>
-<th>{stats} Results</th>
-<th>{coin} Result</th>
-<th>Match</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Normal Approx with continuity correct</td>
-<td>0.01</td>
-<td>0.01001</td>
-<td>❌</td>
-<td>Yes</td>
-<td>{coin} doesn’t have an option for continuity corrections</td>
-</tr>
-<tr class="even">
-<td>Normal Approx without continuity correct</td>
-<td>0.0094</td>
-<td>0.009392</td>
-<td>0.009392</td>
-<td>Yes</td>
-<td></td>
-</tr>
-<tr class="odd">
-<td>Exact (no correction)</td>
-<td>0.0082</td>
-<td>❌</td>
-<td>0.008181</td>
-<td>Yes</td>
-<td>{stats} can’t do an exact method when there are ties</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="hodges-lehmann-ci" class="level4">
-<h4 class="anchored" data-anchor-id="hodges-lehmann-ci">Hodges-Lehmann CI</h4>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 12%">
-<col style="width: 10%">
-<col style="width: 10%">
-<col style="width: 10%">
-<col style="width: 14%">
-<col style="width: 39%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Statistic</th>
-<th>SAS Result</th>
-<th>{stats} Results</th>
-<th>{coin} Result</th>
-<th>Match</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Asymptotic (Moses)</td>
-<td>(-0.77, -0.09)</td>
-<td>(-0.77, -0.090)</td>
-<td>❌</td>
-<td>Yes - only in {stats}</td>
-<td>the exact argument in {coin} only applies to the rank-sum test</td>
-</tr>
-<tr class="even">
-<td>Exact</td>
-<td>(-0.76, -0.1)</td>
-<td>❌</td>
-<td>(-0.76, -0.10)</td>
-<td>Yes</td>
-<td>{stats} can’t do an exact method when there are ties</td>
-</tr>
-</tbody>
-</table>
-</section>
-</section>
-<section id="special-considerations" class="level2">
-<h2 class="anchored" data-anchor-id="special-considerations">Special Considerations</h2>
-<p>If you have a study where you would like to use the exact wilcoxon test and there is the risk of ties, {coin} would be recommended.</p>
-</section>
-<section id="summary-and-recommendation" class="level2">
-<h2 class="anchored" data-anchor-id="summary-and-recommendation">Summary and Recommendation</h2>
-<p>Wilcoxon Rank Sum and the associated Hodges-Lehmann CI are able to be consistenly created in both SAS and R. But, it is worth noting that the test statstic of Wilcoxon Rank Sum does not directly translate into the Hodges-Lehmann CI. Because of this, the exact option in SAS and R can be slightly confusing. In SAS the <code>exact wilcoxon hl;</code> statement is need to get both the exact p-value and CI. In {stats} exact values are only possible when there are no ties and the exact parameter is set to true (<code>exact = TRUE</code>). This will give the exact p-value and CI. In {coin} the exact option only effects the p-values, there is no option for exact CI.</p>
-</section>
-<section id="ties" class="level2">
-<h2 class="anchored" data-anchor-id="ties">Ties</h2>
-<p>In addition to the options discussed here, there are also different method to handle ties. SAS only has one option for handling ties, the <a href="https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_npar1way_details02.htm">average score method</a>. In {coin} by default ties are handled with the “mid-ranks” method.</p>
-</section>
-<section id="additional-references" class="level2">
-<h2 class="anchored" data-anchor-id="additional-references">Additional References</h2>
-<p>Provide references and additional reading materials for both R and SAS documentation related to the analysis.</p>
-<p><strong>R Documentation:</strong></p>
+<p>When you want to implement statistical methodology in R and you don’t already know the package that does the method, it can be difficult to figure out the “best” package. Sometimes when you google a method, the top result is the package with wording that matches closest to what you typed into google, rather than the package that is “best” for the method. You don’t want to waste time looking deeply into a package only to find there is a more common and robust R package out there for the same method. So before you go down a rabbit hole on one package, it is worth checking a few packages. But, how do you “check” a package. This blog post will go through a worked example of comparing packages and a checklist of things to look at when comparing packages in the future.</p>
+<section id="package-checklist" class="level2">
+<h2 class="anchored" data-anchor-id="package-checklist">Package Checklist</h2>
+<p>When looking at a package the first place to start is the CRAN index page. You can find this by googling CRAN and name of the package. From there you want to ask yourself the following questions:</p>
 <ul>
-<li><p><code>wilcox.test</code> function: <a href="https://rdrr.io/r/stats/wilcox.test.html" class="uri">https://rdrr.io/r/stats/wilcox.test.html</a></p></li>
-<li><p><code>wilcox_test</code> function: <a href="https://rdrr.io/cran/coin/man/LocationTests.html" class="uri">https://rdrr.io/cran/coin/man/LocationTests.html</a></p></li>
-</ul>
-<p><strong>SAS Documentation:</strong></p>
+<li><p>Is this package being actively maintained?</p></li>
+<li><p>Is the author known in the field?</p>
 <ul>
-<li><code>PROC npar1way</code>: <a href="https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_npar1way_gettingstarted.htm" class="uri">https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_npar1way_gettingstarted.htm</a></li>
+<li>Is there more than one author?</li>
+</ul></li>
+<li><p>Does the package have adequate documentation?</p>
+<ul>
+<li><p>Are there references to external peer reviewed papers?</p></li>
+<li><p>Is there a website / vignettes?</p></li>
+</ul></li>
+<li><p>Is there a way to report bugs?</p></li>
+<li><p>Can the packages handle different edge cases?</p></li>
+<li><p>Does the package have a lot of dependencies / unusual dependencies?</p></li>
+<li><p>Look at community adoption?</p></li>
 </ul>
-<div class="callout callout-style-default callout-note callout-titled" title="Session Info">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<p>Using this checklist can help you quickly and consistently get a sense of a package before spending time looking into the code directly. Let’s see how this works in practice.</p>
+</section>
+<section id="worked-example-wilcoxon-rank-sum-test" class="level2">
+<h2 class="anchored" data-anchor-id="worked-example-wilcoxon-rank-sum-test">Worked Example: Wilcoxon Rank-Sum Test</h2>
+<p>For this, we are going to look at the Wilcoxon Rank-Sum test and the associated Hodges-Lehmann confidence interval. After googling a bit, I found three different packages that do a Wilcoxon Rank-Sum p-value and Hodges-Lehmann CI:</p>
+<ol type="1">
+<li><p>{stats} (part of base R)</p></li>
+<li><p>{pairwiseCI}</p></li>
+<li><p>{coin}</p></li>
+</ol>
+<p>Great! I might be kind of done, because I tend to favor base R stats functions, but as I start looking into this, I found the {stats} function can’t handle ties if I want the exact methods. So I need to look into and compare the {pairwiseCI} and {coin} packages.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-Session Info
+Tip
 </div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-1" class="callout-1-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
+<p>You often find that differences between packages and software show up when there are ties, missing data, and/or extreme values, so it is good to try to include these in the dataset you are using to compare.</p>
+</div>
+</div>
+<p>Now I need to choose between {pairwaiseCI} and {coin}. I could just run the model in both and see if the results match, but that will be a lot of work. So before I get started I want to go through our checklist.</p>
+<p>Let’s pull up the CRAN index pages for each of these packages and see if we can figure out which package we should use for this analysis.</p>
+<section id="pairwiseci" class="level3">
+<h3 class="anchored" data-anchor-id="pairwiseci">{pairwiseCI}</h3>
+<p>Starting with {pairwiseCI}, the <a href="https://cran.r-project.org/web/packages/pairwiseCI/index.html">index</a> page looks like this:</p>
+<p><img src="images/clipboard-4202698305.png" class="img-fluid"></p>
+<p>Now let’s go down the checklist to see if there are any red flags for this package.</p>
+<ul>
+<li><p>Is this package being actively maintained?</p>
+<p style="color:blue;">
+</p><p>The last update to this package was 2019-03-11, so over 6 years at the writing of this post. That indicates this probably isn’t being actively maintained.</p>
+<p></p></li>
+<li><p>Is the author known in the field?</p>
+<p style="color:blue;">
+</p><p>Personally, I don’t know this author, but it looks like he does work in a biostatistics department at a university, so that is a really good sign. When you are looking at the author you don’t need to go super in-depth, but if you don’t know who they are it can be good to check their qualifications.</p>
+<p></p>
+<ul>
+<li><p>Is there more than one author?</p>
+<p style="color:blue;">
+</p><p>Yes, it looks like there are two authors here. This can be good to check because it can mean the burden of maintaining the package is shared and the documentation has potentially been peer reviewed.</p>
+<p></p></li>
+</ul></li>
+<li><p>Does the package have adequate documentation?</p>
+<p style="color:blue;">
+</p><p>This can be hard to determine from just this index page, but the sub-questions can help here.</p>
+<p></p>
+<ul>
+<li><p>Are there references to external peer reviewed papers?</p>
+<p style="color:blue;">
+</p><p>On the index there are no references, but there might be some references on the function level. Really it just means they haven’t published a paper about this package.</p>
+<p></p></li>
+<li><p>Is there a website / Vignettes?</p>
+<p style="color:blue;">
+</p><p>There isn’t a website or vingettes. This means all the documenation will be limited to just the functions, which can be harder to understand.</p>
+<p></p></li>
+</ul></li>
+<li><p>Is there a way to report bugs?</p>
+<p style="color:blue;">
+</p><p>There doesn’t appear to be a standard way to report bugs. If this package was on github or something similar, I would be able to check any issues there to see if others had similar problems or if the issue was caused by user error and has a quick fix.</p>
+<p></p></li>
+<li><p>Can the packages handle different edge cases?</p>
+<p style="color:blue;">
+</p><p>The description doesn’t say anything about handling special cases. But, I did find this package because it can handle ties in the exact case.</p>
+<p></p></li>
+<li><p>Does the package have a lot of dependencies / unusual dependencies?</p>
+<p style="color:blue;">
+</p><p>It looks like this package only has two dependencies, {MCPAN} and, interestingly, {coin}, the other package we are looking at.</p>
+<p></p></li>
+</ul>
+<p>Okay, having gone through all but the final question, I would say I feel not amazing about the package, but if it was my only option I would still try to use it. The author gives me confidence in the package, but other things like documentation and last update date, make me a bit nervous about this package.</p>
+</section>
+<section id="coin" class="level3">
+<h3 class="anchored" data-anchor-id="coin">{coin}</h3>
+<p>Now on to {coin} with the same questions. The <a href="https://cran.r-project.org/web/packages/coin/index.html">index</a> page is as follows:</p>
+<p><img src="images/clipboard-1725037014.png" class="img-fluid"></p>
+<ul>
+<li><p>Is this package being actively maintained?</p>
+<p style="color:blue;">
+</p><p>The last update to this package was 2023-09-27, so more recently than {pairwiseCI}.</p>
+<p></p></li>
+<li><p>Is the author known in the field?</p>
+<p style="color:blue;">
+</p><p>Again, I don’t know the author, but he has an R-project.org email, which indicates he is very involved in the R ecosystem and is a very good sign.</p>
+<p></p>
+<ul>
+<li><p>Is there more than one author?</p>
+<p style="color:blue;">
+</p><p>Yes, there are 5 different authors, so lots of eyes on bugs and documentation.</p>
+<p></p></li>
+</ul></li>
+<li><p>Does the package have adequate documentation?</p>
+<p style="color:blue;">
+</p><p>Again, this can be hard to determine from just this index page, but the sub-questions can help here.</p>
+<p></p>
+<ul>
+<li><p>Are there references to external peer reviewed papers?</p>
+<p style="color:blue;">
+</p><p>Yes, there is a peer reviewed paper in the description of this package.</p>
+<p></p></li>
+<li><p>Is there a website / Vignettes?</p>
+<p style="color:blue;">
+</p><p>While there isn’t a website here, there are four different vignettes.</p>
+<p></p></li>
+</ul></li>
+<li><p>Is there a way to report bugs?</p>
+<p style="color:blue;">
+</p><p>Like with the other package, there doesn’t appear to be a standard way to report bugs.</p>
+<p></p></li>
+<li><p>Can the packages handle different edge cases?</p>
+<p style="color:blue;">
+</p><p>Same as above. It doesn’t directly said it can handle our edge case, but I know it can.</p>
+<p></p></li>
+<li><p>Does the package have a lot of dependencies / unusual dependencies?</p>
+<p style="color:blue;">
+</p><p>While this package has more dependencies, all the dependencies are very standard and do not raise any red flags for me</p>
+<p></p></li>
+</ul>
+<p>Having gone through most the questions, I am fairly confident in saying I want to use {coin} to investigate this method rather than {pairwiseCI}. For almost all the questions {coin} looks slightly better than {pairwiseCI} and really just has a larger accumulation of evidence of quality. But, I haven’t answered the last question in my checklist for either these packages. What about community adoption? It can be a bit hard to look at directly, but I tend to use a few different ways.</p>
+<p>First, staying on the CRAN index page I look at the Reverse Dependencies. This section only appears if there are other packages on CRAN that use this package. For these two packages only {coin} has this section and we can see there are many packages that use {coin}</p>
+<p><img src="images/clipboard-118256266.png" class="img-fluid"></p>
+<p>The next thing I will check is the number of downloads. This can easily be done with the following bit of code:</p>
 <div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>─ Session info ───────────────────────────────────────────────────────────────
- setting  value
- version  R version 4.4.2 (2024-10-31)
- os       Ubuntu 24.04.2 LTS
- system   x86_64, linux-gnu
- ui       X11
- language (EN)
- collate  C.UTF-8
- ctype    C.UTF-8
- tz       UTC
- date     2025-07-17
- pandoc   3.6.3 @ /opt/quarto/bin/tools/ (via rmarkdown)
-
-─ Packages ───────────────────────────────────────────────────────────────────
- ! package * version date (UTC) lib source
- P coin    * 1.4-3   2023-09-27 [?] RSPM (R 4.4.0)
-
- [1] /home/runner/work/CAMIS/CAMIS/renv/library/linux-ubuntu-noble/R-4.4/x86_64-pc-linux-gnu
- [2] /opt/R/4.4.2/lib/R/library
-
- P ── Loaded and on-disk path mismatch.
-
-─ External software ──────────────────────────────────────────────────────────
- setting value
- SAS     9.04.01M7P080520
-
-──────────────────────────────────────────────────────────────────────────────</code></pre>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>cranlogs<span class="sc">::</span><span class="fu">cran_downloads</span>(<span class="at">package =</span> <span class="fu">c</span>(<span class="st">"coin"</span>, <span class="st">"pairwiseCI"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-</div>
-</div>
-</div>
-</div>
+<p><img src="images/clipboard-3979687165.png" class="img-fluid"></p>
+<p>And you can see {coin} is much more popular than {pairwiseCI}.</p>
+<p>So with all of this information, I think starting with {coin} is going to be the best use of my time.</p>
+<p>The checklist isn’t intended to replace a full review of the package for an GxP workflows. But, when just trying to decide which package to look into for a particular stats method it can be helpful.</p>
+<p>In summary, selecting the appropriate R package for statistical analyses is hard. Google, isn’t perfect and so it worth finding a few packages and going through this checklist. By taking a few minutes to consider factors like maintenance, documentation, and community adoption can save you time in the long run.</p>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
