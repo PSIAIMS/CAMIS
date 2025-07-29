@@ -204,6 +204,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#the-model" id="toc-the-model" class="nav-link" data-scroll-target="#the-model">The Model</a></li>
   <li><a href="#the-results" id="toc-the-results" class="nav-link" data-scroll-target="#the-results">The Results</a></li>
   <li><a href="#sums-of-squares-tables" id="toc-sums-of-squares-tables" class="nav-link" data-scroll-target="#sums-of-squares-tables">Sums of Squares Tables</a></li>
+  <li><a href="#rstatix" id="toc-rstatix" class="nav-link" data-scroll-target="#rstatix">rstatix</a></li>
+  <li><a href="#car" id="toc-car" class="nav-link" data-scroll-target="#car">car</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -421,7 +423,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sums-of-squares-tables" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="sums-of-squares-tables">Sums of Squares Tables</h3>
-<p>Unfortunately, it is not easy to get the various types of sums of squares calculations in using functions from base R. However, the <code>rstatix</code> package offers a solution to produce these various sums of squares tables. For each type, you supply the original dataset and model to the. <code>anova_test</code> function, then specify the ttype and se <code>detailed = TRUE</code>.</p>
+</section>
+<section id="rstatix" class="level3">
+<h3 class="anchored" data-anchor-id="rstatix">rstatix</h3>
+<p>Unfortunately, it is not easy to get the various types of sums of squares calculations in using functions from base R. However, the <code>rstatix</code> package offers a solution to produce these various sums of squares tables. For each type, you supply the original dataset and model to the. <code>anova_test</code> function, then specify the type and se <code>detailed = TRUE</code>.</p>
 <section id="type-i" class="level4">
 <h4 class="anchored" data-anchor-id="type-i">Type I</h4>
 <div class="cell">
@@ -661,6 +666,74 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="type-iv" class="level4 unnumbered">
 <h4 class="unnumbered anchored" data-anchor-id="type-iv">Type IV</h4>
 <p>In R there is no equivalent operation to the <code>Type IV</code> sums of squares calculation in SAS.</p>
+</section>
+</section>
+<section id="car" class="level3">
+<h3 class="anchored" data-anchor-id="car">car</h3>
+<p>As an alternative to the <code>rstatix</code> package, you can use the <code>car</code> package, which is the R package for “An R Companion to Applied Regression, Third Edition, Sage 2019”</p>
+<section id="type-i-1" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="type-i-1">Type I</h4>
+<p>Type I can come directly from <code>stats</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">anova</span>(lm_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Analysis of Variance Table
+
+Response: y
+             Df Sum Sq Mean Sq F value   Pr(&gt;F)    
+drug          3 3133.2 1044.41  9.4558 5.58e-05 ***
+disease       2  418.8  209.42  1.8960   0.1617    
+drug:disease  6  707.3  117.88  1.0672   0.3958    
+Residuals    46 5080.8  110.45                     
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+</section>
+<section id="type-ii-1" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="type-ii-1">Type II</h4>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(lm_model, <span class="at">type =</span> <span class="st">"II"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Anova Table (Type II tests)
+
+Response: y
+             Sum Sq Df F value    Pr(&gt;F)    
+drug         3063.4  3  9.2451 6.748e-05 ***
+disease       418.8  2  1.8960    0.1617    
+drug:disease  707.3  6  1.0672    0.3958    
+Residuals    5080.8 46                      
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+</section>
+<section id="type-iii-1" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="type-iii-1">Type III</h4>
+<p>For type III tests the linear model we have used above does not make sense if the contrasts are orthogonal in the row-basis. The default contrast term <code>contr.treatment</code> are not, so the contrast should be changed. If you want to match the procedure in SAS use contr.sum, contr.poly. This can be either set as an option.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">contrasts =</span> <span class="fu">c</span>(<span class="st">"contr.sum"</span>, <span class="st">"contr.poly"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Or, set directly in the model statement using the <code>contrasts</code> argument</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>lm_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> drug <span class="sc">+</span> disease <span class="sc">+</span> drug<span class="sc">*</span>disease, df_disease, </span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">contrasts =</span> <span class="fu">list</span>(<span class="at">drug =</span> <span class="st">"contr.sum"</span>, <span class="at">disease =</span> <span class="st">"contr.poly"</span>))</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>car<span class="sc">::</span><span class="fu">Anova</span>(lm_model, <span class="at">type =</span> <span class="st">"III"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Anova Table (Type III tests)
+
+Response: y
+              Sum Sq Df  F value    Pr(&gt;F)    
+(Intercept)  20037.6  1 181.4138 &lt; 2.2e-16 ***
+drug          2997.5  3   9.0460 8.086e-05 ***
+disease        415.9  2   1.8826    0.1637    
+drug:disease   707.3  6   1.0672    0.3958    
+Residuals     5080.8 46                       
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+<p><code>rstatix</code> does this is by default. The <code>rstatix</code> package uses the <code>car</code> package to do the anova calculation, but can be nicer to use as it handles the contrasts for you and is more “pipe-able”.</p>
 
 
 </section>
