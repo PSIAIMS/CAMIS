@@ -29,6 +29,7 @@ library(tidyverse)
 library(emmeans)
 library(broom)
 library(knitr)
+library(car)
 
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -85,7 +86,9 @@ lm_model %>%
 
 ### Sums of Squares Tables {.unnumbered}
 
-Unfortunately, it is not easy to get the various types of sums of squares calculations in using functions from base R. However, the `rstatix` package offers a solution to produce these various sums of squares tables. For each type, you supply the original dataset and model to the. `anova_test` function, then specify the ttype and se `detailed = TRUE`.
+### rstatix
+
+Unfortunately, it is not easy to get the various types of sums of squares calculations in using functions from base R. However, the `rstatix` package offers a solution to produce these various sums of squares tables. For each type, you supply the original dataset and model to the. `anova_test` function, then specify the type and se `detailed = TRUE`.
 
 #### Type I
 
@@ -132,3 +135,36 @@ df_disease %>%
 #### Type IV {.unnumbered}
 
 In R there is no equivalent operation to the `Type IV` sums of squares calculation in SAS.
+
+### car 
+
+As an alternative to the `rstatix` package, you can use the `car` package, which is the R package for "An R Companion to Applied Regression, Third Edition, Sage 2019"
+
+#### Type I {.unnumbered}
+
+Type I can come directly from `stats`. 
+
+```{r}
+anova(lm_model)
+```
+#### Type II {.unnumbered}
+```{r}
+Anova(lm_model, type = "II")
+```
+
+
+#### Type III {.unnumbered}
+
+For type III tests the linear model we have used above does not make sense if the contrasts are orthogonal in the row-basis. The default contrast term `contr.treatment` are not, so the contrast should be changed. If you want to match the procedure in SAS use `{r} c("contr.sum", "contr.poly")`. This can be either set as an option. 
+```{r}
+#| eval: FALSE 
+options(contrasts = c("contr.sum", "contr.poly"))
+```
+Or, set directly in the model statement using the `contrasts` argument 
+```{r}
+lm_model <- lm(y ~ drug + disease + drug*disease, df_disease, 
+              contrasts = list(drug = "contr.sum", disease = "contr.poly"))
+car::Anova(lm_model, type = "III")
+```
+
+`rstatix` does this is by default. The `rstatix` package uses the `car` package to do the anova calculation, but can be nicer to use as it handles the contrasts for you and is more "pipe-able". 
