@@ -2,28 +2,45 @@
 title: "R vs SAS Linear Models"
 ---
 
+# R vs. SAS ANOVA
+
+## Introduction
+
+This section compares the implementation of analysis of variance (ANOVA) in R and SAS. ANOVA compares the mean of two or more groups to determine if at least one group is significantly different from the others.
+
 R and SAS give the same result for the linear model. But, there some differences with calculating sums of squares. If you are looking for type I sum of square that is available in base R `stats` package using the `anova()` function. Type II and Type III sum of squares are available in the `car` and the `rstatix` packages. `rstatix` uses the `car` package to calculate the sum of square, but can be considered easier to use as it handles the contrast for type III automatically.
+
+## General Comparison Table
+
+The following table provides an overview of the support and results comparability between R and SAS for the new analysis point.
+
++----------+----------------+------------------+---------------+------------------------------------------+
+| Analysis | Supported in R | Supported in SAS | Results Match | Notes                                    |
++==========+================+==================+===============+==========================================+
+| ANOVA    | Yes ✅         | Yes ✅           | Mostly yes    | R can't calculate type IV Sum of Squares |
++----------+----------------+------------------+---------------+------------------------------------------+
 
 ### Matching Contrasts: R and SAS {.unnumbered}
 
-It is recommended to use the `emmeans` package when attempting to match contrasts between R and SAS. In SAS, all contrasts must be manually defined, whereas in R, we have many ways to use pre-existing contrast definitions. The `emmeans` package makes simplifies this process, and provides syntax that is similar to the syntax of SAS.
+### Scenario 1: Basic Functionality
 
-This is how we would define a contrast in SAS.
+#### R Code Example
 
-```{r, eval=FALSE}
-# In SAS
-proc glm data=work.mycsv;
-   class drug;
-   model post = drug pre / solution;
-   estimate 'C vs A'  drug -1  1 0;
-   estimate 'E vs CA' drug -1 -1 2;
-run;
+In order to get the ANOVA model fit and sum of squares you can use the `anova` function in the `stats` package.
+
+```{r}
+library(emmeans)
+drug_trial <- read.csv("../data/drug_trial.csv")
+
+lm_model <- lm(formula = post ~ pre + drug, data = drug_trial) 
+lm_model|>
+  anova()
 ```
 
-And this is how we would define the same contrast in R, using the `emmeans` package.
+It is recommended to use the `emmeans` package to get the contrasts between R.
 
-```{r, eval=FALSE}
-lm(formula = post ~ pre + drug, data = df_trial) %>% 
+```{r}
+lm_model |> 
   emmeans("drug") %>% 
   contrast(method = list(
     "C vs A"  = c(-1,  1, 0),
@@ -31,13 +48,90 @@ lm(formula = post ~ pre + drug, data = df_trial) %>%
   ))
 ```
 
+In SAS, all contrasts must be manually defined, but the syntax is largely similar in both.
+
+```{r, eval=FALSE}
+# In SAS
+proc glm data=work.mycsv;
+   class drug;
+   model post = pre drug / solution;
+   estimate 'C vs A'  drug -1  1 0;
+   estimate 'E vs CA' drug -1 -1 2;
+run;
+```
+
+```{r, echo=FALSE, fig.align='center', out.width="75%"}
+knitr::include_graphics("../images/linear/clipboard-2025781059.png")
+knitr::include_graphics("../images/linear/clipboard-1394032862.png")
+```
+
+#### Results Comparison
+
+Provided below is a detailed comparison of the results obtained from both SAS and R.
+
+##### Sums of Squares
+
++------------------------+-------------+-------------+-------------+
+| Statistic              | R Result    | SAS Result  | Match       |
++========================+=============+=============+=============+
+| Sum of Square (Type I) | 802.94      | 802.94      | Yes         |
+|                        |             |             |             |
+|                        | 68.55       | 68.55       |             |
++------------------------+-------------+-------------+-------------+
+| Degrees of Freedom     | 1           | 1           | Yes         |
+|                        |             |             |             |
+|                        | 2           | 2           |             |
++------------------------+-------------+-------------+-------------+
+| Mean Square            | 802.94      | 802.94      | Yes         |
+|                        |             |             |             |
+|                        | 34.28       | 34.28       |             |
++------------------------+-------------+-------------+-------------+
+| F Value                | 50.04       | 50.04       | Yes         |
+|                        |             |             |             |
+|                        | 2.14        | 2.14        |             |
++------------------------+-------------+-------------+-------------+
+| p-value                | \<0.0001    | \<0.0001    | Yes         |
+|                        |             |             |             |
+|                        | 0.1384      | 0.1384      |             |
++------------------------+-------------+-------------+-------------+
+
+##### Contrasts
+
+| Statistic                       | R Result | SAS Result | Match |
+|---------------------------------|----------|------------|-------|
+| ***contrast estimate C vs A***  | 0.109    | 0.109      | Yes   |
+| SE                              | 1.80     | 1.80       | Yes   |
+| t-ratio                         | 0.06     | 0.06       | Yes   |
+| p-value                         | 0.9521   | 0.9521     | Yes   |
+| ***contrast estimate E vs CA*** | 6.783    | 6.783      | Yes   |
+| SE                              | 3.28     | 3.28       | Yes   |
+| t-ratio                         | 2.07     | 2.07       | Yes   |
+| p-value                         | 0.0488   | 0.0488     | Yes   |
+
 Note, however, that there are some cases where the scale of the parameter estimates between SAS and R is off, though the test statistics and p-values are identical. In these cases, we can adjust the SAS code to include a divisor. As far as we can tell, this difference only occurs when using the predefined Base R contrast methods like `contr.helmert`.
 
 ```{r, eval=FALSE}
 proc glm data=work.mycsv;
    class drug;
-   model post = drug pre / solution;
+   model post = pre drug / solution;
    estimate 'C vs A'  drug -1  1 0 / divisor = 2;
    estimate 'E vs CA' drug -1 -1 2 / divisor = 6;
 run;
 ```
+
+## Summary and Recommendation
+
+There were no major differences between the R emmeans package and the SAS PROC GLM step in conducting ANOVA on the clinical trial data. Both are robust software tools that generate mostly same results. Scaling for parameter coefficients need to be handled with care however as contrast estimates between R and S differed by a sign.
+
+## Additional References
+
+Provide references and additional reading materials for both R and SAS documentation related to the analysis.
+
+**R Documentation:**
+
+-   `lm` function: <https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/lm>
+-   `emmeans` package: <https://cran.r-project.org/web/packages/emmeans/>
+
+**SAS Documentation:**
+
+-   `PROC GLM`: <https://documentation.sas.com/doc/en/statug/15.2/statug_glm_syntax01.htm>
