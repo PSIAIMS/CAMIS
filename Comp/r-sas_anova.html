@@ -198,7 +198,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#matching-contrasts-r-and-sas" id="toc-matching-contrasts-r-and-sas" class="nav-link active" data-scroll-target="#matching-contrasts-r-and-sas">Matching Contrasts: R and SAS</a></li>
+  <li><a href="#r-vs.-sas-anova" id="toc-r-vs.-sas-anova" class="nav-link active" data-scroll-target="#r-vs.-sas-anova">R vs.&nbsp;SAS ANOVA</a>
+  <ul class="collapse">
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#general-comparison-table" id="toc-general-comparison-table" class="nav-link" data-scroll-target="#general-comparison-table">General Comparison Table</a>
+  <ul class="collapse">
+  <li><a href="#matching-contrasts-r-and-sas" id="toc-matching-contrasts-r-and-sas" class="nav-link" data-scroll-target="#matching-contrasts-r-and-sas">Matching Contrasts: R and SAS</a></li>
+  <li><a href="#scenario-1-basic-functionality" id="toc-scenario-1-basic-functionality" class="nav-link" data-scroll-target="#scenario-1-basic-functionality">Scenario 1: Basic Functionality</a></li>
+  </ul></li>
+  <li><a href="#summary-and-recommendation" id="toc-summary-and-recommendation" class="nav-link" data-scroll-target="#summary-and-recommendation">Summary and Recommendation</a></li>
+  <li><a href="#additional-references" id="toc-additional-references" class="nav-link" data-scroll-target="#additional-references">Additional References</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -224,40 +234,274 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
+<section id="r-vs.-sas-anova" class="level1">
+<h1>R vs.&nbsp;SAS ANOVA</h1>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>This section compares the implementation of analysis of variance (ANOVA) in R and SAS. ANOVA compares the mean of two or more groups to determine if at least one group is significantly different from the others.</p>
 <p>R and SAS give the same result for the linear model. But, there some differences with calculating sums of squares. If you are looking for type I sum of square that is available in base R <code>stats</code> package using the <code>anova()</code> function. Type II and Type III sum of squares are available in the <code>car</code> and the <code>rstatix</code> packages. <code>rstatix</code> uses the <code>car</code> package to calculate the sum of square, but can be considered easier to use as it handles the contrast for type III automatically.</p>
+</section>
+<section id="general-comparison-table" class="level2">
+<h2 class="anchored" data-anchor-id="general-comparison-table">General Comparison Table</h2>
+<p>The following table provides an overview of the support and results comparability between R and SAS for the new analysis point.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 15%">
+<col style="width: 17%">
+<col style="width: 14%">
+<col style="width: 39%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Analysis</th>
+<th>Supported in R</th>
+<th>Supported in SAS</th>
+<th>Results Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ANOVA</td>
+<td>Yes ✅</td>
+<td>Yes ✅</td>
+<td>Mostly yes</td>
+<td>R can’t calculate type IV Sum of Squares</td>
+</tr>
+</tbody>
+</table>
 <section id="matching-contrasts-r-and-sas" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="matching-contrasts-r-and-sas">Matching Contrasts: R and SAS</h3>
-<p>It is recommended to use the <code>emmeans</code> package when attempting to match contrasts between R and SAS. In SAS, all contrasts must be manually defined, whereas in R, we have many ways to use pre-existing contrast definitions. The <code>emmeans</code> package makes simplifies this process, and provides syntax that is similar to the syntax of SAS.</p>
-<p>This is how we would define a contrast in SAS.</p>
+</section>
+<section id="scenario-1-basic-functionality" class="level3">
+<h3 class="anchored" data-anchor-id="scenario-1-basic-functionality">Scenario 1: Basic Functionality</h3>
+<section id="r-code-example" class="level4">
+<h4 class="anchored" data-anchor-id="r-code-example">R Code Example</h4>
+<p>In order to get the ANOVA model fit and sum of squares you can use the <code>anova</code> function in the <code>stats</code> package.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># In SAS</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>proc glm data<span class="ot">=</span>work.mycsv;</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>   class drug;</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>   model post <span class="ot">=</span> drug pre <span class="sc">/</span> solution;</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>   estimate <span class="st">'C vs A'</span>  drug <span class="sc">-</span><span class="dv">1</span>  <span class="dv">1</span> <span class="dv">0</span>;</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>   estimate <span class="st">'E vs CA'</span> drug <span class="sc">-</span><span class="dv">1</span> <span class="sc">-</span><span class="dv">1</span> <span class="dv">2</span>;</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(emmeans)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Welcome to emmeans.
+Caution: You lose important information if you filter this package's results.
+See '? untidy'</code></pre>
 </div>
-<p>And this is how we would define the same contrast in R, using the <code>emmeans</code> package.</p>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>drug_trial <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../data/drug_trial.csv"</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>lm_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="at">formula =</span> post <span class="sc">~</span> pre <span class="sc">+</span> drug, <span class="at">data =</span> drug_trial) </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>lm_model<span class="sc">|&gt;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">anova</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Analysis of Variance Table
+
+Response: post
+          Df Sum Sq Mean Sq F value    Pr(&gt;F)    
+pre        1 802.94  802.94 50.0393 1.639e-07 ***
+drug       2  68.55   34.28  2.1361    0.1384    
+Residuals 26 417.20   16.05                      
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+<p>It is recommended to use the <code>emmeans</code> package to get the contrasts between R.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lm</span>(<span class="at">formula =</span> post <span class="sc">~</span> pre <span class="sc">+</span> drug, <span class="at">data =</span> df_trial) <span class="sc">%&gt;%</span> </span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">emmeans</span>(<span class="st">"drug"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">contrast</span>(<span class="at">method =</span> <span class="fu">list</span>(</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"C vs A"</span>  <span class="ot">=</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>,  <span class="dv">1</span>, <span class="dv">0</span>),</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"E vs CA"</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">2</span>)</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  ))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>lm_model <span class="sc">|&gt;</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">emmeans</span>(<span class="st">"drug"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">contrast</span>(<span class="at">method =</span> <span class="fu">list</span>(</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"C vs A"</span>  <span class="ot">=</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>,  <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"E vs CA"</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">2</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  ))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> contrast estimate   SE df t.ratio p.value
+ C vs A      0.109 1.80 26   0.061  0.9521
+ E vs CA     6.783 3.28 26   2.067  0.0488</code></pre>
 </div>
+</div>
+<p>In SAS, all contrasts must be manually defined, but the syntax is largely similar in both.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># In SAS</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>proc glm data<span class="ot">=</span>work.mycsv;</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>   class drug;</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>   model post <span class="ot">=</span> pre drug <span class="sc">/</span> solution;</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>   estimate <span class="st">'C vs A'</span>  drug <span class="sc">-</span><span class="dv">1</span>  <span class="dv">1</span> <span class="dv">0</span>;</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>   estimate <span class="st">'E vs CA'</span> drug <span class="sc">-</span><span class="dv">1</span> <span class="sc">-</span><span class="dv">1</span> <span class="dv">2</span>;</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/linear/clipboard-2025781059.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/linear/clipboard-1394032862.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="results-comparison" class="level4">
+<h4 class="anchored" data-anchor-id="results-comparison">Results Comparison</h4>
+<p>Provided below is a detailed comparison of the results obtained from both SAS and R.</p>
+<section id="sums-of-squares" class="level5">
+<h5 class="anchored" data-anchor-id="sums-of-squares">Sums of Squares</h5>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 34%">
+<col style="width: 19%">
+<col style="width: 19%">
+<col style="width: 19%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Statistic</th>
+<th>R Result</th>
+<th>SAS Result</th>
+<th>Match</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Sum of Square (Type I)</td>
+<td><p>802.94</p>
+<p>68.55</p></td>
+<td><p>802.94</p>
+<p>68.55</p></td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>Degrees of Freedom</td>
+<td><p>1</p>
+<p>2</p></td>
+<td><p>1</p>
+<p>2</p></td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>Mean Square</td>
+<td><p>802.94</p>
+<p>34.28</p></td>
+<td><p>802.94</p>
+<p>34.28</p></td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>F Value</td>
+<td><p>50.04</p>
+<p>2.14</p></td>
+<td><p>50.04</p>
+<p>2.14</p></td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>p-value</td>
+<td><p>&lt;0.0001</p>
+<p>0.1384</p></td>
+<td><p>&lt;0.0001</p>
+<p>0.1384</p></td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="contrasts" class="level5">
+<h5 class="anchored" data-anchor-id="contrasts">Contrasts</h5>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Statistic</th>
+<th>R Result</th>
+<th>SAS Result</th>
+<th>Match</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong><em>contrast estimate C vs A</em></strong></td>
+<td>0.109</td>
+<td>0.109</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>SE</td>
+<td>1.80</td>
+<td>1.80</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>t-ratio</td>
+<td>0.06</td>
+<td>0.06</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>p-value</td>
+<td>0.9521</td>
+<td>0.9521</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td><strong><em>contrast estimate E vs CA</em></strong></td>
+<td>6.783</td>
+<td>6.783</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>SE</td>
+<td>3.28</td>
+<td>3.28</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>t-ratio</td>
+<td>2.07</td>
+<td>2.07</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>p-value</td>
+<td>0.0488</td>
+<td>0.0488</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
 <p>Note, however, that there are some cases where the scale of the parameter estimates between SAS and R is off, though the test statistics and p-values are identical. In these cases, we can adjust the SAS code to include a divisor. As far as we can tell, this difference only occurs when using the predefined Base R contrast methods like <code>contr.helmert</code>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>proc glm data<span class="ot">=</span>work.mycsv;</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>   class drug;</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>   model post <span class="ot">=</span> drug pre <span class="sc">/</span> solution;</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>   estimate <span class="st">'C vs A'</span>  drug <span class="sc">-</span><span class="dv">1</span>  <span class="dv">1</span> <span class="dv">0</span> <span class="sc">/</span> divisor <span class="ot">=</span> <span class="dv">2</span>;</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>   estimate <span class="st">'E vs CA'</span> drug <span class="sc">-</span><span class="dv">1</span> <span class="sc">-</span><span class="dv">1</span> <span class="dv">2</span> <span class="sc">/</span> divisor <span class="ot">=</span> <span class="dv">6</span>;</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>proc glm data<span class="ot">=</span>work.mycsv;</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>   class drug;</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>   model post <span class="ot">=</span> pre drug <span class="sc">/</span> solution;</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>   estimate <span class="st">'C vs A'</span>  drug <span class="sc">-</span><span class="dv">1</span>  <span class="dv">1</span> <span class="dv">0</span> <span class="sc">/</span> divisor <span class="ot">=</span> <span class="dv">2</span>;</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>   estimate <span class="st">'E vs CA'</span> drug <span class="sc">-</span><span class="dv">1</span> <span class="sc">-</span><span class="dv">1</span> <span class="dv">2</span> <span class="sc">/</span> divisor <span class="ot">=</span> <span class="dv">6</span>;</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>run;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+</section>
+</section>
+</section>
+</section>
+<section id="summary-and-recommendation" class="level2">
+<h2 class="anchored" data-anchor-id="summary-and-recommendation">Summary and Recommendation</h2>
+<p>There were no major differences between the R emmeans package and the SAS PROC GLM step in conducting ANOVA on the clinical trial data. Both are robust software tools that generate mostly same results. Scaling for parameter coefficients need to be handled with care however as contrast estimates between R and S differed by a sign.</p>
+</section>
+<section id="additional-references" class="level2">
+<h2 class="anchored" data-anchor-id="additional-references">Additional References</h2>
+<p>Provide references and additional reading materials for both R and SAS documentation related to the analysis.</p>
+<p><strong>R Documentation:</strong></p>
+<ul>
+<li><code>lm</code> function: <a href="https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/lm" class="uri">https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/lm</a></li>
+<li><code>emmeans</code> package: <a href="https://cran.r-project.org/web/packages/emmeans/" class="uri">https://cran.r-project.org/web/packages/emmeans/</a></li>
+</ul>
+<p><strong>SAS Documentation:</strong></p>
+<ul>
+<li><code>PROC GLM</code>: <a href="https://documentation.sas.com/doc/en/statug/15.2/statug_glm_syntax01.htm" class="uri">https://documentation.sas.com/doc/en/statug/15.2/statug_glm_syntax01.htm</a></li>
+</ul>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
