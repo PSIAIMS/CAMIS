@@ -53,8 +53,7 @@ The `glance` function gives us a summary of the model diagnostic values.
 
 ```{r}
 lm_model %>% 
-  glance() %>% 
-  pivot_longer(everything())
+  glance() 
 ```
 
 The `tidy` function gives a summary of the model results.
@@ -70,8 +69,7 @@ You'll see that R print the individual results for each level of the drug and di
 ```{r}
 lm_model %>% 
   anova() %>% 
-  tidy() %>% 
-  kable()
+  tidy() 
 ```
 
 We can add a `Total` row, by using `add_row` and calculating the sum of the degrees of freedom and sum of squares.
@@ -136,35 +134,54 @@ df_disease %>%
 
 In R there is no equivalent operation to the `Type IV` sums of squares calculation in SAS.
 
-### car 
+### car
 
 As an alternative to the `rstatix` package, you can use the `car` package, which is the R package for "An R Companion to Applied Regression, Third Edition, Sage 2019"
 
 #### Type I {.unnumbered}
 
-Type I can come directly from `stats`. 
+Type I can come directly from `stats`.
 
 ```{r}
 anova(lm_model)
 ```
+
 #### Type II {.unnumbered}
+
 ```{r}
 Anova(lm_model, type = "II")
 ```
 
-
 #### Type III {.unnumbered}
 
-For type III tests the linear model we have used above does not make sense if the contrasts are orthogonal in the row-basis. The default contrast term `contr.treatment` are not, so the contrast should be changed. If you want to match the procedure in SAS use `{r} c("contr.sum", "contr.poly")`. This can be either set as an option. 
+For type III tests the linear model we have used above does not make sense if the contrasts are orthogonal in the row-basis. The default contrast term `contr.treatment` are not, so the contrast should be changed. If you want to match the procedure in SAS use `{r} c("contr.sum", "contr.poly")`. This can be either set as an option.
+
 ```{r}
 #| eval: FALSE 
 options(contrasts = c("contr.sum", "contr.poly"))
 ```
-Or, set directly in the model statement using the `contrasts` argument 
+
+Or, set directly in the model statement using the `contrasts` argument
+
 ```{r}
 lm_model <- lm(y ~ drug + disease + drug*disease, df_disease, 
               contrasts = list(drug = "contr.sum", disease = "contr.poly"))
 car::Anova(lm_model, type = "III")
 ```
 
-`rstatix` does this is by default. The `rstatix` package uses the `car` package to do the anova calculation, but can be nicer to use as it handles the contrasts for you and is more "pipe-able". 
+`rstatix` does this is by default. The `rstatix` package uses the `car` package to do the anova calculation, but can be nicer to use as it handles the contrasts for you and is more "pipe-able".
+
+### Contrasts {.unnumbered}
+The easiest way to get contrasts in R is by using `emmeans`. For looking at contrast we are going to fit a different model on new data, that doesn't include an interaction term as it is easier to calculate contrasts without an interaction term. For this dataset we have three different drugs A, C, and E.
+```{r}
+df_trial<- read.csv("../data/drug_trial.csv")
+
+lm(formula = post ~ pre + drug, data = df_trial) %>% 
+  emmeans("drug") %>% 
+  contrast(method = list(
+    "C vs A"  = c(-1,  1, 0),
+    "E vs CA" = c(-1, -1, 2)
+  ))
+
+```
+

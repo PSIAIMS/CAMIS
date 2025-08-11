@@ -1,0 +1,747 @@
+---
+title: "R Delta Adjustment (tipping point): Continuous Data"
+---
+
+```{r}
+#| include: false
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Delta Adjustment / Tipping Point
+
+## Setup
+
+### General libraries
+
+```{r}
+#| label: general_libraries
+#| output: false
+#| warning: false
+library(mice)
+library(dplyr)
+library(tidyr)
+library(gt)
+library(labelled)
+library(purrr)
+library(ggplot2)
+library(gridExtra)
+```
+
+### Methodology specific libraries
+
+```{r}
+#| label: methodology_specific_libraries
+#| output: false
+#| warning: false
+library(emmeans)
+library(mmrm)
+library(rstan)
+library(rbmi)
+```
+
+### Random seed
+
+```{r}
+#| label: random_seed
+set.seed(12345)
+```
+
+## Reference-based multiple imputation (rbmi)
+
+### Methodology introduction
+
+The concept of delta adjustment and tipping point analysis builds on the framework of reference-based multiple imputation (rbmi) as seen on its respective [CAMIS webpage](../R/rbmi_continuous_joint.html). The use of the `rbmi` package in R ([Gower-Page et al. 2022](https://joss.theoj.org/papers/10.21105/joss.04251)) for the following standard and reference-based multiple imputation approaches are introduced there:
+
+-   Missing At Random (MAR)
+
+-   Jump to Reference (JR)
+
+-   Copy Reference (CR)
+
+-   Copy Increment from Reference (CIR)
+
+Please make sure to familiarize yourself with these functionalities of the `rbmi` package before checking this tutorial.
+
+The outline of this page generally follows the [rbmi advanced functionality vignette](https://cran.r-project.org/web/packages/rbmi/vignettes/advanced.html#sensitivity-analyses-delta-adjustments-and-tipping-point-analyses).
+
+### Data
+
+The same publicly available [dataset](https://r-packages.io/datasets/antidepressant_data) from an antidepressant clinical trial that was used to illustrate `rbmi` is again used for this tutorial. This dataset is also used in the [`rbmi` quickstart vignette](https://cran.r-project.org/web/packages/rbmi/vignettes/quickstart.html).
+
+The relevant endpoint for the antidepressant trial was assessed using the Hamilton 17-item depression rating scale (HAMD17), which was measured at baseline and subsequently at weeks 1, 2, 3, 4 and 6 (visits 4-7). Study drug discontinuation occurred in 24% (20/84) of subjects in the active drug group, compared to 26% (23/88) of subjects in the placebo group. Importantly, all data after study drug discontinuation are missing and there is a single intermittent missing observation.
+
+```{r}
+#| label: data_exploration_1
+data("antidepressant_data")
+
+dat <- antidepressant_data %>%
+  dplyr::select(PATIENT, GENDER, THERAPY, RELDAYS, VISIT, BASVAL, HAMDTL17, CHANGE) %>%
+  dplyr::mutate(THERAPY = factor(THERAPY, levels = c("PLACEBO", "DRUG"))) %>%
+  remove_labels()
+
+gt(head(dat, n=10))
+```
+
+The number of patients per visit and treatment group are:
+
+```{r}
+#| label: data_exploration_2
+dat %>%
+  group_by(VISIT, THERAPY) %>%
+  dplyr::summarise(N = n())
+```
+
+The mean change from baseline of the HAMD17 endpoint per visit and treatment group using only the complete cases are:
+
+```{r}
+#| label: data_exploration_3
+dat %>%
+  group_by(VISIT, THERAPY) %>%
+  dplyr::summarise(N = n(),
+                   MEAN = mean(CHANGE))
+```
+
+The missingness pattern is:
+
+```{r}
+#| label: data_exploration_4
+dat_wide = dat %>%
+  dplyr::select(PATIENT, VISIT, CHANGE) %>%
+  pivot_wider(id_cols = PATIENT,
+              names_from = VISIT,
+              names_prefix = "VISIT_",
+              values_from = CHANGE)
+
+dat_wide %>%
+  dplyr::select(starts_with("VISIT_")) %>%
+  md.pattern(plot=TRUE, rotate.names = TRUE)
+```
+
+There is a single patient with an intermittent missing observation at visit 5, which is patient 3618. Special considerations need to be taken when applying delta adjustments to intermittent missing observations like this one (more on this later).
+
+```{r}
+dat_expand <- expand_locf(
+  dat,
+  PATIENT = levels(dat$PATIENT),
+  VISIT = levels(dat$VISIT),
+  vars = c("BASVAL", "THERAPY", "GENDER"),
+  group = c("PATIENT"),
+  order = c("PATIENT", "VISIT")
+)
+
+gt(dat_expand %>% dplyr::filter(PATIENT == "3618"))
+```
+
+### Preparation
+
+This tutorial will focus on delta adjustment and tipping point analysis. We assume the user used the `rbmi` package to create an imputation object called `imputeObj` (see [CAMIS webpage](../R/rbmi_continuous_joint.html)).
+
+```{r}
+#| label: MAR_data
+#| include: false
+dat_ice <- dat_expand %>% 
+  arrange(PATIENT, VISIT) %>% 
+  filter(is.na(CHANGE)) %>% 
+  group_by(PATIENT) %>% 
+  slice(1) %>%
+  ungroup() %>% 
+  select(PATIENT, VISIT) %>% 
+  mutate(strategy = "MAR")
+
+dat_ice <- dat_ice[-which(dat_ice$PATIENT == 3618),]
+```
+
+```{r}
+#| label: MAR_imputation_model
+#| include: false
+vars <- set_vars(
+  outcome = "CHANGE",
+  visit = "VISIT",
+  subjid = "PATIENT",
+  group = "THERAPY",
+  covariates = c("GENDER", "BASVAL*VISIT", "THERAPY*VISIT")
+)
+
+method <- method_bayes(
+  n_samples = 500,
+  control = control_bayes(warmup = 500, thin = 10)
+)
+
+drawObj <- draws(
+  data = dat_expand,
+  data_ice = dat_ice,
+  vars = vars,
+  method = method,
+  quiet = TRUE
+)
+
+imputeObj <- impute(
+  draws = drawObj,
+  references = NULL)
+```
+
+```{r}
+#| label: MAR_analysis_model
+#| include: false
+vars_analyse <- set_vars(
+  outcome = "CHANGE",
+  visit = "VISIT",
+  subjid = "PATIENT",
+  group = "THERAPY",
+  covariates = c("BASVAL", "GENDER")
+)
+```
+
+## Delta adjustment and tipping point analysis
+
+### Methodology introduction
+
+When analyses for endpoints are performed under MAR or MNAR assumptions for missing data, it is important to perform sensitivity analyses to assess the impact of deviations from these assumptions. Tipping point analysis (or delta adjustment method) is an example of a sensitivity analysis that can be used to assess the robustness of a clinical trial when its result is based on imputed missing data.
+
+Generally, tipping point analysis explores the influence of missingness on the overall conclusion of the treatment difference by shifting imputed missing values in the treatment group towards the reference group until the result becomes non-significant. The tipping point is the minimum shift needed to make the result non-significant. If the minimum shift needed to make the result non-significant is implausible, then greater confidence in the primary results can be inferred.
+
+Tipping point analysis generally happens by adjusting imputing values by so-called delta values. The observed tipping point is the minimum delta needed to make the result non-significant. Mostly a range of delta values is explored and only imputed values from the active treatment group are adjusted by the delta value. However, delta adjustments in the control group is possible as well. Naturally, the range of acceptable values for delta should be agreed a priori, before taking this approach.
+
+For an extensive discussion on delta adjustment methods, we refer to [Cro et al. 2020](https://pubmed.ncbi.nlm.nih.gov/32419182/).
+
+## Simple delta adjustments
+
+### Generate delta's
+
+In the `rbmi` package, the `delta` argument of the `analyse()` function allows users to adjust the imputed datasets prior to the analysis stage. This `delta` argument requires a data frame created by `delta_template()`, which creates an additional column called `delta` that specifies the delta values to be added.
+
+By default, `delta_template()` will set `delta` to 0 for all observations.
+
+```{r}
+#| label: template_delta_0
+dat_delta_0 <- delta_template(imputations = imputeObj)
+
+gt(dat_delta_0 %>% dplyr::filter(PATIENT %in% c("1513", "1514")) %>% head(8))
+```
+
+You can add the delta values to the outcome variable (CHANGE) of one of the imputed datasets by using the `apply_delta()` function. Of course, nothing is changed here as delta = 0.
+
+```{r}
+#| label: extract_imputed_dfs_on_which_to_apply_delta
+imputed_dfs = extract_imputed_dfs(imputeObj)
+MI_10 = imputed_dfs[[10]]
+MI_10$PATIENT2 = MI_10$PATIENT
+MI_10$PATIENT = dat_expand$PATIENT
+```
+
+```{r}
+#| label: apply_delta_0
+gt(MI_10 %>% dplyr::filter(PATIENT %in% c("1513", "1514")) %>% head(8))
+
+rbmi:::apply_delta(MI_10, delta = dat_delta_0, group = c("PATIENT", "VISIT", "THERAPY"), outcome = "CHANGE") %>%
+  dplyr::filter(PATIENT %in% c("1513", "1514")) %>%
+  head(8) %>%
+  gt()
+```
+
+You may have noticed that the `is_missing` and `is_post_ice` columns of the delta data frame lend themselves perfectly to adjust the delta values, as the boolean variables `TRUE` and `FALSE` are regarded as 1 and 0 by R. If you want to set delta to 5 for all missing values, you can do so by multiplying the `is_missing` column by 5. In our case, this addition assumes a "worsening" of the imputed outcome variable, CHANGE, which is measured on the HAMD17 scale.
+
+```{r}
+#| label: template_delta_5_v1
+dat_delta_5_v1 <- delta_template(imputations = imputeObj) %>%
+    mutate(delta = is_missing * 5)
+
+gt(dat_delta_5_v1 %>% dplyr::filter(PATIENT %in% c("1513", "1514")) %>% head(8))
+```
+
+```{r}
+#| label: apply_delta_5_v1
+gt(MI_10 %>% dplyr::filter(PATIENT %in% c("1513", "1514")) %>% head(8))
+
+rbmi:::apply_delta(MI_10, delta = dat_delta_5_v1, group = c("PATIENT", "VISIT", "THERAPY"), outcome = "CHANGE") %>%
+  dplyr::filter(PATIENT %in% c("1513", "1514")) %>%
+  head(8) %>%
+  gt()
+```
+
+Importantly, if you multiply the `is_missing` column only, you apply the delta adjustment to **all** imputed missing values, including intermittent missing values. This can be checked by looking at patient 3618, which has an intermittent missing value at visit 5.
+
+```{r}
+#| label: template_delta_5_v1_3618
+gt(dat_delta_5_v1 %>% dplyr::filter(PATIENT == "3618"))
+```
+
+```{r}
+#| label: apply_delta_5_v1_3618
+gt(MI_10 %>% dplyr::filter(PATIENT == "3618"))
+
+rbmi:::apply_delta(MI_10, delta = dat_delta_5_v1, group = c("PATIENT", "VISIT", "THERAPY"), outcome = "CHANGE") %>%
+  dplyr::filter(PATIENT == "3618") %>%
+  gt()
+```
+
+If you consider the `is_post_ice` column too, you can restrict the delta adjustment to missing values that occur after study drug discontinuation due to an intercurrent event (ICE). By multiplying both the `is_missing` and `is_post_ice` columns by your chosen delta, the delta value will only be added when both columns are `TRUE`.
+
+```{r}
+#| label: template_delta_5_v2
+dat_delta_5_v2 <- delta_template(imputations = imputeObj) %>%
+    mutate(delta = is_missing * is_post_ice * 5)
+
+gt(dat_delta_5_v2 %>% dplyr::filter(PATIENT == "3618"))
+```
+
+```{r}
+#| label: apply_delta_5_v2
+gt(MI_10 %>% dplyr::filter(PATIENT == "3618"))
+
+rbmi:::apply_delta(MI_10, delta = dat_delta_5_v2, group = c("PATIENT", "VISIT", "THERAPY"), outcome = "CHANGE") %>%
+  dplyr::filter(PATIENT == "3618") %>%
+  gt()
+```
+
+Besides choosing which missing data to apply the delta adjustment to, you may also want to apply different delta adjustments to imputed data from the different groups. As an example, let's set delta = 0 for the control group, and delta = 5 for the intervention group. Here, we consider the `is_missing` column only, so that we apply the delta's to **all** imputed missing data.
+
+```{r}
+#| label: template_stratified_delta
+delta_control = 0
+delta_intervention = 5
+
+dat_delta_0_5 <- delta_template(imputations = imputeObj) %>%
+  mutate(
+    delta_ctl = (THERAPY == "PLACEBO") * is_missing * delta_control,
+    delta_int = (THERAPY == "DRUG") * is_missing * delta_intervention,
+    delta = delta_ctl + delta_int
+    )
+
+gt(dat_delta_0_5 %>% dplyr::filter(PATIENT %in% c("1513", "1514")) %>% head(8))
+```
+
+```{r}
+#| label: apply_stratified_delta
+rbmi:::apply_delta(MI_10, delta = dat_delta_0_5, group = c("PATIENT", "VISIT", "THERAPY"), outcome = "CHANGE") %>%
+  dplyr::filter(PATIENT %in% c("1513", "1514")) %>%
+  head(8) %>%
+  gt()
+```
+
+The `delta_template()` function has two additional arguments, `delta` and `dlag`, that can be used to define the delta adjustments. We explain these arguments in more detail in the *flexible delta adjustments* section below.
+
+### Run analysis model with delta adjustment
+
+As mentioned, delta adjustments are implemented via the `delta` argument of the `analyse()` function. The adjustment happens right after data imputation under MAR or MNAR (using reference-based imputation approaches), but before implementing the analysis model. Sensitivity analyses can therefore be performed without having to refit the imputation model, which is computationally efficient. This approach is considered a *marginal* delta adjustment approach, because the delta is simply added to the mean of the conditional multivariate normal distribution (conditional on the observed values and the covariates) for the imputation model ([Roger 2017](https://www.lshtm.ac.uk/research/centres-projects-groups/missing-data#dia-missing-data)).
+
+Here, we apply the delta adjustment of 5 to **all** imputed values of the outcome variable (CHANGE) in the intervention group. The estimated treatment effect at visit 7 is presented below.
+
+```{r}
+#| label: MAR_analysis_model_with_delta_adjustment
+anaObj <- analyse(
+    imputations = imputeObj,
+    fun = ancova,
+    delta = dat_delta_0_5,
+    vars = vars_analyse
+)
+
+poolObj <- rbmi::pool(anaObj)
+
+poolObj %>%
+  data.frame() %>%
+  dplyr::filter(grepl("7", parameter)) %>%
+  gt()  
+```
+
+## Tipping point analysis: MAR approach
+
+### Generate delta's: sequential delta adjustment for intervention arm
+
+To perform a tipping point analysis under the MAR assumption, we must create a range of delta values. In this section, we only specify a range of delta's for the intervention group. We apply a range here with both positive and negative values to broaden the range for possible comparisons with SAS.
+
+```{r}
+#| label: sequential_delta_specification_v1
+delta_df1 <- expand.grid(
+    delta_control = 0,
+    delta_intervention = seq(-5, 10, by = 1)
+    ) %>%
+    as_tibble()
+```
+
+To cut down on computation time, you may want to increase the number of parallel processes.
+
+```{r}
+#| label: cluster_specification
+cl <- make_rbmi_cluster(ncores = 4)
+```
+
+### Perform tipping point analysis
+
+To enable a tipping point analysis within a single function, we create `perform_tipp_analysis()`. This custom function requires a stratified delta for `delta_control` and `delta_intervention`, alongside `cl` as set in the previous step.
+
+```{r}
+#| label: function_tipping_point_analysis
+perform_tipp_analysis <- function(delta_control, delta_intervention, cl) {
+
+  dat_delta <- delta_template(imputeObj) %>%
+    mutate(
+      delta_ctl = (THERAPY == "PLACEBO") * is_missing * delta_control,
+      delta_int = (THERAPY == "DRUG") * is_missing * delta_intervention,
+      delta = delta_ctl + delta_int
+    )
+
+  anaObj <- analyse(
+    imputations = imputeObj,
+    fun = ancova,
+    delta = dat_delta,
+    vars = vars_analyse,
+    ncores = cl
+  )
+
+  poolObj <- as.data.frame(pool(anaObj)) %>%
+    dplyr::filter(grepl("trt_7", parameter))
+  
+  list(
+    trt_7 = poolObj[["est"]],
+    pval_7 = poolObj[["pval"]],
+    lci_7 = poolObj[["lci"]],
+    uci_7 = poolObj[["uci"]]
+  )
+}
+```
+
+Now, let's apply this function to the antidepressant data as follows:
+
+```{r}
+#| label: MAR_v1_tipping_point_analysis
+MAR_tipp_df1 <- delta_df1 %>%
+  mutate(
+    results_list = map2(delta_control, delta_intervention, perform_tipp_analysis, cl = cl),
+    trt_7 = map_dbl(results_list, "trt_7"),
+    pval_7 = map_dbl(results_list, "pval_7"),
+    lci_7 = map_dbl(results_list, "lci_7"),
+    uci_7 = map_dbl(results_list, "uci_7")
+  ) %>%
+  select(-results_list)
+```
+
+The results of the tipping point analysis under MAR with p-value $\geq$ 5% are:
+
+```{r}
+#| label: MAR_v1_non-significant_results
+MAR_tipp_df1 %>%
+  filter(pval_7 >= 0.05) %>%
+  gt()
+```
+
+The results of the tipping point analysis under MAR with p-value $<$ 5% are:
+
+```{r}
+#| label: MAR_v1_significant_results
+MAR_tipp_df1 %>%
+  filter(pval_7 < 0.05) %>%
+  gt()
+```
+
+We can derive an **exact** tipping point by linearly interpolating between the last "significant" delta and the first "non-significant" delta using the `approx()` function.
+
+```{r}
+#| label: MAR_v1_tipping_point
+delta_tp <- approx(x = MAR_tipp_df1$pval_7, 
+                   y = MAR_tipp_df1$delta_intervention, 
+                   xout = 0.05)$y
+
+trt_tp <- approx(x = MAR_tipp_df1$delta_intervention, 
+                 y = MAR_tipp_df1$trt_7,
+                 xout = delta_tp)$y
+
+lci_tp <- approx(x = MAR_tipp_df1$delta_intervention, 
+                 y = MAR_tipp_df1$lci_7,
+                 xout = delta_tp)$y
+
+uci_tp <- approx(x = MAR_tipp_df1$delta_intervention, 
+                 y = MAR_tipp_df1$uci_7,
+                 xout = delta_tp)$y
+
+data.frame(delta_control = 0, delta_intervention = delta_tp, trt_7 = trt_tp, pval_7 = 0.05, lci_7 = lci_tp, uci_7 = uci_tp) %>%
+  gt()
+```
+
+### Visualize results
+
+A nice visualization of this tipping point analysis for the MAR approach is (the dashed lines indicate a p-value=0.05 and no treatment effect):
+
+```{r}
+#| label: MAR_v1_tipping_point_visualization
+MAR_est <- ggplot(MAR_tipp_df1, aes(delta_intervention, trt_7)) +
+  geom_line() +
+  geom_point() +
+  geom_ribbon(aes(delta_intervention, ymin = lci_7, ymax = uci_7), alpha = 0.25) +
+  geom_hline(yintercept = 0.0, linetype = 2) +
+  geom_vline(xintercept = delta_tp, linetype = 2) +
+  scale_x_continuous(breaks = seq(-6, 10, 2)) +
+  labs(x = "Delta (intervention)", y = "Treatment effect (95% CI)") 
+  
+MAR_pval <- ggplot(MAR_tipp_df1, aes(delta_intervention, pval_7)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = 0.05, linetype = 2) +
+  geom_vline(xintercept = delta_tp, linetype = 2) +
+  scale_x_continuous(breaks = seq(-6, 10, 2)) +
+  labs(x = "Delta (intervention)", y = "P-value") 
+
+grid.arrange(MAR_pval, MAR_est, nrow = 1)
+```
+
+We clearly see that the p-value under MAR reaches a tipping point from 3 onward in the range of delta's considered.
+
+### Delta adjustment for control and intervention arms
+
+Let's now create a sequence of delta's for the control group too, and carry out a second tipping point analysis under the MAR assumption.
+
+```{r}
+#| label: sequential_delta_specification_v2
+delta_df2 <- expand.grid(
+    delta_control = seq(-5, 10, by = 1),
+    delta_intervention = seq(-5, 10, by = 1)
+    ) %>%
+    as_tibble()
+```
+
+```{r}
+#| label: MAR_v2_tipping_point_analysis
+MAR_tipp_df2 <- delta_df2 %>%
+  mutate(
+    results_list = map2(delta_control, delta_intervention, perform_tipp_analysis, cl = cl),
+    trt_7 = map_dbl(results_list, "trt_7"),
+    pval_7 = map_dbl(results_list, "pval_7")
+  ) %>%
+  select(-results_list) %>%
+  mutate(
+    pval = cut(
+      pval_7,
+      c(0, 0.001, 0.01, 0.05, 0.2, 1),
+      right = FALSE,
+      labels = c("<0.001", "0.001 - <0.01", "0.01 - <0.05", "0.05 - <0.20", ">= 0.20")
+    )
+  )
+```
+
+We can visualize the result of this tipping point analysis using a heatmap. Here, the **(0,0)** point corresponds to the original result without any delta adjustment (p \~ 0.0125).
+
+```{r}
+#| label: MAR_v2_tipping_point_visualization
+MAR_heat <- ggplot(MAR_tipp_df2, aes(delta_control, delta_intervention, fill = pval)) +
+  geom_raster() +
+  scale_fill_manual(values = c("darkgreen", "lightgreen", "lightyellow", "orange", "red")) +
+  scale_x_continuous(breaks = seq(-5, 10, 1)) +
+  scale_y_continuous(breaks = seq(-5, 10, 1)) +
+  labs(x = "Delta (control)", y = "Delta (intervention)", fill = "P-value") 
+MAR_heat
+```
+
+Don't forget to close the computing clusters when you are done.
+
+```{r}
+#| label: close_clusters
+parallel::stopCluster(cl)
+```
+
+## Comparison with rbmi MNAR approaches
+
+### Summary of results
+
+In the table below we present the results of the different imputation strategies with varying number of multiple imputation draws, M = 500 an M = 5000. Note that the results can be slightly different from the results above due to a possible different seed. The estimates show the contrast at visit 7 between DRUG and PLACEBO (DRUG - PLACEBO). Delta adjustments were applied to **all** imputed missing data in the intervention group only.
+
+| Method | Delta control | Delta intervention | Estimate | 95% CI | P-value | Original estimate | Original p-value |
+|---------|---------|---------|---------|---------|---------|---------|---------|
+| MI - MAR (M=500) | 0 | 3 | -2.074 | -4.324 to 0.176 | 0.0709 | -2.798 | 0.0135 |
+| MI - MAR (M=5000) | 0 | 3 | -2.100 | -4.354 to 0.154 | 0.0675 | -2.829 | 0.0128 |
+| MI - MNAR JR (M=500) | 0 | -1 | -2.380 | -4.595 to -0.165 | 0.0354 | -2.137 | 0.0602 |
+| MI - MNAR JR (M=5000) | 0 | -1 | -2.383 | -4.608 to -0.157 | 0.0361 | -2.140 | 0.0611 |
+| MI - MNAR CR (M=500) | 0 | 1 | -2.151 | -4.359 to 0.057 | 0.0561 | -2.394 | 0.0326 |
+| MI - MNAR CR (M=5000) | 0 | 1 | -2.162 | -4.377 to 0.054 | 0.0558 | -2.405 | 0.0324 |
+| MI - MNAR CIR (M=500) | 0 | 2 | -1.986 | -4.211 to 0.239 | 0.0798 | -2.472 | 0.0274 |
+| MI - MNAR CIR (M=5000) | 0 | 2 | -1.994 | -4.227 to 0.239 | 0.0796 | -2.480 | 0.0274 |
+
+Of all considered approaches, the MAR approach yields the largest delta adjustment at its tipping point, with a delta intervention of 3 at both M = 500 and M = 5000. This indicates that the MAR assumption is the most robust against slight deviations of its conditions. Notice that for the MNAR JR approach we included, for completeness, tipping point analyses to know when the results switch from non-significant to significant. Correspondingly, two negative delta's (-1) are found at the tipping point for M = 500 and M = 5000. This is expected, given that the original analyses are non-significant (p \~ 0.0602 and p \~ 0.0611) and a tipping point analysis here aims to find the point at which the analysis turns to be significant, instead of non-significant.
+
+### Visual comparison
+
+```{r}
+#| echo: false
+#| fig-align: 'center'
+knitr::include_graphics("../images/tipping_point/R_comparison_est.png")
+```
+
+```{r}
+#| echo: false
+#| fig-align: 'center'
+knitr::include_graphics("../images/tipping_point/R_comparison_pval.png")
+```
+
+## Flexible delta adjustments
+
+So far, we have only considered simple delta adjustments that add the same value to all imputed missing data. However, you may want to implement more flexible delta adjustments for missing data following an ICE, where the magnitude of the delta varies depending on the distance of the visit from the ICE visit.
+
+To facilitate the creation of such flexible delta adjustments, the `delta_template()` function has two additional arguments `delta` and `dlag`:
+
+-   `delta`: specifies the default amount of delta that should be applied to each post-ICE visit (default is NULL)
+-   `dlag`: specifies the scaling coefficient to be applied based upon the visits proximity to the first visit affected by the ICE (default is NULL)
+
+The usage of the `delta` and `dlag` arguments is best illustrated with a few examples from the [rbmi advanced functionality vignette](https://cran.r-project.org/web/packages/rbmi/vignettes/advanced.html#sensitivity-analyses-delta-adjustments-and-tipping-point-analyses).
+
+### Scaling delta by visit
+
+Assume a setting with 4 visits and the user specified `delta = c(5, 6, 7, 8)` and `dlag = c(1, 2, 3, 4)`. For a subject for whom the first visit affected by the ICE is visit 2, these values of `delta` and `dlag` would imply the following delta offset:
+
+|                | Visit 1 | Visit 2 | Visit 3 | Visit 4 |
+|----------------|---------|---------|---------|---------|
+| Delta          | 5       | 6       | 7       | 8       |
+| Dlag           | 0       | 1       | 2       | 3       |
+| Delta \* dlag  | 0       | 6       | 14      | 24      |
+| Cumulative sum | 0       | 6       | 20      | 44      |
+
+That is, the subject would have a delta adjustment of 0 applied to visit 1, 6 for visit 2, 20 for visit 3 and 44 for visit 4.
+
+Assume instead, that the subject’s first visit affected by the ICE was visit 3. Then, the above values of `delta` and `dlag` would imply the following delta adjustment:
+
+|                | Visit 1 | Visit 2 | Visit 3 | Visit 4 |
+|----------------|---------|---------|---------|---------|
+| Delta          | 5       | 6       | 7       | 8       |
+| Dlag           | 0       | 0       | 1       | 2       |
+| Delta \* dlag  | 0       | 0       | 7       | 16      |
+| Cumulative sum | 0       | 0       | 7       | 23      |
+
+and thus the subject would have a delta adjustment of 0 applied to visits 1 and 2, 7 for visit 3 and 23 for visit 4
+
+Another way of using these arguments is to set `delta` to the difference in time between visits and `dlag` to be the amount of delta per unit of time. For example, let’s say that visits occur on weeks 1, 5, 6 and 9 and that we want a delta of 3 to be applied for each week after an ICE. For simplicity, we assume that the ICE occurs immediately after the subject’s last visit which is not affected by the ICE. This could be achieved by setting `delta = c(1, 4, 1, 3)`, i.e. the difference in weeks between each visit, and `dlag = c(3, 3, 3, 3)`.
+
+Assume a subject’s first visit affected by the ICE was visit 2, then these values of `delta` and `dlag` would imply the following delta adjustment:
+
+|                | Visit 1 | Visit 2 | Visit 3 | Visit 4 |
+|----------------|---------|---------|---------|---------|
+| Delta          | 1       | 4       | 1       | 3       |
+| Dlag           | 0       | 3       | 3       | 3       |
+| Delta \* dlag  | 0       | 12      | 3       | 9       |
+| Cumulative sum | 0       | 12      | 15      | 24      |
+
+Let's now consider the antidepressant data again. Suppose we apply a delta adjustment of 2 for each week following an ICE in the intervention group only. For example, if the ICE took place immediately after visit 4, then the cumulative delta applied to a missing value from visit 5 would be 2, from visit 6 would be 4, and from visit 7 would be 6.
+
+To program this, we first use the `delta` and `dlag` arguments of `delta_template()`.
+
+```{r}
+#| label: template_delta_scaled
+dat_delta <- delta_template(
+  imputeObj,
+  delta = c(2, 2, 2, 2),
+  dlag = c(1, 1, 1, 1)
+)
+
+gt(dat_delta %>% dplyr::filter(PATIENT %in% c("1513", "1514")) %>% head(8))
+```
+
+Then, we use some metadata variables provided by `delta_template()` to manually reset the delta values for the control group back to 0.
+
+```{r}
+#| label: stratified_delta_scaled
+dat_delta <- dat_delta %>%
+    mutate(delta = if_else(THERAPY == "PLACEBO", 0, delta))
+
+gt(dat_delta %>% dplyr::filter(is_missing == TRUE))
+```
+
+And lastly we use `dat_delta` to apply the desired delta offset to our analysis model under the `delta` argument of the `analyse()` function.
+
+```{r}
+#| label: analysis_model_with_scaled_delta_adjustment
+#| output: false
+anaObj <- analyse(
+    imputations = imputeObj,
+    fun = ancova,
+    delta = dat_delta,
+    vars = vars_analyse
+)
+
+poolObj <- rbmi::pool(anaObj)
+```
+
+### Fixed delta
+
+You may also add a simple, fixed delta using the `delta` and `dlag` arguments. To do this, `delta` should be specified as a vector of length equal to the amount of visits, e.g. `c(5, 5, 5, 5)`, while `dlag` should be `c(1, 0, 0, 0)`. This ensures a delta of 5 is added to each imputed missing value following an ICE, which we here assume to occur at the visit 2:
+
+|                | Visit 1 | Visit 2 | Visit 3 | Visit 4 |
+|----------------|---------|---------|---------|---------|
+| Delta          | 5       | 5       | 5       | 5       |
+| Dlag           | 0       | 1       | 0       | 0       |
+| Delta \* dlag  | 0       | 0       | 0       | 0       |
+| Cumulative sum | 0       | 5       | 5       | 5       |
+
+Adding a fixed delta in this way seems similar to what we explained in the *simple delta adjustments* section above, but there are some crucial differences. Remember the first case where we added delta = 5 to all imputed `is_missing` values:
+
+```{r}
+#| label: delta_5_v1
+dat_delta_5_v1 <- delta_template(imputations = imputeObj) %>%
+    mutate(delta = is_missing * 5)
+```
+
+And remember the second case where we added delta = 5 to all imputed `is_missing` and `is_post_ice` values:
+
+```{r}
+#| label: delta_5_v2
+dat_delta_5_v2 <- delta_template(imputations = imputeObj) %>%
+    mutate(delta = is_missing * is_post_ice * 5)
+```
+
+Similarly, we now set `delta = c(5, 5, 5, 5)` and `dlag = c(1, 0, 0, 0)`:
+
+```{r}
+#| label: delta_5_v3
+dat_delta_5_v3 <- delta_template(
+  imputeObj, 
+  delta = c(5, 5, 5, 5), 
+  dlag = c(1, 0, 0, 0)
+)
+```
+
+The difference between these three approaches lies in how they treat intermittent missing values that do not correspond to study drug discontinuation due to an ICE.
+
+If we consider patient 3618 again, we see that its intermittent missing value at visit 5 has delta = 5 added in the first approach (using `is_missing * 5`), while this missing value is not considered at all to receive a delta adjustment in the second or third approach (using `is_missing * is_post_ice * 5`, or `delta = c(5, 5, 5, 5)` and `dlag = c(1, 0, 0, 0)`). Thus by default, the `delta_template` function only perform delta adjustments to post-ICE missing values.
+
+```{r}
+#| label: delta_5_comparison
+# without delta adjustment
+gt(MI_10 %>% dplyr::filter(PATIENT == "3618"))
+
+# mutate delta = is_missing * 5
+rbmi:::apply_delta(MI_10, delta = dat_delta_5_v1, group = c("PATIENT", "VISIT", "THERAPY"), outcome = "CHANGE") %>%
+  dplyr::filter(PATIENT == 3618) %>%
+  gt()
+
+# mutate delta = is_missing * is_post_ice * 5
+rbmi:::apply_delta(MI_10, delta = dat_delta_5_v2, group = c("PATIENT", "VISIT", "THERAPY"), outcome = "CHANGE") %>%
+  dplyr::filter(PATIENT == 3618) %>%
+  gt()
+
+# delta = c(5, 5, 5, 5), dlag = c(1, 0, 0, 0)
+rbmi:::apply_delta(MI_10, delta = dat_delta_5_v3, group = c("PATIENT", "VISIT", "THERAPY"), outcome = "CHANGE") %>%
+  dplyr::filter(PATIENT == 3618) %>%
+  gt()
+```
+
+One should be aware of this discrepancy when using the `rbmi` package for delta adjustments. For all tipping point analyses performed under MAR and MNAR in this tutorial, we adopted the first approach and applied delta adjustments to **all** imputed missing data. In contrast, we note that the `five macros` in SAS presumably uses the second `delta` and `dlag` approach as discussed here, i.e. it does not apply delta adjustments to intermittent missing values. This could have important implications for datasets with high proportions of intermittent missing values, as it could alter the results of the tipping point analysis substantially.
+
+## References
+
+[Cro et al. 2020](https://pubmed.ncbi.nlm.nih.gov/32419182/). Sensitivity analysis for clinical trials with missing continuous outcome data using controlled multiple imputation: A practical guide. *Statistics in Medicine*. 2020;39(21):2815-2842.
+
+[Gower-Page et al. 2022](https://joss.theoj.org/papers/10.21105/joss.04251). rbmi: A R package for standard and reference-based multiple imputation methods. *Journal of Open Source Software* 7(74):4251.
+
+[rbmi: Advanced Functionality](https://cran.r-project.org/web/packages/rbmi/vignettes/advanced.html#sensitivity-analyses-delta-adjustments-and-tipping-point-analyses)
+
+[rbmi: Quickstart](https://cran.r-project.org/web/packages/rbmi/vignettes/quickstart.html)
+
+[rbmi: Reference-Based Multiple Imputation](https://cran.r-project.org/web/packages/rbmi/index.html)
+
+[Roger 2022](https://baselbiometrics.github.io/home/docs/talks/20221208/5_JamesRoger%2020121118.pdf). Other statistical software for continuous longitudinal endpoints: SAS macros for multiple imputation. Addressing intercurrent events: Treatment policy and hypothetical strategies. *Joint EFSPI and BBS virtual event.*
+
+[Roger 2017](https://www.lshtm.ac.uk/research/centres-projects-groups/missing-data#dia-missing-data). Fitting reference-based models for missing data to longitudinal repeated-measures Normal data. User guide five macros.
+
+::: {.callout-note collapse="true" title="Session info"}
+```{r}
+#| echo: false
+si <- sessioninfo::session_info(c())
+si
+```
+:::
