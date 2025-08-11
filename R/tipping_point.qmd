@@ -542,10 +542,10 @@ parallel::stopCluster(cl)
 
 ### Summary of results
 
-In the table below we present the results of the different imputation strategies with varying number of multiple imputation draws, M = 500 an M = 5000. Note that the results can be slightly different from the results above due to a possible different seed. The estimates show the contrast at visit 7 between DRUG and PLACEBO (DRUG - PLACEBO). Delta adjustments were applied to **all** imputed missing data in the intervention group only.
+In the table below we present the results of the different imputation strategies with varying number of multiple imputation draws, M = 500 and M = 5000. Note that the results can be slightly different from the results above due to a possible different seed. The estimates show the contrast at visit 7 between DRUG and PLACEBO (DRUG - PLACEBO). Delta adjustments were applied to **all** imputed missing data in the intervention group only.
 
-| Method | Delta control | Delta intervention | Estimate | 95% CI | P-value | Original estimate | Original p-value |
-|---------|---------|---------|---------|---------|---------|---------|---------|
+| Method | Delta control | Delta intervention at TP | Estimate at TP | 95% CI | P-value | Original estimate | Original p-value |
+|----|----|----|----|----|----|----|----|
 | MI - MAR (M=500) | 0 | 3 | -2.074 | -4.324 to 0.176 | 0.0709 | -2.798 | 0.0135 |
 | MI - MAR (M=5000) | 0 | 3 | -2.100 | -4.354 to 0.154 | 0.0675 | -2.829 | 0.0128 |
 | MI - MNAR JR (M=500) | 0 | -1 | -2.380 | -4.595 to -0.165 | 0.0354 | -2.137 | 0.0602 |
@@ -562,12 +562,14 @@ Of all considered approaches, the MAR approach yields the largest delta adjustme
 ```{r}
 #| echo: false
 #| fig-align: 'center'
+#| out-width: '80%'
 knitr::include_graphics("../images/tipping_point/R_comparison_est.png")
 ```
 
 ```{r}
 #| echo: false
 #| fig-align: 'center'
+#| out-width: '80%'
 knitr::include_graphics("../images/tipping_point/R_comparison_pval.png")
 ```
 
@@ -639,7 +641,7 @@ Then, we use some metadata variables provided by `delta_template()` to manually 
 dat_delta <- dat_delta %>%
     mutate(delta = if_else(THERAPY == "PLACEBO", 0, delta))
 
-gt(dat_delta %>% dplyr::filter(is_missing == TRUE))
+gt(dat_delta %>% dplyr::filter(PATIENT %in% c("1513", "1514")) %>% head(8))
 ```
 
 And lastly we use `dat_delta` to apply the desired delta offset to our analysis model under the `delta` argument of the `analyse()` function.
