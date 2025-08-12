@@ -44,6 +44,7 @@ The same publicly available [dataset](https://r-packages.io/datasets/antidepress
 The relevant endpoint for the antidepressant trial was assessed using the Hamilton 17-item depression rating scale (HAMD17), which was measured at baseline and subsequently at weeks 1, 2, 3, 4 and 6 (visits 4-7). Study drug discontinuation occurred in 24% (20/84) of subjects in the active drug group, compared to 26% (23/88) of subjects in the placebo group. Importantly, all data after study drug discontinuation are missing and there is a single intermittent missing observation.
 
 ```{r}
+#| label: data_exploration_1
 #| eval: false
 proc print data=dat (obs=10);
   var PATIENT GENDER THERAPY RELDAYS VISIT BASVAL HAMDTL17 CHANGE;
@@ -51,7 +52,7 @@ run;
 ```
 
 ```{r}
-#| label: data_exploration_1
+#| label: data_exploration_1_png
 #| echo: false
 #| fig-align: 'center'
 #| out-width: '80%'
@@ -61,6 +62,7 @@ knitr::include_graphics("../images/tipping_point/SAS_data_exploration_1.PNG")
 The number of patients per visit and treatment group are:
 
 ```{r}
+#| label: data_exploration_2
 #| eval: false
 proc freq data=dat;
   table VISIT*THERAPY / norow nocol nopercent nocum;
@@ -68,7 +70,7 @@ run;
 ```
 
 ```{r}
-#| label: data_exploration_2
+#| label: data_exploration_2_png
 #| echo: false
 #| fig-align: 'center'
 #| out-width: '80%'
@@ -78,6 +80,7 @@ knitr::include_graphics("../images/tipping_point/SAS_data_exploration_2.PNG")
 The mean change from baseline of the HAMD17 endpoint per visit and treatment group using only the complete cases are:
 
 ```{r}
+#| label: data_exploration_3
 #| eval: false
 proc means data=dat n mean nonobs;
   class VISIT THERAPY;
@@ -86,7 +89,7 @@ run;
 ```
 
 ```{r}
-#| label: data_exploration_3
+#| label: data_exploration_3_png
 #| echo: false
 #| fig-align: 'center'
 #| out-width: '80%'
@@ -96,6 +99,7 @@ knitr::include_graphics("../images/tipping_point/SAS_data_exploration_3.PNG")
 The missingness pattern is:
 
 ```{r}
+#| label: data_exploration_4
 #| eval: false
 proc transpose data=dat out=HAMD_wide(drop=_NAME_) prefix=CHG;
 	by PATIENT THERAPY BASVAL;
@@ -109,7 +113,7 @@ run;
 ```
 
 ```{r}
-#| label: data_exploration_4
+#| label: data_exploration_4_png
 #| echo: false
 #| fig-align: 'center'
 #| out-width: '80%'
@@ -203,7 +207,7 @@ run;
 ```
 
 ```{r}
-#| label: MAR_all_results
+#| label: MAR_all_results_png
 #| echo: false
 #| fig-align: 'center'
 #| out-width: '80%'
@@ -211,7 +215,7 @@ knitr::include_graphics("../images/tipping_point/SAS_MAR_all_results.png")
 ```
 
 ```{r}
-#| label: MAR_non_sig_results
+#| label: MAR_filtered_results
 #| eval: false
   (...)
   
@@ -251,7 +255,7 @@ knitr::include_graphics("../images/tipping_point/SAS_MAR_all_results.png")
 ```
 
 ```{r}
-#| label: MAR_non_sig_results
+#| label: MAR_non_sig_results_png
 #| echo: false
 #| fig-align: 'center'
 #| out-width: '80%'
@@ -259,7 +263,7 @@ knitr::include_graphics("../images/tipping_point/SAS_MAR_non_sig_results.png")
 ```
 
 ```{r}
-#| label: MAR_sig_results
+#| label: MAR_sig_results_png
 #| echo: false
 #| fig-align: 'center'
 #| out-width: '80%'
@@ -269,7 +273,7 @@ knitr::include_graphics("../images/tipping_point/SAS_MAR_sig_results.png")
 To determine the **exact** tipping point between the last "significant" delta and the first "non-significant" delta, you may manually perform linear interpolation for `DELTA`, `Diff`, `LCL_Diff` and `UCL_Diff` at `Probt = 0.05`.
 
 ```{r}
-#| label: MAR_TP
+#| label: MAR_TP_png
 #| echo: false
 #| fig-align: 'center'
 #| out-width: '80%'
@@ -283,7 +287,7 @@ knitr::include_graphics("../images/tipping_point/SAS_MAR_TP.png")
 A nice visualization of this tipping point analysis for the MAR approach is:
 
 ```{r}
-#| label: MAR_est_pval_plot
+#| label: MAR_est_pval_plot_png
 #| echo: false
 #| fig-align: 'center'
 #| out-width: '80%'
@@ -314,14 +318,14 @@ Of all considered approaches, the MAR approach yields the largest delta adjustme
 ### Visual comparison
 
 ```{r}
-#| label: comparison_est_plot
+#| label: comparison_est_plot_png
 #| echo: false
 #| fig-align: 'center'
 knitr::include_graphics("../images/tipping_point/SAS_comparison_est.png")
 ```
 
 ```{r}
-#| label: comparison_pval_plot
+#| label: comparison_pval_plot_png
 #| echo: false
 #| fig-align: 'center'
 knitr::include_graphics("../images/tipping_point/SAS_comparison_pval.png")
@@ -400,7 +404,7 @@ To apply this delta = 5 to both groups we leave `DGroups` unspecified.
 
 ```{r}
 #| eval: false
-#| label: flexible_delta
+#| label: fixed_delta
 %part3(Jobname = HAMD_MAR, 
        anref=PLACEBO, 
        Delta = 5 5 5 5, 
