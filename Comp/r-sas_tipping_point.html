@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Sample Size for Superiority Trials in SAS</title>
+<title>R vs SAS Delta Adjustment (tipping point): Continuous Data</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,41 +19,6 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -198,10 +163,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#comparing-means-for-parallel-design-unpaired" id="toc-comparing-means-for-parallel-design-unpaired" class="nav-link active" data-scroll-target="#comparing-means-for-parallel-design-unpaired"><strong>Comparing means for parallel design (unpaired)</strong></a></li>
-  <li><a href="#comparing-means-for-crossover-design-paired" id="toc-comparing-means-for-crossover-design-paired" class="nav-link" data-scroll-target="#comparing-means-for-crossover-design-paired"><strong>Comparing means for crossover design (paired)</strong></a></li>
-  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
-  <li><a href="#version" id="toc-version" class="nav-link" data-scroll-target="#version">Version</a></li>
+  <li><a href="#reference-based-multiple-imputation-for-tipping-point-analysis-delta-adjustment" id="toc-reference-based-multiple-imputation-for-tipping-point-analysis-delta-adjustment" class="nav-link active" data-scroll-target="#reference-based-multiple-imputation-for-tipping-point-analysis-delta-adjustment">Reference-Based Multiple Imputation for Tipping Point Analysis (Delta Adjustment)</a>
+  <ul class="collapse">
+  <li><a href="#comparison-results" id="toc-comparison-results" class="nav-link" data-scroll-target="#comparison-results">Comparison Results</a></li>
+  </ul></li>
+  <li><a href="#summary-and-recommendation" id="toc-summary-and-recommendation" class="nav-link" data-scroll-target="#summary-and-recommendation">Summary and Recommendation</a></li>
   </ul>
 </nav>
     </div>
@@ -210,7 +176,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Sample Size for Superiority Trials in SAS</h1>
+<h1 class="title">R vs SAS Delta Adjustment (tipping point): Continuous Data</h1>
 </div>
 
 
@@ -218,12 +184,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="quarto-title-meta">
 
     
-    <div>
-    <div class="quarto-title-meta-heading">Published</div>
-    <div class="quarto-title-meta-contents">
-      <p class="date">13 August, 2025</p>
-    </div>
-  </div>
   
     
   </div>
@@ -233,118 +193,99 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>SAS has 2 procedures for doing Sample size. A basic summary is provided here based on Jenny Cody’s paper<sup>1</sup> , but see the paper itself for more details. There are also many available options to best to consult SAS online support for <a href="PROC POWER: Simple AB/BA Crossover Designs :: SAS/STAT(R) 9.3 User's Guide">PROC POWER</a><sup>2</sup> and <a href="https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_glmpower_a0000000154.htm">PROC GLMPOWER</a><sup>3</sup>.</p>
-<p>PROC POWER is used for sample size calculations for tests such as:</p>
+<section id="reference-based-multiple-imputation-for-tipping-point-analysis-delta-adjustment" class="level1">
+<h1>Reference-Based Multiple Imputation for Tipping Point Analysis (Delta Adjustment)</h1>
+<p>The following table shows the types of reference-based multiple imputation (rbmi) strategies used for a tipping point analysis with delta adjustments, along with each language’s capabilities and whether the results from each rbmi approach and language are consistent. The results only hold for data that are assumed to be normally distributed. In this comparison, we used the <a href="https://cran.r-project.org/web/packages/rbmi/index.html">rbmi</a> package in R and the so-called <a href="https://www.lshtm.ac.uk/research/centres-projects-groups/missing-data#dia-missing-data">five macros</a> in SAS.</p>
+<p>The following assumptions are made in both languages:</p>
 <ul>
-<li><p>t tests, equivalence tests, and confidence intervals for means,</p></li>
-<li><p>tests, equivalence tests, and confidence intervals for binomial proportions,</p></li>
-<li><p>multiple regression,</p></li>
-<li><p>tests of correlation and partial correlation,</p></li>
-<li><p>one-way analysis of variance,</p></li>
-<li><p>rank tests for comparing two survival curves,</p></li>
-<li><p>logistic regression with binary response,</p></li>
-<li><p>Wilcoxon-Mann-Whitney (rank-sum) test (SAS, 2010).</p></li>
+<li><p>Equal unstructured covariance matrix across treatment groups</p></li>
+<li><p>Same covariates formula for the imputation and analysis model</p></li>
+<li><p>Similar number of MCMC tuning parameters (burn-in, thinning) was used in the MCMC</p></li>
+<li><p>The one intermittent missingness case was imputed under MAR assumption</p></li>
 </ul>
-<p>PROC GLMPOWER is used for sample size calculations for more complex linear models, and cover Type III tests and contrasts of fixed effects in univariate linear models with or without covariates. (SAS, 2011).</p>
-<section id="comparing-means-for-parallel-design-unpaired" class="level3">
-<h3 class="anchored" data-anchor-id="comparing-means-for-parallel-design-unpaired"><strong>Comparing means for parallel design (unpaired)</strong></h3>
-<p>In the most common scenario SDs are assumed known and the same in both treatment groups. Otherwise Student t distribution is used instead of the normal distribution. SAS follows the Satterthwaite method.</p>
-<section id="example-sample-size-for-comparison-of-2-independant-treatment-group-means-with-same-known-sds" class="level4">
-<h4 class="anchored" data-anchor-id="example-sample-size-for-comparison-of-2-independant-treatment-group-means-with-same-known-sds">Example: Sample size for comparison of 2 independant treatment group means with same known SDs</h4>
-<p>A client is interested in conducting a clinical trial to compare two cholesterol lowering agents for treatment of hypercholesterolemic patients. The primary efficacy parameter is a low-density lipidprotein cholesterol (LDL-C). Suppose that a difference of 8% in the percent change of LDL-C is considered a clinically meaningful difference and that the standard deviation is assumed to be 15%. What sample size is required for a two-sided false positive rate of 5% and a power of 80%?</p>
-<p>The code below estimates the sample size in SAS. NOTE: you can either specify the MEANDIFF=8 or if you know the separate group means X and Y, you can use GROUPMEANS =X|Y code instead. SAS also assume a default alpha level of 0.05, a 1:1 balanced randomization and a Normal distribution.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>PROC POWER  ;</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a> TWOSAMPLEMEANS TEST<span class="ot">=</span>DIFF</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a> MEANDIFF<span class="ot">=</span><span class="dv">8</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a> STDDEV<span class="ot">=</span><span class="dv">15</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a> NTOTAL<span class="ot">=</span>.</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a> POWER<span class="ot">=</span><span class="fl">0.8</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a> ;</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>RUN;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>As shown below, a total sample size of 114 is recommended, which equates to 57 in each group.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Analysis</th>
+<th>Supported in R</th>
+<th>Supported in SAS</th>
+<th>Results Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>rbmi delta adjustment - MI MAR</td>
+<td><a href="../R/tipping_point.html">Yes</a></td>
+<td><a href="../SAS/tipping_point.html">Yes</a></td>
+<td>Yes</td>
+<td>Results will be (slightly) different given the randomness in multiple imputations</td>
+</tr>
+<tr class="even">
+<td>rbmi delta adjustment - MI MNAR Copy Reference</td>
+<td><a href="../R/tipping_point.html">Yes</a></td>
+<td><a href="../SAS/tipping_point.html">Yes</a></td>
+<td>Yes</td>
+<td>Results will be (slightly) different given the randomness in multiple imputations</td>
+</tr>
+<tr class="odd">
+<td>rbmi delta adjustment - MI MNAR Jump to Reference</td>
+<td><a href="../R/tipping_point.html">Yes</a></td>
+<td><a href="../SAS/tipping_point.html">Yes</a></td>
+<td>Yes</td>
+<td>Results will be (slightly) different given the randomness in multiple imputations</td>
+</tr>
+<tr class="even">
+<td>rbmi delta adjustment - MI MNAR Copy Increments in Reference</td>
+<td><a href="../R/tipping_point.html">Yes</a></td>
+<td><a href="../SAS/tipping_point.html">Yes</a></td>
+<td>Yes</td>
+<td>Results will be (slightly) different given the randomness in multiple imputations</td>
+</tr>
+</tbody>
+</table>
+<section id="comparison-results" class="level2">
+<h2 class="anchored" data-anchor-id="comparison-results">Comparison Results</h2>
+<p>The following two figures compare the treatment effect estimates at visit 7 and corresponding p-values (y-axis) for each increasing delta in the intervention group (x-axis), while the delta adjustment in the control group is fixed to zero. The black crosses indicate “exact” tipping points as determined by linear interpolation. There seems to be a very good correspondence between R and SAS at M = 500, and near perfect correspondence between R and SAS at M = 5000.</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="../images/sample_s_superiority/SAS2sampmeans.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+<p><img src="../images/tipping_point/COMP_comparison_est.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
 </figure>
 </div>
 </div>
-</div>
-</section>
-</section>
-<section id="comparing-means-for-crossover-design-paired" class="level3">
-<h3 class="anchored" data-anchor-id="comparing-means-for-crossover-design-paired"><strong>Comparing means for crossover design (paired)</strong></h3>
-<p>It is important to differentiate here between the within patient SD and the SD of the difference. We may need to recalculate one to the other, depending on the case.</p>
-<p>Variance of the difference = 2x Variance within patient. Vardiff=2∗Varpatient</p>
-<section id="example" class="level4">
-<h4 class="anchored" data-anchor-id="example">Example</h4>
-<p>We wish to run an AB/BA single dose crossover to compare two brochodilators. The primary outcome is peak expiratory flow, and a clinically relevant difference of 30 l/min is sought with 80% power, the significance level is 5% and the best estimate of the within patient standard deviation is 32 l/min. What size of trial do we require? (After recalculating: 32∗2=45 and assuming no period effect and assuming between each pair of measurements on the same subject that we have a 0.5 correlation)</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>PROC POWER  ;</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a> PAIREDMEANS TEST<span class="ot">=</span>DIFF</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a> NPAIRS<span class="ot">=</span>.</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a> corr<span class="ot">=</span><span class="fl">0.5</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a> MEANDIFF<span class="ot">=</span><span class="dv">30</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a> STDDEV<span class="ot">=</span><span class="dv">45</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a> POWER<span class="ot">=</span><span class="fl">0.8</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a> ;</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>RUN;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="../images/sample_s_superiority/SAScrossovermeans.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+<p><img src="../images/tipping_point/COMP_comparison_pval.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
 </figure>
 </div>
 </div>
 </div>
-</section>
-</section>
-<section id="references" class="level3">
-<h3 class="anchored" data-anchor-id="references">References</h3>
-<ol type="1">
-<li><a href="https://support.sas.com/resources/papers/proceedings20/4675-2020.pdf">Sample Size Calculation Using SAS®, R, and nQuery Software, 2020 Jenna Cody, Paper 4675-2020</a></li>
-<li>PROC POWER SAS online help https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_power_sect010.htm</li>
-<li>PROC GLMPOWER SAS online helphttps://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_glmpower_a0000000154.htm</li>
-</ol>
-</section>
-<section id="version" class="level3">
-<h3 class="anchored" data-anchor-id="version">Version</h3>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>─ Session info ───────────────────────────────────────────────────────────────
- setting  value
- version  R version 4.4.2 (2024-10-31)
- os       Ubuntu 24.04.2 LTS
- system   x86_64, linux-gnu
- ui       X11
- language (EN)
- collate  C.UTF-8
- ctype    C.UTF-8
- tz       UTC
- date     2025-08-13
- pandoc   3.6.3 @ /opt/quarto/bin/tools/ (via rmarkdown)
-
-─ Packages ───────────────────────────────────────────────────────────────────
- ! package              * version date (UTC) lib source
- R sample_s_superiority   &lt;NA&gt;    &lt;NA&gt;       [?] &lt;NA&gt;
-
- [1] /home/runner/work/CAMIS/CAMIS/renv/library/linux-ubuntu-noble/R-4.4/x86_64-pc-linux-gnu
- [2] /opt/R/4.4.2/lib/R/library
-
- R ── Package was removed from disk.
-
-─ External software ──────────────────────────────────────────────────────────
- setting value
- SAS     9.04.01M7P08062020
-
-──────────────────────────────────────────────────────────────────────────────</code></pre>
+<p>The following figure compares the treatment effect estimate at visit 7 (and associated 95% confidence interval) at the “exact” tipping point for M = 500 and M = 5000. The range of the difference between R and SAS results for the treatment effect estimates are [-1.01 to -0.37]%. and [-0.18 to -0.07]% for M = 500 and M = 5000, respectively.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/tipping_point/COMP_comparison_TP.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:80.0%"></p>
+</figure>
 </div>
 </div>
+</div>
+<p>MAR = Missing at Random; MNAR = Missing not at Random; JR = Jump to Reference; CR = Copy Reference; CIR = Copy Increments in Reference;</p>
+<!-- ## Computation Time -->
+<!-- For M = 500, a tipping point analysis with sequential delta adjustments in the intervention group only is approximately twice as fast using the `five macros` in SAS (0.89 minutes) compared to the `rbmi` package in R (1.68 minutes). At M = 5000, the gap in computation time between SAS and R widens to 7.31 minutes for the `five macros` and 17.76 minutes for `rbmi`. These times were recorded for the analysis under the MAR assumption. -->
+</section>
+</section>
+<section id="summary-and-recommendation" class="level1">
+<h1>Summary and Recommendation</h1>
+<p>In our comparison of R and SAS for tipping point analysis and delta adjustments, our experience is that R offers greater flexibility in selecting which records delta adjustments should be applied to. In R, using the <code>delta_template()</code> function one can easily use standard <code>dplyr</code> coding to adjust to which records a delta adjustment and which delta adjustment should be made. Using the <code>delta_template()</code> function one can easily check the whether the applied delta is correct. In SAS, this is also possible using the <code>DGroupsV</code> and <code>DeltaV</code> argument, however there is no easy way to check in intermediate datasets whether the delta is applied correctly.</p>
+<p>In the comparison analysis, a delta adjustments was applied to <strong>all</strong> missing data in R, including intermittent missing data. Whereas in SAS, intermittent missing data cannot be delta adjusted using standard code. Consequently, we would like to explicitly mention that the comparison between the two software may not be fully aligned. Still, the effect of this misalignment should be only minor as the results show, as the explored dataset presented itself with only one intermittent missing value (patient 3618).</p>
+<p>Nonetheless, users should be aware of the discrepancy between R and SAS in how they deal with intermittent missing values when applying delta adjustments, as it may have important implications for datasets with higher proportions of intermittent missing values. Future work on datasets with more intermittent missing data could provide more insight into this matter.</p>
+<p>It is essential for statisticians to explicitly define how intermittent missing values are handled during the tipping point analysis using R or SAS. This should be done within the Statistical Analysis Plan to ensure clarity and consistency.</p>
 
 
 </section>
