@@ -5,8 +5,10 @@ title: "Logistic Regression in R"
 ```{r}
 #| echo: FALSE
 #| include: FALSE
-library(tidyverse)
+library(dplyr)
 library(gmodels)
+library(emmeans)
+library(ggplot2)
 ```
 
 In binary logistic regression, there is a single binary dependent variable, coded by an indicator variable. For example, if we represent a response as 1 and non-response as 0, then the corresponding probability of response, can be between 0 (certainly not a response) and 1 (certainly a response) - hence the labeling !
@@ -29,14 +31,77 @@ trt01pn consists of 1= active treatment, 0 = placebo
 
 # Model Fit
 
-We analyze the event of weight gain (or staying the same weight) in lung cancer patients in dependency of treatment (active or placebo), age, sex, ECOG performance score and calories consumed at meals. One of the most important things to remember is to ensure you tell R what your event is and what treatment comparison you are doing Active / Placebo or Placebo/Active! The easiest way to do this is to have event (or non-reference treatment) as 1, and non-event (reference treatment) as 0. Hence we will use the wt_catn and trt01pn variables.
+We analyze the event of weight gain (or staying the same weight) in lung cancer patients in dependency of treatment (active or placebo), age, sex, ECOG performance score and calories consumed at meals. One of the most important things to remember is to ensure you tell R what your event is and what treatment comparison you are doing Active / Placebo or Placebo/Active! The easiest way to do this is to have event (or non-reference treatment) as 1, and non-event (reference treatment) as 0.
+
+Below we are using wt_catn (0,1) and trt01pn (1,2) and sex (1,2). Let's see what happens !
 
 ```{r}
 lung<-read.csv("../data/lung_cancer.csv")
 head(lung)
-m1 <- glm(wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, data = lung, family = binomial(link="logit"))
+
+m1 <- glm(wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, 
+          data = lung, 
+          family = binomial(link="logit"))
 summary(m1)
 ```
+
+# Modelling factors correctly and Interpretation of the Intercept
+
+The intercept represents the baseline log odds of the outcome when all predictor variables are set to zero. In the above model, we have variables treatment and sex, each coded as 1 and 2. Currently R is not treating these as binary factors, instead it just knows them as a 1 and 2, and hence the intercept is where treatment=0 and sex=0. In the context of our model, this doesn't make sense as you can't have a zero gender and zero treatment (but it may not matter as we rarely look at the intercept term anyway!)
+
+However, if you want to have an interpretable intercept term (and if you want to match SAS output!), then it's important to ensure any factors in your model as fitted as such in R. You can do this using: `lung$trt01pn<-as.factor(lung$trt01pn)` as shown below
+
+Within R, there are many types of forming parameterization of the model parameters. The default here is `contr.treatment` which sets the first level to be the baseline and contrasts each other level to the baseline. This works OK for logistic but not for other types of modelling !!\
+It is good practice to always specify the contrast you are using and to view them as shown below.
+
+Note how the variables trt01pn2 and sex2 are now shown in the output, this is indicating that this row relates to treatment=2 and sex=2, and hence that the intercept (baseline level) is where treatment=1 and sex=1 (the first level). See the next section for how to interpret the estimates and change this `contr.` option.
+
+```{r}
+
+# Good practice to have binary variables (eg. treatment) identified as a factor 
+# And to specify what contrast option you are using ! more on this below
+lung$trt01pn<-as.factor(lung$trt01pn)
+lung$sex<-as.factor(lung$sex)
+
+m1 <- glm(wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, 
+          data = lung, 
+          family = binomial(link="logit"),
+          contrasts = list(trt01pn = "contr.treatment"))
+summary(m1)
+contr.treatment(2)
+
+```
+
+# How R parameterizes your variables in the model
+
+-   contr.treatment - \[default\] sets the first level to be the baseline and contrasts each other level with the baseline. For example, based on the model shown below. Log-odds for Treatment 2 = -2.64153 + 0.38876 =-2.25277 , Log-odds for Treatment 1=-2.64153\
+    use `contr.treatment(2)` to show the contrast you are using. Increase levels as applicable to the parameter in your model.
+
+-   contr.sum - sets the last level to be the baseline and compares the mean of the dependent variable for a given level to the overall mean of the dependent variable. For treatment 1, the intercept + trt01pn1 estimate. For Treatment 2, the intercept - trt01pn1 estimate.\
+    Log-odds for Treatment 2 = -2.44715 - - 0.19438 = -2.25277, Log-odds for Treatment 1=-2.44715 - 0.19438 = -2.64153\
+    use `contr.sum(2)` to show the contrast you are using. Increase levels as applicable to the parameter in your model.
+
+-   exponential (ratio log-odds) = odds ratio. eg. -2.25277/ -2.64153 = 0.85283 Treatment 2 is 0.85 times as likely (eg. 15% less likely) to have weight gain compared to Treatment 1.
+
+```{r}
+
+ma <- glm(wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, 
+          data = lung, 
+          family = binomial(link="logit"),
+          contrasts = list(trt01pn = "contr.treatment"))
+summary(ma)
+contr.treatment(2)
+
+mb <- glm(wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, 
+          data = lung, 
+          family = binomial(link="logit"),
+          contrasts = list(trt01pn = "contr.sum"))
+summary(mb)
+contr.sum(2)
+
+```
+
+# Model parameter estimates
 
 The model summary contains the parameter estimates $\beta_j$ for each explanatory variable $x_j$, corresponding to the log-odds for the response variable to take the value $1$, conditional on all other explanatory variables remaining constant. For better interpretation, we can exponentiate these estimates, to obtain estimates for the odds instead and provide 95% confidence intervals.
 
@@ -56,12 +121,15 @@ cbind(est = exp(coef(m1)),
 
 NOTE: that there are two types of confidence intervals that you can calculate. Function `confint.default` gives the Wald confidence limits, which is the default option in SAS `PROC LOGISTIC` procedure; whereas `confint` gives the profile-likelihood limits.
 
-# Model Comparison
+# Comparing 2 models
 
 To compare two logistic models, the `residual deviances` (-2 \* log likelihoods) are compared against a $\chi^2$-distribution with degrees of freedom calculated using the difference in the two models' parameters. Below, the only difference is the inclusion/exclusion of age in the model, hence we test using $\chi^2$ with 1 df. Here testing at the 5% level.
 
 ```{r}
-m2 <- glm(wt_catn ~ trt01pn + sex + ph.ecog + meal.cal, data = lung, family = binomial(link="logit"))
+m2 <- glm(wt_catn ~ trt01pn + sex + ph.ecog + meal.cal, 
+                    data = lung, 
+                    family = binomial(link="logit"),
+                    contrasts = list(trt01pn = "contr.treatment"))
 summary(m2)
 
 anova(m1, m2, test = "LRT")
@@ -69,7 +137,7 @@ anova(m1, m2, test = "LRT")
 
 Stackexchange [here](https://stats.stackexchange.com/questions/59879/logistic-regression-anova-chi-square-test-vs-significance-of-coefficients-ano) has a good article describing this method and the difference between comparing 2 models using the likelihood ratio tests versus using wald tests and Pr\>chisq (from the maximum likelihood estimate). Note: `anova(m1, m2, test = "Chisq")` and using `test="LRT"` as above are synonymous in this context.
 
-# Prediction
+# Predicting likelihood of response for new patients
 
 Predictions from the model for the log-odds of a patient with new data to experience a weight loss are derived using `predict()`:
 
@@ -79,9 +147,51 @@ new_pt <- data.frame(trt01pn=1, sex=2, ph.ecog=1, meal.cal=2500)
 predict(m2, new_pt, type = "response")
 ```
 
-# Contrast statements for 2 or more treatments
+# Creating Treatment Contrasts for 2 or more treatments
 
-To create contrasts, you can use the `fit.contrast()` function from the `gmodels` package.
+## \<emmeans\>
+
+Here we will use emmeans to output the log-odds of weight gain for treatment 1 and treatment 2.
+
+NOTE as per the output, these are on the logit scale, you need to exponentiate to get the odds (or use the type="response" option).
+
+The treatment comparison can also be output on the log-odds or back transformed scale as shown below.
+
+In Summary: Treatment 2 is on average 1.48 times as likely to have weight gain compared to treatment 1, however this is not statistically significant (95% Confidence interval = 0.703-3.100, p-value= 0.3039).
+
+```{r}
+m3 <- glm(wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, 
+          data = lung, 
+          family = binomial(link="logit"),
+          contrasts = list(trt01pn = "contr.treatment"))
+summary(m3)
+contr.treatment(2)
+
+#log-odds for each treatment
+lsm<-emmeans(m3,"trt01pn")
+lsm
+#log-odds ratios (treatment comparison): This does all pairwise comparisons
+# However as seen below, this is TRT 1 - TRT 2
+pairs(lsm)
+
+# the below creates tests and CI's prior to back transformation (ratios of geometric means)
+pairs(lsm, type="response")
+
+# see coefficients of the linear functions
+coef(pairs(lsm))
+
+# Output treatment contrasts 2 vs 1 and 95% CIs, the type="response" option back transforms the results
+trtdiff<-contrast(lsm,"poly")
+trtdiff
+confint(trtdiff, type="response")
+
+```
+
+See the emmeans vignette on creating bespoke contrasts [here](Comparisons and contrasts in emmeans). If you want to compare Dose 1 + Dose 2 vs Dose 3, then it can get quite complex. However, gmodels provides easy code for this.
+
+## \<gmodels\>
+
+To create contrasts, you can also use the `fit.contrast()` function from the `gmodels` package.
 
 This can be used with lm and glm objects:
 
@@ -94,7 +204,10 @@ You would fit the model as above, followed by `fit.contrast()`. This is effectiv
 lung2<-lung |> 
     mutate(dose_id2 = as.factor(lung$dose_id))
 
-m3 <- glm (wt_catn ~ dose_id2 + age + sex + ph.ecog + meal.cal, data = lung2, family = binomial(link="logit"))
+m3 <- glm (wt_catn ~ dose_id2 + age + sex + ph.ecog + meal.cal, 
+                     data = lung2, 
+                     family = binomial(link="logit"),
+                     contrasts = list(dose_id2 = "contr.treatment"))
 
 fit.contrast (m3,'dose_id2',c(0.5,0.5,-1),conf.int=0.95)
 ```
