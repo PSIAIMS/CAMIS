@@ -2,17 +2,19 @@
 title: "R vs SAS MMRM"
 ---
 
-```{r, include = FALSE}
+```{r}
+#| include: false
 knitr::opts_chunk$set(
   collapse = TRUE, comment = "#>", out.width = "100%",
   dpi = 150, fig.path = "../images/mmrm/"
 )
 ```
 
-```{r review-setup}
-#| message: FALSE
-#| warning: FALSE
-#| include: FALSE
+```{r}
+#| label: review-setup
+#| message: false
+#| warning: false
+#| include: false
 
 library(dplyr)
 library(purrr)
@@ -25,18 +27,20 @@ library(ggplot2)
 library(details)
 ```
 
-```{r load-data}
-#| message: FALSE
-#| warning: FALSE
-#| include: FALSE
+```{r}
+#| label: load-data
+#| message: false
+#| warning: false
+#| include: false
 
 load('../data/cached_mmrm_results.rda')
 ```
 
-```{r set-seed}
-#| message: FALSE
-#| warning: FALSE
-#| include: FALSE
+```{r}
+#| label: set-seed
+#| message: false
+#| warning: false
+#| include: false
 
 set.seed(5123)
 ```
@@ -111,18 +115,18 @@ The BCVA dataset contains data from a randomized longitudinal ophthalmology tria
 
 Listed below are some of the most commonly used covariance structures used when fitting MMRMs. We indicate which matrices are available "out of the box" for each implementation considered in this vignette. Note that this table is not exhaustive; `PROC GLIMMIX` and `glmmTMB` support additional spatial covariance structures.
 
-|       Covariance structures       | `mmrm` | `PROC GLIMMIX` | `gls` | `lmer` | `glmmTMB` |
-|:---------------------------------:|:------:|:--------------:|:-----:|:------:|:---------:|
-|  Ante-dependence (heterogeneous)  |   X    |       X        |       |        |           |
-|   Ante-dependence (homogeneous)   |   X    |                |       |        |           |
-|  Auto-regressive (heterogeneous)  |   X    |       X        |   X   |        |           |
-|   Auto-regressive (homogeneous)   |   X    |       X        |   X   |        |     X     |
-| Compound symmetry (heterogeneous) |   X    |       X        |   X   |        |     X     |
-|  Compound symmetry (homogeneous)  |   X    |       X        |   X   |        |           |
-|        Spatial exponential        |   X    |       X        |   X   |        |     X     |
-|     Toeplitz (heterogeneous)      |   X    |       X        |       |        |     X     |
-|      Toeplitz (homogeneous)       |   X    |       X        |       |        |           |
-|           Unstructured            |   X    |       X        |   X   |   X    |     X     |
+| Covariance structures | `mmrm` | `PROC GLIMMIX` | `gls` | `lmer` | `glmmTMB` |
+|:-------------------:|:---------:|:---------:|:---------:|:---------:|:---------:|
+| Ante-dependence (heterogeneous) | X | X |  |  |  |
+| Ante-dependence (homogeneous) | X |  |  |  |  |
+| Auto-regressive (heterogeneous) | X | X | X |  |  |
+| Auto-regressive (homogeneous) | X | X | X |  | X |
+| Compound symmetry (heterogeneous) | X | X | X |  | X |
+| Compound symmetry (homogeneous) | X | X | X |  |  |
+| Spatial exponential | X | X | X |  | X |
+| Toeplitz (heterogeneous) | X | X |  |  | X |
+| Toeplitz (homogeneous) | X | X |  |  |  |
+| Unstructured | X | X | X | X | X |
 
 Code for fitting MMRMs to the FEV data using each of the considered functions and covariance structures are provided below. Fixed effects for the visit number, treatment assignment and the interaction between the two are modeled.
 
@@ -137,6 +141,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 <b>RANDOM AVISIT / subject=USUBJID type=ANTE(1)</b>;
 </code></pre>
 ```
+
 ### `mmrm`
 
 ```{=html}
@@ -146,6 +151,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ## Ante-dependence (homogeneous)
 
 ### `mmrm`
@@ -157,6 +163,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ## Auto-regressive (heterogeneous)
 
 ### `PROC GLIMMIX`
@@ -168,6 +175,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 <b>RANDOM AVISIT / subject=USUBJID type=ARH(1)</b>;
 </code></pre>
 ```
+
 ### `mmrm`
 
 ```{=html}
@@ -177,6 +185,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ### `gls`
 
 ```{=html}
@@ -189,6 +198,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ## Auto-regressive (homogeneous)
 
 ### `PROC GLIMMIX`
@@ -200,6 +210,7 @@ MODEL FEV1 =  ARMCD|AVISIT / ddfm=satterthwaite solution chisq;
 <b>RANDOM AVISIT / subject=USUBJID type=AR(1)</b>;
 </code></pre>
 ```
+
 ### `mmrm`
 
 ```{=html}
@@ -209,6 +220,7 @@ MODEL FEV1 =  ARMCD|AVISIT / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ### `gls`
 
 ```{=html}
@@ -220,6 +232,7 @@ MODEL FEV1 =  ARMCD|AVISIT / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ### `glmmTMB`
 
 ```{=html}
@@ -230,6 +243,7 @@ MODEL FEV1 =  ARMCD|AVISIT / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ## Compound symmetry (heterogeneous)
 
 ### `PROC GLIMMIX`
@@ -241,6 +255,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 <b>RANDOM AVISIT / subject=USUBJID type=CSH</b>;
 </code></pre>
 ```
+
 ### `mmrm`
 
 ```{=html}
@@ -250,6 +265,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ### `gls`
 
 ```{=html}
@@ -262,6 +278,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ### `glmmTMB`
 
 ```{=html}
@@ -272,6 +289,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ## Compound symmetry (homogeneous)
 
 ### `PROC GLIMMIX`
@@ -283,6 +301,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 <b>RANDOM AVISIT / subject=USUBJID type=CS</b>;
 </code></pre>
 ```
+
 ### `mmrm`
 
 ```{=html}
@@ -292,6 +311,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ### `gls`
 
 ```{=html}
@@ -303,6 +323,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ## Spatial exponential
 
 ### `PROC GLIMMIX`
@@ -314,6 +335,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 <b>RANDOM / subject=USUBJID type=sp(exp)(visitn)</b> rcorr;
 </code></pre>
 ```
+
 ### `mmrm`
 
 ```{=html}
@@ -323,6 +345,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ### `gls`
 
 ```{=html}
@@ -335,6 +358,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ### `glmmTMB`
 
 ```{=html}
@@ -346,6 +370,7 @@ glmmTMB(
 )
 </code></pre>
 ```
+
 ## Toeplitz (heterogeneous)
 
 ### `PROC GLIMMIX`
@@ -357,6 +382,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 <b>RANDOM AVISIT / subject=USUBJID type=TOEPH</b>;
 </code></pre>
 ```
+
 ### `mmrm`
 
 ```{=html}
@@ -366,6 +392,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ### `glmmTMB`
 
 ```{=html}
@@ -376,6 +403,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ## Toeplitz (homogeneous)
 
 ### `PROC GLIMMIX`
@@ -387,6 +415,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 <b>RANDOM AVISIT / subject=USUBJID</b> <b>type=TOEP</b>;
 </code></pre>
 ```
+
 ### `mmrm`
 
 ```{=html}
@@ -396,6 +425,7 @@ MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ## Unstructured
 
 ### `PROC GLIMMIX`
@@ -407,6 +437,7 @@ MODEL FEV1 = ARMCD|AVISIT / ddfm=satterthwaite solution chisq;
 <b>RANDOM AVISIT / subject=USUBJID</b> <b>type=un</b>;
 </code></pre>
 ```
+
 ### `mmrm`
 
 ```{=html}
@@ -416,6 +447,7 @@ MODEL FEV1 = ARMCD|AVISIT / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ### `gls`
 
 ```{=html}
@@ -428,6 +460,7 @@ MODEL FEV1 = ARMCD|AVISIT / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ### `lmer`
 
 ```{=html}
@@ -439,6 +472,7 @@ MODEL FEV1 = ARMCD|AVISIT / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 ### `glmmTMB`
 
 ```{=html}
@@ -449,6 +483,7 @@ MODEL FEV1 = ARMCD|AVISIT / ddfm=satterthwaite solution chisq;
 )
 </code></pre>
 ```
+
 # Benchmarking
 
 Next, the MMRM fitting procedures are compared using the FEV and BCVA datasets. FEV1 measurements are modeled as a function of race, treatment arm, visit number, and the interaction between the treatment arm and the visit number. Change in BCVA is assumed to be a function of race, baseline BCVA, treatment arm, visit number, and the treatment--visit interaction. In both datasets, repeated measures are modeled using an unstructured covariance matrix. The implementations' convergence times are evaluated first, followed by a comparison of their estimates. Finally, we fit these procedures on simulated BCVA-like data to assess the impact of missingness on convergence rates.
@@ -460,9 +495,9 @@ Next, the MMRM fitting procedures are compared using the FEV and BCVA datasets. 
 The `mmrm`, `PROC GLIMMIX`, `gls`, `lmer`, and `glmmTMB` functions are applied to the FEV dataset 10 times. The convergence times are recorded for each replicate and are reported in the table below.
 
 ```{r}
-#| message: FALSE
-#| warning: FALSE
-#| echo: FALSE
+#| message: false
+#| warning: false
+#| echo: false
 
 # format table in markdown
 cached_mmrm_results$conv_time_fev |>
@@ -485,9 +520,9 @@ It is clear from these results that `mmrm` converges significantly faster than o
 The MMRM implementations are now applied to the BCVA dataset 10 times. The convergence times are presented below.
 
 ```{r}
-#| message: FALSE
-#| warning: FALSE
-#| echo: FALSE
+#| message: false
+#| warning: false
+#| echo: false
 # format table in markdown
 cached_mmrm_results$conv_time_bcva |>
   arrange(median) |>
@@ -510,10 +545,11 @@ We next estimate the marginal mean treatment effects for each visit in the FEV a
 
 ### FEV Data
 
-```{r review-treatment-fev}
-#| message: FALSE
-#| warning: FALSE
-#| echo: FALSE
+```{r}
+#| label: review-treatment-fev
+#| message: false
+#| warning: false
+#| echo: false
 # plot estimates
 ggplot(
   cached_mmrm_results$rel_diff_ests_tbl_fev,
@@ -533,10 +569,11 @@ The R procedures' estimates are very similar to those output by `PROC GLIMMIX`, 
 
 ### BCVA Data
 
-```{r review-treatment-bcva}
-#| message: FALSE
-#| warning: FALSE
-#| echo: FALSE
+```{r}
+#| label: review-treatment-bcva
+#| message: false
+#| warning: false
+#| echo: false
 # plot estimates
 ggplot(
   cached_mmrm_results$rel_diff_ests_tbl_bcva,
@@ -578,7 +615,11 @@ The results of the previous benchmark suggest that the amount of patients missin
 
 Ten datasets of 200 patients are generated each of the following levels of missingness: none, mild, moderate, and high. In all scenarios, observations are missing at random. The number patients observed at each visit is obtained for one replicated dataset at each level of missingness is presented in the table below.
 
-```{r review-missingness-table, warning=FALSE, message=FALSE, echo=FALSE}
+```{r}
+#| label: review-missingness-table
+#| warning: false
+#| message: false
+#| echo: false
 ## construct the table
 cached_mmrm_results$df_missingness |>
   kable(caption = "Number of patients per visit")
@@ -586,10 +627,11 @@ cached_mmrm_results$df_missingness |>
 
 The convergence rates of all implementations for stratified by missingness level is presented in the plot below.
 
-```{r review-convergence-rate-missingness}
-#| message: FALSE
-#| warning: FALSE
-#| echo: FALSE
+```{r}
+#| label: review-convergence-rate-missingness
+#| message: false
+#| warning: false
+#| echo: false
 ## plot the convergence rates
 cached_mmrm_results$conv_rate |>
   mutate(
