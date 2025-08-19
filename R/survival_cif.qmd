@@ -6,7 +6,10 @@ title: "Estimating Cumulative Incidence Functions Using R"
 
 In this document we present how to estimate the cumulative incidence function (CIF) in R. We focus on the competing risks model where each subject experiences only one out of *k* possible events as depicted in the figure below.
 
-```{r, echo=FALSE, fig.align='center', out.width="25%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 25%
 knitr::include_graphics("../images/survival_competing_risks/cr.jpg")
 ```
 
@@ -38,7 +41,10 @@ The bone marrow transplant (BTM) dataset as presented by Guo & So (2018) is used
 
 -   A new variable `ID` is created.
 
-```{r readdata, message=FALSE, warning=FALSE}
+```{r}
+#| label: readdata
+#| message: false
+#| warning: false
 require(dplyr)
 bmt <- haven::read_sas(file.path("../data/bmt.sas7bdat")) %>%
   mutate(
@@ -62,7 +68,10 @@ bmt <- haven::read_sas(file.path("../data/bmt.sas7bdat")) %>%
 
 The `tidycmprsk::cuminc()` function requires a `Surv` object. Therefore, the first level of the event status variable (in this example `Status`) must represent censoring.
 
-```{r cr.est, message=FALSE, warning=FALSE}
+```{r}
+#| label: cr.est
+#| message: false
+#| warning: false
 require(survival)
 require(tidycmprsk)
 require(tidyverse)
@@ -71,7 +80,10 @@ cif.1 <- cuminc(Surv(TYears, Status) ~ Group, data = bmt)
 
 Gray's test statistics and p-value:
 
-```{r cr.test, message=FALSE, warning=FALSE}
+```{r}
+#| label: cr.test
+#| message: false
+#| warning: false
 knitr::kable(
   glance(cif.1) %>% 
   pivot_longer(
@@ -84,7 +96,10 @@ knitr::kable(
 
 CIF estimates for time to relapse at selected timepoints for 'AML-Low Risk' patients:
 
-```{r cr.sum, message=FALSE, warning=FALSE}
+```{r}
+#| label: cr.sum
+#| message: false
+#| warning: false
 knitr::kable(
   cif.1 %>% 
   tidy(times = c(0.5, 1, 1.5, 2, 3)) %>%
@@ -104,7 +119,10 @@ Two points to note:
 
 #### CIF Plots
 
-```{r cr.plot, message=FALSE,warning=FALSE}
+```{r}
+#| label: cr.plot
+#| message: false
+#| warning: false
 require(ggsurvfit)
 cif.1 %>%
   ggcuminc(outcome = 'Death') +
@@ -124,7 +142,10 @@ cif.1 %>%
 
 Using the bone marrow transplant example, the following code shows how to estimate the CIF for time to relapse or to death:
 
-```{r surv.est, message=FALSE, warning=FALSE}
+```{r}
+#| label: surv.est
+#| message: false
+#| warning: false
 cif.2 <- survfit(Surv(TYears, Status) ~ Group,
                  data = bmt,
                  se.fit = TRUE,
