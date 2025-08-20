@@ -23,7 +23,9 @@ To demonstrate the use of logistic regression we examine the same lung dataset a
 
 4)  Be careful when interpreting any odds ratios that you have the factor of interest the correct way around (0 vs 1, or 1 vs 0)
 
-5)  If using proc logistic, be careful of how SAS creates its parameters used in the model as this determines how you can use the parameter estimates! It is often easiest to use `param=glm` so that the exp(maximum liklihood parameter estimate) = odds ratio. Check the class level information (Design variables) is as you would expect. See below for more detail on other parameterization methods.
+5)  If using proc logistic, be careful of how SAS creates its parameters used in the model as this determines how you can use the parameter estimates! It is often easiest to use `param=glm` so that the exp(maximum likelihood parameter estimate) = odds ratio. Check the class level information (Design variables) is as you would expect. See below for more detail on `effect` and `ref` parameterization and [here](https://support.sas.com/documentation/cdl/en/statug/63962/HTML/default/viewer.htm#statug_introcom_a0000003337.htm) for more options such as polynomial coding.
+
+6)  By default, SAS includes an intercept in the model. The intercept represents the baseline log odds of the outcome when all predictor variables are set to zero. SAS outputs a p-value testing if the baseline log odds is significantly different to zero, however this is not generally of interest because the purpose of our modelling is to find out which parameters have a significant effect on the probability of an event occurring. This baseline log odds is simply shifting the linear expression up or down so that the variable components are most accurate. The baseline log odds, may be not interpretable if it's not possible for some variables to take a value of zero (e.g. age=0 is not yet born!). Therefore, we generally ignore the intercept and instead calculate odds ratios for parameters of interest. How your model is parameterised (param=glm, param=effect, param=ref, can also affect the estimate, so intercept estimates may not align when using different parameterization.
 
 ## Modelling using Proc Genmod
 
@@ -35,7 +37,8 @@ Below we are fitting trt01pn and sex as categorical variables, age, ph_ecog2 and
 
 You can use exponential of the maximum likelihood parameter estimate and the exponential of the Wald 95% Confidence Limits to obtain the odds ratios and 95% CIs. Proc Genmod uses GLM parameterization.
 
-```{r eval=FALSE}
+```{r}
+#| eval: false
 Example data: . = missing, trt01pn (1 or 2), sex (1 or 2), ph_ecog2 (0,1,2,3)
 wt_gain (1=gain, 0=no gain)
 
@@ -98,7 +101,8 @@ Proc Logistic is often preferred above Proc Genmod as it outputs the Odds Ratios
 
 NOTE: that the 95% confidence limits are being calculated using the Wald method. This assumes symmetric intervals around the maximum likelihood estimate using a normal distribution assumption (MLE +/-1.96\* SE). Alternative confidence interval estimation methods exist such as the profile likelihood method but SAS does not calculate these.
 
-```{r eval=FALSE}
+```{r}
+#| eval: false
 proc logistic data=lung;  
     class trt01pn (ref="1") sex (ref="1") /param=glm;
     model  wt_gain(event="1") = trt01pn age sex ph_ecog2 meal_caln;
@@ -158,7 +162,8 @@ meal_cal         1.001             1.000   1.002
 
 To compare two logistic models, the -2 \* Log Likelihood from each model can be compared against a $\chi^2$-distribution with degrees of freedom calculated using the difference in the two models' parameters.
 
-```{r eval=FALSE}
+```{r}
+#| eval: false
 Model 1:  model  wt_gain(event="1") = trt01pn age sex ph_ecog2 meal_caln;
 
 Model Fit Statistics
@@ -184,7 +189,8 @@ SC          207.491            216.477
 
 SAS also allows us to fit forward or backwards stepwise selection. Below we specify to stop when we have 4 variables left in the model. This is not commonly done in practice but is included to highlight the difference in using a selection procedure compared to doing the difference betweeen the -2 \* log likelihood models using a $\chi^2$-distribution.
 
-```{r eval=FALSE}
+```{r}
+#| eval: false
 proc logistic data=lung;  
     class trt01pn (ref="1") sex (ref="1") /param=glm;
     model  wt_gain(event="1") = trt01pn age sex ph_ecog2 meal_caln/ 
@@ -217,7 +223,8 @@ This is the SAS default such that if you do not specify the `/param` option, SAS
 
 With the EFFECT option, dose_id has 3 levels, and so needs 2 design variables (β1 and β2). Sex has 2 levels so uses just 1 design variable (β1). For dose_id, the reference level (Placebo) is given values of "-1" for both of the β1 and β2 parameters. General model: Y= α + β1x1 + β2x1 {+β3x3} etc, representing each parameter in the model.
 
-```{r eval=FALSE}
+```{r}
+#| eval: false
 proc logistic data=lung;  
     class dose_id (ref="3") sex (ref="1") /param=effect;
     model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
@@ -283,7 +290,8 @@ Active (10mg +20mg) vs Placebo     1          1.1610               0.2813
 
 Now let's look at the `param=glm` option. GLM parameterization has a design variable for each level of a parameter. Hence for dose with 3 levels, we have 3 design variables (β1, β2 and β3).
 
-```{r eval=FALSE}
+```{r}
+#| eval: false
 proc logistic data=lung;  
     class dose_id (ref="3") sex (ref="1") /param=glm;
     model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
@@ -350,7 +358,8 @@ Active (10mg +20mg) vs Placebo     1          1.1610               0.2813
 
 Now let's look at the `param=ref` option. Similar to param=effect, ref parameterization uses 1 less design variable compared to the number of levels each parameter has, but the parameterization is different. For dose with 3 levels, we have 2 design variables (β1 and β2).
 
-```{r eval=FALSE}
+```{r}
+#| eval: false
 proc logistic data=lung;   
 class dose_id (ref="3") sex (ref="1") /param=ref;
 model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
@@ -414,7 +423,8 @@ Active (10mg +20mg) vs Placebo     1          1.1610               0.2813
 
 The Contrast statement, only outputs the p-value for the contrast, but it is common to also require an estimate of the difference between the treatments, with associated 95% CI. You can do this by changing `contrast` to an `estimate` statement. Note that the parameterization of the contrast remains the same as when using a contrast statement as shown below. These estimates and 95% CI's can be back transformed to give you the Odds ratio of the contrast and associated 95% CI. The estimate coefficients table should be checked for accuracy versus the contrast you are trying to do.
 
-```{r eval=FALSE}
+```{r}
+#| eval: false
 proc logistic data=lung;
 class dose_id (ref="3") sex (ref="1") /param=glm;
 model wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln; 
