@@ -26,7 +26,10 @@ Results from the examples shown for R [here](https://psiaims.github.io/CAMIS/R/s
 
 Comparing the non-stratified model results side-by-side, the CIs for the quartile estimates and landmark estimates are different between R and SAS. HR and CI also have slight differences.
 
-```{r, echo=FALSE, fig.align='center', out.width="75%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 75%
 library(tibble)
 knitr::include_graphics("../images/survival/r_sas_default.png")   
 ```
@@ -39,13 +42,15 @@ R uses "efron" by default. SAS uses "breslow" by default. Both R and SAS are abl
 
 -   R: change method for ties to use "breslow"
 
-```{r, eval=FALSE}
+```{r}
+#| eval: false
 fit.cox <- coxph(Surv(LENFOLY, FSTAT) ~ AFB, ties = "breslow", data = dat)
 ```
 
 -   SAS: change method for ties to use "efron"
 
-```{r, eval=FALSE}
+```{r}
+#| eval: false
 proc phreg data=dat;
 class afb;
 model lenfol*fstat(0) = afb/rl ties = efron;
@@ -66,13 +71,15 @@ R uses "log" by default, and SAS uses "log-log" by default. As shown below, usin
 
 -   R: change to "log-log"
 
-```{r, eval=FALSE}
+```{r}
+#| eval: false
 fit.km <- survfit(Surv(LENFOLY, FSTAT) ~ AFB, conf.type = "log-log", data = dat)
 ```
 
 -   SAS: change to "log"
 
-```{r, eval=FALSE}
+```{r}
+#| eval: false
 proc lifetest data=dat conftype=log;
 time lenfoly*fstat(0);
 strata afb;
@@ -85,13 +92,19 @@ From a [reference](https://myweb.uiowa.edu/pbreheny/7210/f15/notes/9-10.pdf): Th
 
 Now if we change the confidence interval type in SAS to "log" and tie handling to "efron", the results will be identical to the results in R.
 
-```{r, echo=FALSE, fig.align='center', out.width="75%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 75%
 knitr::include_graphics("../images/survival/r_sas_chg_default.png")   
 ```
 
 Below is the side-by-side comparison for stratified analysis with default methods in SAS matched to R's, the results are also identical.
 
-```{r, echo=FALSE, fig.align='center', out.width="75%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 75%
 knitr::include_graphics("../images/survival/r_sas_stratified.png")   
 ```
 
@@ -115,13 +128,15 @@ with a value of `1e-9`.
 
 - R: default convergence criterion
 
-```{r, eval=FALSE}
+```{r}
+#| eval: false
 fit.cox <- coxph(Surv(LENFOLY, FSTAT) ~ AFB, data = dat)
 ```
 
 - SAS: adjust convergence criterion
 
-```{sas, eval=FALSE}
+```{sas}
+*| eval: false;
 proc phreg data=dat;
 class afb;
 model lenfol*fstat(0) = afb / rl fconv = 1e-9;
@@ -154,7 +169,8 @@ Suppose we are interested to know the 25%, 50% and 75% quartile estimates, and t
 
 Below is the R code:
 
-```{r, eval=FALSE}
+```{r}
+#| eval: false
 fit.km <- survfit(Surv(time, status) ~ 1, conf.type = "log-log", data = test)
 ## quantile estimates
 quantile(fit.km, probs = c(0.25, 0.5, 0.75))
@@ -164,7 +180,8 @@ summary(fit.km, times = c(80, 100, 120), extend = T)
 
 Below is the SAS code:
 
-```{r, eval=FALSE}
+```{r}
+#| eval: false
 proc lifetest data=dat outsurv=_SurvEst timelist= 80 100 120 reduceout stderr; 
 time lenfoly*fstat(0);
 run;
@@ -172,7 +189,10 @@ run;
 
 Below is the side-by-side comparison:
 
-```{r, echo=FALSE, fig.align='center', out.width="75%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 75%
 knitr::include_graphics("../images/survival/r_sas_special.png")   
 ```
 
@@ -186,13 +206,17 @@ The kth quantile for a survival curve S(t) is the location at which a horizontal
 
 For example, using the data above, the survival probability is exactly 0.5 at time=87 and remains at 0.5 until the last censored observation at 118.
 
-```{r, echo=FALSE, fig.align='center', out.width="75%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 75%
 knitr::include_graphics("../images/survival/other_diff_km.png")   
 ```
 
 When using R, the median is the smallest time which survival estimate is \<= 0.5 --\> `(87+118) / 2 = 102.5.` However, SAS searches the smallest time which survival estimate is \< 0.5, which does not exist in this dataset, so it gives "NE" (Not evaluable).
 
-```{r, eval=FALSE}
+```{r}
+#| eval: false
 pl <- survminer::ggsurvplot(fit.km, 
                             conf.int = TRUE,
                             ggtheme = theme_light()) 
@@ -214,7 +238,10 @@ test <- tibble(time = c(54, 75, 77, 84, 87, 92, 103, 105, 112, 118),
 test
 ```
 
-```{r, echo=FALSE, fig.align='center', out.width="75%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 75%
 knitr::include_graphics("../images/survival/r_sas_special_lst.png")   
 ```
 
