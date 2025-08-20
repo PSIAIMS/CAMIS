@@ -228,10 +228,25 @@ window.Quarto = {
    
   <ul>
   <li><a href="#example-lung-cancer-data" id="toc-example-lung-cancer-data" class="nav-link active" data-scroll-target="#example-lung-cancer-data">Example: Lung Cancer Data</a></li>
-  <li><a href="#model-fit" id="toc-model-fit" class="nav-link" data-scroll-target="#model-fit">Model Fit</a></li>
-  <li><a href="#model-comparison" id="toc-model-comparison" class="nav-link" data-scroll-target="#model-comparison">Model Comparison</a></li>
-  <li><a href="#prediction" id="toc-prediction" class="nav-link" data-scroll-target="#prediction">Prediction</a></li>
-  <li><a href="#contrast-statements-for-2-or-more-treatments" id="toc-contrast-statements-for-2-or-more-treatments" class="nav-link" data-scroll-target="#contrast-statements-for-2-or-more-treatments">Contrast statements for 2 or more treatments</a></li>
+  <li><a href="#model-fit" id="toc-model-fit" class="nav-link" data-scroll-target="#model-fit">Model Fit</a>
+  <ul class="collapse">
+  <li><a href="#modelling-factors-correctly-and-interpretation-of-the-intercept" id="toc-modelling-factors-correctly-and-interpretation-of-the-intercept" class="nav-link" data-scroll-target="#modelling-factors-correctly-and-interpretation-of-the-intercept">Modelling factors correctly and Interpretation of the Intercept</a></li>
+  </ul></li>
+  <li><a href="#model-parameter-estimates" id="toc-model-parameter-estimates" class="nav-link" data-scroll-target="#model-parameter-estimates">Model parameter estimates</a>
+  <ul class="collapse">
+  <li><a href="#how-r-parameterizes-your-variables-in-the-model" id="toc-how-r-parameterizes-your-variables-in-the-model" class="nav-link" data-scroll-target="#how-r-parameterizes-your-variables-in-the-model">How R parameterizes your variables in the model</a></li>
+  <li><a href="#calculation-of-confidence-intervals" id="toc-calculation-of-confidence-intervals" class="nav-link" data-scroll-target="#calculation-of-confidence-intervals">Calculation of confidence intervals</a></li>
+  </ul></li>
+  <li><a href="#comparing-2-models" id="toc-comparing-2-models" class="nav-link" data-scroll-target="#comparing-2-models">Comparing 2 models</a></li>
+  <li><a href="#predicting-likelihood-of-response-for-new-patients" id="toc-predicting-likelihood-of-response-for-new-patients" class="nav-link" data-scroll-target="#predicting-likelihood-of-response-for-new-patients">Predicting likelihood of response for new patients</a></li>
+  <li><a href="#creating-treatment-contrasts-for-2-treatments" id="toc-creating-treatment-contrasts-for-2-treatments" class="nav-link" data-scroll-target="#creating-treatment-contrasts-for-2-treatments">Creating Treatment Contrasts for 2 treatments</a>
+  <ul class="collapse">
+  <li><a href="#emmeans" id="toc-emmeans" class="nav-link" data-scroll-target="#emmeans">&lt;emmeans&gt;</a></li>
+  </ul></li>
+  <li><a href="#creating-treatment-contrasts-for-2-or-more-treatments" id="toc-creating-treatment-contrasts-for-2-or-more-treatments" class="nav-link" data-scroll-target="#creating-treatment-contrasts-for-2-or-more-treatments">Creating Treatment Contrasts for 2 or more treatments</a>
+  <ul class="collapse">
+  <li><a href="#gmodels" id="toc-gmodels" class="nav-link" data-scroll-target="#gmodels">&lt;gmodels&gt;</a></li>
+  </ul></li>
   <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">Reference</a></li>
   </ul>
 </nav>
@@ -272,7 +287,9 @@ window.Quarto = {
 </section>
 <section id="model-fit" class="level1">
 <h1>Model Fit</h1>
-<p>We analyze the event of weight gain (or staying the same weight) in lung cancer patients in dependency of treatment (active or placebo), age, sex, ECOG performance score and calories consumed at meals. One of the most important things to remember is to ensure you tell R what your event is and what treatment comparison you are doing Active / Placebo or Placebo/Active! The easiest way to do this is to have event (or non-reference treatment) as 1, and non-event (reference treatment) as 0. Hence we will use the wt_catn and trt01pn variables.</p>
+<p>We analyze the event of weight gain (or staying the same weight) in lung cancer patients in dependency of treatment (active or placebo), age, sex, ECOG performance score and calories consumed at meals. One of the most important things to remember is to ensure you tell R what your event is and what treatment comparison you are doing Active / Placebo or Placebo/Active! The easiest way to do this is to have event (or non-reference treatment) as 1, and non-event (reference treatment) as 0.</p>
+<p>Below we are using wt_catn (0,1) and trt01pn (1,2) and sex (1,2). Let’s see what happens !</p>
+<p>head(lung)</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>lung<span class="ot">&lt;-</span><span class="fu">read.csv</span>(<span class="st">"../data/lung_cancer.csv"</span>)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(lung)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -284,16 +301,18 @@ window.Quarto = {
 4    5  210      2  57   1       1       90        60     1150      11 Active
 5    1  883      2  60   1       0      100        90       NA       0 Active
 6   12 1022      1  74   1       1       50        80      513       0 Active
-  trt01pn dose_mg dose_id wt_cat wt_catn
-1       1      10       1   &lt;NA&gt;      NA
-2       1      10       1   loss       0
-3       1      10       1   loss       0
-4       1      10       1   loss       0
-5       1      10       1   gain       1
-6       1      10       1   gain       1</code></pre>
+  trt01pn dose_mg dose_id wt_cat wt_catn cnsr
+1       1      10       1   &lt;NA&gt;      NA    0
+2       1      10       1   loss       0    0
+3       1      10       1   loss       0    1
+4       1      10       1   loss       0    0
+5       1      10       1   gain       1    0
+6       1      10       1   gain       1    1</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>m1 <span class="ot">&lt;-</span> <span class="fu">glm</span>(wt_catn <span class="sc">~</span> trt01pn <span class="sc">+</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog <span class="sc">+</span> meal.cal, <span class="at">data =</span> lung, <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>))</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>m1 <span class="ot">&lt;-</span> <span class="fu">glm</span>(wt_catn <span class="sc">~</span> trt01pn <span class="sc">+</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog <span class="sc">+</span> meal.cal, </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> lung, </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>))</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Call:
@@ -321,68 +340,230 @@ AIC: 202.46
 Number of Fisher Scoring iterations: 4</code></pre>
 </div>
 </div>
-<p>The model summary contains the parameter estimates <span class="math inline">\(\beta_j\)</span> for each explanatory variable <span class="math inline">\(x_j\)</span>, corresponding to the log-odds for the response variable to take the value <span class="math inline">\(1\)</span>, conditional on all other explanatory variables remaining constant. For better interpretation, we can exponentiate these estimates, to obtain estimates for the odds instead and provide 95% confidence intervals.</p>
+<p>R by default sets the first category as the baseline category, hence trt01pn =1 and sex =1 are the baseline level, and other levels of the variable are contrasted to this level. This is using <code>contr.treatment</code> option (more information on this later!). The estimate for those variables (0.3887 and 0.8321) are the increase in the log-odds of being of receiving treatment 2 vs 1, and of being of sex=2 vs 1. The exponential of the estimate is the odds ratio. For example, exp(0.3887)=1.475, hence Treatment 2 is 1.475 times as likely to have weight gain compared to Treatment 1.</p>
+<p>The intercept represents the baseline log odds of the outcome when all predictor variables are set to zero. In the above model, we have variables treatment and sex, each coded as 1 and 2. Currently R is not treating these as binary factors, instead R thinks they are a continuous variable, and hence the intercept is where treatment=0 and sex=0. In the context of our model, this doesn’t make sense as you can’t have a zero gender and zero treatment (but it may not matter as we rarely look at the intercept term anyway!)</p>
+<p>However, if you want to have an interpretable intercept term (and if you want to match SAS output for intercept!), then it’s important to ensure any factors in your model as fitted as such in R. You can do this using: <code>lung$trt01pn&lt;-as.factor(lung$trt01pn)</code> or by changing the variable to a 0 and 1. Note if you are using the same <code>contr.treatment</code> option, then this only affects the intercept estimate not the variable estimates.</p>
+<section id="modelling-factors-correctly-and-interpretation-of-the-intercept" class="level2">
+<h2 class="anchored" data-anchor-id="modelling-factors-correctly-and-interpretation-of-the-intercept">Modelling factors correctly and Interpretation of the Intercept</h2>
+<p>So far we’ve learnt that it is good practice to always have binary and categorical variables set as factors, and that we should specify what method we want R to use for doing any contrasts (e.g.&nbsp;<code>contr.treatment</code>). You can specify different contrast methods for each variable by including them in a list in the model. It can sometimes be hard to see what contrast method R is using, so best to always specify this in your model (e.g.&nbsp;<code>contrasts = list(trt01pn = "contr.treatment", sex="contr.sum")</code>. It is helpful to view what the contrasts look like before you select which to use.</p>
+<p>A factor with 2 levels (2 treatments) using <code>contr.treatment</code> would set the first level to be the reference (0) and contrast the second level to the baseline.</p>
+<p>A factor with 4 levels (4 treatments) using <code>contr.treatment</code> would set the first level to be the reference (0), you would see 3 parameters in the model with 3 estimates corresponding to the increase in log-odds attributable to contrasting the second, third or fourth level to the baseline.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># model coefficients summary</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1)<span class="sc">$</span>coefficients</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">contr.treatment</span>(<span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  2
+1 0
+2 1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">contr.treatment</span>(<span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  2 3 4
+1 0 0 0
+2 1 0 0
+3 0 1 0
+4 0 0 1</code></pre>
+</div>
+</div>
+<p>Below we apply <code>contr.treatment</code> to our trt01pn and sex variables. Note: how the variables trt01pn2 and sex2 are now shown in the output, this is indicating that these rows relates to treatment=2 and sex=2. See the next section for how to interpret the estimates and change this <code>contr.</code> option.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Good practice to have binary variables (eg. treatment) identified as a factor </span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co"># And to specify what contrast option you are using ! more on this below</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>lung<span class="sc">$</span>trt01pn<span class="ot">&lt;-</span><span class="fu">as.factor</span>(lung<span class="sc">$</span>trt01pn)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>lung<span class="sc">$</span>sex<span class="ot">&lt;-</span><span class="fu">as.factor</span>(lung<span class="sc">$</span>sex)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>m1 <span class="ot">&lt;-</span> <span class="fu">glm</span>(wt_catn <span class="sc">~</span> trt01pn <span class="sc">+</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog <span class="sc">+</span> meal.cal, </span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> lung, </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>          <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>),</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>          <span class="at">contrasts =</span> <span class="fu">list</span>(<span class="at">trt01pn =</span> <span class="st">"contr.treatment"</span>, <span class="at">sex =</span> <span class="st">"contr.treatment"</span>))</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+glm(formula = wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, 
+    family = binomial(link = "logit"), data = lung, contrasts = list(trt01pn = "contr.treatment", 
+        sex = "contr.treatment"))
+
+Coefficients:
+              Estimate Std. Error z value Pr(&gt;|z|)  
+(Intercept) -2.6415326  1.5140191  -1.745   0.0810 .
+trt01pn2     0.3887667  0.3781566   1.028   0.3039  
+age          0.0122549  0.0211553   0.579   0.5624  
+sex2         0.8321005  0.3743793   2.223   0.0262 *
+ph.ecog     -0.3763592  0.2638322  -1.427   0.1537  
+meal.cal     0.0008500  0.0004486   1.895   0.0581 .
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 202.36  on 169  degrees of freedom
+Residual deviance: 190.46  on 164  degrees of freedom
+  (58 observations deleted due to missingness)
+AIC: 202.46
+
+Number of Fisher Scoring iterations: 4</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="model-parameter-estimates" class="level1">
+<h1>Model parameter estimates</h1>
+<p>The model summary contains the parameter estimates <span class="math inline">\(\beta_j\)</span> for each explanatory variable <span class="math inline">\(x_j\)</span>, corresponding to the log-odds for the response variable to take the value <span class="math inline">\(1\)</span>, conditional on all other explanatory variables remaining constant. For better interpretation, we can exponentiate these estimates, to obtain estimates for the odds instead and provide 95% confidence intervals.</p>
+<section id="how-r-parameterizes-your-variables-in-the-model" class="level2">
+<h2 class="anchored" data-anchor-id="how-r-parameterizes-your-variables-in-the-model">How R parameterizes your variables in the model</h2>
+<ul>
+<li><p>contr.treatment - [default] sets the first level to be the reference and contrasts each other level with the baseline. For example, based on the model shown below. Log-odds for Treatment 2 = -2.64153 + 0.38876 =-2.25277 , Log-odds for Treatment 1=-2.64153</p></li>
+<li><p>contr.sum - sets the last level to be the reference and compares the mean of the dependent variable for a given level to the overall mean of the dependent variable. For treatment 1, the intercept + trt01pn1 estimate. For Treatment 2, the intercept - trt01pn1 estimate.<br>
+Log-odds for Treatment 2 = -2.44715 - - 0.19438 = -2.25277, Log-odds for Treatment 1=-2.44715 - 0.19438 = -2.64153<br>
+use <code>contr.sum(2)</code> to show the contrast you are using and hence how to interpret your estimates.</p></li>
+<li><p>exponential (ratio log-odds) = odds ratio. eg. -2.25277/ -2.64153 = 0.85283 Treatment 2 is 0.85 times as likely (eg. 15% less likely) to have weight gain compared to Treatment 1.</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>ma <span class="ot">&lt;-</span> <span class="fu">glm</span>(wt_catn <span class="sc">~</span> trt01pn <span class="sc">+</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog <span class="sc">+</span> meal.cal, </span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> lung, </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>),</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">contrasts =</span> <span class="fu">list</span>(<span class="at">trt01pn =</span> <span class="st">"contr.treatment"</span>, <span class="at">sex =</span> <span class="st">"contr.treatment"</span>))</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(ma)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+glm(formula = wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, 
+    family = binomial(link = "logit"), data = lung, contrasts = list(trt01pn = "contr.treatment", 
+        sex = "contr.treatment"))
+
+Coefficients:
+              Estimate Std. Error z value Pr(&gt;|z|)  
+(Intercept) -2.6415326  1.5140191  -1.745   0.0810 .
+trt01pn2     0.3887667  0.3781566   1.028   0.3039  
+age          0.0122549  0.0211553   0.579   0.5624  
+sex2         0.8321005  0.3743793   2.223   0.0262 *
+ph.ecog     -0.3763592  0.2638322  -1.427   0.1537  
+meal.cal     0.0008500  0.0004486   1.895   0.0581 .
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 202.36  on 169  degrees of freedom
+Residual deviance: 190.46  on 164  degrees of freedom
+  (58 observations deleted due to missingness)
+AIC: 202.46
+
+Number of Fisher Scoring iterations: 4</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">contr.treatment</span>(<span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  2
+1 0
+2 1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>mb <span class="ot">&lt;-</span> <span class="fu">glm</span>(wt_catn <span class="sc">~</span> trt01pn <span class="sc">+</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog <span class="sc">+</span> meal.cal, </span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> lung, </span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>),</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">contrasts =</span> <span class="fu">list</span>(<span class="at">trt01pn =</span> <span class="st">"contr.sum"</span>, <span class="at">sex =</span> <span class="st">"contr.treatment"</span>))</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mb)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+glm(formula = wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, 
+    family = binomial(link = "logit"), data = lung, contrasts = list(trt01pn = "contr.sum", 
+        sex = "contr.treatment"))
+
+Coefficients:
+              Estimate Std. Error z value Pr(&gt;|z|)  
+(Intercept) -2.4471493  1.4929863  -1.639   0.1012  
+trt01pn1    -0.1943833  0.1890783  -1.028   0.3039  
+age          0.0122549  0.0211553   0.579   0.5624  
+sex2         0.8321005  0.3743793   2.223   0.0262 *
+ph.ecog     -0.3763592  0.2638322  -1.427   0.1537  
+meal.cal     0.0008500  0.0004486   1.895   0.0581 .
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 202.36  on 169  degrees of freedom
+Residual deviance: 190.46  on 164  degrees of freedom
+  (58 observations deleted due to missingness)
+AIC: 202.46
+
+Number of Fisher Scoring iterations: 4</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">contr.sum</span>(<span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  [,1]
+1    1
+2   -1</code></pre>
+</div>
+</div>
+</section>
+<section id="calculation-of-confidence-intervals" class="level2">
+<h2 class="anchored" data-anchor-id="calculation-of-confidence-intervals">Calculation of confidence intervals</h2>
+<p>Using the above model, you can output the estimates and confidence intervals using coef() and confint() and exponential back transforming using exp(). NOTE: that there are two types of confidence intervals that you can calculate. Function <code>confint.default</code> gives the Wald confidence limits, which is the default option in SAS <code>PROC LOGISTIC</code> procedure; whereas <code>confint</code> gives the profile-likelihood limits.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># model coefficients summary</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1)<span class="sc">$</span>coefficients</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                 Estimate   Std. Error    z value   Pr(&gt;|z|)
-(Intercept) -3.8623998098 1.7675776454 -2.1851373 0.02887878
-trt01pn      0.3887666677 0.3781565596  1.0280574 0.30392281
+(Intercept) -2.6415326252 1.5140190574 -1.7447156 0.08103439
+trt01pn2     0.3887666677 0.3781565596  1.0280574 0.30392281
 age          0.0122549015 0.0211552875  0.5792831 0.56239813
-sex          0.8321005169 0.3743792762  2.2226137 0.02624186
+sex2         0.8321005169 0.3743792762  2.2226137 0.02624186
 ph.ecog     -0.3763592487 0.2638321918 -1.4265100 0.15372119
 meal.cal     0.0008499918 0.0004486401  1.8945961 0.05814593</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Wald confidence limits</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cbind</span>(<span class="at">est =</span> <span class="fu">exp</span>(<span class="fu">coef</span>(m1)), </span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>          <span class="fu">exp</span>(<span class="fu">confint.default</span>(m1)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Wald confidence limits</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cbind</span>(<span class="at">est =</span> <span class="fu">exp</span>(<span class="fu">coef</span>(m1)), </span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>          <span class="fu">exp</span>(<span class="fu">confint.default</span>(m1)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>                  est        2.5 %    97.5 %
-(Intercept) 0.0210175 0.0006576825 0.6716544
-trt01pn     1.4751603 0.7029942478 3.0954705
-age         1.0123303 0.9712137510 1.0551875
-sex         2.2981410 1.1033275058 4.7868397
-ph.ecog     0.6863557 0.4092369943 1.1511280
-meal.cal    1.0008504 0.9999706738 1.0017308</code></pre>
+<pre><code>                   est       2.5 %   97.5 %
+(Intercept) 0.07125198 0.003664896 1.385263
+trt01pn2    1.47516031 0.702994248 3.095470
+age         1.01233030 0.971213751 1.055188
+sex2        2.29814096 1.103327506 4.786840
+ph.ecog     0.68635572 0.409236994 1.151128
+meal.cal    1.00085035 0.999970674 1.001731</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="do">## profile-likelihood limits</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cbind</span>(<span class="at">est =</span> <span class="fu">exp</span>(<span class="fu">coef</span>(m1)), </span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>          <span class="fu">exp</span>(<span class="fu">confint</span>(m1)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="do">## profile-likelihood limits</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cbind</span>(<span class="at">est =</span> <span class="fu">exp</span>(<span class="fu">coef</span>(m1)), </span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>          <span class="fu">exp</span>(<span class="fu">confint</span>(m1)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Waiting for profiling to be done...</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>                  est       2.5 %    97.5 %
-(Intercept) 0.0210175 0.000580124 0.6197446
-trt01pn     1.4751603 0.696210092 3.0850890
-age         1.0123303 0.971670916 1.0561942
-sex         2.2981410 1.107651762 4.8367698
-ph.ecog     0.6863557 0.405659156 1.1474521
-meal.cal    1.0008504 0.999978126 1.0017613</code></pre>
+<pre><code>                   est       2.5 %   97.5 %
+(Intercept) 0.07125198 0.003312288 1.302587
+trt01pn2    1.47516031 0.696210092 3.085089
+age         1.01233030 0.971670916 1.056194
+sex2        2.29814096 1.107651762 4.836770
+ph.ecog     0.68635572 0.405659156 1.147452
+meal.cal    1.00085035 0.999978126 1.001761</code></pre>
 </div>
 </div>
-<p>NOTE: that there are two types of confidence intervals that you can calculate. Function <code>confint.default</code> gives the Wald confidence limits, which is the default option in SAS <code>PROC LOGISTIC</code> procedure; whereas <code>confint</code> gives the profile-likelihood limits.</p>
 </section>
-<section id="model-comparison" class="level1">
-<h1>Model Comparison</h1>
+</section>
+<section id="comparing-2-models" class="level1">
+<h1>Comparing 2 models</h1>
 <p>To compare two logistic models, the <code>residual deviances</code> (-2 * log likelihoods) are compared against a <span class="math inline">\(\chi^2\)</span>-distribution with degrees of freedom calculated using the difference in the two models’ parameters. Below, the only difference is the inclusion/exclusion of age in the model, hence we test using <span class="math inline">\(\chi^2\)</span> with 1 df. Here testing at the 5% level.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>m2 <span class="ot">&lt;-</span> <span class="fu">glm</span>(wt_catn <span class="sc">~</span> trt01pn <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog <span class="sc">+</span> meal.cal, <span class="at">data =</span> lung, <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>))</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>m2 <span class="ot">&lt;-</span> <span class="fu">glm</span>(wt_catn <span class="sc">~</span> trt01pn <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog <span class="sc">+</span> meal.cal, </span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">data =</span> lung, </span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>),</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>                    <span class="at">contrasts =</span> <span class="fu">list</span>(<span class="at">trt01pn =</span> <span class="st">"contr.treatment"</span>))</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Call:
 glm(formula = wt_catn ~ trt01pn + sex + ph.ecog + meal.cal, family = binomial(link = "logit"), 
-    data = lung)
+    data = lung, contrasts = list(trt01pn = "contr.treatment"))
 
 Coefficients:
               Estimate Std. Error z value Pr(&gt;|z|)   
-(Intercept) -2.9951557  0.9245655  -3.240   0.0012 **
-trt01pn      0.3681563  0.3761976   0.979   0.3278   
-sex          0.7919227  0.3674936   2.155   0.0312 * 
-ph.ecog     -0.3312031  0.2527586  -1.310   0.1901   
-meal.cal     0.0007896  0.0004378   1.803   0.0713 . 
+(Intercept) -1.8350766  0.5810727  -3.158  0.00159 **
+trt01pn2     0.3681563  0.3761976   0.979  0.32777   
+sex2         0.7919227  0.3674936   2.155  0.03117 * 
+ph.ecog     -0.3312031  0.2527586  -1.310  0.19008   
+meal.cal     0.0007896  0.0004378   1.803  0.07131 . 
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -395,7 +576,7 @@ AIC: 200.8
 
 Number of Fisher Scoring iterations: 4</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">anova</span>(m1, m2, <span class="at">test =</span> <span class="st">"LRT"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">anova</span>(m1, m2, <span class="at">test =</span> <span class="st">"LRT"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Analysis of Deviance Table
 
@@ -408,32 +589,185 @@ Model 2: wt_catn ~ trt01pn + sex + ph.ecog + meal.cal
 </div>
 <p>Stackexchange <a href="https://stats.stackexchange.com/questions/59879/logistic-regression-anova-chi-square-test-vs-significance-of-coefficients-ano">here</a> has a good article describing this method and the difference between comparing 2 models using the likelihood ratio tests versus using wald tests and Pr&gt;chisq (from the maximum likelihood estimate). Note: <code>anova(m1, m2, test = "Chisq")</code> and using <code>test="LRT"</code> as above are synonymous in this context.</p>
 </section>
-<section id="prediction" class="level1">
-<h1>Prediction</h1>
+<section id="predicting-likelihood-of-response-for-new-patients" class="level1">
+<h1>Predicting likelihood of response for new patients</h1>
 <p>Predictions from the model for the log-odds of a patient with new data to experience a weight loss are derived using <code>predict()</code>:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># new female, symptomatic but completely ambulatory patient consuming 2500 calories</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>new_pt <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">trt01pn=</span><span class="dv">1</span>, <span class="at">sex=</span><span class="dv">2</span>, <span class="at">ph.ecog=</span><span class="dv">1</span>, <span class="at">meal.cal=</span><span class="dv">2500</span>)</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">predict</span>(m2, new_pt, <span class="at">type =</span> <span class="st">"response"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># new female, symptomatic but completely ambulatory patient consuming 2500 calories</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>new_pt <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">trt01pn=</span><span class="dv">1</span>, <span class="at">age=</span><span class="dv">48</span>, <span class="at">sex=</span><span class="dv">2</span>, <span class="at">ph.ecog=</span><span class="dv">1</span>, <span class="at">meal.cal=</span><span class="dv">2500</span>)</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>new_pt<span class="sc">$</span>trt01pn<span class="ot">&lt;-</span><span class="fu">as.factor</span>(new_pt<span class="sc">$</span>trt01pn)</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>new_pt<span class="sc">$</span>sex<span class="ot">&lt;-</span><span class="fu">as.factor</span>(new_pt<span class="sc">$</span>sex)</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="fu">predict</span>(m1, new_pt, <span class="at">type =</span> <span class="st">"response"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>        1 
-0.6455793 </code></pre>
+<pre><code>       1 
+0.628882 </code></pre>
 </div>
 </div>
 </section>
-<section id="contrast-statements-for-2-or-more-treatments" class="level1">
-<h1>Contrast statements for 2 or more treatments</h1>
-<p>To create contrasts, you can use the <code>fit.contrast()</code> function from the <code>gmodels</code> package.</p>
-<p>This can be used with lm and glm objects:</p>
-<p>Here if we use the 3 level treatment variable (dose_id), we have 1=10mg, 2=20mg doses for active treatment and then 3= placebo which is 0mg.</p>
-<p>You would fit the model as above, followed by <code>fit.contrast()</code>. This is effective testing the null hypothesis that 0.5<em>dose10mg + 0.5</em> dose20mg - placebo = 0.</p>
+<section id="creating-treatment-contrasts-for-2-treatments" class="level1">
+<h1>Creating Treatment Contrasts for 2 treatments</h1>
+<section id="emmeans" class="level2">
+<h2 class="anchored" data-anchor-id="emmeans">&lt;emmeans&gt;</h2>
+<p>Here we will use &lt;emmeans&gt; to output the log-odds of weight gain for treatment 1 and treatment 2.</p>
+<p>NOTE as per the output, these are on the logit scale, you need to exponentiate to get the odds (or use the type=“response” option).</p>
+<p>The treatment comparison can also be output on the log-odds or back transformed scale as shown below.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>lung2<span class="ot">&lt;-</span>lung <span class="sc">|&gt;</span> </span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">dose_id2 =</span> <span class="fu">as.factor</span>(lung<span class="sc">$</span>dose_id))</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>m3 <span class="ot">&lt;-</span> <span class="fu">glm</span> (wt_catn <span class="sc">~</span> dose_id2 <span class="sc">+</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog <span class="sc">+</span> meal.cal, <span class="at">data =</span> lung2, <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>))</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="fu">fit.contrast</span> (m3,<span class="st">'dose_id2'</span>,<span class="fu">c</span>(<span class="fl">0.5</span>,<span class="fl">0.5</span>,<span class="sc">-</span><span class="dv">1</span>),<span class="at">conf.int=</span><span class="fl">0.95</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>m3 <span class="ot">&lt;-</span> <span class="fu">glm</span>(wt_catn <span class="sc">~</span> trt01pn <span class="sc">+</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog <span class="sc">+</span> meal.cal, </span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> lung, </span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>),</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">contrasts =</span> <span class="fu">list</span>(<span class="at">trt01pn =</span> <span class="st">"contr.treatment"</span>))</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+glm(formula = wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, 
+    family = binomial(link = "logit"), data = lung, contrasts = list(trt01pn = "contr.treatment"))
+
+Coefficients:
+              Estimate Std. Error z value Pr(&gt;|z|)  
+(Intercept) -2.6415326  1.5140191  -1.745   0.0810 .
+trt01pn2     0.3887667  0.3781566   1.028   0.3039  
+age          0.0122549  0.0211553   0.579   0.5624  
+sex2         0.8321005  0.3743793   2.223   0.0262 *
+ph.ecog     -0.3763592  0.2638322  -1.427   0.1537  
+meal.cal     0.0008500  0.0004486   1.895   0.0581 .
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 202.36  on 169  degrees of freedom
+Residual deviance: 190.46  on 164  degrees of freedom
+  (58 observations deleted due to missingness)
+AIC: 202.46
+
+Number of Fisher Scoring iterations: 4</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">contr.treatment</span>(<span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  2
+1 0
+2 1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co">#log-odds for each treatment</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>lsm<span class="ot">&lt;-</span><span class="fu">emmeans</span>(m3,<span class="st">"trt01pn"</span>)</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>lsm</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> trt01pn emmean    SE  df asymp.LCL asymp.UCL
+ 1       -1.034 0.225 Inf     -1.47   -0.5935
+ 2       -0.645 0.302 Inf     -1.24   -0.0529
+
+Results are averaged over the levels of: sex 
+Results are given on the logit (not the response) scale. 
+Confidence level used: 0.95 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co">#log-odds ratios (treatment comparison): This does all pairwise comparisons</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="co"># However as seen below, this is TRT 1 - TRT 2</span></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a><span class="fu">pairs</span>(lsm)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> contrast            estimate    SE  df z.ratio p.value
+ trt01pn1 - trt01pn2   -0.389 0.378 Inf  -1.028  0.3039
+
+Results are averaged over the levels of: sex 
+Results are given on the log odds ratio (not the response) scale. </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co"># the below creates tests and CI's prior to back transformation (ratios of geometric means)</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="fu">pairs</span>(lsm, <span class="at">type=</span><span class="st">"response"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> contrast            odds.ratio    SE  df null z.ratio p.value
+ trt01pn1 / trt01pn2      0.678 0.256 Inf    1  -1.028  0.3039
+
+Results are averaged over the levels of: sex 
+Tests are performed on the log odds ratio scale </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co"># see coefficients of the linear functions</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(<span class="fu">pairs</span>(lsm))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         trt01pn c.1
+trt01pn1       1   1
+trt01pn2       2  -1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Output treatment contrasts 2 vs 1 and 95% CIs, the type="response" option back transforms the results</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>trtdiff<span class="ot">&lt;-</span><span class="fu">contrast</span>(lsm,<span class="st">"poly"</span>)</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>trtdiff</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> contrast estimate    SE  df z.ratio p.value
+ linear      0.389 0.378 Inf   1.028  0.3039
+
+Results are averaged over the levels of: sex 
+Results are given on the log odds ratio (not the response) scale. </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">confint</span>(trtdiff, <span class="at">type=</span><span class="st">"response"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> contrast odds.ratio    SE  df asymp.LCL asymp.UCL
+ linear         1.48 0.558 Inf     0.703       3.1
+
+Results are averaged over the levels of: sex 
+Confidence level used: 0.95 
+Intervals are back-transformed from the log odds ratio scale </code></pre>
+</div>
+</div>
+<p>In Summary: Treatment 2 is on average 1.48 times as likely to have weight gain compared to treatment 1, however this is not statistically significant (95% Confidence interval = 0.703-3.100, p-value= 0.3039).</p>
+</section>
+</section>
+<section id="creating-treatment-contrasts-for-2-or-more-treatments" class="level1">
+<h1>Creating Treatment Contrasts for 2 or more treatments</h1>
+<p>&lt;emmeans&gt; can also be used to do specific contrasts, instead of investigating treatment (active vs placebo), suppose we now want to look at 2 dose groups vs placebo.</p>
+<p>We have a 3 level treatment variable (dose_id), where 1=10mg, 2=20mg doses for active treatment and 3= placebo which is 0mg. We want to test the null hypothesis that 0.5<em>dose10mg + 0.5</em> dose20mg - placebo = 0. That there is not difference between the doses.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>lung2<span class="ot">&lt;-</span>lung <span class="sc">|&gt;</span> </span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">dose_id2 =</span> <span class="fu">as.factor</span>(lung<span class="sc">$</span>dose_id))</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>m3 <span class="ot">&lt;-</span> <span class="fu">glm</span> (wt_catn <span class="sc">~</span> dose_id2 <span class="sc">+</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog <span class="sc">+</span> meal.cal, </span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>                     <span class="at">data =</span> lung2, </span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>),</span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>                     <span class="at">contrasts =</span> <span class="fu">list</span>(<span class="at">dose_id2 =</span> <span class="st">"contr.treatment"</span>))</span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a><span class="co">#log-odds for each treatment</span></span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>lsm3<span class="ot">&lt;-</span><span class="fu">emmeans</span>(m3,<span class="st">"dose_id2"</span>)</span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>lsm3</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> dose_id2 emmean    SE  df asymp.LCL asymp.UCL
+ 1        -0.903 0.296 Inf     -1.48   -0.3228
+ 2        -1.201 0.348 Inf     -1.88   -0.5201
+ 3        -0.643 0.302 Inf     -1.23   -0.0518
+
+Results are averaged over the levels of: sex 
+Results are given on the logit (not the response) scale. 
+Confidence level used: 0.95 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">contrast</span> (lsm3,<span class="fu">list</span>(<span class="at">AveDose_vs_pbo=</span><span class="fu">c</span>(<span class="fl">0.5</span>,<span class="fl">0.5</span>,<span class="sc">-</span><span class="dv">1</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> contrast       estimate   SE  df z.ratio p.value
+ AveDose_vs_pbo    -0.41 0.38 Inf  -1.078  0.2813
+
+Results are averaged over the levels of: sex 
+Results are given on the log odds ratio (not the response) scale. </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">confint</span>(<span class="fu">contrast</span> (lsm3,<span class="fu">list</span>(<span class="at">AveDose_vs_pbo=</span><span class="fu">c</span>(<span class="fl">0.5</span>,<span class="fl">0.5</span>,<span class="sc">-</span><span class="dv">1</span>))))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> contrast       estimate   SE  df asymp.LCL asymp.UCL
+ AveDose_vs_pbo    -0.41 0.38 Inf     -1.15     0.335
+
+Results are averaged over the levels of: sex 
+Results are given on the log odds ratio (not the response) scale. 
+Confidence level used: 0.95 </code></pre>
+</div>
+</div>
+<p>Here we found that on average there is -0.41 times the risk of weight gain on active vs placebo but that this is not statisticallly significantly different (95% CI -1.15 to 0.335, p-value = 0.2813).</p>
+<p>See the emmeans vignette on creating bespoke contrasts <a href="Comparisons and contrasts in emmeans">here</a>.</p>
+<section id="gmodels" class="level2">
+<h2 class="anchored" data-anchor-id="gmodels">&lt;gmodels&gt;</h2>
+<p>&lt;gmodels&gt; is an alternative package to create contrasts instead of &lt;emmeans&gt;, you can use the <code>fit.contrast()</code> function from the <code>gmodels</code> package. The same result is obtained as &lt;emmeans&gt;.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>lung2<span class="ot">&lt;-</span>lung <span class="sc">|&gt;</span> </span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">dose_id2 =</span> <span class="fu">as.factor</span>(lung<span class="sc">$</span>dose_id))</span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>m3 <span class="ot">&lt;-</span> <span class="fu">glm</span> (wt_catn <span class="sc">~</span> dose_id2 <span class="sc">+</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog <span class="sc">+</span> meal.cal, </span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>                     <span class="at">data =</span> lung2, </span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>),</span>
+<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a>                     <span class="at">contrasts =</span> <span class="fu">list</span>(<span class="at">dose_id2 =</span> <span class="st">"contr.treatment"</span>))</span>
+<span id="cb54-8"><a href="#cb54-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-9"><a href="#cb54-9" aria-hidden="true" tabindex="-1"></a><span class="fu">fit.contrast</span> (m3,<span class="st">'dose_id2'</span>,<span class="fu">c</span>(<span class="fl">0.5</span>,<span class="fl">0.5</span>,<span class="sc">-</span><span class="dv">1</span>),<span class="at">conf.int=</span><span class="fl">0.95</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                            Estimate Std. Error   z value  Pr(&gt;|z|)  lower CI
 dose_id2 c=( 0.5 0.5 -1 ) -0.4096323  0.3801683 -1.077502 0.2812558 -1.160322
@@ -442,143 +776,59 @@ dose_id2 c=( 0.5 0.5 -1 ) 0.3410574</code></pre>
 </div>
 </div>
 </section>
+</section>
 <section id="reference" class="level1">
 <h1>Reference</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co">#\| echo: false</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co">#List all the packages needed</span></span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>si <span class="ot">&lt;-</span> sessioninfo<span class="sc">::</span><span class="fu">session_info</span>(<span class="fu">c</span>(<span class="st">'tidyverse'</span>,<span class="st">'gmodels'</span>)) </span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>si</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="co">#\| echo: false</span></span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a><span class="co">#List all the packages needed</span></span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>si <span class="ot">&lt;-</span> sessioninfo<span class="sc">::</span><span class="fu">session_info</span>(<span class="fu">c</span>(<span class="st">'dplyr'</span>,<span class="st">'emmeans'</span>,<span class="st">'gmodels'</span>)) </span>
+<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a>si</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>─ Session info ───────────────────────────────────────────────────────────────
  setting  value
- version  R version 4.4.3 (2025-02-28)
+ version  R version 4.4.2 (2024-10-31)
  os       Ubuntu 24.04.2 LTS
  system   x86_64, linux-gnu
  ui       X11
  language (EN)
  collate  C.UTF-8
  ctype    C.UTF-8
- tz       Europe/London
- date     2025-03-13
- pandoc   NA (via rmarkdown)
+ tz       UTC
+ date     2025-08-20
+ pandoc   3.6.3 @ /opt/quarto/bin/tools/ (via rmarkdown)
 
 ─ Packages ───────────────────────────────────────────────────────────────────
- ! package       * version date (UTC) lib source
-   askpass         1.2.1   2024-10-04 [1] RSPM (R 4.4.0)
-   backports       1.5.0   2024-05-23 [1] RSPM (R 4.4.0)
-   base64enc       0.1-3   2015-07-28 [1] RSPM (R 4.4.0)
-   bit             4.5.0   2024-09-20 [1] RSPM (R 4.4.0)
-   bit64           4.5.2   2024-09-22 [1] RSPM (R 4.4.0)
-   blob            1.2.4   2023-03-17 [1] RSPM (R 4.4.0)
-   broom           1.0.7   2024-09-26 [1] RSPM (R 4.4.0)
-   bslib           0.8.0   2024-07-29 [1] RSPM (R 4.4.0)
-   cachem          1.1.0   2024-05-16 [1] RSPM (R 4.4.0)
-   callr           3.7.6   2024-03-25 [1] RSPM (R 4.4.0)
-   cellranger      1.1.0   2016-07-27 [1] RSPM (R 4.4.0)
- P cli             3.6.3   2024-06-21 [?] RSPM (R 4.4.0)
-   clipr           0.8.0   2022-02-22 [1] RSPM (R 4.4.0)
- P colorspace      2.1-1   2024-07-26 [?] RSPM (R 4.4.0)
-   conflicted      1.2.0   2023-02-01 [1] RSPM (R 4.4.0)
-   cpp11           0.5.0   2024-08-27 [1] RSPM (R 4.4.0)
-   crayon          1.5.3   2024-06-20 [1] RSPM (R 4.4.0)
-   curl            5.2.3   2024-09-20 [1] RSPM (R 4.4.0)
-   data.table      1.16.0  2024-08-27 [1] RSPM (R 4.4.0)
-   DBI             1.2.3   2024-06-02 [1] RSPM (R 4.4.0)
-   dbplyr          2.5.0   2024-03-19 [1] RSPM (R 4.4.0)
- P digest          0.6.37  2024-08-19 [?] RSPM (R 4.4.0)
- P dplyr         * 1.1.4   2023-11-17 [?] RSPM (R 4.4.0)
-   dtplyr          1.3.1   2023-03-22 [1] RSPM (R 4.4.0)
- P evaluate        1.0.0   2024-09-17 [?] RSPM (R 4.4.0)
- P fansi           1.0.6   2023-12-08 [?] RSPM (R 4.4.0)
-   farver          2.1.2   2024-05-13 [1] RSPM (R 4.4.0)
- P fastmap         1.2.0   2024-05-15 [?] RSPM (R 4.4.0)
-   fontawesome     0.5.2   2023-08-19 [1] RSPM (R 4.4.0)
- P forcats       * 1.0.0   2023-01-29 [?] RSPM (R 4.4.0)
-   fs              1.6.4   2024-04-25 [1] RSPM (R 4.4.0)
-   gargle          1.5.2   2023-07-20 [1] RSPM (R 4.4.0)
- P gdata           3.0.1   2024-10-22 [?] RSPM (R 4.4.0)
- P generics        0.1.3   2022-07-05 [?] RSPM (R 4.4.0)
- P ggplot2       * 3.5.1   2024-04-23 [?] RSPM (R 4.4.0)
- P glue            1.8.0   2024-09-30 [?] RSPM (R 4.4.0)
- P gmodels       * 2.19.1  2024-03-06 [?] RSPM (R 4.4.0)
-   googledrive     2.1.1   2023-06-11 [1] RSPM (R 4.4.0)
-   googlesheets4   1.1.1   2023-06-11 [1] RSPM (R 4.4.0)
- P gtable          0.3.5   2024-04-22 [?] RSPM (R 4.4.0)
- P gtools          3.9.5   2023-11-20 [?] RSPM (R 4.4.0)
-   haven           2.5.4   2023-11-30 [1] RSPM (R 4.4.0)
-   highr           0.11    2024-05-26 [1] RSPM (R 4.4.0)
- P hms             1.1.3   2023-03-21 [?] RSPM (R 4.4.0)
- P htmltools       0.5.8.1 2024-04-04 [?] RSPM (R 4.4.0)
-   httr            1.4.7   2023-08-15 [1] RSPM (R 4.4.0)
-   ids             1.0.1   2017-05-31 [1] RSPM (R 4.4.0)
-   isoband         0.2.7   2022-12-20 [1] RSPM (R 4.4.0)
-   jquerylib       0.1.4   2021-04-26 [1] RSPM (R 4.4.0)
- P jsonlite        1.8.9   2024-09-20 [?] RSPM (R 4.4.0)
- P knitr           1.48    2024-07-07 [?] RSPM (R 4.4.0)
-   labeling        0.4.3   2023-08-29 [1] RSPM (R 4.4.0)
-   lattice         0.22-6  2024-03-20 [2] CRAN (R 4.4.3)
- P lifecycle       1.0.4   2023-11-07 [?] RSPM (R 4.4.0)
- P lubridate     * 1.9.3   2023-09-27 [?] RSPM (R 4.4.0)
- P magrittr        2.0.3   2022-03-30 [?] RSPM (R 4.4.0)
- P MASS            7.3-61  2024-06-13 [?] RSPM (R 4.4.0)
-   Matrix          1.7-1   2024-10-18 [1] RSPM (R 4.4.0)
-   memoise         2.0.1   2021-11-26 [1] RSPM (R 4.4.0)
-   mgcv            1.9-1   2023-12-21 [2] CRAN (R 4.4.3)
-   mime            0.12    2021-09-28 [1] RSPM (R 4.4.0)
-   modelr          0.1.11  2023-03-22 [1] RSPM (R 4.4.0)
- P munsell         0.5.1   2024-04-01 [?] RSPM (R 4.4.0)
-   nlme            3.1-166 2024-08-14 [1] RSPM (R 4.4.0)
-   openssl         2.2.2   2024-09-20 [1] RSPM (R 4.4.0)
- P pillar          1.9.0   2023-03-22 [?] RSPM (R 4.4.0)
- P pkgconfig       2.0.3   2019-09-22 [?] RSPM (R 4.4.0)
-   prettyunits     1.2.0   2023-09-24 [1] RSPM (R 4.4.0)
-   processx        3.8.4   2024-03-16 [1] RSPM (R 4.4.0)
-   progress        1.2.3   2023-12-06 [1] RSPM (R 4.4.0)
-   ps              1.8.0   2024-09-12 [1] RSPM (R 4.4.0)
- P purrr         * 1.0.2   2023-08-10 [?] RSPM (R 4.4.0)
- P R6              2.5.1   2021-08-19 [?] RSPM (R 4.4.0)
-   ragg            1.3.3   2024-09-11 [1] RSPM (R 4.4.0)
-   rappdirs        0.3.3   2021-01-31 [1] RSPM (R 4.4.0)
-   RColorBrewer    1.1-3   2022-04-03 [1] RSPM (R 4.4.0)
- P readr         * 2.1.5   2024-01-10 [?] RSPM (R 4.4.0)
-   readxl          1.4.3   2023-07-06 [1] RSPM (R 4.4.0)
-   rematch         2.0.0   2023-08-30 [1] RSPM (R 4.4.0)
-   rematch2        2.1.2   2020-05-01 [1] RSPM (R 4.4.0)
-   reprex          2.1.1   2024-07-06 [1] RSPM (R 4.4.0)
- P rlang           1.1.4   2024-06-04 [?] RSPM (R 4.4.0)
- P rmarkdown       2.28    2024-08-17 [?] RSPM (R 4.4.0)
-   rstudioapi      0.16.0  2024-03-24 [1] RSPM (R 4.4.0)
-   rvest           1.0.4   2024-02-12 [1] RSPM (R 4.4.0)
-   sass            0.4.9   2024-03-15 [1] RSPM (R 4.4.0)
- P scales          1.3.0   2023-11-28 [?] RSPM (R 4.4.0)
-   selectr         0.4-2   2019-11-20 [1] RSPM (R 4.4.0)
- P stringi         1.8.4   2024-05-06 [?] RSPM (R 4.4.0)
- P stringr       * 1.5.1   2023-11-14 [?] RSPM (R 4.4.0)
-   sys             3.4.3   2024-10-04 [1] RSPM (R 4.4.0)
-   systemfonts     1.1.0   2024-05-15 [1] RSPM (R 4.4.0)
-   textshaping     0.4.0   2024-05-24 [1] RSPM (R 4.4.0)
- P tibble        * 3.2.1   2023-03-20 [?] RSPM (R 4.4.0)
- P tidyr         * 1.3.1   2024-01-24 [?] RSPM (R 4.4.0)
- P tidyselect      1.2.1   2024-03-11 [?] RSPM (R 4.4.0)
- P tidyverse     * 2.0.0   2023-02-22 [?] RSPM (R 4.4.0)
- P timechange      0.3.0   2024-01-18 [?] RSPM (R 4.4.0)
-   tinytex         0.53    2024-09-15 [1] RSPM (R 4.4.0)
- P tzdb            0.4.0   2023-05-12 [?] RSPM (R 4.4.0)
- P utf8            1.2.4   2023-10-22 [?] RSPM (R 4.4.0)
-   uuid            1.2-1   2024-07-29 [1] RSPM (R 4.4.0)
- P vctrs           0.6.5   2023-12-01 [?] RSPM (R 4.4.0)
-   viridisLite     0.4.2   2023-05-02 [1] RSPM (R 4.4.0)
-   vroom           1.6.5   2023-12-05 [1] RSPM (R 4.4.0)
- P withr           3.0.1   2024-07-31 [?] RSPM (R 4.4.0)
- P xfun            0.48    2024-10-03 [?] RSPM (R 4.4.0)
-   xml2            1.3.6   2023-12-04 [1] RSPM (R 4.4.0)
- P yaml            2.3.10  2024-07-26 [?] RSPM (R 4.4.0)
+ ! package      * version    date (UTC) lib source
+ P cli            3.6.3      2024-06-21 [?] RSPM (R 4.4.0)
+ P dplyr        * 1.1.4      2023-11-17 [?] RSPM (R 4.4.0)
+ P emmeans      * 1.10.4     2024-08-21 [?] RSPM (R 4.4.0)
+ P estimability   1.5.1      2024-05-12 [?] RSPM (R 4.4.0)
+ P fansi          1.0.6      2023-12-08 [?] RSPM (R 4.4.0)
+ P gdata          3.0.1      2024-10-22 [?] RSPM (R 4.4.0)
+ P generics       0.1.3      2022-07-05 [?] RSPM (R 4.4.0)
+ P glue           1.8.0      2024-09-30 [?] RSPM (R 4.4.0)
+ P gmodels      * 2.19.1     2024-03-06 [?] RSPM (R 4.4.0)
+ P gtools         3.9.5      2023-11-20 [?] RSPM (R 4.4.0)
+ P lifecycle      1.0.4      2023-11-07 [?] RSPM (R 4.4.0)
+ P magrittr       2.0.3      2022-03-30 [?] RSPM (R 4.4.0)
+   MASS           7.3-61     2024-06-13 [2] CRAN (R 4.4.2)
+ P mvtnorm        1.3-1      2024-09-03 [?] RSPM (R 4.4.0)
+   numDeriv       2016.8-1.1 2019-06-06 [1] RSPM (R 4.4.0)
+ P pillar         1.9.0      2023-03-22 [?] RSPM (R 4.4.0)
+ P pkgconfig      2.0.3      2019-09-22 [?] RSPM (R 4.4.0)
+ P R6             2.5.1      2021-08-19 [?] RSPM (R 4.4.0)
+ P rlang          1.1.4      2024-06-04 [?] RSPM (R 4.4.0)
+ P tibble         3.2.1      2023-03-20 [?] RSPM (R 4.4.0)
+ P tidyselect     1.2.1      2024-03-11 [?] RSPM (R 4.4.0)
+ P utf8           1.2.4      2023-10-22 [?] RSPM (R 4.4.0)
+ P vctrs          0.6.5      2023-12-01 [?] RSPM (R 4.4.0)
+   withr          3.0.1      2024-07-31 [1] RSPM (R 4.4.0)
 
- [1] /home/michael/source/CAMIS/renv/library/linux-ubuntu-noble/R-4.4/x86_64-pc-linux-gnu
- [2] /opt/R/4.4.3/lib/R/library
+ [1] /home/runner/work/CAMIS/CAMIS/renv/library/linux-ubuntu-noble/R-4.4/x86_64-pc-linux-gnu
+ [2] /opt/R/4.4.2/lib/R/library
 
  P ── Loaded and on-disk path mismatch.
 
