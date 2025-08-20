@@ -44,16 +44,27 @@ m1 <- glm(wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal,
 summary(m1)
 ```
 
-# Modelling factors correctly and Interpretation of the Intercept
+R by default sets the first category as the baseline category, hence trt01pn =1 and sex =1 are the baseline level, and other levels of the variable are contrasted to this level. This is using `contr.treatment` option (more information on this later!). The estimate for those variables (0.3887 and 0.8321) are the increase in the log-odds of being of receiving treatment 2 vs 1, and of being of sex=2 vs 1. The exponential of the estimate is the odds ratio. For example, exp(0.3887)=1.475, hence Treatment 2 is 1.475 times as likely to have weight gain compared to Treatment 1.
 
 The intercept represents the baseline log odds of the outcome when all predictor variables are set to zero. In the above model, we have variables treatment and sex, each coded as 1 and 2. Currently R is not treating these as binary factors, instead it just knows them as a 1 and 2, and hence the intercept is where treatment=0 and sex=0. In the context of our model, this doesn't make sense as you can't have a zero gender and zero treatment (but it may not matter as we rarely look at the intercept term anyway!)
 
-However, if you want to have an interpretable intercept term (and if you want to match SAS output!), then it's important to ensure any factors in your model as fitted as such in R. You can do this using: `lung$trt01pn<-as.factor(lung$trt01pn)` as shown below
+However, if you want to have an interpretable intercept term (and if you want to match SAS output for intercept!), then it's important to ensure any factors in your model as fitted as such in R. You can do this using: `lung$trt01pn<-as.factor(lung$trt01pn)` or by changing the variable to a 0 and 1. Note if you are using the same `contr.treatment` option, then this only affects the intercept estimate not the variable estimates.
 
-Within R, there are many types of forming parameterization of the model parameters. The default here is `contr.treatment` which sets the first level to be the baseline and contrasts each other level to the baseline. This works OK for logistic but not for other types of modelling !!\
-It is good practice to always specify the contrast you are using and to view them as shown below.
+# Modelling factors correctly and Interpretation of the Intercept
 
-Note how the variables trt01pn2 and sex2 are now shown in the output, this is indicating that this row relates to treatment=2 and sex=2, and hence that the intercept (baseline level) is where treatment=1 and sex=1 (the first level). See the next section for how to interpret the estimates and change this `contr.` option.
+So far we've learnt that it is good practice to always have binary variables set as factors (or as a 0 and 1), and that we should specify what method we want R to use for doing any contrasts (e.g. `contr.treatment`). You can specify different contrast methods for each variable by including them in a list in the model. It can sometimes be hard to see what contrast method R is using, so best to always specify this in your model (e.g. `contrasts = list(trt01pn = "contr.treatment", sex="contr.sum")`. It is helpful to view what the contrasts look like before you select which to use.
+
+A factor with 2 levels (2 treatments) using `contr.treatment` would set the first level to be the reference (0) and contrast the second level to the baseline.
+
+A factor with 4 levels (4 treatments) using `contr.treatment` would set the first level to be the reference (0), you would see 3 parameters in the model with 3 estimates corresponding to the increase in log-odds attributable to contrasting the second, third or fourth level to the baseline.
+
+```{r}
+
+contr.treatment(2)
+contr.treatment(4)
+```
+
+Below we apply `contr.treatment` to our trt01pn and sex variables. Note: how the variables trt01pn2 and sex2 are now shown in the output, this is indicating that these rows relates to treatment=2 and sex=2. See the next section for how to interpret the estimates and change this `contr.` option.
 
 ```{r}
 
@@ -65,20 +76,17 @@ lung$sex<-as.factor(lung$sex)
 m1 <- glm(wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, 
           data = lung, 
           family = binomial(link="logit"),
-          contrasts = list(trt01pn = "contr.treatment"))
+          contrasts = list(trt01pn = "contr.treatment", sex = "contr.treatment"))
 summary(m1)
-contr.treatment(2)
-
 ```
 
 # How R parameterizes your variables in the model
 
--   contr.treatment - \[default\] sets the first level to be the baseline and contrasts each other level with the baseline. For example, based on the model shown below. Log-odds for Treatment 2 = -2.64153 + 0.38876 =-2.25277 , Log-odds for Treatment 1=-2.64153\
-    use `contr.treatment(2)` to show the contrast you are using. Increase levels as applicable to the parameter in your model.
+-   contr.treatment - \[default\] sets the first level to be the reference and contrasts each other level with the baseline. For example, based on the model shown below. Log-odds for Treatment 2 = -2.64153 + 0.38876 =-2.25277 , Log-odds for Treatment 1=-2.64153
 
--   contr.sum - sets the last level to be the baseline and compares the mean of the dependent variable for a given level to the overall mean of the dependent variable. For treatment 1, the intercept + trt01pn1 estimate. For Treatment 2, the intercept - trt01pn1 estimate.\
+-   contr.sum - sets the last level to be the reference and compares the mean of the dependent variable for a given level to the overall mean of the dependent variable. For treatment 1, the intercept + trt01pn1 estimate. For Treatment 2, the intercept - trt01pn1 estimate.\
     Log-odds for Treatment 2 = -2.44715 - - 0.19438 = -2.25277, Log-odds for Treatment 1=-2.44715 - 0.19438 = -2.64153\
-    use `contr.sum(2)` to show the contrast you are using. Increase levels as applicable to the parameter in your model.
+    use `contr.sum(2)` to show the contrast you are using and hence how to interpret your estimates. Increase levels as applicable to the variable being fitted in your model.
 
 -   exponential (ratio log-odds) = odds ratio. eg. -2.25277/ -2.64153 = 0.85283 Treatment 2 is 0.85 times as likely (eg. 15% less likely) to have weight gain compared to Treatment 1.
 
@@ -87,14 +95,14 @@ contr.treatment(2)
 ma <- glm(wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, 
           data = lung, 
           family = binomial(link="logit"),
-          contrasts = list(trt01pn = "contr.treatment"))
+          contrasts = list(trt01pn = "contr.treatment", sex = "contr.treatment"))
 summary(ma)
 contr.treatment(2)
 
 mb <- glm(wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, 
           data = lung, 
           family = binomial(link="logit"),
-          contrasts = list(trt01pn = "contr.sum"))
+          contrasts = list(trt01pn = "contr.sum", sex = "contr.treatment"))
 summary(mb)
 contr.sum(2)
 
