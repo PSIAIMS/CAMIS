@@ -48,13 +48,13 @@ summary(m1)
 
 R by default sets the first category as the baseline category, hence trt01pn =1 and sex =1 are the baseline level, and other levels of the variable are contrasted to this level. This is using `contr.treatment` option (more information on this later!). The estimate for those variables (0.3887 and 0.8321) are the increase in the log-odds of being of receiving treatment 2 vs 1, and of being of sex=2 vs 1. The exponential of the estimate is the odds ratio. For example, exp(0.3887)=1.475, hence Treatment 2 is 1.475 times as likely to have weight gain compared to Treatment 1.
 
-The intercept represents the baseline log odds of the outcome when all predictor variables are set to zero. In the above model, we have variables treatment and sex, each coded as 1 and 2. Currently R is not treating these as binary factors, instead it just knows them as a 1 and 2, and hence the intercept is where treatment=0 and sex=0. In the context of our model, this doesn't make sense as you can't have a zero gender and zero treatment (but it may not matter as we rarely look at the intercept term anyway!)
+The intercept represents the baseline log odds of the outcome when all predictor variables are set to zero. In the above model, we have variables treatment and sex, each coded as 1 and 2. Currently R is not treating these as binary factors, instead R thinks they are a continuous variable, and hence the intercept is where treatment=0 and sex=0. In the context of our model, this doesn't make sense as you can't have a zero gender and zero treatment (but it may not matter as we rarely look at the intercept term anyway!)
 
 However, if you want to have an interpretable intercept term (and if you want to match SAS output for intercept!), then it's important to ensure any factors in your model as fitted as such in R. You can do this using: `lung$trt01pn<-as.factor(lung$trt01pn)` or by changing the variable to a 0 and 1. Note if you are using the same `contr.treatment` option, then this only affects the intercept estimate not the variable estimates.
 
-# Modelling factors correctly and Interpretation of the Intercept
+## Modelling factors correctly and Interpretation of the Intercept
 
-So far we've learnt that it is good practice to always have binary variables set as factors (or as a 0 and 1), and that we should specify what method we want R to use for doing any contrasts (e.g. `contr.treatment`). You can specify different contrast methods for each variable by including them in a list in the model. It can sometimes be hard to see what contrast method R is using, so best to always specify this in your model (e.g. `contrasts = list(trt01pn = "contr.treatment", sex="contr.sum")`. It is helpful to view what the contrasts look like before you select which to use.
+So far we've learnt that it is good practice to always have binary and categorical variables set as factors, and that we should specify what method we want R to use for doing any contrasts (e.g. `contr.treatment`). You can specify different contrast methods for each variable by including them in a list in the model. It can sometimes be hard to see what contrast method R is using, so best to always specify this in your model (e.g. `contrasts = list(trt01pn = "contr.treatment", sex="contr.sum")`. It is helpful to view what the contrasts look like before you select which to use.
 
 A factor with 2 levels (2 treatments) using `contr.treatment` would set the first level to be the reference (0) and contrast the second level to the baseline.
 
@@ -82,13 +82,17 @@ m1 <- glm(wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal,
 summary(m1)
 ```
 
-# How R parameterizes your variables in the model
+# Model parameter estimates
+
+The model summary contains the parameter estimates $\beta_j$ for each explanatory variable $x_j$, corresponding to the log-odds for the response variable to take the value $1$, conditional on all other explanatory variables remaining constant. For better interpretation, we can exponentiate these estimates, to obtain estimates for the odds instead and provide 95% confidence intervals.
+
+## How R parameterizes your variables in the model
 
 -   contr.treatment - \[default\] sets the first level to be the reference and contrasts each other level with the baseline. For example, based on the model shown below. Log-odds for Treatment 2 = -2.64153 + 0.38876 =-2.25277 , Log-odds for Treatment 1=-2.64153
 
 -   contr.sum - sets the last level to be the reference and compares the mean of the dependent variable for a given level to the overall mean of the dependent variable. For treatment 1, the intercept + trt01pn1 estimate. For Treatment 2, the intercept - trt01pn1 estimate.\
     Log-odds for Treatment 2 = -2.44715 - - 0.19438 = -2.25277, Log-odds for Treatment 1=-2.44715 - 0.19438 = -2.64153\
-    use `contr.sum(2)` to show the contrast you are using and hence how to interpret your estimates. Increase levels as applicable to the variable being fitted in your model.
+    use `contr.sum(2)` to show the contrast you are using and hence how to interpret your estimates.
 
 -   exponential (ratio log-odds) = odds ratio. eg. -2.25277/ -2.64153 = 0.85283 Treatment 2 is 0.85 times as likely (eg. 15% less likely) to have weight gain compared to Treatment 1.
 
@@ -110,9 +114,9 @@ contr.sum(2)
 
 ```
 
-# Model parameter estimates
+## Calculation of confidence intervals
 
-The model summary contains the parameter estimates $\beta_j$ for each explanatory variable $x_j$, corresponding to the log-odds for the response variable to take the value $1$, conditional on all other explanatory variables remaining constant. For better interpretation, we can exponentiate these estimates, to obtain estimates for the odds instead and provide 95% confidence intervals.
+Using the above model, you can output the estimates and confidence intervals using coef() and confint() and exponential back transforming using exp(). NOTE: that there are two types of confidence intervals that you can calculate. Function `confint.default` gives the Wald confidence limits, which is the default option in SAS `PROC LOGISTIC` procedure; whereas `confint` gives the profile-likelihood limits.
 
 ```{r}
 # model coefficients summary
@@ -127,8 +131,6 @@ cbind(est = exp(coef(m1)),
 
 
 ```
-
-NOTE: that there are two types of confidence intervals that you can calculate. Function `confint.default` gives the Wald confidence limits, which is the default option in SAS `PROC LOGISTIC` procedure; whereas `confint` gives the profile-likelihood limits.
 
 # Comparing 2 models
 
@@ -158,17 +160,15 @@ new_pt$sex<-as.factor(new_pt$sex)
 predict(m1, new_pt, type = "response")
 ```
 
-# Creating Treatment Contrasts for 2 or more treatments
+# Creating Treatment Contrasts for 2 treatments
 
 ## \<emmeans\>
 
-Here we will use emmeans to output the log-odds of weight gain for treatment 1 and treatment 2.
+Here we will use \<emmeans\> to output the log-odds of weight gain for treatment 1 and treatment 2.
 
 NOTE as per the output, these are on the logit scale, you need to exponentiate to get the odds (or use the type="response" option).
 
 The treatment comparison can also be output on the log-odds or back transformed scale as shown below.
-
-In Summary: Treatment 2 is on average 1.48 times as likely to have weight gain compared to treatment 1, however this is not statistically significant (95% Confidence interval = 0.703-3.100, p-value= 0.3039).
 
 ```{r}
 m3 <- glm(wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, 
@@ -198,17 +198,37 @@ confint(trtdiff, type="response")
 
 ```
 
-See the emmeans vignette on creating bespoke contrasts [here](Comparisons and contrasts in emmeans). If you want to compare Dose 1 + Dose 2 vs Dose 3, then it can get quite complex. However, gmodels provides easy code for this.
+In Summary: Treatment 2 is on average 1.48 times as likely to have weight gain compared to treatment 1, however this is not statistically significant (95% Confidence interval = 0.703-3.100, p-value= 0.3039).
+
+# Creating Treatment Contrasts for 2 or more treatments
+
+\<emmeans\> can also be used to do specific contrasts, instead of investigating treatment (active vs placebo), suppose we now want to look at 2 dose groups vs placebo.
+
+We have a 3 level treatment variable (dose_id), where 1=10mg, 2=20mg doses for active treatment and 3= placebo which is 0mg. We want to test the null hypothesis that 0.5*dose10mg + 0.5* dose20mg - placebo = 0. That there is not difference between the doses.
+
+```{r}
+
+lung2<-lung |> 
+    mutate(dose_id2 = as.factor(lung$dose_id))
+
+m3 <- glm (wt_catn ~ dose_id2 + age + sex + ph.ecog + meal.cal, 
+                     data = lung2, 
+                     family = binomial(link="logit"),
+                     contrasts = list(dose_id2 = "contr.treatment"))
+#log-odds for each treatment
+lsm3<-emmeans(m3,"dose_id2")
+lsm3
+contrast (lsm3,list(AveDose_vs_pbo=c(0.5,0.5,-1)))
+confint(contrast (lsm3,list(AveDose_vs_pbo=c(0.5,0.5,-1))))
+```
+
+Here we found that on average there is -0.41 times the risk of weight gain on active vs placebo but that this is not statisticallly significantly different (95% CI -1.15 to 0.335, p-value = 0.2813).
+
+See the emmeans vignette on creating bespoke contrasts [here](Comparisons%20and%20contrasts%20in%20emmeans).
 
 ## \<gmodels\>
 
-To create contrasts, you can also use the `fit.contrast()` function from the `gmodels` package.
-
-This can be used with lm and glm objects:
-
-Here if we use the 3 level treatment variable (dose_id), we have 1=10mg, 2=20mg doses for active treatment and then 3= placebo which is 0mg.
-
-You would fit the model as above, followed by `fit.contrast()`. This is effective testing the null hypothesis that 0.5*dose10mg + 0.5* dose20mg - placebo = 0.
+\<gmodels\> is an alternative package to create contrasts instead of \<emmeans\>, you can use the `fit.contrast()` function from the `gmodels` package. The same result is obtained as \<emmeans\>.
 
 ```{r}
 
