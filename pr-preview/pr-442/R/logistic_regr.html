@@ -228,15 +228,23 @@ window.Quarto = {
    
   <ul>
   <li><a href="#example-lung-cancer-data" id="toc-example-lung-cancer-data" class="nav-link active" data-scroll-target="#example-lung-cancer-data">Example: Lung Cancer Data</a></li>
-  <li><a href="#model-fit" id="toc-model-fit" class="nav-link" data-scroll-target="#model-fit">Model Fit</a></li>
+  <li><a href="#model-fit" id="toc-model-fit" class="nav-link" data-scroll-target="#model-fit">Model Fit</a>
+  <ul class="collapse">
   <li><a href="#modelling-factors-correctly-and-interpretation-of-the-intercept" id="toc-modelling-factors-correctly-and-interpretation-of-the-intercept" class="nav-link" data-scroll-target="#modelling-factors-correctly-and-interpretation-of-the-intercept">Modelling factors correctly and Interpretation of the Intercept</a></li>
+  </ul></li>
+  <li><a href="#model-parameter-estimates" id="toc-model-parameter-estimates" class="nav-link" data-scroll-target="#model-parameter-estimates">Model parameter estimates</a>
+  <ul class="collapse">
   <li><a href="#how-r-parameterizes-your-variables-in-the-model" id="toc-how-r-parameterizes-your-variables-in-the-model" class="nav-link" data-scroll-target="#how-r-parameterizes-your-variables-in-the-model">How R parameterizes your variables in the model</a></li>
-  <li><a href="#model-parameter-estimates" id="toc-model-parameter-estimates" class="nav-link" data-scroll-target="#model-parameter-estimates">Model parameter estimates</a></li>
+  <li><a href="#calculation-of-confidence-intervals" id="toc-calculation-of-confidence-intervals" class="nav-link" data-scroll-target="#calculation-of-confidence-intervals">Calculation of confidence intervals</a></li>
+  </ul></li>
   <li><a href="#comparing-2-models" id="toc-comparing-2-models" class="nav-link" data-scroll-target="#comparing-2-models">Comparing 2 models</a></li>
   <li><a href="#predicting-likelihood-of-response-for-new-patients" id="toc-predicting-likelihood-of-response-for-new-patients" class="nav-link" data-scroll-target="#predicting-likelihood-of-response-for-new-patients">Predicting likelihood of response for new patients</a></li>
-  <li><a href="#creating-treatment-contrasts-for-2-or-more-treatments" id="toc-creating-treatment-contrasts-for-2-or-more-treatments" class="nav-link" data-scroll-target="#creating-treatment-contrasts-for-2-or-more-treatments">Creating Treatment Contrasts for 2 or more treatments</a>
+  <li><a href="#creating-treatment-contrasts-for-2-treatments" id="toc-creating-treatment-contrasts-for-2-treatments" class="nav-link" data-scroll-target="#creating-treatment-contrasts-for-2-treatments">Creating Treatment Contrasts for 2 treatments</a>
   <ul class="collapse">
   <li><a href="#emmeans" id="toc-emmeans" class="nav-link" data-scroll-target="#emmeans">&lt;emmeans&gt;</a></li>
+  </ul></li>
+  <li><a href="#creating-treatment-contrasts-for-2-or-more-treatments" id="toc-creating-treatment-contrasts-for-2-or-more-treatments" class="nav-link" data-scroll-target="#creating-treatment-contrasts-for-2-or-more-treatments">Creating Treatment Contrasts for 2 or more treatments</a>
+  <ul class="collapse">
   <li><a href="#gmodels" id="toc-gmodels" class="nav-link" data-scroll-target="#gmodels">&lt;gmodels&gt;</a></li>
   </ul></li>
   <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">Reference</a></li>
@@ -333,12 +341,11 @@ Number of Fisher Scoring iterations: 4</code></pre>
 </div>
 </div>
 <p>R by default sets the first category as the baseline category, hence trt01pn =1 and sex =1 are the baseline level, and other levels of the variable are contrasted to this level. This is using <code>contr.treatment</code> option (more information on this later!). The estimate for those variables (0.3887 and 0.8321) are the increase in the log-odds of being of receiving treatment 2 vs 1, and of being of sex=2 vs 1. The exponential of the estimate is the odds ratio. For example, exp(0.3887)=1.475, hence Treatment 2 is 1.475 times as likely to have weight gain compared to Treatment 1.</p>
-<p>The intercept represents the baseline log odds of the outcome when all predictor variables are set to zero. In the above model, we have variables treatment and sex, each coded as 1 and 2. Currently R is not treating these as binary factors, instead it just knows them as a 1 and 2, and hence the intercept is where treatment=0 and sex=0. In the context of our model, this doesn’t make sense as you can’t have a zero gender and zero treatment (but it may not matter as we rarely look at the intercept term anyway!)</p>
+<p>The intercept represents the baseline log odds of the outcome when all predictor variables are set to zero. In the above model, we have variables treatment and sex, each coded as 1 and 2. Currently R is not treating these as binary factors, instead R thinks they are a continuous variable, and hence the intercept is where treatment=0 and sex=0. In the context of our model, this doesn’t make sense as you can’t have a zero gender and zero treatment (but it may not matter as we rarely look at the intercept term anyway!)</p>
 <p>However, if you want to have an interpretable intercept term (and if you want to match SAS output for intercept!), then it’s important to ensure any factors in your model as fitted as such in R. You can do this using: <code>lung$trt01pn&lt;-as.factor(lung$trt01pn)</code> or by changing the variable to a 0 and 1. Note if you are using the same <code>contr.treatment</code> option, then this only affects the intercept estimate not the variable estimates.</p>
-</section>
-<section id="modelling-factors-correctly-and-interpretation-of-the-intercept" class="level1">
-<h1>Modelling factors correctly and Interpretation of the Intercept</h1>
-<p>So far we’ve learnt that it is good practice to always have binary variables set as factors (or as a 0 and 1), and that we should specify what method we want R to use for doing any contrasts (e.g.&nbsp;<code>contr.treatment</code>). You can specify different contrast methods for each variable by including them in a list in the model. It can sometimes be hard to see what contrast method R is using, so best to always specify this in your model (e.g.&nbsp;<code>contrasts = list(trt01pn = "contr.treatment", sex="contr.sum")</code>. It is helpful to view what the contrasts look like before you select which to use.</p>
+<section id="modelling-factors-correctly-and-interpretation-of-the-intercept" class="level2">
+<h2 class="anchored" data-anchor-id="modelling-factors-correctly-and-interpretation-of-the-intercept">Modelling factors correctly and Interpretation of the Intercept</h2>
+<p>So far we’ve learnt that it is good practice to always have binary and categorical variables set as factors, and that we should specify what method we want R to use for doing any contrasts (e.g.&nbsp;<code>contr.treatment</code>). You can specify different contrast methods for each variable by including them in a list in the model. It can sometimes be hard to see what contrast method R is using, so best to always specify this in your model (e.g.&nbsp;<code>contrasts = list(trt01pn = "contr.treatment", sex="contr.sum")</code>. It is helpful to view what the contrasts look like before you select which to use.</p>
 <p>A factor with 2 levels (2 treatments) using <code>contr.treatment</code> would set the first level to be the reference (0) and contrast the second level to the baseline.</p>
 <p>A factor with 4 levels (4 treatments) using <code>contr.treatment</code> would set the first level to be the reference (0), you would see 3 parameters in the model with 3 estimates corresponding to the increase in log-odds attributable to contrasting the second, third or fourth level to the baseline.</p>
 <div class="cell">
@@ -398,13 +405,17 @@ Number of Fisher Scoring iterations: 4</code></pre>
 </div>
 </div>
 </section>
-<section id="how-r-parameterizes-your-variables-in-the-model" class="level1">
-<h1>How R parameterizes your variables in the model</h1>
+</section>
+<section id="model-parameter-estimates" class="level1">
+<h1>Model parameter estimates</h1>
+<p>The model summary contains the parameter estimates <span class="math inline">\(\beta_j\)</span> for each explanatory variable <span class="math inline">\(x_j\)</span>, corresponding to the log-odds for the response variable to take the value <span class="math inline">\(1\)</span>, conditional on all other explanatory variables remaining constant. For better interpretation, we can exponentiate these estimates, to obtain estimates for the odds instead and provide 95% confidence intervals.</p>
+<section id="how-r-parameterizes-your-variables-in-the-model" class="level2">
+<h2 class="anchored" data-anchor-id="how-r-parameterizes-your-variables-in-the-model">How R parameterizes your variables in the model</h2>
 <ul>
 <li><p>contr.treatment - [default] sets the first level to be the reference and contrasts each other level with the baseline. For example, based on the model shown below. Log-odds for Treatment 2 = -2.64153 + 0.38876 =-2.25277 , Log-odds for Treatment 1=-2.64153</p></li>
 <li><p>contr.sum - sets the last level to be the reference and compares the mean of the dependent variable for a given level to the overall mean of the dependent variable. For treatment 1, the intercept + trt01pn1 estimate. For Treatment 2, the intercept - trt01pn1 estimate.<br>
 Log-odds for Treatment 2 = -2.44715 - - 0.19438 = -2.25277, Log-odds for Treatment 1=-2.44715 - 0.19438 = -2.64153<br>
-use <code>contr.sum(2)</code> to show the contrast you are using and hence how to interpret your estimates. Increase levels as applicable to the variable being fitted in your model.</p></li>
+use <code>contr.sum(2)</code> to show the contrast you are using and hence how to interpret your estimates.</p></li>
 <li><p>exponential (ratio log-odds) = odds ratio. eg. -2.25277/ -2.64153 = 0.85283 Treatment 2 is 0.85 times as likely (eg. 15% less likely) to have weight gain compared to Treatment 1.</p></li>
 </ul>
 <div class="cell">
@@ -486,9 +497,9 @@ Number of Fisher Scoring iterations: 4</code></pre>
 </div>
 </div>
 </section>
-<section id="model-parameter-estimates" class="level1">
-<h1>Model parameter estimates</h1>
-<p>The model summary contains the parameter estimates <span class="math inline">\(\beta_j\)</span> for each explanatory variable <span class="math inline">\(x_j\)</span>, corresponding to the log-odds for the response variable to take the value <span class="math inline">\(1\)</span>, conditional on all other explanatory variables remaining constant. For better interpretation, we can exponentiate these estimates, to obtain estimates for the odds instead and provide 95% confidence intervals.</p>
+<section id="calculation-of-confidence-intervals" class="level2">
+<h2 class="anchored" data-anchor-id="calculation-of-confidence-intervals">Calculation of confidence intervals</h2>
+<p>Using the above model, you can output the estimates and confidence intervals using coef() and confint() and exponential back transforming using exp(). NOTE: that there are two types of confidence intervals that you can calculate. Function <code>confint.default</code> gives the Wald confidence limits, which is the default option in SAS <code>PROC LOGISTIC</code> procedure; whereas <code>confint</code> gives the profile-likelihood limits.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># model coefficients summary</span></span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1)<span class="sc">$</span>coefficients</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -529,7 +540,7 @@ ph.ecog     0.68635572 0.405659156 1.147452
 meal.cal    1.00085035 0.999978126 1.001761</code></pre>
 </div>
 </div>
-<p>NOTE: that there are two types of confidence intervals that you can calculate. Function <code>confint.default</code> gives the Wald confidence limits, which is the default option in SAS <code>PROC LOGISTIC</code> procedure; whereas <code>confint</code> gives the profile-likelihood limits.</p>
+</section>
 </section>
 <section id="comparing-2-models" class="level1">
 <h1>Comparing 2 models</h1>
@@ -593,14 +604,13 @@ Model 2: wt_catn ~ trt01pn + sex + ph.ecog + meal.cal
 </div>
 </div>
 </section>
-<section id="creating-treatment-contrasts-for-2-or-more-treatments" class="level1">
-<h1>Creating Treatment Contrasts for 2 or more treatments</h1>
+<section id="creating-treatment-contrasts-for-2-treatments" class="level1">
+<h1>Creating Treatment Contrasts for 2 treatments</h1>
 <section id="emmeans" class="level2">
 <h2 class="anchored" data-anchor-id="emmeans">&lt;emmeans&gt;</h2>
-<p>Here we will use emmeans to output the log-odds of weight gain for treatment 1 and treatment 2.</p>
+<p>Here we will use &lt;emmeans&gt; to output the log-odds of weight gain for treatment 1 and treatment 2.</p>
 <p>NOTE as per the output, these are on the logit scale, you need to exponentiate to get the odds (or use the type=“response” option).</p>
 <p>The treatment comparison can also be output on the log-odds or back transformed scale as shown below.</p>
-<p>In Summary: Treatment 2 is on average 1.48 times as likely to have weight gain compared to treatment 1, however this is not statistically significant (95% Confidence interval = 0.703-3.100, p-value= 0.3039).</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>m3 <span class="ot">&lt;-</span> <span class="fu">glm</span>(wt_catn <span class="sc">~</span> trt01pn <span class="sc">+</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog <span class="sc">+</span> meal.cal, </span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> lung, </span>
@@ -697,14 +707,13 @@ Confidence level used: 0.95
 Intervals are back-transformed from the log odds ratio scale </code></pre>
 </div>
 </div>
-<p>See the emmeans vignette on creating bespoke contrasts <a href="Comparisons and contrasts in emmeans">here</a>. If you want to compare Dose 1 + Dose 2 vs Dose 3, then it can get quite complex. However, gmodels provides easy code for this.</p>
+<p>In Summary: Treatment 2 is on average 1.48 times as likely to have weight gain compared to treatment 1, however this is not statistically significant (95% Confidence interval = 0.703-3.100, p-value= 0.3039).</p>
 </section>
-<section id="gmodels" class="level2">
-<h2 class="anchored" data-anchor-id="gmodels">&lt;gmodels&gt;</h2>
-<p>To create contrasts, you can also use the <code>fit.contrast()</code> function from the <code>gmodels</code> package.</p>
-<p>This can be used with lm and glm objects:</p>
-<p>Here if we use the 3 level treatment variable (dose_id), we have 1=10mg, 2=20mg doses for active treatment and then 3= placebo which is 0mg.</p>
-<p>You would fit the model as above, followed by <code>fit.contrast()</code>. This is effective testing the null hypothesis that 0.5<em>dose10mg + 0.5</em> dose20mg - placebo = 0.</p>
+</section>
+<section id="creating-treatment-contrasts-for-2-or-more-treatments" class="level1">
+<h1>Creating Treatment Contrasts for 2 or more treatments</h1>
+<p>&lt;emmeans&gt; can also be used to do specific contrasts, instead of investigating treatment (active vs placebo), suppose we now want to look at 2 dose groups vs placebo.</p>
+<p>We have a 3 level treatment variable (dose_id), where 1=10mg, 2=20mg doses for active treatment and 3= placebo which is 0mg. We want to test the null hypothesis that 0.5<em>dose10mg + 0.5</em> dose20mg - placebo = 0. That there is not difference between the doses.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>lung2<span class="ot">&lt;-</span>lung <span class="sc">|&gt;</span> </span>
 <span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">dose_id2 =</span> <span class="fu">as.factor</span>(lung<span class="sc">$</span>dose_id))</span>
@@ -713,8 +722,52 @@ Intervals are back-transformed from the log odds ratio scale </code></pre>
 <span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>                     <span class="at">data =</span> lung2, </span>
 <span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>),</span>
 <span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>                     <span class="at">contrasts =</span> <span class="fu">list</span>(<span class="at">dose_id2 =</span> <span class="st">"contr.treatment"</span>))</span>
-<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a><span class="fu">fit.contrast</span> (m3,<span class="st">'dose_id2'</span>,<span class="fu">c</span>(<span class="fl">0.5</span>,<span class="fl">0.5</span>,<span class="sc">-</span><span class="dv">1</span>),<span class="at">conf.int=</span><span class="fl">0.95</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a><span class="co">#log-odds for each treatment</span></span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>lsm3<span class="ot">&lt;-</span><span class="fu">emmeans</span>(m3,<span class="st">"dose_id2"</span>)</span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>lsm3</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> dose_id2 emmean    SE  df asymp.LCL asymp.UCL
+ 1        -0.903 0.296 Inf     -1.48   -0.3228
+ 2        -1.201 0.348 Inf     -1.88   -0.5201
+ 3        -0.643 0.302 Inf     -1.23   -0.0518
+
+Results are averaged over the levels of: sex 
+Results are given on the logit (not the response) scale. 
+Confidence level used: 0.95 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">contrast</span> (lsm3,<span class="fu">list</span>(<span class="at">AveDose_vs_pbo=</span><span class="fu">c</span>(<span class="fl">0.5</span>,<span class="fl">0.5</span>,<span class="sc">-</span><span class="dv">1</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> contrast       estimate   SE  df z.ratio p.value
+ AveDose_vs_pbo    -0.41 0.38 Inf  -1.078  0.2813
+
+Results are averaged over the levels of: sex 
+Results are given on the log odds ratio (not the response) scale. </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">confint</span>(<span class="fu">contrast</span> (lsm3,<span class="fu">list</span>(<span class="at">AveDose_vs_pbo=</span><span class="fu">c</span>(<span class="fl">0.5</span>,<span class="fl">0.5</span>,<span class="sc">-</span><span class="dv">1</span>))))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> contrast       estimate   SE  df asymp.LCL asymp.UCL
+ AveDose_vs_pbo    -0.41 0.38 Inf     -1.15     0.335
+
+Results are averaged over the levels of: sex 
+Results are given on the log odds ratio (not the response) scale. 
+Confidence level used: 0.95 </code></pre>
+</div>
+</div>
+<p>Here we found that on average there is -0.41 times the risk of weight gain on active vs placebo but that this is not statisticallly significantly different (95% CI -1.15 to 0.335, p-value = 0.2813).</p>
+<p>See the emmeans vignette on creating bespoke contrasts <a href="Comparisons and contrasts in emmeans">here</a>.</p>
+<section id="gmodels" class="level2">
+<h2 class="anchored" data-anchor-id="gmodels">&lt;gmodels&gt;</h2>
+<p>&lt;gmodels&gt; is an alternative package to create contrasts instead of &lt;emmeans&gt;, you can use the <code>fit.contrast()</code> function from the <code>gmodels</code> package. The same result is obtained as &lt;emmeans&gt;.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>lung2<span class="ot">&lt;-</span>lung <span class="sc">|&gt;</span> </span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">dose_id2 =</span> <span class="fu">as.factor</span>(lung<span class="sc">$</span>dose_id))</span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>m3 <span class="ot">&lt;-</span> <span class="fu">glm</span> (wt_catn <span class="sc">~</span> dose_id2 <span class="sc">+</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog <span class="sc">+</span> meal.cal, </span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>                     <span class="at">data =</span> lung2, </span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">"logit"</span>),</span>
+<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a>                     <span class="at">contrasts =</span> <span class="fu">list</span>(<span class="at">dose_id2 =</span> <span class="st">"contr.treatment"</span>))</span>
+<span id="cb54-8"><a href="#cb54-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-9"><a href="#cb54-9" aria-hidden="true" tabindex="-1"></a><span class="fu">fit.contrast</span> (m3,<span class="st">'dose_id2'</span>,<span class="fu">c</span>(<span class="fl">0.5</span>,<span class="fl">0.5</span>,<span class="sc">-</span><span class="dv">1</span>),<span class="at">conf.int=</span><span class="fl">0.95</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                            Estimate Std. Error   z value  Pr(&gt;|z|)  lower CI
 dose_id2 c=( 0.5 0.5 -1 ) -0.4096323  0.3801683 -1.077502 0.2812558 -1.160322
@@ -727,12 +780,12 @@ dose_id2 c=( 0.5 0.5 -1 ) 0.3410574</code></pre>
 <section id="reference" class="level1">
 <h1>Reference</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="co">#\| echo: false</span></span>
-<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a><span class="co">#List all the packages needed</span></span>
-<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>si <span class="ot">&lt;-</span> sessioninfo<span class="sc">::</span><span class="fu">session_info</span>(<span class="fu">c</span>(<span class="st">'dplyr'</span>,<span class="st">'emmeans'</span>,<span class="st">'gmodels'</span>)) </span>
-<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>si</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="co">#\| echo: false</span></span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a><span class="co">#List all the packages needed</span></span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>si <span class="ot">&lt;-</span> sessioninfo<span class="sc">::</span><span class="fu">session_info</span>(<span class="fu">c</span>(<span class="st">'dplyr'</span>,<span class="st">'emmeans'</span>,<span class="st">'gmodels'</span>)) </span>
+<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a>si</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>─ Session info ───────────────────────────────────────────────────────────────
  setting  value
