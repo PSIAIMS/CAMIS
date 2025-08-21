@@ -207,12 +207,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#getting-started" id="toc-getting-started" class="nav-link" data-scroll-target="#getting-started"><strong>Getting Started</strong></a></li>
   <li><a href="#the-model" id="toc-the-model" class="nav-link" data-scroll-target="#the-model">The Model</a></li>
-  <li><a href="#the-results" id="toc-the-results" class="nav-link" data-scroll-target="#the-results">The Results</a></li>
   <li><a href="#sums-of-squares-tables" id="toc-sums-of-squares-tables" class="nav-link" data-scroll-target="#sums-of-squares-tables">Sums of Squares Tables</a></li>
-  <li><a href="#rstatix" id="toc-rstatix" class="nav-link" data-scroll-target="#rstatix">rstatix</a></li>
-  <li><a href="#car" id="toc-car" class="nav-link" data-scroll-target="#car">car</a></li>
   <li><a href="#contrasts" id="toc-contrasts" class="nav-link" data-scroll-target="#contrasts">Contrasts</a></li>
   </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 </nav>
     </div>
@@ -256,7 +254,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="the-model" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="the-model">The Model</h3>
-<p>For this example, we’re testing for a significant difference in <code>stem_length</code> using ANOVA. In R, we’re using <code>lm()</code> to run the ANOVA, and then using <code>broom::glance()</code> and <code>broom::tidy()</code> to view the results in a table format.</p>
+<p>For this example, we’re testing for a significant difference in <code>stem_length</code> using ANOVA. Before getting the sums of squares and associated p-values from the ANOVA, we need to fit a linear model. In R, we’re using <code>lm()</code> to fit the model, and then using <code>broom::glance()</code> and <code>broom::tidy()</code> to view the results in a table format.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>lm_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> drug <span class="sc">+</span> disease <span class="sc">+</span> drug<span class="sc">*</span>disease, df_disease)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
@@ -294,343 +292,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </section>
-<section id="the-results" class="level3 unnumbered">
-<h3 class="unnumbered anchored" data-anchor-id="the-results">The Results</h3>
-<p>You’ll see that R print the individual results for each level of the drug and disease interaction. We can get the combined F table in R using the <code>anova()</code> function on the model object.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>lm_model <span class="sc">%&gt;%</span> </span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">anova</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidy</span>() </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 4 × 6
-  term            df sumsq meansq statistic    p.value
-  &lt;chr&gt;        &lt;int&gt; &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt;
-1 drug             3 3133.  1044.      9.46  0.0000558
-2 disease          2  419.   209.      1.90  0.162    
-3 drug:disease     6  707.   118.      1.07  0.396    
-4 Residuals       46 5081.   110.     NA    NA        </code></pre>
-</div>
-</div>
-<p>We can add a <code>Total</code> row, by using <code>add_row</code> and calculating the sum of the degrees of freedom and sum of squares.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>lm_model <span class="sc">%&gt;%</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">anova</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidy</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_row</span>(<span class="at">term =</span> <span class="st">"Total"</span>, <span class="at">df =</span> <span class="fu">sum</span>(.<span class="sc">$</span>df), <span class="at">sumsq =</span> <span class="fu">sum</span>(.<span class="sc">$</span>sumsq)) <span class="sc">%&gt;%</span> </span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<table class="caption-top table table-sm table-striped small">
-<thead>
-<tr class="header">
-<th style="text-align: left;">term</th>
-<th style="text-align: right;">df</th>
-<th style="text-align: right;">sumsq</th>
-<th style="text-align: right;">meansq</th>
-<th style="text-align: right;">statistic</th>
-<th style="text-align: right;">p.value</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">drug</td>
-<td style="text-align: right;">3</td>
-<td style="text-align: right;">3133.2385</td>
-<td style="text-align: right;">1044.4128</td>
-<td style="text-align: right;">9.455761</td>
-<td style="text-align: right;">0.0000558</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">disease</td>
-<td style="text-align: right;">2</td>
-<td style="text-align: right;">418.8337</td>
-<td style="text-align: right;">209.4169</td>
-<td style="text-align: right;">1.895990</td>
-<td style="text-align: right;">0.1617201</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">drug:disease</td>
-<td style="text-align: right;">6</td>
-<td style="text-align: right;">707.2663</td>
-<td style="text-align: right;">117.8777</td>
-<td style="text-align: right;">1.067225</td>
-<td style="text-align: right;">0.3958458</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Residuals</td>
-<td style="text-align: right;">46</td>
-<td style="text-align: right;">5080.8167</td>
-<td style="text-align: right;">110.4525</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">NA</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Total</td>
-<td style="text-align: right;">57</td>
-<td style="text-align: right;">9340.1552</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">NA</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</section>
 <section id="sums-of-squares-tables" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="sums-of-squares-tables">Sums of Squares Tables</h3>
-</section>
-<section id="rstatix" class="level3">
-<h3 class="anchored" data-anchor-id="rstatix">rstatix</h3>
-<p>Unfortunately, it is not easy to get the various types of sums of squares calculations in using functions from base R. However, the <code>rstatix</code> package offers a solution to produce these various sums of squares tables. For each type, you supply the original dataset and model to the. <code>anova_test</code> function, then specify the type and se <code>detailed = TRUE</code>.</p>
 <section id="type-i" class="level4">
 <h4 class="anchored" data-anchor-id="type-i">Type I</h4>
+<p>Type I sums of square, also known as sequential ANOVA, is a method of analysis of variance where model terms are assessed sequentially. In this approach, the contribution of each factor or variable to the model is evaluated in the order they are specified, with each factor being adjusted for the effects of those that precede it. This means that the significance of a factor can depend on the factors that have already been included in the model. Type I ANOVA is useful for hierarchical models, where the sequence of entering factors into the model is meaningful or based on theoretical considerations. While possible to use on unbalanced designs it is often not testing the hypothesis of interest.</p>
+<p>For a model with two factors, A and B (in that order) the sums of squares will be tested like this: - SS(A) for factor A. - SS(B | A) for factor B. - SS(AB | B, A) for interaction AB.</p>
+<p>This can be calculated using, the base R {stats} package or the {rstatix} package. Both give the same result.</p>
+<section id="stats" class="level5">
+<h5 class="anchored" data-anchor-id="stats">stats</h5>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>df_disease <span class="sc">%&gt;%</span> </span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  rstatix<span class="sc">::</span><span class="fu">anova_test</span>(</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    y <span class="sc">~</span> drug <span class="sc">+</span> disease <span class="sc">+</span> drug<span class="sc">*</span>disease, </span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">type =</span> <span class="dv">1</span>, </span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">detailed =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  rstatix<span class="sc">::</span><span class="fu">get_anova_table</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<table class="caption-top table table-sm table-striped small">
-<colgroup>
-<col style="width: 19%">
-<col style="width: 6%">
-<col style="width: 6%">
-<col style="width: 13%">
-<col style="width: 13%">
-<col style="width: 9%">
-<col style="width: 13%">
-<col style="width: 9%">
-<col style="width: 9%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">Effect</th>
-<th style="text-align: right;">DFn</th>
-<th style="text-align: right;">DFd</th>
-<th style="text-align: right;">SSn</th>
-<th style="text-align: right;">SSd</th>
-<th style="text-align: right;">F</th>
-<th style="text-align: right;">p</th>
-<th style="text-align: left;">p&lt;.05</th>
-<th style="text-align: right;">ges</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">drug</td>
-<td style="text-align: right;">3</td>
-<td style="text-align: right;">46</td>
-<td style="text-align: right;">3133.239</td>
-<td style="text-align: right;">5080.817</td>
-<td style="text-align: right;">9.456</td>
-<td style="text-align: right;">5.58e-05</td>
-<td style="text-align: left;">*</td>
-<td style="text-align: right;">0.381</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">disease</td>
-<td style="text-align: right;">2</td>
-<td style="text-align: right;">46</td>
-<td style="text-align: right;">418.834</td>
-<td style="text-align: right;">5080.817</td>
-<td style="text-align: right;">1.896</td>
-<td style="text-align: right;">1.62e-01</td>
-<td style="text-align: left;"></td>
-<td style="text-align: right;">0.076</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">drug:disease</td>
-<td style="text-align: right;">6</td>
-<td style="text-align: right;">46</td>
-<td style="text-align: right;">707.266</td>
-<td style="text-align: right;">5080.817</td>
-<td style="text-align: right;">1.067</td>
-<td style="text-align: right;">3.96e-01</td>
-<td style="text-align: left;"></td>
-<td style="text-align: right;">0.122</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</section>
-<section id="type-ii" class="level4 unnumbered">
-<h4 class="unnumbered anchored" data-anchor-id="type-ii">Type II</h4>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>df_disease <span class="sc">%&gt;%</span> </span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  rstatix<span class="sc">::</span><span class="fu">anova_test</span>(</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    y <span class="sc">~</span> drug <span class="sc">+</span> disease <span class="sc">+</span> drug<span class="sc">*</span>disease, </span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">type =</span> <span class="dv">2</span>, </span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">detailed =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  rstatix<span class="sc">::</span><span class="fu">get_anova_table</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<table class="caption-top table table-sm table-striped small">
-<colgroup>
-<col style="width: 19%">
-<col style="width: 13%">
-<col style="width: 13%">
-<col style="width: 6%">
-<col style="width: 6%">
-<col style="width: 9%">
-<col style="width: 13%">
-<col style="width: 9%">
-<col style="width: 9%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">Effect</th>
-<th style="text-align: right;">SSn</th>
-<th style="text-align: right;">SSd</th>
-<th style="text-align: right;">DFn</th>
-<th style="text-align: right;">DFd</th>
-<th style="text-align: right;">F</th>
-<th style="text-align: right;">p</th>
-<th style="text-align: left;">p&lt;.05</th>
-<th style="text-align: right;">ges</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">drug</td>
-<td style="text-align: right;">3063.433</td>
-<td style="text-align: right;">5080.817</td>
-<td style="text-align: right;">3</td>
-<td style="text-align: right;">46</td>
-<td style="text-align: right;">9.245</td>
-<td style="text-align: right;">6.75e-05</td>
-<td style="text-align: left;">*</td>
-<td style="text-align: right;">0.376</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">disease</td>
-<td style="text-align: right;">418.834</td>
-<td style="text-align: right;">5080.817</td>
-<td style="text-align: right;">2</td>
-<td style="text-align: right;">46</td>
-<td style="text-align: right;">1.896</td>
-<td style="text-align: right;">1.62e-01</td>
-<td style="text-align: left;"></td>
-<td style="text-align: right;">0.076</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">drug:disease</td>
-<td style="text-align: right;">707.266</td>
-<td style="text-align: right;">5080.817</td>
-<td style="text-align: right;">6</td>
-<td style="text-align: right;">46</td>
-<td style="text-align: right;">1.067</td>
-<td style="text-align: right;">3.96e-01</td>
-<td style="text-align: left;"></td>
-<td style="text-align: right;">0.122</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</section>
-<section id="type-iii" class="level4 unnumbered">
-<h4 class="unnumbered anchored" data-anchor-id="type-iii">Type III</h4>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>df_disease <span class="sc">%&gt;%</span> </span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  rstatix<span class="sc">::</span><span class="fu">anova_test</span>(</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    y <span class="sc">~</span> drug <span class="sc">+</span> disease <span class="sc">+</span> drug<span class="sc">*</span>disease, </span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">type =</span> <span class="dv">3</span>, </span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">detailed =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  rstatix<span class="sc">::</span><span class="fu">get_anova_table</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<table class="caption-top table table-sm table-striped small">
-<colgroup>
-<col style="width: 18%">
-<col style="width: 14%">
-<col style="width: 13%">
-<col style="width: 5%">
-<col style="width: 5%">
-<col style="width: 11%">
-<col style="width: 13%">
-<col style="width: 8%">
-<col style="width: 8%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">Effect</th>
-<th style="text-align: right;">SSn</th>
-<th style="text-align: right;">SSd</th>
-<th style="text-align: right;">DFn</th>
-<th style="text-align: right;">DFd</th>
-<th style="text-align: right;">F</th>
-<th style="text-align: right;">p</th>
-<th style="text-align: left;">p&lt;.05</th>
-<th style="text-align: right;">ges</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">(Intercept)</td>
-<td style="text-align: right;">20037.613</td>
-<td style="text-align: right;">5080.817</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">46</td>
-<td style="text-align: right;">181.414</td>
-<td style="text-align: right;">0.00e+00</td>
-<td style="text-align: left;">*</td>
-<td style="text-align: right;">0.798</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">drug</td>
-<td style="text-align: right;">2997.472</td>
-<td style="text-align: right;">5080.817</td>
-<td style="text-align: right;">3</td>
-<td style="text-align: right;">46</td>
-<td style="text-align: right;">9.046</td>
-<td style="text-align: right;">8.09e-05</td>
-<td style="text-align: left;">*</td>
-<td style="text-align: right;">0.371</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">disease</td>
-<td style="text-align: right;">415.873</td>
-<td style="text-align: right;">5080.817</td>
-<td style="text-align: right;">2</td>
-<td style="text-align: right;">46</td>
-<td style="text-align: right;">1.883</td>
-<td style="text-align: right;">1.64e-01</td>
-<td style="text-align: left;"></td>
-<td style="text-align: right;">0.076</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">drug:disease</td>
-<td style="text-align: right;">707.266</td>
-<td style="text-align: right;">5080.817</td>
-<td style="text-align: right;">6</td>
-<td style="text-align: right;">46</td>
-<td style="text-align: right;">1.067</td>
-<td style="text-align: right;">3.96e-01</td>
-<td style="text-align: left;"></td>
-<td style="text-align: right;">0.122</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</section>
-<section id="type-iv" class="level4 unnumbered">
-<h4 class="unnumbered anchored" data-anchor-id="type-iv">Type IV</h4>
-<p>In R there is no equivalent operation to the <code>Type IV</code> sums of squares calculation in SAS.</p>
-</section>
-</section>
-<section id="car" class="level3">
-<h3 class="anchored" data-anchor-id="car">car</h3>
-<p>As an alternative to the <code>rstatix</code> package, you can use the <code>car</code> package, which is the R package for “An R Companion to Applied Regression, Third Edition, Sage 2019”</p>
-<section id="type-i-1" class="level4 unnumbered">
-<h4 class="unnumbered anchored" data-anchor-id="type-i-1">Type I</h4>
-<p>Type I can come directly from <code>stats</code>.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">anova</span>(lm_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">anova</span>(lm_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Analysis of Variance Table
 
@@ -645,10 +317,38 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 </div>
 </div>
 </section>
-<section id="type-ii-1" class="level4 unnumbered">
-<h4 class="unnumbered anchored" data-anchor-id="type-ii-1">Type II</h4>
+<section id="rstatix" class="level5">
+<h5 class="anchored" data-anchor-id="rstatix">rstatix</h5>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(lm_model, <span class="at">type =</span> <span class="st">"II"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>df_disease <span class="sc">%&gt;%</span> </span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  rstatix<span class="sc">::</span><span class="fu">anova_test</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    y <span class="sc">~</span> drug <span class="sc">+</span> disease <span class="sc">+</span> drug<span class="sc">*</span>disease, </span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">type =</span> <span class="dv">1</span>, </span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">detailed =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: NA detected in rows: 8,10,15,20,25,29,37,38,41,43,51,54,56,72.
+Removing this rows before the analysis.</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>ANOVA Table (type I tests)
+
+        Effect DFn DFd      SSn      SSd     F        p p&lt;.05   ges
+1         drug   3  46 3133.239 5080.817 9.456 5.58e-05     * 0.381
+2      disease   2  46  418.834 5080.817 1.896 1.62e-01       0.076
+3 drug:disease   6  46  707.266 5080.817 1.067 3.96e-01       0.122</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="type-ii" class="level4">
+<h4 class="anchored" data-anchor-id="type-ii">Type II</h4>
+<p>Type II sum of squares also known as hierarchical or partially sequential sums of squares. Tests the effect of adding a factor to the model after all other factors have been added. This means that the significance of a factor is assessed while controlling for the effects of all other factors in the model, but not for interactions. Type II ANOVA is particularly useful when there are no interactions in the model or when the focus is on main effects only. It is often used in unbalanced designs, where the number of observations varies across groups.</p>
+<p>For a model with two factors, A and B (in that order) the sums of squares will be tested like this: - SS(A | B) for factor A. - SS(B | A) for factor B.</p>
+<p>This can be calculated using the {car} package or the {rstatix} package. Both give the same result.</p>
+<section id="car" class="level5">
+<h5 class="anchored" data-anchor-id="car">car</h5>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Anova</span>(lm_model, <span class="at">type =</span> <span class="st">"II"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Anova Table (Type II tests)
 
@@ -663,17 +363,91 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 </div>
 </div>
 </section>
-<section id="type-iii-1" class="level4 unnumbered">
-<h4 class="unnumbered anchored" data-anchor-id="type-iii-1">Type III</h4>
-<p>For type III tests the linear model we have used above does not make sense if the contrasts are orthogonal in the row-basis. The default contrast term <code>contr.treatment</code> are not, so the contrast should be changed. If you want to match the procedure in SAS use contr.sum, contr.poly. This can be either set as an option.</p>
+<section id="rstatix-1" class="level5">
+<h5 class="anchored" data-anchor-id="rstatix-1">rstatix</h5>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">contrasts =</span> <span class="fu">c</span>(<span class="st">"contr.sum"</span>, <span class="st">"contr.poly"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>df_disease <span class="sc">%&gt;%</span> </span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  rstatix<span class="sc">::</span><span class="fu">anova_test</span>(</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    y <span class="sc">~</span> drug <span class="sc">+</span> disease <span class="sc">+</span> drug<span class="sc">*</span>disease, </span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">type =</span> <span class="dv">2</span>, </span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">detailed =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: NA detected in rows: 8,10,15,20,25,29,37,38,41,43,51,54,56,72.
+Removing this rows before the analysis.</code></pre>
 </div>
-<p>Or, set directly in the model statement using the <code>contrasts</code> argument</p>
+<div class="cell-output cell-output-stdout">
+<pre><code>ANOVA Table (type II tests)
+
+        Effect      SSn      SSd DFn DFd     F        p p&lt;.05   ges
+1         drug 3063.433 5080.817   3  46 9.245 6.75e-05     * 0.376
+2      disease  418.834 5080.817   2  46 1.896 1.62e-01       0.076
+3 drug:disease  707.266 5080.817   6  46 1.067 3.96e-01       0.122</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="type-iii" class="level4">
+<h4 class="anchored" data-anchor-id="type-iii">Type III</h4>
+<p>Type III sum of squares is calculated such that every effect is adjusted for all other effect. This means testing for the presence of a main effect after adjusting for other main effects and interactions. For a model with two factors, A and B (in that order) the sums of squares will be tested like this: - SS(A | B, AB) for factor A. - SS(B | A, AB) for factor B.</p>
+<p>This can be calculated using the base R {stats} package, the {car} package or the {rstatix} package. All give the same result.</p>
+<p>Note: Calculating type III sums of squares in R is a bit tricky, because the multi-way ANOVA model is over-paramerterised. So when running the linear model we need to select a design matrix that sums to zero. In R those options will be either <code>"contr.sum"</code> or <code>"contr.poly"</code></p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>lm_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> drug <span class="sc">+</span> disease <span class="sc">+</span> drug<span class="sc">*</span>disease, df_disease, </span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">contrasts =</span> <span class="fu">list</span>(<span class="at">drug =</span> <span class="st">"contr.sum"</span>, <span class="at">disease =</span> <span class="st">"contr.poly"</span>))</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>car<span class="sc">::</span><span class="fu">Anova</span>(lm_model, <span class="at">type =</span> <span class="st">"III"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Drug design matrix </span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">contr.sum</span>(<span class="dv">4</span>) <span class="co"># Using 4 here as we have 4 levels of drug </span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  [,1] [,2] [,3]
+1    1    0    0
+2    0    1    0
+3    0    0    1
+4   -1   -1   -1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Disease design matrix </span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">contr.sum</span>(<span class="dv">3</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  [,1] [,2]
+1    1    0
+2    0    1
+3   -1   -1</code></pre>
+</div>
+</div>
+<p>While not relevant for this example as the disease variable isn’t ordinal the polynomial design matrix would look like</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">contr.poly</span>(<span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                .L         .Q
+[1,] -7.071068e-01  0.4082483
+[2,] -9.073800e-17 -0.8164966
+[3,]  7.071068e-01  0.4082483</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>lm_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> drug <span class="sc">+</span> disease <span class="sc">+</span> drug<span class="sc">*</span>disease, df_disease, </span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">contrasts =</span> <span class="fu">list</span>(<span class="at">drug =</span> <span class="st">"contr.sum"</span>, <span class="at">disease =</span> <span class="st">"contr.sum"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="stats-1" class="level5">
+<h5 class="anchored" data-anchor-id="stats-1">stats</h5>
+<p>Using the base stats package, you can use the <code>drop1()</code> function which drops all possible single terms in a model. The scope term specifies how things can be dropped.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">drop1</span>(lm_model, <span class="at">scope =</span> .<span class="sc">~</span>., <span class="at">test=</span><span class="st">"F"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Single term deletions
+
+Model:
+y ~ drug + disease + drug * disease
+             Df Sum of Sq    RSS    AIC F value    Pr(&gt;F)    
+&lt;none&gt;                    5080.8 283.42                      
+drug          3   2997.47 8078.3 304.32  9.0460 8.086e-05 ***
+disease       2    415.87 5496.7 283.99  1.8826    0.1637    
+drug:disease  6    707.27 5788.1 278.98  1.0672    0.3958    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+</section>
+<section id="car-1" class="level5">
+<h5 class="anchored" data-anchor-id="car-1">car</h5>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>car<span class="sc">::</span><span class="fu">Anova</span>(lm_model, <span class="at">type =</span> <span class="st">"III"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Anova Table (Type III tests)
 
@@ -688,30 +462,62 @@ Residuals     5080.8 46
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 </div>
 </div>
-<p><code>rstatix</code> does this is by default. The <code>rstatix</code> package uses the <code>car</code> package to do the anova calculation, but can be nicer to use as it handles the contrasts for you and is more “pipe-able”.</p>
+</section>
+<section id="rstatix-2" class="level5">
+<h5 class="anchored" data-anchor-id="rstatix-2">rstatix</h5>
+<p>The <code>rstatix</code> package uses the <code>car</code> package to do the anova calculation, but can be nicer to use as it handles the contrasts for you and is more “pipe-able”.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>df_disease <span class="sc">%&gt;%</span> </span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  rstatix<span class="sc">::</span><span class="fu">anova_test</span>(</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    y <span class="sc">~</span> drug <span class="sc">+</span> disease <span class="sc">+</span> drug<span class="sc">*</span>disease, </span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">type =</span> <span class="dv">3</span>, </span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">detailed =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: NA detected in rows: 8,10,15,20,25,29,37,38,41,43,51,54,56,72.
+Removing this rows before the analysis.</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>ANOVA Table (type III tests)
+
+        Effect       SSn      SSd DFn DFd       F        p p&lt;.05   ges
+1  (Intercept) 20037.613 5080.817   1  46 181.414 1.42e-17     * 0.798
+2         drug  2997.472 5080.817   3  46   9.046 8.09e-05     * 0.371
+3      disease   415.873 5080.817   2  46   1.883 1.64e-01       0.076
+4 drug:disease   707.266 5080.817   6  46   1.067 3.96e-01       0.122</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="type-iv" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="type-iv">Type IV</h4>
+<p>In R there is no equivalent operation to the <code>Type IV</code> sums of squares calculation in SAS.</p>
 </section>
 </section>
 <section id="contrasts" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="contrasts">Contrasts</h3>
 <p>The easiest way to get contrasts in R is by using <code>emmeans</code>. For looking at contrast we are going to fit a different model on new data, that doesn’t include an interaction term as it is easier to calculate contrasts without an interaction term. For this dataset we have three different drugs A, C, and E.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>df_trial<span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../data/drug_trial.csv"</span>)</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="fu">lm</span>(<span class="at">formula =</span> post <span class="sc">~</span> pre <span class="sc">+</span> drug, <span class="at">data =</span> df_trial) <span class="sc">%&gt;%</span> </span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">emmeans</span>(<span class="st">"drug"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">contrast</span>(<span class="at">method =</span> <span class="fu">list</span>(</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"C vs A"</span>  <span class="ot">=</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>,  <span class="dv">1</span>, <span class="dv">0</span>),</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"E vs CA"</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">2</span>)</span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>  ))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>df_trial<span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../data/drug_trial.csv"</span>)</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="fu">lm</span>(<span class="at">formula =</span> post <span class="sc">~</span> pre <span class="sc">+</span> drug, <span class="at">data =</span> df_trial) <span class="sc">%&gt;%</span> </span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">emmeans</span>(<span class="st">"drug"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">contrast</span>(<span class="at">method =</span> <span class="fu">list</span>(</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"C vs A"</span>  <span class="ot">=</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>,  <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"E vs CA"</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">2</span>)</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>  ))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> contrast estimate   SE df t.ratio p.value
  C vs A      0.109 1.80 26   0.061  0.9521
  E vs CA     6.783 3.28 26   2.067  0.0488</code></pre>
 </div>
 </div>
-
-
 </section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>Göttingen University. (n.d.). Type II and III SS using the car package. Retrieved 19 August 2025, from https://md.psych.bio.uni-goettingen.de/mv/unit/lm_cat/lm_cat_unbal_ss_explained.html#type-ii-and-iii-ss-using-the-car-package</p>
+
+
 </section>
 
 </main> <!-- /main -->
