@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>CAMIS Blog</title>
+<title>Sample Size for Non-Inferiority Trials in R</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,6 +20,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -31,8 +66,6 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
 <link href="../images/logo.png" rel="icon" type="image/png">
-<script src="../site_libs/quarto-listing/list.min.js"></script>
-<script src="../site_libs/quarto-listing/quarto-listing.js"></script>
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -70,35 +103,6 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
-<script>
-
-  window.document.addEventListener("DOMContentLoaded", function (_event) {
-    const listingTargetEl = window.document.querySelector('#listing-listing .list');
-    if (!listingTargetEl) {
-      // No listing discovered, do not attach.
-      return; 
-    }
-
-    const options = {
-      valueNames: ['listing-date','listing-title','listing-author','listing-subtitle','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
-      
-      searchColumns: ["listing-date","listing-title","listing-author","listing-subtitle","listing-image","listing-description"],
-    };
-
-    window['quarto-listings'] = window['quarto-listings'] || {};
-    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
-
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  });
-
-  window.addEventListener('hashchange',() => {
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  })
-  </script>
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
@@ -181,7 +185,7 @@ window.Quarto = {
 <span class="menu-text">Meeting Minutes</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="../blogs/index.html" aria-current="page"> 
+    <a class="nav-link" href="../blogs/index.html"> 
 <span class="menu-text">Blog</span></a>
   </li>  
   <li class="nav-item dropdown ">
@@ -220,24 +224,29 @@ window.Quarto = {
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#two-sample-non-inferiority-test-comparing-means-for-parallel-design-unpaired" id="toc-two-sample-non-inferiority-test-comparing-means-for-parallel-design-unpaired" class="nav-link active" data-scroll-target="#two-sample-non-inferiority-test-comparing-means-for-parallel-design-unpaired"><strong>Two Sample Non-inferiority test: Comparing means for parallel design (unpaired)</strong></a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
-<main class="content column-page" id="quarto-document-content">
+<main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">CAMIS Blog</h1>
-<p class="subtitle lead">News, updates, and commentary on the CAMIS working group</p>
+<h1 class="title">Sample Size for Non-Inferiority Trials in R</h1>
 </div>
 
 
 
-<div class="quarto-title-meta column-page">
+<div class="quarto-title-meta">
 
     
   
@@ -249,140 +258,62 @@ window.Quarto = {
 </header>
 
 
+<p>In R there are lots of packages for sample size calculations. Here we will cover one of the most common {rpact}</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rpact)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="two-sample-non-inferiority-test-comparing-means-for-parallel-design-unpaired" class="level1">
+<h1><strong>Two Sample Non-inferiority test: Comparing means for parallel design (unpaired)</strong></h1>
+<p>This example is a sample size calculation for the following hypotheses: <span class="math inline">\(H_0:\mu2-\mu1\le -\theta\)</span> versus <span class="math inline">\(H_1: \mu2-\mu1\gt -\theta\)</span>.</p>
+<p>A client is interested in conducting a clinical trial to compare two cholesterol lowering agents for treatment of hypercholesterolemic patients through a parallel design. The primary efficacy parameter is a low-density lipidprotein cholesterol (LDL-C). We will consider the situation where the intended trial is for testing noninferiority. For establishing it, suppose the true mean difference is 0 and the noninferiority margin is chosen to be -0.05 (-5%). Assuming SD = 0.1, how many patients are required for an 80% power and an overall significance level of 5%?</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">getDesignInverseNormal</span>(<span class="at">kMax =</span> <span class="dv">1</span>, <span class="at">alpha =</span> <span class="fl">0.05</span>) <span class="sc">|&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">getSampleSizeMeans</span>(<span class="at">thetaH0 =</span> <span class="sc">-</span><span class="fl">0.05</span>, </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>                       <span class="at">alternative =</span> <span class="dv">0</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        <span class="at">stDev =</span> <span class="fl">0.1</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="at">allocationRatioPlanned =</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summary</span>() </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><em>Sample size calculation for a continuous endpoint</em></p>
+<p>Fixed sample analysis, one-sided significance level 5%, power 80%. The results were calculated for a two-sample t-test, H0: mu(1) - mu(2) = -0.05, H1: effect = 0, standard deviation = 0.1.</p>
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th>Stage</th>
+<th>Fixed</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Stage level (one-sided)</td>
+<td>0.0500</td>
+</tr>
+<tr class="even">
+<td>Efficacy boundary (z-value scale)</td>
+<td>1.645</td>
+</tr>
+<tr class="odd">
+<td>Efficacy boundary (t)</td>
+<td>-0.017</td>
+</tr>
+<tr class="even">
+<td>Number of subjects</td>
+<td>100.3</td>
+</tr>
+</tbody>
+</table>
+<p>Legend:</p>
+<ul>
+<li><em>(t)</em>: treatment effect scale</li>
+</ul>
+</div>
+</div>
+<p>Here the recommended sample size is 100.3, so we will need to round up to 51 subjects per arm.</p>
 
 
+</section>
 
-
-<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
-<div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-categories="Q29uZmVyZW5jZQ==" data-listing-date-sort="1750118400000" data-listing-file-modified-sort="1755768834969" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="2" data-listing-word-count-sort="206">
-<div class="thumbnail"><a href="../blogs/posts/2025-06-17_psi-conference/index.html" class="no-external">
-
-<img loading="lazy" src="../blogs/posts/2025-06-17_psi-conference/2025-06_PSI.jpg" class="thumbnail-image">
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/2025-06-17_psi-conference/index.html" class="no-external">PSI Conference 2025</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/2025-06-17_psi-conference/index.html" class="no-external">The CAMIS group presentations at the 2025 PSI Conference in London</a>
-</div>
-<div class="delink listing-description"><a href="../blogs/posts/2025-06-17_psi-conference/index.html" class="no-external">
-The PSI Conference 2025 took place 8th-11th June 2025 in Wembley, London.
-</a></div>
-</div>
-<div class="metadata">
-<a href="../blogs/posts/2025-06-17_psi-conference/index.html" class="no-external">
-<div class="listing-date">
-Jun 17, 2025
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="1" data-categories="UmVncmVzc2lvbiUyQ1IlMkNTQVM=" data-listing-date-sort="1741824000000" data-listing-file-modified-sort="1755768834968" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="2" data-listing-word-count-sort="270">
-<div class="thumbnail"><a href="../blogs/posts/2025-03-13_tobit-regression/index.html" class="no-external">
-
-<img loading="lazy" src="../blogs/posts/2025-03-13_tobit-regression/tobit-comparison.jpg" class="thumbnail-image">
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/2025-03-13_tobit-regression/index.html" class="no-external">Tobit Regression Comparison</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/2025-03-13_tobit-regression/index.html" class="no-external">A Comparison of Tobit Regression between R and SAS</a>
-</div>
-<div class="delink listing-description"><a href="../blogs/posts/2025-03-13_tobit-regression/index.html" class="no-external">
-A recent CAMIS contribution explored the standard Tobit model for a virology endpoint (viral load) with a lower detection limit.
-</a></div>
-</div>
-<div class="metadata">
-<a href="../blogs/posts/2025-03-13_tobit-regression/index.html" class="no-external">
-<div class="listing-date">
-Mar 13, 2025
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="2" data-categories="Q29uZmVyZW5jZXM=" data-listing-date-sort="1711670400000" data-listing-file-modified-sort="1755768834968" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="101">
-<div class="thumbnail"><a href="../blogs/posts/2024-03-29_phuse-conference/index.html" class="no-external">
-
-<img loading="lazy" src="../blogs/posts/2024-03-29_phuse-conference/2024-03_phuse-conference.jpeg" class="thumbnail-image">
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/2024-03-29_phuse-conference/index.html" class="no-external">2024 PHUSE US Connect Conference</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/2024-03-29_phuse-conference/index.html" class="no-external">PHUSE Poster Presentation by Soma &amp; Vikash</a>
-</div>
-<div class="delink listing-description"><a href="../blogs/posts/2024-03-29_phuse-conference/index.html" class="no-external">
-Congratulations, Soma Sekhar Sriadibhatla, on your poster presentation “CAMIS-An open source repository to document differences in statistical methodology software” at PHUSE…
-</a></div>
-</div>
-<div class="metadata">
-<a href="../blogs/posts/2024-03-29_phuse-conference/index.html" class="no-external">
-<div class="listing-date">
-Mar 29, 2024
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="3" data-listing-date-sort="1701388800000" data-listing-file-modified-sort="1755768834953" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="2" data-listing-word-count-sort="309">
-<div class="thumbnail"><a href="../blogs/posts/2023-12-01_highlights/index.html" class="no-external">
-
-<img loading="lazy" src="../blogs/posts/2023-12-01_highlights/2023-12_highlights.jpg" class="thumbnail-image">
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/2023-12-01_highlights/index.html" class="no-external">2023 Highlights</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/2023-12-01_highlights/index.html" class="no-external">A Year of Progress for the PHUSE CAMIS Working Group Project</a>
-</div>
-<div class="delink listing-description"><a href="../blogs/posts/2023-12-01_highlights/index.html" class="no-external">
-As we draw towards the end of 2023, the PHUSE DVOST CAMIS Working Group Project reflect on their key progress and successes this year.
-</a></div>
-</div>
-<div class="metadata">
-<a href="../blogs/posts/2023-12-01_highlights/index.html" class="no-external">
-<div class="listing-date">
-Dec 1, 2023
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="4" data-listing-date-sort="1683244800000" data-listing-file-modified-sort="1755768834952" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="2" data-listing-word-count-sort="209">
-<div class="thumbnail"><a href="../blogs/posts/2023-05-05_introduction-to-CAMIS/index.html" class="no-external">
-
-<img loading="lazy" src="../blogs/posts/2023-05-05_introduction-to-CAMIS/logo.png" class="thumbnail-image">
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/2023-05-05_introduction-to-CAMIS/index.html" class="no-external">Introduction to CAMIS</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/2023-05-05_introduction-to-CAMIS/index.html" class="no-external">An Introduction to the Comparing Analysis Method Implementations in Software (CAMIS) Working Group</a>
-</div>
-<div class="delink listing-description"><a href="../blogs/posts/2023-05-05_introduction-to-CAMIS/index.html" class="no-external">
-Are you trying to replicate results using different software/languages and struggling to find out why you can’t match the results? Check out the CAMIS repository!
-</a></div>
-</div>
-<div class="metadata">
-<a href="../blogs/posts/2023-05-05_introduction-to-CAMIS/index.html" class="no-external">
-<div class="listing-date">
-May 5, 2023
-</div>
-</a>
-</div>
-</div>
-</div>
-<div class="listing-no-matching d-none">No matching items</div>
-</div></main> <!-- /main -->
+</main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";
