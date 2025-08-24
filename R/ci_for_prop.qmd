@@ -28,29 +28,31 @@ The adcibc data stored [here](../data/adcibc.csv) was used in this example, crea
 library(tidyverse)
 library(cardx)
 library(DescTools)
-adcibc2<-read_csv("../data/adcibc.csv")
+adcibc2 <- read_csv("../data/adcibc.csv")
 
-adcibc<- adcibc2 %>% 
-        select(AVAL,TRTP) %>% 
-        mutate(resp=if_else(AVAL>4,"Yes","No")) %>% 
-        mutate(respn=if_else(AVAL>4,1,0)) %>% 
-        mutate(trt=if_else(TRTP=="Placebo","PBO","ACT"))%>% 
-        mutate(trtn=if_else(TRTP=="Placebo",0,1))%>% 
-        select(trt,trtn,resp, respn) 
+adcibc <- adcibc2 |>
+  select(AVAL, TRTP) |>
+  mutate(
+    resp = if_else(AVAL > 4, "Yes", "No"),
+    respn = if_else(AVAL > 4, 1, 0),
+    trt = if_else(TRTP == "Placebo", "PBO", "ACT"),
+    trtn = if_else(TRTP == "Placebo", 0, 1)
+  ) |>
+  select(trt, trtn, resp, respn)
 
 # cardx package required a vector with 0 and 1s for a single proportion CI
-act<-filter(adcibc,trt=="ACT") %>% 
-     select(respn)
-act2<-act$respn
+act <- filter(adcibc, trt == "ACT") |>
+  select(respn)
+act2 <- act$respn
 ```
 
 The below shows that for the Actual Treatment, there are 36 responders out of 154 subjects = 0.234 (23.4% responders).
 
 ```{r}
 #| echo: false
-adcibc %>% 
-  group_by(trt,resp) %>% 
-  tally() 
+adcibc |>
+  group_by(trt, resp) |>
+  tally()
 ```
 
 ## Packages
@@ -63,31 +65,9 @@ If calculating the CI for a difference in proportions, the package requires both
 
 Instead of the code presented below, you can use `ard_categorical_ci(data, variables=resp, method ='wilson')` for example. This invokes the code below but returns an analysis results dataset (ARD) format as the output. Methods included are waldcc, wald, clopper-pearson, wilson, wilsoncc, strat_wilson, strat_wilsoncc, agresti-coull and jeffreys for one-sample proportions and methods for 2 independent samples, however currently does not have a method for 2 matched proportions.
 
-Code example: `proportion_ci_clopper_pearson(<resp_var>,conf.level=0.95) %>%    as_tibble()`
-
-Example data format needed for {cardx} for a single proportion CI
-
-```{r}
-#| echo: false
-#Data for use with cardx takes the format 0s and 1s
-head(act2,30)
-```
-
-**The {PropCIs} package** produces CIs for methods such as Blaker's exact method and Midp which aren't available in {cardx} but are available in SAS. We found results agreed with SAS to the 5th decimal place. The package also calculates CIs for Clopper-Pearson, Wald, Wilson, Agresti-Coull and these align to results obtained in cardx to at least the 7th decimal place. The {PropsCIs} package requires just the number of events (numerator number of successes) & total number of subjects (denominator) as an input dataset. Given Blaker and Midp are rarely used in practice, and {PropsCIs} isn't a package commonly downloaded from CRAN, further detail is not provided here.
-
-Code example for Clopper-pearson:\
-`exactci(x=<count of successes> , n=<Total>, conf.level=0.95)`
-
-Code example for Mid P method:\
-`midPci(x=<count of successes> , n=<Total>, conf.level=0.95)`
-
-Code example for Blaker's exact method:\
-`blakerci(x=<count of successes> , n=<Total>, conf.level=0.95, tolerance=1e-05)`
+**The {PropCIs} package** produces CIs for methods such as Blaker's exact method and Midp which aren't available in {cardx} but are available in SAS. We found results agreed with SAS to the 5th decimal place. The package also calculates CIs for Clopper-Pearson, Wald, Wilson, Agresti-Coull and these align to results obtained in cardx to at least the 7th decimal place. The {PropsCIs} package requires just the number of events (numerator number of successes) & total number of subjects (denominator) as an input dataset. Given Blaker and Midp are rarely used in practice, and {PropsCIs} isn't a package commonly downloaded from CRAN, further details are not provided here.
 
 **The {Hmisc} package** produces CIs using the Clopper-Pearson method. In this example (x=36 and n=154), the results match the cardx package. Documentation reports that the method uses F distribution to compute exact intervals based on the binomial cdf. However, if the percentage of responders is 100% then the upper limit is set to 1. Similarly if the percentage of responders is 0%, then the lower limit is set to 0. Hence, in extreme cases there may be differences between this package and the standard implementation of Clopper-Pearson method.
-
-Code example for Clopper-pearson:\
-`binconf(x=<count of successes> , n=<Total>,method="exact",alpha=0.05)`
 
 **The {RBesT} package (Prior to Version 1.8-0)** produces CIs using the Clopper-Pearson method. In this example (x=36 and n=154), the results match the cardx package. However, as described below, there are 2 cases where the results using RBesT package do not match cardx or Hmisc.
 
@@ -106,13 +86,9 @@ In Version 1.8-0 onwards the equations were updated as follows, which then match
 pLow \<- qbeta(Low, r, n - r + 1)\
 pHigh \<- qbeta(High, r + 1, n - r)
 
-`BinaryExactCI(x=<count of successes> , n=<Total>,alpha=0.05)`
-
 **The {ExactCIdiff} package** produces exact CIs for two dependent proportions (matched pairs).
 
-**The {DescTools} package** has a function BinomDiffCI which produces CIs for two independent proportions (unmatched pairs) including methods for Agresti/Caffo, Wald, Wald with Continuity correction, Newcombe Score, Newcombe score with continuity correction, and more computationally intensive methods such as Miettinen and Nurminen, Mee, Brown Li's Jeffreys, Hauck-Anderson and Haldane. See [here](https://search.r-project.org/CRAN/refmans/DescTools/html/BinomDiffCI.html) for more detail. Code is of the form.
-
-`BinomDiffCI(x1, n1, x2, n2, conf.level = 0.95, sides =c("two.sided","left","right"),             method = c("ac", "wald", "waldcc", "score", "scorecc", "mn",                        "mee", "blj", "ha", "hal", "jp"))`
+**The {DescTools} package** has a function BinomDiffCI which produces CIs for two independent proportions (unmatched pairs) including methods for Agresti/Caffo, Wald, Wald with Continuity correction, Newcombe Score, Newcombe score with continuity correction, and more computationally intensive methods such as Miettinen and Nurminen, Mee, Brown Li's Jeffreys, Hauck-Anderson and Haldane. See [here](https://search.r-project.org/CRAN/refmans/DescTools/html/BinomDiffCI.html) for more detail. 
 
 **The {presize} package** has a function prec_prop() which also calculates CIs for 2 independent samples using the Wilson, Agresti-Coull, Exact or Wald approaches. The package is not described in further detail here since in most cases **{DescTools}** will be able to compute what is needed. However, it's mentioned due to other functionality it has available such as sample size and precision calculations for AUC, correlations, cronbach's alpha, intraclass correlation, Cohen's kappa, likelihood ratios, means, mean differences, odds ratios, rates, rate ratios, risk differences and risk ratios.
 
@@ -129,9 +105,8 @@ Clopper-Pearson Exact CI is one of the most popular methods, it is often good fo
 The cardx package calculates the Clopper-Pearson score by calling stats::binom.test() function.
 
 ```{r}
-proportion_ci_clopper_pearson(act2,conf.level=0.95) %>% 
+cardx::proportion_ci_clopper_pearson(act2, conf.level = 0.95) |>
   as_tibble()
-
 ```
 
 ### Normal Approximation Method (Also known as the Wald or asymptotic CI Method)
@@ -147,29 +122,33 @@ For more technical information see the corresponding [SAS page](https://psiaims.
 The following code calculates a confidence interval for a binomial proportion using normal approximation equation manually. This is replicated exactly using the `cardx::proportion_ci_wald function` which also allows the continuity correction to be applied.
 
 ```{r}
-    # sample proportion by trt
-summary <- adcibc %>% 
-           filter(trt=="ACT") %>% 
-           group_by(resp) %>% 
-           tally()  %>% 
-           ungroup() %>% 
-           mutate(total=sum(n)) %>% 
-           mutate(p=n/total)
+# sample proportion by trt
+summary <- adcibc |>
+  filter(trt == "ACT") |>
+  group_by(resp) |>
+  tally() |>
+  ungroup() |>
+  mutate(
+    total = sum(n),
+    p = n / total
+  )
 
-    # Calculate standard error and 95% wald confidence intervals for population proportion
-waldci <-summary %>% 
-         filter(resp=="Yes") %>% 
-         mutate(se=sqrt(p*(1-p)/total)) %>% 
-         mutate(lower_ci=(p-qnorm(1-0.05/2)*se)) %>% 
-         mutate(upper_ci=(p+qnorm(1-0.05/2)*se)) 
-waldci  
+# Calculate standard error and 95% wald confidence intervals for population proportion
+waldci <- summary |>
+  filter(resp == "Yes") |>
+  mutate(
+    se = sqrt(p * (1 - p) / total),
+    lower_ci = (p - qnorm(1 - 0.05 / 2) * se),
+    upper_ci = (p + qnorm(1 - 0.05 / 2) * se)
+  )
+waldci
 
-#cardx package Wald method without continuity correction
-proportion_ci_wald(act2,conf.level=0.95,correct=FALSE) %>% 
+# cardx package Wald method without continuity correction
+cardx::proportion_ci_wald(act2, conf.level = 0.95, correct = FALSE) |>
   as_tibble()
 
-#cardx package Wald method with continuity correction
-proportion_ci_wald(act2,conf.level=0.95,correct=TRUE) %>% 
+# cardx package Wald method with continuity correction
+cardx::proportion_ci_wald(act2, conf.level = 0.95, correct = TRUE) |>
   as_tibble()
 ```
 
@@ -180,13 +159,12 @@ The cardx package calculates the Wilson (score) method by calling stats::prop.te
 The package also contains a function for proportion_ci_strat_wilson() which calculates the stratified Wilson CIs for unequal proportions as described on page 47 [here](https://cran.r-universe.dev/cardx/cardx.pdf).
 
 ```{r}
-#cardx package Wilson method without continuity correction
-proportion_ci_wilson(act2,conf.level=0.95,correct=FALSE) %>% 
+# cardx package Wilson method without continuity correction
+cardx::proportion_ci_wilson(act2, conf.level = 0.95, correct = FALSE) |>
   as_tibble()
 
-
-#cardx package Wilson method with continuity correction
-proportion_ci_wilson(act2,conf.level=0.95,correct=TRUE) %>% 
+# cardx package Wilson method with continuity correction
+cardx::proportion_ci_wilson(act2, conf.level = 0.95, correct = TRUE) |>
   as_tibble()
 
 ```
@@ -196,11 +174,9 @@ proportion_ci_wilson(act2,conf.level=0.95,correct=TRUE) %>%
 The cardx package calculates the Agresti-Coull method using the equation from the published method by Alan Agresti & Brent Coull based on adding 2 successes and 2 failures before computing the wald CI. The CI is truncated, when it overshoots the boundary (\<0 or \>1).
 
 ```{r}
-
-#cardx package agresti_coull method 
-proportion_ci_agresti_coull(act2,conf.level=0.95) %>% 
+# cardx package agresti_coull method
+cardx::proportion_ci_agresti_coull(act2, conf.level = 0.95) |>
   as_tibble()
-
 ```
 
 ### Jeffreys Method
@@ -208,12 +184,9 @@ proportion_ci_agresti_coull(act2,conf.level=0.95) %>%
 Jeffreys method is a particular type of Bayesian Highest Probability Density (HPD) Method. For proportions, the beta distribution is generally used for the prior, which consists of two parameters alpha and beta. Setting alpha=beta=0.5 is called Jeffrey's prior. NOTE: if you want to use any other priors, you can use `binom.bayes` which estimates a credible interval for proportions.
 
 ```{r}
-#cardx package jeffreys method 
-proportion_ci_jeffreys(act2,conf.level=0.95) %>% 
+# cardx package jeffreys method
+cardx::proportion_ci_jeffreys(act2, conf.level = 0.95) |>
   as_tibble()
-```
-
-```         
 ```
 
 ## Methods for Calculating Confidence Intervals for a matched pair proportion using {ExactCIdiff}
@@ -261,12 +234,13 @@ Active: $\hat p_1 = (r+s)/n$ =35/46 =0.761 and Placebo: $\hat p_2= (r+t)/n$ = 26
 
 Difference = 0.761-0.565 = 0.196, then PairedCI() function can provide an exact confidence interval as shown below
 
-(-0.00339 to 0.38065)
+-0.00339 to 0.38065
 
 ```{r}
 #| eval: false
-#ExactCIdiff: PairedCI(s, r+u, t, conf.level = 0.95)
-CI<-PairedCI(15, 25, 6, conf.level = 0.95)$ExactCI
+# ExactCIdiff::PairedCI(s, r+u, t, conf.level = 0.95)
+
+CI <- ExactCIdiff::PairedCI(15, 25, 6, conf.level = 0.95)$ExactCI
 CI
 ```
 
@@ -289,21 +263,35 @@ Both the Treatment variable (ACT,PBO) and the Response variable (Yes,No) have to
 The prop.test default with 2 groups, is the null hypothesis that the proportions in each group are the same and a 2-sided CI.
 
 ```{r}
-
-indat1<- adcibc2 %>% 
-  select(AVAL,TRTP) %>% 
-  mutate(resp=if_else(AVAL>4,"Yes","No")) %>% 
-  mutate(respn=if_else(AVAL>4,1,0)) %>% 
-  mutate(trt=if_else(TRTP=="Placebo","PBO","ACT"))%>% 
-  mutate(trtn=if_else(TRTP=="Placebo",1,0)) %>% 
-  select(trt,trtn,resp, respn) 
+indat1 <- adcibc2 |>
+  select(AVAL, TRTP) |>
+  mutate(
+    resp = if_else(AVAL > 4, "Yes", "No"),
+    respn = if_else(AVAL > 4, 1, 0),
+    trt = if_else(TRTP == "Placebo", "PBO", "ACT"),
+    trtn = if_else(TRTP == "Placebo", 1, 0)
+  ) |>
+  select(trt, trtn, resp, respn)
 
 # cardx package required a vector with 0 and 1s for a single proportion CI
 # To get the comparison the correct way around Placebo must be 1, and Active 0
 
-indat<- select(indat1, trtn,respn)
-cardx::ard_stats_prop_test(data=indat, by=trtn, variables=respn, conf.level = 0.95, correct=FALSE) 
-cardx::ard_stats_prop_test(data=indat, by=trtn, variables=respn, conf.level = 0.95, correct=TRUE) 
+indat <- select(indat1, trtn, respn)
+
+cardx::ard_stats_prop_test(
+  data = indat,
+  by = trtn,
+  variables = respn,
+  conf.level = 0.95,
+  correct = FALSE
+)
+cardx::ard_stats_prop_test(
+  data = indat,
+  by = trtn,
+  variables = respn,
+  conf.level = 0.95,
+  correct = TRUE
+)
 ```
 
 ### Normal Approximation (Wald) and Other Methods for 2 independent samples using {DescTools}
@@ -315,13 +303,35 @@ For more technical information regarding the derivations of these methods see th
 With 2 groups, the null hypothesis that the proportions in each group are the same and a 2-sided CI.
 
 ```{r}
-count_dat <- indat %>% 
-     count(trtn,respn)
+count_dat <- indat |>
+  count(trtn, respn)
 count_dat
-# the BinomDiffCI requires x1=successes in active, n1=total subjects in active,
-#                          x2=successes in placebo, n2=total subjects in placebo,
 
-BinomDiffCI(x1=36, n1=154, x2=12, n2=77, conf.level = 0.95, sides=c("two.sided"), method=c("wald","waldcc","score","scorecc","ac","mn","mee","blj","ha","hal","jp"))
+# BinomDiffCI requires
+# x1 = successes in active,  n1 = total subjects in active,
+# x2 = successes in placebo, n2 = total subjects in placebo
+
+DescTools::BinomDiffCI(
+  x1 = 36,
+  n1 = 154,
+  x2 = 12,
+  n2 = 77,
+  conf.level = 0.95,
+  sides = c("two.sided"),
+  method = c(
+    "wald",
+    "waldcc",
+    "score",
+    "scorecc",
+    "ac",
+    "mn",
+    "mee",
+    "blj",
+    "ha",
+    "hal",
+    "jp"
+  )
+)
 ```
 
 ## References

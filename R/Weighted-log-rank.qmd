@@ -43,7 +43,7 @@ library(haven)
 
 knitr::opts_chunk$set(echo = TRUE)
 
-dat <- read_sas(file.path("../data/whas500.sas7bdat"))
+dat <- haven::read_sas(file.path("../data/whas500.sas7bdat"))
 head(dat)
 ```
 
@@ -53,10 +53,11 @@ This function uses $G(\rho)=\hat{S}(t)^\rho, \rho \geq 0$ , where $\hat{S}(t)$ i
 
 ```{r}
 library(survival)
-WLRtest<-survdiff(Surv(LENFOL,FSTAT)~ AFB,rho = 3,data=dat)
-```
-
-```{r}
+WLRtest <- survival::survdiff(
+  survival::Surv(LENFOL, FSTAT) ~ AFB,
+  rho = 3,
+  data = dat
+)
 WLRtest
 ```
 
@@ -68,16 +69,22 @@ This function uses $G(\rho,\gamma)=\hat{S}(t)^\rho (1-\hat{S}(t))^\gamma; \rho,\
 
 ```{r}
 library(nphRCT)
-WL<-wlrt(Surv(LENFOL,FSTAT)~ AFB, data=dat, method="fh", rho = 0, gamma = 0)
+WL <- nphRCT::wlrt(
+  survival::Surv(LENFOL, FSTAT) ~ AFB,
+  data = dat,
+  method = "fh",
+  rho = 0,
+  gamma = 0
+)
 WL
 ```
 
 To obtain the corresponding $p$-value we can either use *2(1-pnorm(abs(WL\$z),0,1))* or we can square the test statistic *WL\$z* by using *(WL\$z)\^2* and obtain the corresponding $p$-values as *1 - pchisq((WL\$z)\^2,1)* , both the $p$-values will be the same.
 
 ```{r}
-2*(1-pnorm(abs(WL$z),0,1))
+2 * (1 - pnorm(abs(WL$z), 0, 1))
 (WL$z)^2
-1-pchisq((WL$z)^2,1)
+1 - pchisq((WL$z)^2, 1)
 ```
 
 For the illustration purpose we used $\rho=0,\  \gamma=0$ and in this scenario weighted log-rank test becomes standard log-rank test. Therefore, the result obtained in this illustration is consistent with the result obtained in [standard log-rank test](Survival%20Analysis%20Using%20R%20(psiaims.github.io)).
@@ -93,8 +100,10 @@ For the illustration purpose we used $\rho=0,\  \gamma=0$ and in this scenario w
 ```{r}
 #| echo: false
 si <- sessioninfo::session_info(
-  c("survival", "nphRCT") #Vector of packages used 
-  , dependencies = FALSE)
+  c("survival", "nphRCT"), #Vector of packages used
+  dependencies = FALSE
+)
 si
 ```
+
 :::

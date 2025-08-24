@@ -15,7 +15,7 @@ library(emmeans)
 library(rstatix)
 library(gt)
 
-df_sas <- 
+df_sas <-
   tribble(
     ~drug, ~pre, ~post,
       "A",   11,     6,   
@@ -47,8 +47,9 @@ df_sas <-
       "F",   12,     5,   
       "F",   12,    16,   
       "F",    7,     1,   
-      "F",   12,    20) %>% 
+      "F",   12,    20) |>
   mutate(drug = factor(drug))
+
 my_formula <- as.formula(post ~ drug + pre)
 ```
 
@@ -63,61 +64,75 @@ We follow the example from link [Analysis of Covariance](https://documentation.s
 ## Data Summary
 
 ```{r}
-df_sas %>% glimpse()
-df_sas %>% summary()
+df_sas |> glimpse()
+df_sas |> summary()
 ```
 
 ## The Model
 
 ```{r}
 model_ancova <- lm(post ~ drug + pre, data = df_sas)
-model_glance <- model_ancova %>% glance()
-model_tidy   <- model_ancova %>% tidy()
-model_glance %>% gt()
-model_tidy   %>% gt()
+
+model_glance <- model_ancova |>
+  glance()
+model_tidy <- model_ancova |>
+  tidy()
+model_glance |>
+  gt()
+model_tidy |>
+  gt()
 ```
 
 ```{r}
-model_table <- 
-  model_ancova %>% 
-  anova() %>% 
-  tidy() %>% 
-  add_row(term = "Total", df = sum(.$df), sumsq = sum(.$sumsq))
-model_table %>% gt()
+model_table <- model_ancova |>
+  anova() |>
+  tidy()
+
+total_df <- sum(model_table$df)
+total_sumsq <- sum(model_table$sumsq)
+
+model_table |>
+  add_row(term = "Total", df = total_df, sumsq = total_sumsq) |>
+  gt()
 ```
 
 ### Type 1
 
 ```{r}
-df_sas %>%
-  anova_test(post ~ drug + pre, type = 1, detailed = TRUE) %>% 
-  get_anova_table() %>%
+df_sas |>
+  anova_test(post ~ drug + pre, type = 1, detailed = TRUE) |>
+  get_anova_table() |>
   gt()
 ```
 
 ### Type 2
 
 ```{r}
-df_sas %>% 
-  anova_test(post ~ drug + pre, type = 2, detailed = TRUE) %>% 
-  get_anova_table() %>% 
+df_sas |>
+  anova_test(post ~ drug + pre, type = 2, detailed = TRUE) |>
+  get_anova_table() |>
   gt()
 ```
 
 ### Type 3
 
 ```{r}
-df_sas %>%
-  anova_test(post ~ drug + pre, type = 3, detailed = TRUE) %>% 
-  get_anova_table() %>% 
+df_sas |>
+  anova_test(post ~ drug + pre, type = 3, detailed = TRUE) |>
+  get_anova_table() |>
   gt()
 ```
 
 ### Least Squares Means
 
 ```{r}
-model_ancova %>% emmeans::lsmeans("drug") %>% emmeans::pwpm(pvals = TRUE, means = TRUE) 
-model_ancova %>% emmeans::lsmeans("drug") %>% plot(comparisons = TRUE)
+model_ancova |>
+  emmeans::lsmeans("drug") |>
+  emmeans::pwpm(pvals = TRUE, means = TRUE)
+
+model_ancova |>
+  emmeans::lsmeans("drug") |>
+  plot(comparisons = TRUE)
 ```
 
 ## sasLM Package

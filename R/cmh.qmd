@@ -26,7 +26,7 @@ tribble(
   ~Package, ~`General Association`, ~`Row Means Differ`, ~`Nonzero Correlation`, ~`M-H Odds Ratio`, ~`Homogeneity Test`, ~Note,
  "stats::mantelhaen.test()", yes, no, no, yes, no, "Works well for 2x2xK",
  "vcdExtra::CMHtest()", yes,yes,yes,no,no,"Problems with sparsity, potential bug",
- "epiDisplay::mhor()", no,no,no,yes,yes,"OR are limited to 2x2xK design") %>%
+ "epiDisplay::mhor()", no,no,no,yes,yes,"OR are limited to 2x2xK design") |>
   gt::gt()
 ```
 
@@ -36,7 +36,7 @@ We will use the CDISC Pilot data set, which is publicly available on the PHUSE T
 
 ```{r}
 #| echo: false
-data<-read.csv("../data/adcibc.csv")
+data <- read.csv("../data/adcibc.csv")
 head(data)
 
 ```
@@ -48,12 +48,14 @@ head(data)
 This is included in a base installation of R, as part of the stats package. Requires inputting data as a *table* or as *vectors*. Two examples 2x2x2 examples: X=2 treatments, Y=Sex (M/F), controlling for 2 age groups and 3x2x3 example X=3 treatments, Y=Sex (M/F), controlling for 3 age groups.
 
 ```{r}
-#2x2x2 example
-data2 <- data %>% 
-         filter(TRTPN !="54" & AGEGR1 !=">80")
-mantelhaen.test(x = data2$TRTP, y = data2$SEX, z = data2$AGEGR1)
-#3x2x3 example
-mantelhaen.test(x = data$TRTP, y = data$SEX, z = data$AGEGR1)
+# 2x2x2 example
+data2 <- data |>
+  filter(TRTPN != "54" & AGEGR1 != ">80")
+
+stats::mantelhaen.test(x = data2$TRTP, y = data2$SEX, z = data2$AGEGR1)
+
+# 3x2x3 example
+stats::mantelhaen.test(x = data$TRTP, y = data$SEX, z = data$AGEGR1)
 ```
 
 ### vcdExtra
@@ -62,8 +64,9 @@ The vcdExtra package provides results for the generalized CMH test, for each of 
 
 ```{r}
 library(vcdExtra)
+
 # Formula: Freq ~ X + Y | K
-CMHtest(Freq ~ TRTP + SEX | AGEGR1 , data=data, overall=TRUE) 
+vcdExtra::CMHtest(Freq ~ TRTP + SEX | AGEGR1, data = data, overall = TRUE)
 ```
 
 ### epiDisplay
@@ -72,8 +75,8 @@ To get the M-H common odds ratio and the homogeneity test, the epiDisplay packag
 
 ```{r}
 #| eval: false
-library(epiDisplay) 
-mhor(x,y,k, graph = FALSE)
+library(epiDisplay)
+epiDisplay::mhor(x, y, k, graph = FALSE)
 ```
 
 #### Forked Version - Solution for sparse data

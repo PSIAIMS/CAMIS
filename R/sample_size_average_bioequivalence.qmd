@@ -11,7 +11,6 @@ The most unambiguous requirements are mentioned in [FDA Guidance for Industry. S
 Appropriate method is described in `Diletti D, Hauschke D, Steinijans VW. Sample Size Determination for Bioequivalence Assessment by Means of Confidence Intervals. Int J Clin Pharmacol Ther Toxicol. 1991;29(1):1–8` and implemented in R package [PowerTOST](https://cran.r-project.org/web/packages/PowerTOST/index.html) with one clarification: it is simulation-based (iterative) procedure rather than simple calculation by formula.
 
 ```{r}
-#renv::install("PowerTOST")
 library(PowerTOST)
 library(knitr)
 library(data.table)
@@ -24,27 +23,27 @@ library(purrr)
 `sampleN.TOST()` function can calculate sample size for different designs:
 
 ```{r}
-kable(known.designs())
+kable(PowerTOST::known.designs())
 ```
 
 Basic usage: we should specify `targetpower` (power to achieve at least, e.g. 0.8 or 0.9), `theta0` (T/R ratio if `logscale = TRUE` which is convenient default value) and `cv` (coefficient of variation given as ratio if `logscale = TRUE`).
 
 ```{r}
 # 2x2x2
-sampleN.TOST(
-  targetpower = 0.8, 
-  theta0 = 0.95, 
-  CV = 0.3, 
+PowerTOST::sampleN.TOST(
+  targetpower = 0.8,
+  theta0 = 0.95,
+  CV = 0.3,
   design = "2x2x2"
 )
 ```
 
 ```{r}
 # 2x2x4
-sampleN.TOST(
-  targetpower = 0.9, 
-  theta0 = 0.98, 
-  CV = 0.24, 
+PowerTOST::sampleN.TOST(
+  targetpower = 0.9,
+  theta0 = 0.98,
+  CV = 0.24,
   design = "2x2x4"
 )
 ```
@@ -66,9 +65,9 @@ theta0 <- 1 - 0.05
 CV <- c(0.15, 0.23, 0.3, 0.5)
 design <- c("2x2x2", "2x2x4")
 
-dt <- CJ(CV, targetpower, design, theta0)
+dt <- data.table::CJ(CV, targetpower, design, theta0)
 
-sample_size <- purrr::pmap(dt, sampleN.TOST, print = FALSE)
+sample_size <- purrr::pmap(dt, PowerTOST::sampleN.TOST, print = FALSE)
 kable(rbindlist(sample_size))
 ```
 
@@ -82,7 +81,7 @@ Conclusion: we can trust `sampleN.TOST()`; for CV less or equal 0.30 with power 
 CV can be calculated from CI boundaries and sample size if only these values are available:
 
 ```{r}
-CVfromCI(lower = 0.95, upper = 1.11, n = 38)
+PowerTOST::CVfromCI(lower = 0.95, upper = 1.11, n = 38)
 ```
 
 
@@ -90,4 +89,5 @@ CVfromCI(lower = 0.95, upper = 1.11, n = 38)
 ```{r}
 sessionInfo()
 ```
+
 :::
