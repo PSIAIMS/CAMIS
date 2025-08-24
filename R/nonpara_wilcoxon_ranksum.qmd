@@ -5,7 +5,9 @@ title: "Wilcoxon Rank Sum (Mann Whitney-U) in R"
 ```{r}
 #| echo: FALSE
 #| include: FALSE
- library(tidyverse)
+library(tidyverse)
+library(coin)
+library(asht)
 ```
 
 # Overview
@@ -20,13 +22,15 @@ A tie in the data exists when an observation in group A, has the same result as 
 
 ## Available R packages
 
-There are two main implementations of the Wilcoxon rank sum test in R.
+There are three main implementations of the Wilcoxon rank sum test in R.
 
--   [stats::wilcox.test](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/wilcox.test)
+-   [stats::wilcox.test()](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/wilcox.test)
 
 -   [coin::wilcox_test()](https://cran.r-project.org/web/packages/coin/coin.pdf)
 
-The `stats` package implements various classic statistical tests, including Wilcoxon rank sum test. Although this is arguably the most commonly applied package, this one does not account for any ties in the data. To account for ties in the data, the `coin` package should be used.
+-   [asht::wmwTest()](https://cran.r-project.org/web/packages/asht/asht.pdf)
+
+The `stats` package implements various classic statistical tests, including Wilcoxon rank sum test. Although this is arguably the most commonly applied package, this one does not account for any ties in the data. To account for ties in the data, the `coin` or `asht` package should be used.
 
 ```{r}
 #| eval: false
@@ -54,7 +58,7 @@ bw_s <- c(3.18, 2.74, 2.9, 3.27, 3.65,
            3.69, 3.53, 2.38, 2.34)
 ```
 
-Can visualize the data on two histograms. Red lines indicate the location of medians.
+We do note that there are ties present in the data. Can visualize the data on two histograms. Red lines indicate the location of medians.
 
 ```{r}
 #| eval: true
@@ -68,33 +72,52 @@ abline(v = median(bw_s), col = 'red', lwd = 2)
 
 It is possible to see that for non-smokers, the median birthweight is higher than those of smokers. Now we can formally test it with wilcoxon rank sum test.
 
-The default test is two-sided with confidence level of 0.95, and does continuity correction.
+## stats::wilcox.test()
+
+In `stats::wilcox.test()` the exact p-value is computed when there are less than 50 values and no ties otherwise the normal approximation is used. In our data case, because there are ties the normal approximation is used.
+
+The default for the normal approximation is to use a continuity correction. One can add the argument `correct=FALSE` to not perform a continuity correction.
 
 ```{r}
 #| eval: true
 #| echo: true
 # default is two sided
+stats::wilcox.test(bw_s, bw_ns, paired = FALSE)
+stats::wilcox.test(bw_s, bw_ns, paired = FALSE, correct = FALSE)
+```
+
+We can also carry out a one-sided test, by specifying `alternative = "less"` (if the first group is expected to be smaller than the second group) or `alternative = "greater"`.
+
+```{r}
+#| eval: true
+#| echo: true
+# perform one-sided test
+stats::wilcox.test(bw_s, bw_ns, paired = FALSE, alternative = "less")
+```
+
+By setting `conf.int=TRUE` a confidence interval of the location parameter (x-y) is computed. Note that in the two-sample case the estimator for the difference in location parameters does not estimate the difference in medians (a common misconception) but rather the median of the difference between a sample from x and a sample from y. Note that the algorithm used for the estimation of the location parameter and confidence interval is not discussed in the help of the function (in the source code of the `stats::wilcox.test()` it is only mentioned that "Algorithm not published, thus better documented here.").
+
+By default a 95% confidence interval is provided. This can be changed by the argument `conf.level`.
+
+```{r}
+#| eval: true
+#| echo: true
+# Add conf.int = TRUE
 stats::wilcox.test(bw_s, bw_ns, paired = FALSE, conf.int = TRUE)
 ```
 
-We can also carry out a one-sided test, by specifying `alternative = greater` (if the first item is greater than the second).
+The argument `exact = TRUE` can be added to ask for an exact p-value to be computed. However, in our data case as there are ties this does not work.
 
 ```{r}
 #| eval: true
 #| echo: true
-# default is two sided
-stats::wilcox.test(bw_ns, bw_s, paired = FALSE, alternative = 'greater')
-```
-
-In {stats} the exact p-value is computed when there are less than 50 values and no ties otherwise the normal approximation is used. In this cause, because there are ties the normal approximation is used.
-```{r}
-#| eval: true
-#| echo: true
-# force exact
+# force exact, but does not work because we have ties
 stats::wilcox.test(bw_s, bw_ns, paired = FALSE, conf.int = TRUE, exact = TRUE)
 ```
 
-In order to account for the ties, `wilcox_test` from the {coin} package should be used. For this function, the data needs to be inputted via a formula where the right hand side is a factor, so we need to create a dataset. In order to get smokers - non-smokers we need to relevel the factors.
+## coin::wilcox_test()
+
+In order to account for the ties, `wilcox_test` from the `coin` package should be used. For this function, the data needs to be inputted via a formula where the right hand side is a factor, so we need to create a dataset. In order to get results for *smokers - non-smokers* we need to relevel the factors.
 
 ```{r}
 #| eval: true
@@ -104,27 +127,65 @@ smk_data <- data.frame(
   value = c(bw_ns, bw_s), 
   smoke = as.factor(rep(c("non", "smoke"), c(length(bw_ns), length(bw_s))))
 ) 
-
-smk_data$smoke
 smk_data$smoke <- forcats::fct_relevel(smk_data$smoke, "smoke")
-
 smk_data$smoke
 ```
 
-Now the data is in the right shape we can run `wilcox_test`. In order to get the Hodges-Lehmann confidence intervals out, we need to include the `conf.int = TRUE` argument.(NOTE: the `conf.level` argument controls the confidence level, but must be used with `conf.int = TRUE` otherwise you won't get a confidence interval)
+Now the data is in the right shape we can run `wilcox_test`. By default, `coin::wilcox_test` does a normal approximation approach without continuity correction. One can add again `alternative="less"` (or `alternative="greater"`) for one-sided testing.
+
+```{r}
+coin::wilcox_test(value ~ smoke, data = smk_data)
+```
+
+We do note that a normal approximation approach with continuity correction cannot be obtained with this function. One can add `correct=FALSE`, but note that no error is given and the results of a normal approximation approach without continuity correction is provided.
+
+```{r}
+coin::wilcox_test(value ~ smoke, data = smk_data, correct=FALSE)
+```
+
+By including the `conf.int = TRUE` argument, confidence intervals for the difference in location are computed. According to the `coin` package documentation this is done according to Bauer (1972) \[Bauer, D. F. (1972). Constructing confidence sets using rank statistics. Journal of the American Statistical Association 67(339), 687–690\] and Hollander and Wolfe (1999) \[Hollander, M. and Wolfe, D. A. (1999). Nonparametric Statistical Methods, Second Edition. New York: John Wiley & Sons.\]. Note that the `conf.level` argument controls the confidence level, but must be used with `conf.int = TRUE` otherwise you won't get a confidence interval.
 
 ```{r}
 coin::wilcox_test(value ~ smoke, data = smk_data, conf.int  = TRUE)
 ```
 
-In {coin} there is no option for a continuity correction and it is not done by default. {coin} can calculate exact and Monte Carlo conditional p-values using the `distribtuion` argument. The exact p-value should be used in small sample sizes as the normal approximation does not hold
+Using `coin` one can calculate exact and Monte Carlo conditional p-values using the `distribtuion` argument. The exact p-value is best used in small sample sizes.
 
 ```{r}
-
 coin::wilcox_test(value ~ smoke, data = smk_data, conf.int  = TRUE,
                   distribution = "exact")
 ```
-*Note:* the distribution argument only effects the p-value, {coin} consistently calculated the exact Hodges-Lehmann confidence intervals.
+
+
+For doing an approximative (Monte Carlo) (with 500 and 500000 samples) the following code can be used.
+
+```{r}
+coin::wilcox_test(value ~ smoke, data = smk_data, conf.int  = TRUE,
+                  distribution = approximate(nresample = 500))
+coin::wilcox_test(value ~ smoke, data = smk_data, conf.int  = TRUE,
+                  distribution = approximate(nresample = 500000))
+```
+
+<!-- *Note:* the distribution argument only effects the p-value and estimate of difference in location. In contrast, `coin` consistently calculated the exact Hodges-Lehmann confidence intervals. -->
+
+
+## asht::wmwTest()
+
+The `asht::wmwTest()` function calculates the Wilcoxon-Mann-Whitney test (normal approximation, exact complete enumeration, and exact Monte Carlo implementation) together with confidence intervals on the Mann-Whitney parameter, Pr[X<Y] + 0.5 Pr[X=Y].
+
+By default, the function returns the normal approximation using a continuity correction. The `correct` argument is available to turn-off the continuity correction. The `alternative` argument is available for one-sided testing. By default, the 95% confidence interval is calculated for the Mann-Whitney parameter (use argument `conf.int` and `conf.level` to change these defaults.). Details on the calculation of the confidence interval are provided in Newcombe (2006) \[Newcombe, Robert G. (2006). Confidence intervals for an effect size measure based on the Mann-Whitney statistic. Part 2: asymptotic methods and evaluation. Statistics in medicine 25(4): 559-573\].
+
+```{r}
+wmwTest(bw_s, bw_ns)
+```
+
+Using the `method` argument one can change from normal approximation to exact complete enumeration (`method = "exact.ce"`), and exact Monte Carlo (`method = "exact.mc"`) implementation. When `method = "exact.mc"`, the test is implemented using complete enumeration of all permutations, and hence is only tractible for very small sample sizes (less than 10 in each group). Here, we show an example of `method = "exact.mc"`.
+
+```{r}
+wmwTest(bw_s, bw_ns,
+        method = "exact.mc", control = wmwControl(nMC = 100000))
+```
+
 
 ## Useful References
 

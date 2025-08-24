@@ -43,7 +43,7 @@ df_disease <-
 
 ### The Model {.unnumbered}
 
-For this example, we're testing for a significant difference in `stem_length` using ANOVA. In R, we're using `lm()` to run the ANOVA, and then using `broom::glance()` and `broom::tidy()` to view the results in a table format.
+For this example, we're testing for a significant difference in `stem_length` using ANOVA. Before getting the sums of squares and associated p-values from the ANOVA, we need to fit a linear model. In R, we're using `lm()` to fit the model, and then using `broom::glance()` and `broom::tidy()` to view the results in a table format.
 
 ```{r}
 lm_model <- lm(y ~ drug + disease + drug*disease, df_disease)
@@ -62,117 +62,122 @@ The `tidy` function gives a summary of the model results.
 lm_model %>% tidy()
 ```
 
-### The Results {.unnumbered}
-
-You'll see that R print the individual results for each level of the drug and disease interaction. We can get the combined F table in R using the `anova()` function on the model object.
-
-```{r}
-lm_model %>% 
-  anova() %>% 
-  tidy() 
-```
-
-We can add a `Total` row, by using `add_row` and calculating the sum of the degrees of freedom and sum of squares.
-
-```{r}
-lm_model %>%
-  anova() %>%
-  tidy() %>%
-  add_row(term = "Total", df = sum(.$df), sumsq = sum(.$sumsq)) %>% 
-  kable()
-```
 
 ### Sums of Squares Tables {.unnumbered}
 
-### rstatix
+#### Type I 
 
-Unfortunately, it is not easy to get the various types of sums of squares calculations in using functions from base R. However, the `rstatix` package offers a solution to produce these various sums of squares tables. For each type, you supply the original dataset and model to the. `anova_test` function, then specify the type and se `detailed = TRUE`.
+Type I sums of square, also known as sequential ANOVA, is a method of analysis of variance where model terms are assessed sequentially. In this approach, the contribution of each factor or variable to the model is evaluated in the order they are specified, with each factor being adjusted for the effects of those that precede it. This means that the significance of a factor can depend on the factors that have already been included in the model. Type I ANOVA is useful for hierarchical models, where the sequence of entering factors into the model is meaningful or based on theoretical considerations. While possible to use on unbalanced designs it is often not testing the hypothesis of interest. 
 
-#### Type I
+For a model with two factors, A and B (in that order) the sums of squares will be tested like this: 
+  - SS(A) for factor A. 
+  - SS(B | A) for factor B. 
+  - SS(AB | B, A) for interaction AB. 
 
+This can be calculated using, the base R {stats} package or the {rstatix} package. Both give the same result. 
+
+##### stats
 ```{r}
-#| message: false
-#| warning: false
+anova(lm_model)
+```
+
+##### rstatix 
+```{r}
 df_disease %>% 
   rstatix::anova_test(
     y ~ drug + disease + drug*disease, 
     type = 1, 
-    detailed = TRUE) %>% 
-  rstatix::get_anova_table() %>% 
-  kable()
+    detailed = TRUE)
 ```
 
-#### Type II {.unnumbered}
 
+#### Type II 
+
+Type II sum of squares also known as hierarchical or partially sequential sums of squares. Tests the effect of adding a factor to the model after all other factors have been added. This means that the significance of a factor is assessed while controlling for the effects of all other factors in the model, but not for interactions. Type II ANOVA is particularly useful when there are no interactions in the model or when the focus is on main effects only. It is often used in unbalanced designs, where the number of observations varies across groups.
+
+For a model with two factors, A and B (in that order) the sums of squares will be tested like this: 
+ - SS(A | B) for factor A. 
+ - SS(B | A) for factor B. 
+
+This can be calculated using the {car} package or the {rstatix} package. Both give the same result.
+
+
+##### car
 ```{r}
-#| message: false
-#| warning: false
+Anova(lm_model, type = "II")
+```
+
+##### rstatix 
+```{r}
 df_disease %>% 
   rstatix::anova_test(
     y ~ drug + disease + drug*disease, 
     type = 2, 
-    detailed = TRUE) %>% 
-  rstatix::get_anova_table() %>% 
-  kable()
+    detailed = TRUE)
 ```
 
-#### Type III {.unnumbered}
+
+#### Type III 
+
+Type III sum of squares is calculated such that every effect is adjusted for all other effect. This means testing for the presence of a main effect after adjusting for other main effects and interactions. 
+For a model with two factors, A and B (in that order) the sums of squares will be tested like this: 
+ - SS(A | B, AB) for factor A. 
+ - SS(B | A, AB) for factor B. 
+
+This can be calculated using the base R {stats} package, the {car} package or the {rstatix} package. All give the same result. 
+
+Note: Calculating type III sums of squares in R is a bit tricky, because the multi-way ANOVA model is over-paramerterised. So when running the linear model we need to select a design matrix that sums to zero. In R those options will be either `"contr.sum"` or `"contr.poly"`
 
 ```{r}
-#| message: false
-#| warning: false
+# Drug design matrix 
+contr.sum(4) # Using 4 here as we have 4 levels of drug 
+# Disease design matrix 
+contr.sum(3) 
+
+```
+
+While not relevant for this example as the disease variable isn't ordinal the polynomial design matrix would look like 
+```{r}
+contr.poly(3)
+```
+
+```{r}
+lm_model <- lm(y ~ drug + disease + drug*disease, df_disease, 
+              contrasts = list(drug = "contr.sum", disease = "contr.sum"))
+```
+
+##### stats
+
+Using the base stats package, you can use the `drop1()` function which drops all possible single terms in a model. The scope term specifies how things can be dropped. 
+```{r}
+drop1(lm_model, scope = .~., test="F")
+```
+
+##### car
+```{r}
+car::Anova(lm_model, type = "III")
+```
+
+##### rstatix 
+The `rstatix` package uses the `car` package to do the anova calculation, but can be nicer to use as it handles the contrasts for you and is more "pipe-able".
+```{r}
 df_disease %>% 
   rstatix::anova_test(
     y ~ drug + disease + drug*disease, 
     type = 3, 
-    detailed = TRUE) %>% 
-  rstatix::get_anova_table() %>% 
-  kable()
+    detailed = TRUE)
 ```
+
 
 #### Type IV {.unnumbered}
 
 In R there is no equivalent operation to the `Type IV` sums of squares calculation in SAS.
 
-### car
-
-As an alternative to the `rstatix` package, you can use the `car` package, which is the R package for "An R Companion to Applied Regression, Third Edition, Sage 2019"
-
-#### Type I {.unnumbered}
-
-Type I can come directly from `stats`.
-
-```{r}
-anova(lm_model)
-```
-
-#### Type II {.unnumbered}
-
-```{r}
-Anova(lm_model, type = "II")
-```
-
-#### Type III {.unnumbered}
-
-For type III tests the linear model we have used above does not make sense if the contrasts are orthogonal in the row-basis. The default contrast term `contr.treatment` are not, so the contrast should be changed. If you want to match the procedure in SAS use `{r} c("contr.sum", "contr.poly")`. This can be either set as an option.
-
-```{r}
-#| eval: FALSE 
-options(contrasts = c("contr.sum", "contr.poly"))
-```
-
-Or, set directly in the model statement using the `contrasts` argument
-
-```{r}
-lm_model <- lm(y ~ drug + disease + drug*disease, df_disease, 
-              contrasts = list(drug = "contr.sum", disease = "contr.poly"))
-car::Anova(lm_model, type = "III")
-```
-
-`rstatix` does this is by default. The `rstatix` package uses the `car` package to do the anova calculation, but can be nicer to use as it handles the contrasts for you and is more "pipe-able".
 
 ### Contrasts {.unnumbered}
+
 The easiest way to get contrasts in R is by using `emmeans`. For looking at contrast we are going to fit a different model on new data, that doesn't include an interaction term as it is easier to calculate contrasts without an interaction term. For this dataset we have three different drugs A, C, and E.
+
 ```{r}
 df_trial<- read.csv("../data/drug_trial.csv")
 
@@ -185,3 +190,5 @@ lm(formula = post ~ pre + drug, data = df_trial) %>%
 
 ```
 
+## References
+Göttingen University. (n.d.). Type II and III SS using the car package. Retrieved 19 August 2025, from https://md.psych.bio.uni-goettingen.de/mv/unit/lm_cat/lm_cat_unbal_ss_explained.html#type-ii-and-iii-ss-using-the-car-package
