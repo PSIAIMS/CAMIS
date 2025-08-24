@@ -1,29 +1,25 @@
 ---
-title: "<R> <Reference-Based Multiple Imputation (joint modelling): Continuous Data>"
+title: "Reference-Based Multiple Imputation (joint modelling): Continuous Data"
 ---
 
 ## Libraries
 
-### General
 ```{r}
 #| output: false
 #| warning: false
+
+# General
 library(dplyr)
 library(tidyr)
 library(gt)
 library(labelled)
-```
 
-### Methodology specific
-```{r}
-#| output: false
-#| warning: false
+# Methodlolgy specific
 library(mmrm)
 library(emmeans)
 library(rbmi)
 library(mice) # only used md.pattern()
 ```
-
 
 ## Reference-based multiple imputation (rbmi)
 
@@ -78,7 +74,7 @@ dat <- antidepressant_data |>
     CHANGE
   ) |>
   dplyr::mutate(THERAPY = factor(THERAPY, levels = c("PLACEBO", "DRUG"))) |>
-  remove_labels()
+  labelled::remove_labels()
 
 gt(head(dat, n = 10))
 ```
@@ -116,7 +112,7 @@ dat_wide = dat |>
 
 dat_wide |>
   dplyr::select(starts_with("VISIT_")) |>
-  md.pattern(plot = TRUE, rotate.names = TRUE)
+  mice::md.pattern(plot = TRUE, rotate.names = TRUE)
 ```
 
 ## Complete case analysis
@@ -125,7 +121,7 @@ A complete case analysis is performed using mixed model for repeated measures (M
 
 ```{r}
 #| label: mmrm fit
-mmrm_fit = mmrm(
+mmrm_fit = mmrm::mmrm(
   CHANGE ~
     1 +
       THERAPY +
@@ -155,7 +151,8 @@ em = emmeans::emmeans(
 )
 
 em_contrast = broom::tidy(em$contrasts, conf.int = TRUE, conf.level = 0.95)
-gt(em_contrast) |>
+em_contrast |>
+  gt() |>
   fmt_number(decimals = 3)
 ```
 
@@ -170,7 +167,7 @@ The code presented here is based on the `rbmi` package  [quickstart vignette](ht
 
 ```{r}
 #| label: MAR - create dataset 1
-dat_expand <- expand_locf(
+dat_expand <- rbmi::expand_locf(
   dat,
   PATIENT = levels(dat$PATIENT), # expand by PATIENT and VISIT
   VISIT = levels(dat$VISIT),
@@ -181,10 +178,16 @@ dat_expand <- expand_locf(
 ```
 
 For example, the data of patient 1513 in the original data and expanded data are:
+
 ```{r}
 #| label: MAR - create dataset 2
-gt(dat |> dplyr::filter(PATIENT == "1513"))
-gt(dat_expand |> dplyr::filter(PATIENT == "1513"))
+dat |>
+  dplyr::filter(PATIENT == "1513") |>
+  gt()
+
+dat_expand |>
+  dplyr::filter(PATIENT == "1513") |>
+  gt()
 ```
 
 Next, a dataset must be created specifying which data points should be imputed with the specified imputation strategy. The dataset `dat_ice` is created which specifies the first visit affected by an intercurrent event (ICE) and the imputation strategy for handling missing outcome data after the ICE. At most one ICE which is to be imputed is allowed per subject. In the example, the subject’s first visit affected by the ICE “study drug discontinuation” corresponds to the first terminal missing observation
@@ -204,6 +207,7 @@ gt(head(dat_ice))
 ```
 
 In this dataset, subject 3618 has an intermittent missing values which does not correspond to a study drug discontinuation. We therefore remove this subject from `dat_ice`. In the later imputation step, it will automatically be imputed under the default MAR assumption.
+
 ```{r}
 #| label: MAR - create dataset 4
 dat_ice <- dat_ice[-which(dat_ice$PATIENT == 3618), ]
@@ -218,7 +222,7 @@ The `draws()` function fits the imputation model and stores the corresponding pa
 
 ```{r}
 #| label: MAR - draw step
-vars <- set_vars(
+vars <- rbmi::set_vars(
   outcome = "CHANGE",
   visit = "VISIT",
   subjid = "PATIENT",
@@ -226,9 +230,9 @@ vars <- set_vars(
   covariates = c("GENDER", "BASVAL*VISIT", "THERAPY*VISIT")
 )
 
-method <- method_bayes(
+method <- rbmi::method_bayes(
   n_samples = 500,
-  control = control_bayes(warmup = 500, thin = 10)
+  control = rbmi::control_bayes(warmup = 500, thin = 10)
 )
 
 set.seed(12345)
@@ -249,18 +253,20 @@ The next step is to use the parameters from the imputation model to generate the
 
 ```{r}
 #| label: MAR - impute step
-imputeObj <- impute(draws = drawObj, references = NULL)
+imputeObj <- rbmi::impute(draws = drawObj, references = NULL)
 ```
 
 In case we would like to access the imputed datasets, we can use the `extract_imputed_dfs()` function. For example, the imputed values in the 10th imputed dataset for patient 1513 are:
 
 ```{r}
 #| label: MAR impute step 2
-imputed_dfs = extract_imputed_dfs(imputeObj)
+imputed_dfs = rbmi::extract_imputed_dfs(imputeObj)
 MI_10 = imputed_dfs[[10]]
 MI_10$PATIENT_ID = dat_expand$PATIENT
 
-gt(MI_10 |> dplyr::filter(PATIENT_ID == "1513"))
+MI_10 |>
+  dplyr::filter(PATIENT_ID == "1513") |>
+  gt()
 ```
 
 ### Analyse imputed datasets
@@ -272,7 +278,7 @@ Note: In Appendix 1 below we show how you can easily use a different analysis me
 
 ```{r}
 #| label: MAR - analyse
-vars_analyse <- set_vars(
+vars_analyse <- rbmi::set_vars(
   outcome = "CHANGE",
   visit = "VISIT",
   subjid = "PATIENT",
@@ -280,18 +286,19 @@ vars_analyse <- set_vars(
   covariates = c("BASVAL", "GENDER")
 )
 
-anaObj <- analyse(
+anaObj <- rbmi::analyse(
   imputations = imputeObj,
   fun = ancova,
   vars = vars_analyse
 )
 ```
 
-
 ### Pool results
+
 Finally, the `pool()` function can be used to summarise the analysis results across multiple imputed datasets to provide an overall statistic with a standard error, confidence intervals and a p-value for the hypothesis test of the null hypothesis that the effect is equal to 0. Since we used `method_bayes()`, pooling and inference are based on Rubin’s rules.
 
 Here, the treatment difference at visit 7 is of interest. Since we set PLACEBO as the first factor in the variable `THERAPY` this corresponds to `ref`, whereas DRUG corresponds to `alt`.
+
 ```{r}
 #| label: MAR - pool
 poolObj <- rbmi::pool(anaObj, conf.level = 0.95, alternative = "two.sided")
@@ -318,7 +325,7 @@ dat_ice <- dat_expand |>
   select(PATIENT, VISIT) |>
   mutate(strategy = "CR")
 
-imputeObj <- impute(
+imputeObj <- rbmi::impute(
   drawObj,
   references = c("PLACEBO" = "PLACEBO", "DRUG" = "PLACEBO")
 )
@@ -339,7 +346,7 @@ dat_ice <- dat_expand |>
   mutate(strategy = "CR")
 dat_ice <- dat_ice[-which(dat_ice$PATIENT == 3618), ]
 
-vars <- set_vars(
+vars <- rbmi::set_vars(
   outcome = "CHANGE",
   visit = "VISIT",
   subjid = "PATIENT",
@@ -347,13 +354,13 @@ vars <- set_vars(
   covariates = c("GENDER", "BASVAL*VISIT", "THERAPY*VISIT")
 )
 
-method <- method_bayes(
+method <- rbmi::method_bayes(
   n_samples = 500,
-  control = control_bayes(warmup = 500, thin = 10)
+  control = rbmi::control_bayes(warmup = 500, thin = 10)
 )
 
 set.seed(12345)
-drawObj <- draws(
+drawObj <- rbmi::draws(
   data = dat_expand,
   data_ice = dat_ice,
   vars = vars,
@@ -361,12 +368,12 @@ drawObj <- draws(
   quiet = TRUE
 )
 
-imputeObj <- impute(
+imputeObj <- rbmi::impute(
   drawObj,
   references = c("PLACEBO" = "PLACEBO", "DRUG" = "PLACEBO")
 )
 
-vars_analyse <- set_vars(
+vars_analyse <- rbmi::set_vars(
   outcome = "CHANGE",
   visit = "VISIT",
   subjid = "PATIENT",
@@ -374,12 +381,17 @@ vars_analyse <- set_vars(
   covariates = c("BASVAL", "GENDER")
 )
 
-anaObj <- analyse(imputations = imputeObj, fun = ancova, vars = vars_analyse)
+anaObj <- rbmi::analyse(
+  imputations = imputeObj,
+  fun = ancova,
+  vars = vars_analyse
+)
 
 poolObj <- rbmi::pool(anaObj, conf.level = 0.95, alternative = "two.sided")
 ```
 
 The results for M=500 imputed datasets using the MNAR CR approach are:
+
 ```{r}
 #| label: MNAR CR - results
 poolObj |>
@@ -403,7 +415,7 @@ dat_ice <- dat_expand |>
   select(PATIENT, VISIT) |>
   mutate(strategy = "JR")
 
-imputeObj <- impute(
+imputeObj <- rbmi::impute(
   drawObj,
   references = c("PLACEBO" = "PLACEBO", "DRUG" = "PLACEBO")
 )
@@ -422,9 +434,10 @@ dat_ice <- dat_expand |>
   ungroup() |>
   select(PATIENT, VISIT) |>
   mutate(strategy = "JR")
+
 dat_ice <- dat_ice[-which(dat_ice$PATIENT == 3618), ]
 
-vars <- set_vars(
+vars <- rbmi::set_vars(
   outcome = "CHANGE",
   visit = "VISIT",
   subjid = "PATIENT",
@@ -432,13 +445,13 @@ vars <- set_vars(
   covariates = c("GENDER", "BASVAL*VISIT", "THERAPY*VISIT")
 )
 
-method <- method_bayes(
+method <- rbmi::method_bayes(
   n_samples = 500,
-  control = control_bayes(warmup = 500, thin = 10)
+  control = rbmi::control_bayes(warmup = 500, thin = 10)
 )
 
 set.seed(12345)
-drawObj <- draws(
+drawObj <- rbmi::draws(
   data = dat_expand,
   data_ice = dat_ice,
   vars = vars,
@@ -446,12 +459,12 @@ drawObj <- draws(
   quiet = TRUE
 )
 
-imputeObj <- impute(
+imputeObj <- rbmi::impute(
   drawObj,
   references = c("PLACEBO" = "PLACEBO", "DRUG" = "PLACEBO")
 )
 
-vars_analyse <- set_vars(
+vars_analyse <- rbmi::set_vars(
   outcome = "CHANGE",
   visit = "VISIT",
   subjid = "PATIENT",
@@ -459,12 +472,17 @@ vars_analyse <- set_vars(
   covariates = c("BASVAL", "GENDER")
 )
 
-anaObj <- analyse(imputations = imputeObj, fun = ancova, vars = vars_analyse)
+anaObj <- rbmi::analyse(
+  imputations = imputeObj,
+  fun = ancova,
+  vars = vars_analyse
+)
 
 poolObj <- rbmi::pool(anaObj, conf.level = 0.95, alternative = "two.sided")
 ```
 
 The results for M=500 imputed datasets using the MNAR JR approach are:
+
 ```{r}
 #| label: MNAR JR - results
 poolObj |>
@@ -490,7 +508,7 @@ dat_ice <- dat_expand |>
   select(PATIENT, VISIT) |>
   mutate(strategy = "CIR")
 
-imputeObj <- impute(
+imputeObj <- rbmi::impute(
   drawObj,
   references = c("PLACEBO" = "PLACEBO", "DRUG" = "PLACEBO")
 )
@@ -509,6 +527,7 @@ dat_ice <- dat_expand |>
   ungroup() |>
   select(PATIENT, VISIT) |>
   mutate(strategy = "CIR")
+
 dat_ice <- dat_ice[-which(dat_ice$PATIENT == 3618), ]
 
 vars <- set_vars(
@@ -519,13 +538,13 @@ vars <- set_vars(
   covariates = c("GENDER", "BASVAL*VISIT", "THERAPY*VISIT")
 )
 
-method <- method_bayes(
+method <- rbmi::method_bayes(
   n_samples = 500,
   control = control_bayes(warmup = 500, thin = 10)
 )
 
 set.seed(12345)
-drawObj <- draws(
+drawObj <- rbmi::draws(
   data = dat_expand,
   data_ice = dat_ice,
   vars = vars,
@@ -533,12 +552,12 @@ drawObj <- draws(
   quiet = TRUE
 )
 
-imputeObj <- impute(
+imputeObj <- rbmi::impute(
   drawObj,
   references = c("PLACEBO" = "PLACEBO", "DRUG" = "PLACEBO")
 )
 
-vars_analyse <- set_vars(
+vars_analyse <- rbmi::set_vars(
   outcome = "CHANGE",
   visit = "VISIT",
   subjid = "PATIENT",
@@ -546,12 +565,17 @@ vars_analyse <- set_vars(
   covariates = c("BASVAL", "GENDER")
 )
 
-anaObj <- analyse(imputations = imputeObj, fun = ancova, vars = vars_analyse)
+anaObj <- rbmi::analyse(
+  imputations = imputeObj,
+  fun = ancova,
+  vars = vars_analyse
+)
 
 poolObj <- rbmi::pool(anaObj, conf.level = 0.95, alternative = "two.sided")
 ```
 
 The results for M=500 imputed datasets using the MNAR CIR approach are:
+
 ```{r}
 #| label: MNAR CIR - results
 poolObj |>
@@ -580,14 +604,14 @@ In the table we present the results of the different imputation strategies (and 
 | MI - MNAR CIR (M=2000) | -2.469 | 1.116 | -4.674 to -0.263 | 0.0285 |
 | MI - MNAR CIR (M=5000) | -2.479 | 1.112 | -4.676 to -0.282 | 0.0273 |
 
-
 ## Approximate Bayesian
+
 In the `draws()` function it is possible to specify other methods. For example, the approximate Bayesian MI `method_approxbayes()` which is based on bootstrapping. `draws()` returns the draws from the posterior distribution of the parameters using an approximate Bayesian approach, where the sampling from the posterior distribution is simulated by fitting the MMRM model on bootstrap samples of the original dataset.
 
 ```{r}
 #| label: ApproxBayes - changes
 #| eval: false
-method <- method_approxbayes(
+method <- rbmi::method_approxbayes(
   covariance = "us",
   threshold = 0.01,
   REML = TRUE,
@@ -602,13 +626,14 @@ In the table we present the results of the approximate Bayesian approach for a C
 | MI - MNAR CR (M=500)  | -2.415 | 1.109 | -4.617 to -0.210 | 0.0320 |
 | MI - MNAR CR (M=2000) | -2.403 | 1.112 | -4.600 to -0.205 | 0.0323 |
 
-
 ## Discussion
+
 A note on computational time: The total running time (including data loading, setting up data sets, MCMC run, imputing data and analysis MI data) for M=500 was about 26 seconds on a personal laptop. It increased to about 92 seconds for M=2000. Computational time was similar across different imputation strategies.
 
 With a small number of `n_samples` in `method_bayes()` a warning could pop-up "The largest R-hat is 1.08, indicating chains have not mixed. Running the chains for more iterations may help". Increasing the number of `n_samples` will mostly solve this warning. For example, for this data example, this message is received when setting `n_samples` equal to a number below 100.
 
 ## Appendix 1: mmrm as analysis model
+
 In the `analyse()` function (at the moment of writing) the only available analysis function is `ancova`. However, the user is able to specify its own analysis function. See the `analyse()` function for more details.
 
 Another possibility (although, not the most efficient) is to implement a for loop in which the model is fit on each imputed dataset. The obtained results could then be pooled using Rubin's rule. For example, suppose an MMRM should be fit on each imputed dataset:
@@ -617,7 +642,7 @@ Another possibility (although, not the most efficient) is to implement a for loo
 #| label: mmrm analyse
 mmrm_analyse_mi_function <- function(Impute_Obj) {
   # create all imputed datasets
-  imputed_dfs = extract_imputed_dfs(Impute_Obj)
+  imputed_dfs = rbmi::extract_imputed_dfs(Impute_Obj)
 
   # create empty vectors to store mmrm analysis results
   est_vec = sd_vec = df_vec = NULL
@@ -625,7 +650,7 @@ mmrm_analyse_mi_function <- function(Impute_Obj) {
   # for loop to save estimates per imputation
   for (k in 1:length(imputed_dfs)) {
     temp_dat = imputed_dfs[[k]]
-    mmrm_fit_temp = mmrm(
+    mmrm_fit_temp = mmrm::mmrm(
       CHANGE ~
         1 +
           THERAPY +
@@ -661,6 +686,7 @@ mmrm_analyse_mi_function <- function(Impute_Obj) {
 ```
 
 The following code then performs the analysis and pooling
+
 ```{r}
 #| label: mmrm analyse 2
 #| eval: false

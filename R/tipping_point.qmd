@@ -80,7 +80,7 @@ dat <- antidepressant_data |>
     CHANGE
   ) |>
   dplyr::mutate(THERAPY = factor(THERAPY, levels = c("PLACEBO", "DRUG"))) |>
-  remove_labels()
+  labelled::remove_labels()
 
 gt(head(dat, n = 10))
 ```
@@ -118,13 +118,13 @@ dat_wide = dat |>
 
 dat_wide |>
   dplyr::select(starts_with("VISIT_")) |>
-  md.pattern(plot = TRUE, rotate.names = TRUE)
+  mice::md.pattern(plot = TRUE, rotate.names = TRUE)
 ```
 
 There is a single patient with an intermittent missing observation at visit 5, which is patient 3618. Special considerations need to be taken when applying delta adjustments to intermittent missing observations like this one (more on this later).
 
 ```{r}
-dat_expand <- expand_locf(
+dat_expand <- rbmi::expand_locf(
   dat,
   PATIENT = levels(dat$PATIENT),
   VISIT = levels(dat$VISIT),
@@ -160,7 +160,7 @@ dat_ice <- dat_ice[-which(dat_ice$PATIENT == 3618), ]
 ```{r}
 #| label: MAR_imputation_model
 #| include: false
-vars <- set_vars(
+vars <- rbmi::set_vars(
   outcome = "CHANGE",
   visit = "VISIT",
   subjid = "PATIENT",
@@ -168,12 +168,12 @@ vars <- set_vars(
   covariates = c("GENDER", "BASVAL*VISIT", "THERAPY*VISIT")
 )
 
-method <- method_bayes(
+method <- rbmi::method_bayes(
   n_samples = 500,
   control = control_bayes(warmup = 500, thin = 10)
 )
 
-drawObj <- draws(
+drawObj <- rbmi::draws(
   data = dat_expand,
   data_ice = dat_ice,
   vars = vars,
@@ -181,7 +181,7 @@ drawObj <- draws(
   quiet = TRUE
 )
 
-imputeObj <- impute(
+imputeObj <- rbmi::impute(
   draws = drawObj,
   references = NULL
 )
@@ -190,7 +190,7 @@ imputeObj <- impute(
 ```{r}
 #| label: MAR_analysis_model
 #| include: false
-vars_analyse <- set_vars(
+vars_analyse <- rbmi::set_vars(
   outcome = "CHANGE",
   visit = "VISIT",
   subjid = "PATIENT",
@@ -221,7 +221,7 @@ By default, `delta_template()` will set `delta` to 0 for all observations.
 
 ```{r}
 #| label: template_delta_0
-dat_delta_0 <- delta_template(imputations = imputeObj)
+dat_delta_0 <- rbmi::delta_template(imputations = imputeObj)
 
 dat_delta_0 |>
   dplyr::filter(PATIENT %in% c("1513", "1514")) |>
@@ -233,7 +233,7 @@ You can add the delta values to the outcome variable (CHANGE) of one of the impu
 
 ```{r}
 #| label: extract_imputed_dfs_on_which_to_apply_delta
-imputed_dfs = extract_imputed_dfs(imputeObj)
+imputed_dfs = rbmi::extract_imputed_dfs(imputeObj)
 MI_10 = imputed_dfs[[10]]
 MI_10$PATIENT2 = MI_10$PATIENT
 MI_10$PATIENT = dat_expand$PATIENT
@@ -261,7 +261,7 @@ You may have noticed that the `is_missing` and `is_post_ice` columns of the delt
 
 ```{r}
 #| label: template_delta_5_v1
-dat_delta_5_v1 <- delta_template(imputations = imputeObj) |>
+dat_delta_5_v1 <- rbmi::delta_template(imputations = imputeObj) |>
   mutate(delta = is_missing * 5)
 
 dat_delta_5_v1 |>
@@ -317,7 +317,7 @@ If you consider the `is_post_ice` column too, you can restrict the delta adjustm
 
 ```{r}
 #| label: template_delta_5_v2
-dat_delta_5_v2 <- delta_template(imputations = imputeObj) |>
+dat_delta_5_v2 <- rbmi::delta_template(imputations = imputeObj) |>
   mutate(delta = is_missing * is_post_ice * 5)
 
 dat_delta_5_v2 |>
@@ -348,7 +348,7 @@ Besides choosing which missing data to apply the delta adjustment to, you may al
 delta_control = 0
 delta_intervention = 5
 
-dat_delta_0_5 <- delta_template(imputations = imputeObj) |>
+dat_delta_0_5 <- rbmi::delta_template(imputations = imputeObj) |>
   mutate(
     delta_ctl = (THERAPY == "PLACEBO") * is_missing * delta_control,
     delta_int = (THERAPY == "DRUG") * is_missing * delta_intervention,
@@ -384,7 +384,7 @@ Here, we apply the delta adjustment of 5 to **all** imputed values of the outcom
 
 ```{r}
 #| label: MAR_analysis_model_with_delta_adjustment
-anaObj <- analyse(
+anaObj <- rbmi::analyse(
   imputations = imputeObj,
   fun = ancova,
   delta = dat_delta_0_5,
@@ -418,7 +418,7 @@ To cut down on computation time, you may want to increase the number of parallel
 
 ```{r}
 #| label: cluster_specification
-cl <- make_rbmi_cluster(ncores = 4)
+cl <- rbmi::make_rbmi_cluster(ncores = 4)
 ```
 
 ### Perform tipping point analysis
@@ -428,14 +428,14 @@ To enable a tipping point analysis within a single function, we create `perform_
 ```{r}
 #| label: function_tipping_point_analysis
 perform_tipp_analysis <- function(delta_control, delta_intervention, cl) {
-  dat_delta <- delta_template(imputeObj) |>
+  dat_delta <- rbmi::delta_template(imputeObj) |>
     mutate(
       delta_ctl = (THERAPY == "PLACEBO") * is_missing * delta_control,
       delta_int = (THERAPY == "DRUG") * is_missing * delta_intervention,
       delta = delta_ctl + delta_int
     )
 
-  anaObj <- analyse(
+  anaObj <- rbmi::analyse(
     imputations = imputeObj,
     fun = ancova,
     delta = dat_delta,
@@ -718,7 +718,7 @@ To program this, we first use the `delta` and `dlag` arguments of `delta_templat
 
 ```{r}
 #| label: template_delta_scaled
-dat_delta <- delta_template(
+dat_delta <- rbmi::delta_template(
   imputeObj,
   delta = c(2, 2, 2, 2),
   dlag = c(1, 1, 1, 1)
@@ -748,7 +748,7 @@ And lastly we use `dat_delta` to apply the desired delta offset to our analysis 
 ```{r}
 #| label: analysis_model_with_scaled_delta_adjustment
 #| output: false
-anaObj <- analyse(
+anaObj <- rbmi::analyse(
   imputations = imputeObj,
   fun = ancova,
   delta = dat_delta,
@@ -773,7 +773,7 @@ Adding a fixed delta in this way seems similar to what we explained in the *simp
 
 ```{r}
 #| label: delta_5_v1
-dat_delta_5_v1 <- delta_template(imputations = imputeObj) |>
+dat_delta_5_v1 <- rbmi::delta_template(imputations = imputeObj) |>
   mutate(delta = is_missing * 5)
 ```
 
@@ -781,7 +781,7 @@ And remember the second case where we added delta = 5 to all imputed `is_missing
 
 ```{r}
 #| label: delta_5_v2
-dat_delta_5_v2 <- delta_template(imputations = imputeObj) |>
+dat_delta_5_v2 <- rbmi::delta_template(imputations = imputeObj) |>
   mutate(delta = is_missing * is_post_ice * 5)
 ```
 
@@ -789,7 +789,7 @@ Similarly, we now set `delta = c(5, 5, 5, 5)` and `dlag = c(1, 0, 0, 0)`:
 
 ```{r}
 #| label: delta_5_v3
-dat_delta_5_v3 <- delta_template(
+dat_delta_5_v3 <- rbmi::delta_template(
   imputeObj,
   delta = c(5, 5, 5, 5),
   dlag = c(1, 0, 0, 0)

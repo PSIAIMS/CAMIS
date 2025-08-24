@@ -63,7 +63,6 @@ A factor with 2 levels (2 treatments) using `contr.treatment` would set the firs
 A factor with 4 levels (4 treatments) using `contr.treatment` would set the first level to be the reference (0), you would see 3 parameters in the model with 3 estimates corresponding to the increase in log-odds attributable to contrasting the second, third or fourth level to the baseline.
 
 ```{r}
-
 contr.treatment(2)
 contr.treatment(4)
 ```
@@ -77,7 +76,7 @@ Below we apply `contr.treatment` to our trt01pn and sex variables. Note: how the
 lung$trt01pn <- as.factor(lung$trt01pn)
 lung$sex <- as.factor(lung$sex)
 
-m1 <- glm(
+m1 <- stats::glm(
   wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal,
   data = lung,
   family = binomial(link = "logit"),
@@ -102,7 +101,7 @@ The model summary contains the parameter estimates $\beta_j$ for each explanator
 
 ```{r}
 
-ma <- glm(
+ma <- stats::glm(
   wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal,
   data = lung,
   family = binomial(link = "logit"),
@@ -111,7 +110,7 @@ ma <- glm(
 summary(ma)
 contr.treatment(2)
 
-mb <- glm(
+mb <- stats::glm(
   wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal,
   data = lung,
   family = binomial(link = "logit"),
@@ -130,11 +129,11 @@ Using the above model, you can output the estimates and confidence intervals usi
 # model coefficients summary
 summary(m1)$coefficients
 
-## Wald confidence limits
+# Wald confidence limits
 cbind(est = exp(coef(m1)), exp(confint.default(m1)))
-## profile-likelihood limits
-cbind(est = exp(coef(m1)), exp(confint(m1)))
 
+# profile-likelihood limits
+cbind(est = exp(coef(m1)), exp(confint(m1)))
 ```
 
 # Comparing 2 models
@@ -142,7 +141,7 @@ cbind(est = exp(coef(m1)), exp(confint(m1)))
 To compare two logistic models, the `residual deviances` (-2 \* log likelihoods) are compared against a $\chi^2$-distribution with degrees of freedom calculated using the difference in the two models' parameters. Below, the only difference is the inclusion/exclusion of age in the model, hence we test using $\chi^2$ with 1 df. Here testing at the 5% level.
 
 ```{r}
-m2 <- glm(
+m2 <- stats::glm(
   wt_catn ~ trt01pn + sex + ph.ecog + meal.cal,
   data = lung,
   family = binomial(link = "logit"),
@@ -184,7 +183,7 @@ NOTE as per the output, these are on the logit scale, you need to exponentiate t
 The treatment comparison can also be output on the log-odds or back transformed scale as shown below.
 
 ```{r}
-m3 <- glm(
+m3 <- stats::glm(
   wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal,
   data = lung,
   family = binomial(link = "logit"),
@@ -193,10 +192,10 @@ m3 <- glm(
 summary(m3)
 contr.treatment(2)
 
-#log-odds for each treatment
-lsm <- emmeans(m3, "trt01pn")
+# log-odds for each treatment
+lsm <- emmeans::emmeans(m3, "trt01pn")
 lsm
-#log-odds ratios (treatment comparison): This does all pairwise comparisons
+# log-odds ratios (treatment comparison): This does all pairwise comparisons
 # However as seen below, this is TRT 1 - TRT 2
 pairs(lsm)
 
@@ -210,7 +209,6 @@ coef(pairs(lsm))
 trtdiff <- contrast(lsm, "poly")
 trtdiff
 confint(trtdiff, type = "response")
-
 ```
 
 In Summary: Treatment 2 is on average 1.48 times as likely to have weight gain compared to treatment 1, however this is not statistically significant (95% Confidence interval = 0.703-3.100, p-value= 0.3039).
@@ -226,14 +224,15 @@ We have a 3 level treatment variable (dose_id), where 1=10mg, 2=20mg doses for a
 lung2 <- lung |>
   mutate(dose_id2 = as.factor(lung$dose_id))
 
-m3 <- glm(
+m3 <- stats::glm(
   wt_catn ~ dose_id2 + age + sex + ph.ecog + meal.cal,
   data = lung2,
   family = binomial(link = "logit"),
   contrasts = list(dose_id2 = "contr.treatment")
 )
-#log-odds for each treatment
-lsm3 <- emmeans(m3, "dose_id2")
+
+# log-odds for each treatment
+lsm3 <- emmeans::emmeans(m3, "dose_id2")
 lsm3
 contrast(lsm3, list(AveDose_vs_pbo = c(0.5, 0.5, -1)))
 confint(contrast(lsm3, list(AveDose_vs_pbo = c(0.5, 0.5, -1))))
@@ -252,24 +251,22 @@ See the emmeans vignette on creating bespoke contrasts [here](Comparisons%20and%
 lung2 <- lung |>
   mutate(dose_id2 = as.factor(lung$dose_id))
 
-m3 <- glm(
+m3 <- stats::glm(
   wt_catn ~ dose_id2 + age + sex + ph.ecog + meal.cal,
   data = lung2,
   family = binomial(link = "logit"),
   contrasts = list(dose_id2 = "contr.treatment")
 )
 
-fit.contrast(m3, 'dose_id2', c(0.5, 0.5, -1), conf.int = 0.95)
+gmodels::fit.contrast(m3, 'dose_id2', c(0.5, 0.5, -1), conf.int = 0.95)
 ```
 
 # Reference
 
 ```{r}
-#\| echo: false
+#| echo: false
 
-#List all the packages needed
-
+# List all the packages needed
 si <- sessioninfo::session_info(c('dplyr', 'emmeans', 'gmodels'))
 si
-
 ```
