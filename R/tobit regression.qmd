@@ -1,30 +1,23 @@
 ---
-title: "<R> <Tobit Regression>"
+title: "Tobit Regression"
 ---
 
 # Tobit regression
 
-## Libraries
-
-### General
 ```{r}
 #| output: false
 #| warning: false
+# General
 library(dplyr)
 library(gt)
 library(broom)
-```
 
-### Methodology specific
-```{r}
-#| output: false
-#| warning: false
+# Methodology specific
 library(emmeans)
 library(censReg)
 library(survival)
 library(VGAM)
 ```
-
 
 ## Tobit model
 
@@ -81,7 +74,6 @@ dat_used = tribble(
 gt(dat_used)
 ```
 
-
 ## Example Code using R
 
 The analysis will be based on a Tobit analysis of variance with $Y$, rounded to 1 decimal places, as dependent variable and study group as a fixed covariate. A normally distributed error term will be used. Values will be left censored at the value 8.0.
@@ -89,29 +81,31 @@ The analysis will be based on a Tobit analysis of variance with $Y$, rounded to 
 Several R functions and packages are presented.
 
 ### censReg
+
 The `censReg` function from the `censReg` package performs tobit models for left and right censored. The model is estimated by Maximum Likelihood (ML) assuming a Gaussian (normal) distribution of the error term. The maximization of the likelihood function is done by function `maxLik` of the `maxLik` package. The optimization method can be changed.
+
 ```{r}
 #| label: censReg
-res_censreg = censReg(Y ~ ARM, 
-                      left = 8.0, 
-                      data = dat_used)
+res_censreg = censReg::censReg(Y ~ ARM, left = 8.0, data = dat_used)
 summary(res_censreg)
 
 # Difference between groups (Wald CIs)
-round(res_censreg$estimate[2], 3) 
-round(stats::confint(res_censreg, level = 0.95)[2,], 3)
+round(res_censreg$estimate[2], 3)
+round(stats::confint(res_censreg, level = 0.95)[2, ], 3)
 ```
+
 The output provides an estimate of difference between groups A and B (B-A), namely 1.8225 (se=0.8061). The presented p-value is a two-sided p-value based on the Z-test. The output also provides an estimate for $log(\sigma) = 0.5491$. Wald based confidence intervals can be obtained by the `stats::confint` function.
-
-
 
 ### survreg
 Using the `survreg` function from the `survival` package a tobit model can be fit. For more information, refer to the [survival package](https://cran.r-project.org/web/packages/survival/index.html).
+
 ```{r}
 #| label: survreg
-res_survreg = survreg(Surv(Y, 1-CENS, type="left") ~ ARM,
-                      dist = "gaussian",
-                      data = dat_used)
+res_survreg = survival::survreg(
+  survival::Surv(Y, 1 - CENS, type = "left") ~ ARM,
+  dist = "gaussian",
+  data = dat_used
+)
 summary(res_survreg)
 
 # Least square means by group
@@ -119,29 +113,29 @@ lsm = emmeans(res_survreg, specs = trt.vs.ctrl ~ ARM)
 lsm$emmeans
 
 # Difference between groups
-lsm_contrast = broom::tidy(lsm$contrasts, conf.int=TRUE, conf.level=0.95)
-gt(lsm_contrast) %>%
+lsm_contrast = broom::tidy(lsm$contrasts, conf.int = TRUE, conf.level = 0.95)
+lsm_contrast |>
+  gt() |>
   fmt_number(decimals = 3)
 
 # Wald-based CIs
-round(stats::confint(res_survreg, level = 0.95)[2,], 3)
+round(stats::confint(res_survreg, level = 0.95)[2, ], 3)
 ```
 
 The output provides an estimate of difference between groups A and B (B-A), namely 1.823 (se=0.806). The presented p-value is a two-sided p-value based on the Z-test. The output also provides an estimate for $log(\sigma) = 0.549$. Using the `emmeans` package/function least square means and contrast can be easily obtained. The confidence intervals and p-value is based on the t-test using `emmeans`. Wald based confidence intervals can be obtained by the `stats::confint` function.
 
-
 ### vglm
+
 The `VGAM` package provides functions for fitting vector generalized linear and additive models (VGLMs and VGAMs). This package centers on the iteratively reweighted least squares (IRLS) algorithm. The `vglm` function offers the possibility to fit a tobit model.
+
 ```{r}
 #| label: vglm
-res_vglm = vglm(Y ~ ARM,
-                tobit(Lower = 8.0),
-                data = dat_used)
+res_vglm = VGAM::vglm(Y ~ ARM, tobit(Lower = 8.0), data = dat_used)
 summary(res_vglm)
 
 # Difference between groups
 round(res_vglm@coefficients[3], 3)
-round(confintvglm(res_vglm, level = 0.95)[3,], 3)
+round(VGAM::confintvglm(res_vglm, level = 0.95)[3, ], 3)
 ```
 
 The output provides an estimate of difference between groups A and B (B-A), namely 1.823 (se=0.794). The presented p-value is a two-sided p-value based on the Z-test. Note that point estimate for the difference (and associated SE) are slightly different from the results obtained by `censReg` and `tobit` due to the difference in estimation procedure used. Wald based confidence intervals can be obtained by the `confintvglm` function. The $(Intercept):2$ in the model output is an estimate for $log(\sigma)$.
@@ -158,17 +152,16 @@ Breen, R. (1996). Regression models. SAGE Publications, Inc., https://doi.org/10
 
 Tobin, James (1958). "Estimation of Relationships for Limited Dependent Variables". Econometrica. 26 (1): 24-36. doi:10.2307/1907382
 
-
-
-
 ::: {.callout-note collapse="true" title="Session Info"}
+
 ```{r}
 #| echo: false
 
-# List all the packages needed 
+# List all the packages needed
 si <- sessioninfo::session_info(c(
-  #Create a vector of all the packages used in this file 
+  #Create a vector of all the packages used in this file
 ))
 si
 ```
+
 :::

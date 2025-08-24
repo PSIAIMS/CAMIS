@@ -8,9 +8,9 @@ ANOVA (Analysis of Variance) is a statistical method used to compare the means o
 
 The key assumptions include:
 
--   Independence of observations
--   Normality of the data (the distribution should be approximately normal)
--   Homogeneity of variances (similar variances across groups)
+-  Independence of observations
+-  Normality of the data (the distribution should be approximately normal)
+-  Homogeneity of variances (similar variances across groups)
 
 Common types include one-way ANOVA (one independent variable) and two-way ANOVA (two independent variables).
 
@@ -18,7 +18,7 @@ One-way ANOVA tests the effect of a single independent variable on a dependent v
 
 Two-way ANOVA tests the effect of two independent variables on a dependent variable and also examines if there is an interaction between the two independent variables.
 
-### **Getting Started**
+### Getting Started
 
 To demonstrate the various types of sums of squares, we'll create a data frame called `df_disease` taken from the SAS documentation. The corresponding data can be found [here](https://github.com/PSIAIMS/CAMIS/blob/main/data/sas_disease.csv).
 
@@ -33,12 +33,14 @@ library(car)
 
 knitr::opts_chunk$set(echo = TRUE)
 
-df_disease <- 
-  read_csv(
-    file = "../data/sas_disease.csv",
-    col_types = cols(drug    = col_factor(),
-                     disease = col_factor(),
-                     y       = col_double()))
+df_disease <- read_csv(
+  file = "../data/sas_disease.csv",
+  col_types = cols(
+    drug = col_factor(),
+    disease = col_factor(),
+    y = col_double()
+  )
+)
 ```
 
 ### The Model {.unnumbered}
@@ -46,20 +48,21 @@ df_disease <-
 For this example, we're testing for a significant difference in `stem_length` using ANOVA. Before getting the sums of squares and associated p-values from the ANOVA, we need to fit a linear model. In R, we're using `lm()` to fit the model, and then using `broom::glance()` and `broom::tidy()` to view the results in a table format.
 
 ```{r}
-lm_model <- lm(y ~ drug + disease + drug*disease, df_disease)
+lm_model <- lm(y ~ drug + disease + drug * disease, df_disease)
 ```
 
 The `glance` function gives us a summary of the model diagnostic values.
 
 ```{r}
-lm_model %>% 
-  glance() 
+lm_model |>
+  glance()
 ```
 
 The `tidy` function gives a summary of the model results.
 
 ```{r}
-lm_model %>% tidy()
+lm_model |>
+  tidy()
 ```
 
 
@@ -70,9 +73,9 @@ lm_model %>% tidy()
 Type I sums of square, also known as sequential ANOVA, is a method of analysis of variance where model terms are assessed sequentially. In this approach, the contribution of each factor or variable to the model is evaluated in the order they are specified, with each factor being adjusted for the effects of those that precede it. This means that the significance of a factor can depend on the factors that have already been included in the model. Type I ANOVA is useful for hierarchical models, where the sequence of entering factors into the model is meaningful or based on theoretical considerations. While possible to use on unbalanced designs it is often not testing the hypothesis of interest. 
 
 For a model with two factors, A and B (in that order) the sums of squares will be tested like this: 
-  - SS(A) for factor A. 
-  - SS(B | A) for factor B. 
-  - SS(AB | B, A) for interaction AB. 
+- SS(A) for factor A. 
+- SS(B | A) for factor B. 
+- SS(AB | B, A) for interaction AB. 
 
 This can be calculated using, the base R {stats} package or the {rstatix} package. Both give the same result. 
 
@@ -83,11 +86,12 @@ anova(lm_model)
 
 ##### rstatix 
 ```{r}
-df_disease %>% 
+df_disease |>
   rstatix::anova_test(
-    y ~ drug + disease + drug*disease, 
-    type = 1, 
-    detailed = TRUE)
+    y ~ drug + disease + drug * disease,
+    type = 1,
+    detailed = TRUE
+  )
 ```
 
 
@@ -96,8 +100,8 @@ df_disease %>%
 Type II sum of squares also known as hierarchical or partially sequential sums of squares. Tests the effect of adding a factor to the model after all other factors have been added. This means that the significance of a factor is assessed while controlling for the effects of all other factors in the model, but not for interactions. Type II ANOVA is particularly useful when there are no interactions in the model or when the focus is on main effects only. It is often used in unbalanced designs, where the number of observations varies across groups.
 
 For a model with two factors, A and B (in that order) the sums of squares will be tested like this: 
- - SS(A | B) for factor A. 
- - SS(B | A) for factor B. 
+- SS(A | B) for factor A. 
+- SS(B | A) for factor B. 
 
 This can be calculated using the {car} package or the {rstatix} package. Both give the same result.
 
@@ -109,11 +113,12 @@ Anova(lm_model, type = "II")
 
 ##### rstatix 
 ```{r}
-df_disease %>% 
+df_disease |>
   rstatix::anova_test(
-    y ~ drug + disease + drug*disease, 
-    type = 2, 
-    detailed = TRUE)
+    y ~ drug + disease + drug * disease,
+    type = 2,
+    detailed = TRUE
+  )
 ```
 
 
@@ -121,19 +126,19 @@ df_disease %>%
 
 Type III sum of squares is calculated such that every effect is adjusted for all other effect. This means testing for the presence of a main effect after adjusting for other main effects and interactions. 
 For a model with two factors, A and B (in that order) the sums of squares will be tested like this: 
- - SS(A | B, AB) for factor A. 
- - SS(B | A, AB) for factor B. 
+- SS(A | B, AB) for factor A. 
+- SS(B | A, AB) for factor B. 
 
 This can be calculated using the base R {stats} package, the {car} package or the {rstatix} package. All give the same result. 
 
 Note: Calculating type III sums of squares in R is a bit tricky, because the multi-way ANOVA model is over-paramerterised. So when running the linear model we need to select a design matrix that sums to zero. In R those options will be either `"contr.sum"` or `"contr.poly"`
 
 ```{r}
-# Drug design matrix 
-contr.sum(4) # Using 4 here as we have 4 levels of drug 
-# Disease design matrix 
-contr.sum(3) 
+# Drug design matrix
+contr.sum(4) # Using 4 here as we have 4 levels of drug
 
+# Disease design matrix
+contr.sum(3)
 ```
 
 While not relevant for this example as the disease variable isn't ordinal the polynomial design matrix would look like 
@@ -142,30 +147,37 @@ contr.poly(3)
 ```
 
 ```{r}
-lm_model <- lm(y ~ drug + disease + drug*disease, df_disease, 
-              contrasts = list(drug = "contr.sum", disease = "contr.sum"))
+lm_model <- lm(
+  y ~ drug + disease + drug * disease,
+  df_disease,
+  contrasts = list(drug = "contr.sum", disease = "contr.sum")
+)
 ```
 
 ##### stats
 
-Using the base stats package, you can use the `drop1()` function which drops all possible single terms in a model. The scope term specifies how things can be dropped. 
+Using the base stats package, you can use the `drop1()` function which drops all possible single terms in a model. The scope term specifies how things can be dropped.
+
 ```{r}
-drop1(lm_model, scope = .~., test="F")
+drop1(lm_model, scope = . ~ ., test = "F")
 ```
 
 ##### car
+
 ```{r}
 car::Anova(lm_model, type = "III")
 ```
 
 ##### rstatix 
 The `rstatix` package uses the `car` package to do the anova calculation, but can be nicer to use as it handles the contrasts for you and is more "pipe-able".
+
 ```{r}
-df_disease %>% 
+df_disease |>
   rstatix::anova_test(
-    y ~ drug + disease + drug*disease, 
-    type = 3, 
-    detailed = TRUE)
+    y ~ drug + disease + drug * disease,
+    type = 3,
+    detailed = TRUE
+  )
 ```
 
 
@@ -179,15 +191,16 @@ In R there is no equivalent operation to the `Type IV` sums of squares calculati
 The easiest way to get contrasts in R is by using `emmeans`. For looking at contrast we are going to fit a different model on new data, that doesn't include an interaction term as it is easier to calculate contrasts without an interaction term. For this dataset we have three different drugs A, C, and E.
 
 ```{r}
-df_trial<- read.csv("../data/drug_trial.csv")
+df_trial <- read.csv("../data/drug_trial.csv")
 
-lm(formula = post ~ pre + drug, data = df_trial) %>% 
-  emmeans("drug") %>% 
-  contrast(method = list(
-    "C vs A"  = c(-1,  1, 0),
-    "E vs CA" = c(-1, -1, 2)
-  ))
-
+lm(formula = post ~ pre + drug, data = df_trial) |>
+  emmeans("drug") |>
+  contrast(
+    method = list(
+      "C vs A" = c(-1, 1, 0),
+      "E vs CA" = c(-1, -1, 2)
+    )
+  )
 ```
 
 ## References

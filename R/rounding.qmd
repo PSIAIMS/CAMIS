@@ -6,7 +6,7 @@ title: "Rounding in R"
 #| echo: false
 #| include: false
 library(janitor)
-library(dplyr) 
+library(dplyr)
 ```
 
 ## round from R base
@@ -18,7 +18,7 @@ The **round(12.5,digits=1)** function tells R to round to 1 decimal place.
 However, rounding is dependent on OS services and on representation error since for example, if 0.15 is not represented exactly, if could actually be the number 0.15000000001 or 0.149999999999! The rounding rule applies to the represented number and not to the printed number, and so round(0.15, 1) could be either 0.1 or 0.2).
 
 ```{r}
-round(1:9/10+0.05,1)
+round(1:9 / 10 + 0.05, 1)
 ```
 
 ## round_half_up from package janitor
@@ -26,18 +26,21 @@ round(1:9/10+0.05,1)
 Note that the [janitor](https://sfirke.github.io/janitor/) package in R contains a function `round_half_up()` that rounds away from zero. In this case it rounds to the nearest whole number and 'away from zero' or 'rounding up' when equidistant, meaning that exactly 12.5 rounds to the integer 13.
 
 ```{r}
-#Example code
-my_number <-c(2.2,3.99,1.2345,7.876,13.8739)
+# Example code
+my_number <- c(2.2, 3.99, 1.2345, 7.876, 13.8739)
 
-r_0_dec <- round(my_number, digits=0);
-r_1_dec <- round(my_number, digits=1);
-r_2_dec <- round(my_number, digits=2);
-r_3_dec <- round(my_number, digits=3);
-
+r_0_dec <- round(my_number, digits = 0)
 r_0_dec
+
+r_1_dec <- round(my_number, digits = 1)
 r_1_dec
+
+r_2_dec <- round(my_number, digits = 2)
 r_2_dec
+
+r_3_dec <- round(my_number, digits = 3)
 r_3_dec
+
 ```
 
 If using the janitor package in R, and the function `round_half_up()`, the results would be the same with the exception of rounding 1.2345 to 3 decimal places where a result of 1.235 would be obtained instead of 1.234. However, in some rare cases, `round_half_up()` does not return result as expected. There are two kinds of cases for it. 1. Round down for positive decimal like 0.xx5.
@@ -49,35 +52,38 @@ round_half_up(524288.1255, digits = 3)
 The cause is that when the decimal is stored in binary, the value usually does not exactly the same with the original number. In the example above, 524288.1255 is stored as a value a little less than the original value. Then `round_half_up()` rounds it down.
 
 ```{r}
-options(digits=22)
+options(digits = 22)
 524288.1255
 ```
 
 In `round_half_up()`, a small decimal `sqrt(.Machine$double.eps)` is added before rounding. It avoids some incorrect rounding due to the stored numeric value is a little less than the original value, but does not cover all conditions.
 
 ```{r}
-round_half_up <- function (x, digits = 0) 
-{
-    posneg <- sign(x)
-    z <- abs(x) * 10^digits
-    z <- z + 0.5 + sqrt(.Machine$double.eps)
-    z <- trunc(z)
-    z <- z/10^digits
-    z * posneg
+round_half_up <- function(x, digits = 0) {
+  posneg <- sign(x)
+  z <- abs(x) * 10^digits
+  z <- z + 0.5 + sqrt(.Machine$double.eps)
+  z <- trunc(z)
+  z <- z / 10^digits
+  z * posneg
 }
 ```
 
 More examples can be found from the code below. It creates numeric values containing different digit numbers of integer part and decimal part, and all ending with 5 for rounding.
 
 ```{r}
-options(digits=15) #set digit number to display 
-int1 <- c(0,2^(1:19)) #create values of integer part
-round_digits <- 1:7 #define values of rounding digits
-dec1 <- 2^(-round_digits)+10^(-round_digits-1)*5 #create values of decimal part
-df1 <- cross_join(tibble(int1),tibble(dec1,round_digits)) |>
-  mutate(num1=int1+dec1) #combine integer part and decimal part
-df1 |> mutate(rounded_num=round_half_up(num1,round_digits)) |> #round the numbers
-  filter(rounded_num<num1) |>  #incorrect if rounded result is less than the original number
+options(digits = 15) # set digit number to display
+int1 <- c(0, 2^(1:19)) # create values of integer part
+round_digits <- 1:7 # define values of rounding digits
+
+dec1 <- 2^(-round_digits) + 10^(-round_digits - 1) * 5 # create values of decimal part
+
+df1 <- cross_join(tibble(int1), tibble(dec1, round_digits)) |>
+  mutate(num1 = int1 + dec1) # combine integer part and decimal part
+
+df1 |>
+  mutate(rounded_num = round_half_up(num1, round_digits)) |> # round the numbers
+  filter(rounded_num < num1) |> # incorrect if rounded result is less than the original number
   print.data.frame()
 ```
 
@@ -86,28 +92,28 @@ df1 |> mutate(rounded_num=round_half_up(num1,round_digits)) |> #round the number
 2.  Round up for positive decimal like 0.4999....
 
 ```{r}
-options(digits=16)
-round_half_up(1.4999999851,0)
-
+options(digits = 16)
+round_half_up(1.4999999851, 0)
 ```
 
 It occurs when the number is smaller than but so closed to 0.xx5. As described in point 1 above, in `round_half_up()`, a small decimal `sqrt(.Machine$double.eps)` is added before rounding, which causes a number bigger than 0.xx5 to be rounded. It occurs only when the decimal is long, so `round_half_up()` is still reliable.\
 And the added decimal `sqrt(.Machine$double.eps)` is necessary. Without it, or even replace it to a smaller decimal, there will be more incorrect results under point 1, as the example below. Some of them are common, e.g. rounding 16.1255 to 3 decimals.
 
 ```{r}
-#a new function to round away from zero, by replacing sqrt(.Machine$double.eps) in round_half_up to a smaller number
-round_half_up_test <- function (x, digits = 0){
+# a new function to round away from zero, by replacing sqrt(.Machine$double.eps) in round_half_up to a smaller number
+round_half_up_test <- function(x, digits = 0) {
   posneg <- sign(x)
   z <- abs(x) * 10^digits
-  z <- z + 0.5 + .Machine$double.eps *100
+  z <- z + 0.5 + .Machine$double.eps * 100
   z <- trunc(z)
-  z <- z/10^digits
+  z <- z / 10^digits
   z * posneg
 }
 
-options(digits=15) #set digit number to display 
-df1 |> mutate(rounded_num=round_half_up_test(num1,round_digits)) |> #round the numbers
-  filter(rounded_num<num1) |>  #incorrect if rounded result is less than the original number
+options(digits = 15)
+df1 |>
+  mutate(rounded_num = round_half_up_test(num1, round_digits)) |>
+  filter(rounded_num < num1) |>
   print.data.frame()
 ```
 
@@ -116,7 +122,9 @@ df1 |> mutate(rounded_num=round_half_up_test(num1,round_digits)) |> #round the n
 https://stackoverflow.com/a/12688836 discussed multiple algorithms to round away from zero, including the one implemented in `round_half_up()`. Below is another algorithm modified from it.
 
 ```{r}
-round_v2 <- function(x, digits = 0, eps = .Machine$double.eps) round(x + x * eps, digits = digits)
+round_v2 <- function(x, digits = 0, eps = .Machine$double.eps) {
+  round(x + x * eps, digits = digits)
+}
 ```
 
 Like `round_half_up()`, it also contains the two kinds of incorrect results. And like `round_half_up()`, a small decimal is added to make 0.xx5 round up. The parameter `eps` is provided to let user decide which small decimal to add.
@@ -132,5 +140,5 @@ The `cards::round5()` package does the same rounding as the `janitor::round_half
 So far, `round_half_up()` from package janitor (or `cards::round5()` ) is still one of the best solutions to round away from zero, though users may meet incorrect results in rare cases when the numbers are big or the decimal is long.
 
 ```{r}
-options(digits = 7) #This just returns the number of displayed digits back to the default
+options(digits = 7) # This just returns the number of displayed digits back to the default
 ```

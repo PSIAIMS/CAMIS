@@ -3,9 +3,9 @@ title: "Logistic Regression in R"
 ---
 
 ```{r}
-#| echo: FALSE
-#| include: FALSE
-library(dplyr)
+#| echo: false
+#| include: false
+#| library(dplyr)
 library(gmodels)
 library(emmeans)
 ```
@@ -37,12 +37,14 @@ Below we are using wt_catn (0,1) and trt01pn (1,2) and sex (1,2). Let's see what
 head(lung)
 
 ```{r}
-lung<-read.csv("../data/lung_cancer.csv")
+lung <- read.csv("../data/lung_cancer.csv")
 head(lung)
 
-m1 <- glm(wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, 
-          data = lung, 
-          family = binomial(link="logit"))
+m1 <- glm(
+  wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal,
+  data = lung,
+  family = binomial(link = "logit")
+)
 summary(m1)
 ```
 
@@ -70,15 +72,17 @@ Below we apply `contr.treatment` to our trt01pn and sex variables. Note: how the
 
 ```{r}
 
-# Good practice to have binary variables (eg. treatment) identified as a factor 
+# Good practice to have binary variables (eg. treatment) identified as a factor
 # And to specify what contrast option you are using ! more on this below
-lung$trt01pn<-as.factor(lung$trt01pn)
-lung$sex<-as.factor(lung$sex)
+lung$trt01pn <- as.factor(lung$trt01pn)
+lung$sex <- as.factor(lung$sex)
 
-m1 <- glm(wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, 
-          data = lung, 
-          family = binomial(link="logit"),
-          contrasts = list(trt01pn = "contr.treatment", sex = "contr.treatment"))
+m1 <- glm(
+  wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal,
+  data = lung,
+  family = binomial(link = "logit"),
+  contrasts = list(trt01pn = "contr.treatment", sex = "contr.treatment")
+)
 summary(m1)
 ```
 
@@ -98,17 +102,21 @@ The model summary contains the parameter estimates $\beta_j$ for each explanator
 
 ```{r}
 
-ma <- glm(wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, 
-          data = lung, 
-          family = binomial(link="logit"),
-          contrasts = list(trt01pn = "contr.treatment", sex = "contr.treatment"))
+ma <- glm(
+  wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal,
+  data = lung,
+  family = binomial(link = "logit"),
+  contrasts = list(trt01pn = "contr.treatment", sex = "contr.treatment")
+)
 summary(ma)
 contr.treatment(2)
 
-mb <- glm(wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, 
-          data = lung, 
-          family = binomial(link="logit"),
-          contrasts = list(trt01pn = "contr.sum", sex = "contr.treatment"))
+mb <- glm(
+  wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal,
+  data = lung,
+  family = binomial(link = "logit"),
+  contrasts = list(trt01pn = "contr.sum", sex = "contr.treatment")
+)
 summary(mb)
 contr.sum(2)
 
@@ -123,12 +131,9 @@ Using the above model, you can output the estimates and confidence intervals usi
 summary(m1)$coefficients
 
 ## Wald confidence limits
-cbind(est = exp(coef(m1)), 
-          exp(confint.default(m1)))
+cbind(est = exp(coef(m1)), exp(confint.default(m1)))
 ## profile-likelihood limits
-cbind(est = exp(coef(m1)), 
-          exp(confint(m1)))
-
+cbind(est = exp(coef(m1)), exp(confint(m1)))
 
 ```
 
@@ -137,10 +142,12 @@ cbind(est = exp(coef(m1)),
 To compare two logistic models, the `residual deviances` (-2 \* log likelihoods) are compared against a $\chi^2$-distribution with degrees of freedom calculated using the difference in the two models' parameters. Below, the only difference is the inclusion/exclusion of age in the model, hence we test using $\chi^2$ with 1 df. Here testing at the 5% level.
 
 ```{r}
-m2 <- glm(wt_catn ~ trt01pn + sex + ph.ecog + meal.cal, 
-                    data = lung, 
-                    family = binomial(link="logit"),
-                    contrasts = list(trt01pn = "contr.treatment"))
+m2 <- glm(
+  wt_catn ~ trt01pn + sex + ph.ecog + meal.cal,
+  data = lung,
+  family = binomial(link = "logit"),
+  contrasts = list(trt01pn = "contr.treatment")
+)
 summary(m2)
 
 anova(m1, m2, test = "LRT")
@@ -154,9 +161,15 @@ Predictions from the model for the log-odds of a patient with new data to experi
 
 ```{r}
 # new female, symptomatic but completely ambulatory patient consuming 2500 calories
-new_pt <- data.frame(trt01pn=1, age=48, sex=2, ph.ecog=1, meal.cal=2500)
-new_pt$trt01pn<-as.factor(new_pt$trt01pn)
-new_pt$sex<-as.factor(new_pt$sex)
+new_pt <- data.frame(
+  trt01pn = 1,
+  age = 48,
+  sex = 2,
+  ph.ecog = 1,
+  meal.cal = 2500
+)
+new_pt$trt01pn <- as.factor(new_pt$trt01pn)
+new_pt$sex <- as.factor(new_pt$sex)
 predict(m1, new_pt, type = "response")
 ```
 
@@ -171,30 +184,32 @@ NOTE as per the output, these are on the logit scale, you need to exponentiate t
 The treatment comparison can also be output on the log-odds or back transformed scale as shown below.
 
 ```{r}
-m3 <- glm(wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal, 
-          data = lung, 
-          family = binomial(link="logit"),
-          contrasts = list(trt01pn = "contr.treatment"))
+m3 <- glm(
+  wt_catn ~ trt01pn + age + sex + ph.ecog + meal.cal,
+  data = lung,
+  family = binomial(link = "logit"),
+  contrasts = list(trt01pn = "contr.treatment")
+)
 summary(m3)
 contr.treatment(2)
 
 #log-odds for each treatment
-lsm<-emmeans(m3,"trt01pn")
+lsm <- emmeans(m3, "trt01pn")
 lsm
 #log-odds ratios (treatment comparison): This does all pairwise comparisons
 # However as seen below, this is TRT 1 - TRT 2
 pairs(lsm)
 
 # the below creates tests and CI's prior to back transformation (ratios of geometric means)
-pairs(lsm, type="response")
+pairs(lsm, type = "response")
 
 # see coefficients of the linear functions
 coef(pairs(lsm))
 
 # Output treatment contrasts 2 vs 1 and 95% CIs, the type="response" option back transforms the results
-trtdiff<-contrast(lsm,"poly")
+trtdiff <- contrast(lsm, "poly")
 trtdiff
-confint(trtdiff, type="response")
+confint(trtdiff, type = "response")
 
 ```
 
@@ -208,18 +223,20 @@ We have a 3 level treatment variable (dose_id), where 1=10mg, 2=20mg doses for a
 
 ```{r}
 
-lung2<-lung |> 
-    mutate(dose_id2 = as.factor(lung$dose_id))
+lung2 <- lung |>
+  mutate(dose_id2 = as.factor(lung$dose_id))
 
-m3 <- glm (wt_catn ~ dose_id2 + age + sex + ph.ecog + meal.cal, 
-                     data = lung2, 
-                     family = binomial(link="logit"),
-                     contrasts = list(dose_id2 = "contr.treatment"))
+m3 <- glm(
+  wt_catn ~ dose_id2 + age + sex + ph.ecog + meal.cal,
+  data = lung2,
+  family = binomial(link = "logit"),
+  contrasts = list(dose_id2 = "contr.treatment")
+)
 #log-odds for each treatment
-lsm3<-emmeans(m3,"dose_id2")
+lsm3 <- emmeans(m3, "dose_id2")
 lsm3
-contrast (lsm3,list(AveDose_vs_pbo=c(0.5,0.5,-1)))
-confint(contrast (lsm3,list(AveDose_vs_pbo=c(0.5,0.5,-1))))
+contrast(lsm3, list(AveDose_vs_pbo = c(0.5, 0.5, -1)))
+confint(contrast(lsm3, list(AveDose_vs_pbo = c(0.5, 0.5, -1))))
 ```
 
 Here we found that on average there is -0.41 times the risk of weight gain on active vs placebo but that this is not statisticallly significantly different (95% CI -1.15 to 0.335, p-value = 0.2813).
@@ -232,15 +249,17 @@ See the emmeans vignette on creating bespoke contrasts [here](Comparisons%20and%
 
 ```{r}
 
-lung2<-lung |> 
-    mutate(dose_id2 = as.factor(lung$dose_id))
+lung2 <- lung |>
+  mutate(dose_id2 = as.factor(lung$dose_id))
 
-m3 <- glm (wt_catn ~ dose_id2 + age + sex + ph.ecog + meal.cal, 
-                     data = lung2, 
-                     family = binomial(link="logit"),
-                     contrasts = list(dose_id2 = "contr.treatment"))
+m3 <- glm(
+  wt_catn ~ dose_id2 + age + sex + ph.ecog + meal.cal,
+  data = lung2,
+  family = binomial(link = "logit"),
+  contrasts = list(dose_id2 = "contr.treatment")
+)
 
-fit.contrast (m3,'dose_id2',c(0.5,0.5,-1),conf.int=0.95)
+fit.contrast(m3, 'dose_id2', c(0.5, 0.5, -1), conf.int = 0.95)
 ```
 
 # Reference
@@ -250,7 +269,7 @@ fit.contrast (m3,'dose_id2',c(0.5,0.5,-1),conf.int=0.95)
 
 #List all the packages needed
 
-si <- sessioninfo::session_info(c('dplyr','emmeans','gmodels')) 
+si <- sessioninfo::session_info(c('dplyr', 'emmeans', 'gmodels'))
 si
 
 ```
