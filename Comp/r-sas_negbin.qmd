@@ -15,24 +15,24 @@ Comparison of implementations and results between SAS vs R for negative binomial
 
 ## Scope
 
-::: columns
-::: {.column width="45%"}
+::::::: columns
+:::: {.column width="45%"}
 ::: {.callout-note appearance="minimal" collapse="false"}
 ## Methodologies
 
 -   Negative binomial regression\
 :::
-:::
+::::
 
-::: {.column width="55%"}
+:::: {.column width="55%"}
 ::: {.callout-note appearance="minimal" collapse="false"}
 ## Technical implementations
 
 -   SAS: `PROC GENMOD` with option: `DIST = NB` or `DIST = NEGBIN`
 -   R: `MASS::glm.nb`\
 :::
-:::
-:::
+::::
+:::::::
 
 ## Findings
 
@@ -70,15 +70,15 @@ Let's walk through the conclusions for [Table 1](#tbl-1):
 -   Methods for hypothesis testing for model coefficients are equivalent in SAS and R.
 -   Least-square or marginal means are not directly available in R but equivalent estimation as in SAS is possible with additional packages
 
-|                  Attribute                   |                                                                                              SAS <br> `PROC GENMOD`                                                                                              |                                                                                                                        R <br>`MASS::glm.nb`                                                                                                                        | Note                                                                                                                                                                                                                                                                                                                                                    |
-|:---------------:|:-----------------:|:-----------------:|:----------------|
-|      Negative binomial parameterization      |                          Variance of the negative binomial is given by $\mu + k\mu^2$ and the dispersion parameter `k` is estimated. Overdispersion increases as `k` goes to infinity.                           |                                             Variance of the negative binomial is given by $\mu + \frac{\mu^2}{\theta}$ and the scale parameter `theta` is estimated. Overdispersion increases as `theta` goes to zero.                                             | $k=\frac{1}{\theta}$                                                                                                                                                                                                                                                                                                                                    |
-|      Likelihood optimization algorithm       |                                                                                    Ridge-stabilized Newton-Raphson algorithm                                                                                     |                                                                                                            Iteratively reweighted least squares (IWLS)                                                                                                             | It seems SAS performs simultaneous optimization on all parameters (i.e. including dispersion). R uses an alternating process, where glm coefficients are fitted given a fixed theta and then theta is estimated given fixed coefficients until convergence.                                                                                             |
-|   Estimation of variance-covariance matrix   |        Observed (rather than expected) fisher information is used for calculation of standard errors of coefficients, which allows for non-zero covariance between coefficients and dispersion parameter.        | Expected fisher information is used for calculation of standard errors of coefficients, so covariance between coefficients and dispersion parameter is zero (which is asymptotically correct). However identical vcov matrix as in SAS can be obtained "post-hoc". | As shown in the numerical example below in R the variance-covariance matrix corresponding to the `PROC GENMOD` estimation can be obtained based on the outputs from `MASS::glm.nb` with the `glm.nb.cov` function. The "correct" standard errors, confidence intervals and p-values can then be manually calculated based on the new covariance matrix. |
-|             Convergence criteria             | The iterations are considered to have converged when the maximum change in the parameter estimates between iteration steps is less than the value specified in `CONVERGE` option (default: `CONVERGENCE = 1E-4`) |                                                                 Based on relative difference between deviance, specified through `epsilon` argument in `glm.control` (default: `epsilon = 1e-8`).                                                                  | `PROC GENMOD` also checks for relative Hessian convergence and throws a warning if this is larger than the value provided in the `CONVH` option (default: `CONVH = 1E-4` ).                                                                                                                                                                             |
-|  Confidence interval (CI) estimation method  |                                                  By default asymptotic Wald CIs are estimated. Profile likelihood CI is estimated if option `LRCI` is provided.                                                  |                                                                            `confint` function will estimate profile likelihood CIs, Wald CIs can be obtained by using `confint.default`                                                                            | Note that by default confidence intervals can differ even if same method is used if vcov matrix in R is not adjusted as explained above.                                                                                                                                                                                                                |
-| Hypothesis tests for regression coefficients |                                                                                               Asymptotic Wald test                                                                                               |                                                                                                                        Asymptotic Wald test                                                                                                                        | `PROC GENMOD` reports Wald Chi-square statistic, while `MASS::glm.nb` reports the Z statistic, however the p-values are equivalent. Note that by default test results will differ if vcov matrix in R is not adjusted as explained above.                                                                                                               |
-|  Estimation of least-square/marginal means   |     Calculation through lsmeans statement assumes that for classification effects the groups are balanced. `OM` option can be provided to obtain lsmeans that are using the observed proportions in the data     |                                                                                       Not implemented as part of `MASS::glm.nb` but can be obtained using `emmeans` package.                                                                                       | In R marginal means can be obtained using the `emmeans::emmeans` function, setting argument `weights = "equal"` corresponds to the default option in SAS, while `weights = "proportional"` gives the means proportional to observed data                                                                                                                |
+| Attribute | SAS <br> `PROC GENMOD` | R <br>`MASS::glm.nb` | Note |
+|:----------------:|:-----------------:|:-----------------:|:-----------------|
+| Negative binomial parameterization | Variance of the negative binomial is given by $\mu + k\mu^2$ and the dispersion parameter `k` is estimated. Overdispersion increases as `k` goes to infinity. | Variance of the negative binomial is given by $\mu + \frac{\mu^2}{\theta}$ and the scale parameter `theta` is estimated. Overdispersion increases as `theta` goes to zero. | $k=\frac{1}{\theta}$ |
+| Likelihood optimization algorithm | Ridge-stabilized Newton-Raphson algorithm | Iteratively reweighted least squares (IWLS) | It seems SAS performs simultaneous optimization on all parameters (i.e. including dispersion). R uses an alternating process, where glm coefficients are fitted given a fixed theta and then theta is estimated given fixed coefficients until convergence. |
+| Estimation of variance-covariance matrix | Observed (rather than expected) fisher information is used for calculation of standard errors of coefficients, which allows for non-zero covariance between coefficients and dispersion parameter. | Expected fisher information is used for calculation of standard errors of coefficients, so covariance between coefficients and dispersion parameter is zero (which is asymptotically correct). However identical vcov matrix as in SAS can be obtained "post-hoc". | As shown in the numerical example below in R the variance-covariance matrix corresponding to the `PROC GENMOD` estimation can be obtained based on the outputs from `MASS::glm.nb` with the `glm.nb.cov` function. The "correct" standard errors, confidence intervals and p-values can then be manually calculated based on the new covariance matrix. |
+| Convergence criteria | The iterations are considered to have converged when the maximum change in the parameter estimates between iteration steps is less than the value specified in `CONVERGE` option (default: `CONVERGENCE = 1E-4`) | Based on relative difference between deviance, specified through `epsilon` argument in `glm.control` (default: `epsilon = 1e-8`). | `PROC GENMOD` also checks for relative Hessian convergence and throws a warning if this is larger than the value provided in the `CONVH` option (default: `CONVH = 1E-4` ). |
+| Confidence interval (CI) estimation method | By default asymptotic Wald CIs are estimated. Profile likelihood CI is estimated if option `LRCI` is provided. | `confint` function will estimate profile likelihood CIs, Wald CIs can be obtained by using `confint.default` | Note that by default confidence intervals can differ even if same method is used if vcov matrix in R is not adjusted as explained above. |
+| Hypothesis tests for regression coefficients | Asymptotic Wald test | Asymptotic Wald test | `PROC GENMOD` reports Wald Chi-square statistic, while `MASS::glm.nb` reports the Z statistic, however the p-values are equivalent. Note that by default test results will differ if vcov matrix in R is not adjusted as explained above. |
+| Estimation of least-square/marginal means | Calculation through lsmeans statement assumes that for classification effects the groups are balanced. `OM` option can be provided to obtain lsmeans that are using the observed proportions in the data | Not implemented as part of `MASS::glm.nb` but can be obtained using `emmeans` package. | In R marginal means can be obtained using the `emmeans::emmeans` function, setting argument `weights = "equal"` corresponds to the default option in SAS, while `weights = "proportional"` gives the means proportional to observed data |
 
 : Negative binomial regression in SAS vs R {#tbl-1}
 
@@ -113,41 +113,55 @@ glm_nb_cov <- function(mod) {
   # given a model fitted by glm.nb in MASS, this function returns a variance covariance matrix for the
   # regression coefficients and dispersion parameter, without assuming independence between these
   # note that the model must have been fitted with x=TRUE argument so that design matrix is available
-  
+
   # formulae based on p23-p24 of
   # http://pointer.esalq.usp.br/departamentos/lce/arquivos/aulas/2011/LCE5868/OverdispersionBook.pdf
   # and http://www.math.mcgill.ca/~dstephens/523/Papers/Lawless-1987-CJS.pdf
-  
+
   # lintr: off
   # please rm -- variable not used!
   # k <- mod$theta
   # lintr: on
   # p is number of regression coefficients
   p <- dim(vcov(mod))[1]
-  
+
   # construct observed information matrix
   obsInfo <- array(0, dim = c(p + 1, p + 1))
-  
+
   # first calculate top left part for regression coefficients
   for (i in 1:p) {
     for (j in 1:p) {
-      obsInfo[i, j] <- sum((1 + mod$y / mod$theta) * mod$fitted.values * mod$x[, i] * mod$x[, j] /
-                             (1 + mod$fitted.values / mod$theta)^2)
+      obsInfo[i, j] <- sum(
+        (1 + mod$y / mod$theta) *
+          mod$fitted.values *
+          mod$x[, i] *
+          mod$x[, j] /
+          (1 + mod$fitted.values / mod$theta)^2
+      )
     }
   }
-  
+
   # information for dispersion parameter
-  obsInfo[(p + 1), (p + 1)] <- -sum(trigamma(mod$theta + mod$y) - trigamma(mod$theta) -
-                                      1 / (mod$fitted.values + mod$theta) + (mod$theta + mod$y) / (mod$theta + mod$fitted.values)^2 -
-                                      1 / (mod$fitted.values + mod$theta) + 1 / mod$theta)
-  
+  obsInfo[(p + 1), (p + 1)] <- -sum(
+    trigamma(mod$theta + mod$y) -
+      trigamma(mod$theta) -
+      1 / (mod$fitted.values + mod$theta) +
+      (mod$theta + mod$y) / (mod$theta + mod$fitted.values)^2 -
+      1 / (mod$fitted.values + mod$theta) +
+      1 / mod$theta
+  )
+
   # covariance between regression coefficients and dispersion
   for (i in 1:p) {
-    obsInfo[(p + 1), i] <- -sum(((mod$y - mod$fitted.values) * mod$fitted.values /
-                                   ((mod$theta + mod$fitted.values)^2)) * mod$x[, i])
+    obsInfo[(p + 1), i] <- -sum(
+      ((mod$y - mod$fitted.values) *
+        mod$fitted.values /
+        ((mod$theta + mod$fitted.values)^2)) *
+        mod$x[, i]
+    )
     obsInfo[i, (p + 1)] <- obsInfo[(p + 1), i]
   }
-  
+
   # return variance covariance matrix
   solve(obsInfo, tol = 1e-20)
 }
@@ -173,12 +187,11 @@ N = 100
 set.seed(123)
 
 # Treatment Group; 1:1 ratio
-grp <- rep(c(0,1),each= N/2)
+grp <- rep(c(0, 1), each = N / 2)
 
 # Covariates (one continuous; one categorical)
 x1 <- rnorm(N)
-x2 <- factor(sample(LETTERS[1:3], N, replace = TRUE, 
-                    prob=c(0.3, 0.2, 0.5)))
+x2 <- factor(sample(LETTERS[1:3], N, replace = TRUE, prob = c(0.3, 0.2, 0.5)))
 
 # Offset
 logtime <- log(runif(N, 1, 2))
@@ -188,18 +201,20 @@ beta0 = 0.6
 betaTrt = -0.5
 beta1 = 0.25
 beta2 = c(-0.1, 0.2)
-theta = 1/2
+theta = 1 / 2
 
 
 # Dummy dataset
-df <- data.frame(grp,x1, x2, logtime) %>% 
-   mutate(log_rate = 
-            case_when(x2 == "A" ~ beta0 + betaTrt*grp + beta1*x1 + logtime,
-                      x2 == "B" ~ beta0 + betaTrt*grp + beta1*x1 + beta2[1] + logtime, 
-                      x2 == "C" ~ beta0 + betaTrt*grp + beta1*x1 + beta2[2] + logtime),
-          y = rnegbin(N, mu = exp(log_rate), theta = theta),
-          grpc = factor(case_when(grp==0 ~"Plb",
-                                 grp==1 ~"Trt")))
+df <- data.frame(grp, x1, x2, logtime) %>%
+  mutate(
+    log_rate = case_when(
+      x2 == "A" ~ beta0 + betaTrt * grp + beta1 * x1 + logtime,
+      x2 == "B" ~ beta0 + betaTrt * grp + beta1 * x1 + beta2[1] + logtime,
+      x2 == "C" ~ beta0 + betaTrt * grp + beta1 * x1 + beta2[2] + logtime
+    ),
+    y = rnegbin(N, mu = exp(log_rate), theta = theta),
+    grpc = factor(case_when(grp == 0 ~ "Plb", grp == 1 ~ "Trt"))
+  )
 
 # save the dummy dataset to be imported in SAS
 # write.csv(df, file = "df_dummy_negbin.csv")
@@ -218,7 +233,7 @@ Exact match (at 0.001 level) can be obtained using `glm.nb` in R vs `PROC GENMOD
 After importing the dummy dataset we can run the negative binomial regression in SAS using \`PROC GENMOD. We estimate the model parameters and lsmeans for the treatment arms using both the default and OM weights.
 
 ```{sas}
-*| eval: false;
+#| eval: false
 proc genmod data=df;
 	class GRPC (ref='Plb') X2 (ref='A');
 	model y = GRPC x1 x2 / dist=negbin link=log offset=logtime;
@@ -250,12 +265,23 @@ sigma_hat <- glm_nb_cov(fit)
 ## recalculate confidence intervals, and p-values
 coef_est <- coef(fit)
 coef_se <- sqrt(diag(sigma_hat)[1:5])
+
 coef_lower <- coef_est - qnorm(0.975) * coef_se
 coef_upper <- coef_est + qnorm(0.975) * coef_se
-zstat <- coef_est/coef_se
-pval <- 2 * (1-pnorm(abs(zstat)))
+
+zstat <- coef_est / coef_se
+pval <- 2 * (1 - pnorm(abs(zstat)))
+
 new_summary <- cbind(coef_est, coef_se, coef_lower, coef_upper, zstat, pval)
-colnames(new_summary) <- c("Estimate", "Std. Error", "CI_lower", "CI_upper", "z value", "Pr(>|z|)")
+
+colnames(new_summary) <- c(
+  "Estimate",
+  "Std. Error",
+  "CI_lower",
+  "CI_upper",
+  "z value",
+  "Pr(>|z|)"
+)
 rownames(new_summary) <- rownames(summary(fit)$coefficients)
 new_summary
 ```
@@ -266,8 +292,13 @@ Now the estimates, standard errors, 95% confidence interval limits and p-values 
 # estimate and 95%-CI for k = 1/theta
 theta_est <- fit$theta
 theta_se <- sqrt(sigma_hat[6, 6])
-theta_est_ci <- c(theta_est, theta_est - qnorm(0.975) * theta_se, theta_est + qnorm(0.975) * theta_se)
-1/theta_est_ci[c(1, 3, 2)]
+
+theta_est_ci <- c(
+  theta_est,
+  theta_est - qnorm(0.975) * theta_se,
+  theta_est + qnorm(0.975) * theta_se
+)
+1 / theta_est_ci[c(1, 3, 2)]
 ```
 
 We see that while the point estimate is the same as in SAS, the CI for the dispersion does not match, most likely due to the different parameterizations used by SAS and R.
@@ -276,10 +307,25 @@ Finally we can replicate the estimation of lsmeans in SAS via the emmeans packag
 
 ```{r}
 # lsmeans with weights = equal, equivalent to SAS default
-lsmean1 <- emmeans(fit, ~ grpc, data=df, vcov. = sigma_hat[1:5, 1:5], weights = "equal", offset = 0)
+lsmean1 <- emmeans(
+  fit,
+  ~grpc,
+  data = df,
+  vcov. = sigma_hat[1:5, 1:5],
+  weights = "equal",
+  offset = 0
+)
 lsmean1
+
 # lsmeans with weights = proportional, equivalent to SAS OM option
-lsmean2 <- emmeans(fit, ~ grpc, data=df, vcov. = sigma_hat[1:5, 1:5], weights = "proportional", offset = 0)
+lsmean2 <- emmeans(
+  fit,
+  ~grpc,
+  data = df,
+  vcov. = sigma_hat[1:5, 1:5],
+  weights = "proportional",
+  offset = 0
+)
 lsmean2
 ```
 
