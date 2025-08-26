@@ -1,6 +1,5 @@
 ---
 title: "Logistic Regression in SAS"
-output: html_document
 date: last-modified
 date-format: D MMMM, YYYY
 ---
@@ -37,24 +36,30 @@ Below we are fitting trt01pn and sex as categorical variables, age, ph_ecog2 and
 
 You can use exponential of the maximum likelihood parameter estimate and the exponential of the Wald 95% Confidence Limits to obtain the odds ratios and 95% CIs. Proc Genmod uses GLM parameterization.
 
-```{r}
+```{sas}
 #| eval: false
 Example data: . = missing, trt01pn (1 or 2), sex (1 or 2), ph_ecog2 (0,1,2,3)
 wt_gain (1=gain, 0=no gain)
+```
 
+```default
 wt_gain   trt01pn  age   sex    ph_ecog2   meal_caln
 -----------------------------------------------------------------------------
 .         1        74    1       1          1175
 0         1        68    2       0          1225
 1         2        60    1       2           .
+```
 
-
+```{sas}
+#| eval: false
 proc genmod data=lung;       
-  class trt01pn (ref="1") sex (ref="1")  ;    
-  model wt_gain (event="1") = trt01pn age sex ph_ecog2 meal_caln / 
+    class trt01pn (ref="1") sex (ref="1");    
+    model wt_gain (event="1") = trt01pn age sex ph_ecog2 meal_caln / 
         dist=bin link=logit;
-run; 
+run;
+```
 
+```default
 Class Level Information
 Class     Levels      Values
 -----------------------------------------------------------------------------
@@ -101,13 +106,15 @@ Proc Logistic is often preferred above Proc Genmod as it outputs the Odds Ratios
 
 NOTE: that the 95% confidence limits are being calculated using the Wald method. This assumes symmetric intervals around the maximum likelihood estimate using a normal distribution assumption (MLE +/-1.96\* SE). Alternative confidence interval estimation methods exist such as the profile likelihood method but SAS does not calculate these.
 
-```{r}
+```{sas}
 #| eval: false
 proc logistic data=lung;  
     class trt01pn (ref="1") sex (ref="1") /param=glm;
     model  wt_gain(event="1") = trt01pn age sex ph_ecog2 meal_caln;
 run;
+```
 
+```default
 Response Profile
 Ordered value     wt_gain         Total Frequency
 -----------------------------------------------------------------------------
@@ -154,18 +161,18 @@ sex     2 vs 1   2.298             1.103   4.787
 ph_ecog          0.686             0.409   1.151  
 meal_cal         1.001             1.000   1.002 
 ----------------------------------------------------------------------------
-
-
 ```
 
 ## **Model Comparison**
 
 To compare two logistic models, the -2 \* Log Likelihood from each model can be compared against a $\chi^2$-distribution with degrees of freedom calculated using the difference in the two models' parameters.
 
-```{r}
+```{sas}
 #| eval: false
 Model 1:  model  wt_gain(event="1") = trt01pn age sex ph_ecog2 meal_caln;
+```
 
+```default
 Model Fit Statistics
 Criterion   Intercept Only     Intercept and Covariates       
 --------------------------------------------------------
@@ -173,7 +180,7 @@ AIC         204.355            202.460
 SC          207.491            221.274
 -2 Log L    202.355            190.460   
 --------------------------------------------------------
-  
+
 Model 2:  model  wt_gain(event="1") = trt01pn sex ph_ecog2 meal_caln;
 
 Model Fit Statistics
@@ -183,20 +190,22 @@ AIC         204.355            200.798
 SC          207.491            216.477
 -2 Log L    202.355            190.798   
 --------------------------------------------------------
-```
 
 190.460 - 190.798 = -0.338 which using a $\chi^2$-distribution corresponds to p=0.5606
+```
 
 SAS also allows us to fit forward or backwards stepwise selection. Below we specify to stop when we have 4 variables left in the model. This is not commonly done in practice but is included to highlight the difference in using a selection procedure compared to doing the difference betweeen the -2 \* log likelihood models using a $\chi^2$-distribution.
 
-```{r}
+```{sas}
 #| eval: false
 proc logistic data=lung;  
     class trt01pn (ref="1") sex (ref="1") /param=glm;
     model  wt_gain(event="1") = trt01pn age sex ph_ecog2 meal_caln/ 
-           selection=backward stop=4;
-run;  
+            selection=backward stop=4;
+run;
+```
 
+```default
 Step 1: Effect age is removed
 Summary of Backward Elimination
 Step   Effect Removed   DF     Number In     Wald Chi-Square   Pr>ChiSq
@@ -223,13 +232,15 @@ This is the SAS default such that if you do not specify the `/param` option, SAS
 
 With the EFFECT option, dose_id has 3 levels, and so needs 2 design variables (β1 and β2). Sex has 2 levels so uses just 1 design variable (β1). For dose_id, the reference level (Placebo) is given values of "-1" for both of the β1 and β2 parameters. General model: Y= α + β1x1 + β2x1 {+β3x3} etc, representing each parameter in the model.
 
-```{r}
+```{sas}
 #| eval: false
 proc logistic data=lung;  
     class dose_id (ref="3") sex (ref="1") /param=effect;
     model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
 run;
+```
 
+```default
 Class Level Information
 Class       Value            Design Variables
 --------------------------------------------------------
@@ -242,8 +253,11 @@ dose_id      1                1           0
 SEX          1               -1
              2                1
 --------------------------------------------------------
+```
 
 If we want to estimate the effect of treatment (ignoring the other covariates), the Class Level Information can be translated into the table below, which is then used to form contrast statements.
+
+```default
 α is the intercept, and β1 and β2 (including the sign +/-) are from the design variables above.
                               
 Dose_id       Effect          
@@ -252,51 +266,68 @@ Dose_id       Effect
 20mg Active   Y = α + β2          
 Placebo       Y = α - β1 - β2    
 ------------------------------
-  
+```
+
 To compare 10mg Active vs Placebo, we would do the following:
- (α + β1 ) - (α - β1 - β2)
+
+```default
+(α + β1 ) - (α - β1 - β2)
 = 2 β1 + β2  
 = 2 β1 + 1 β2
+```
 
 This equates to a contrast statement as follows:
+
+```{sas}
+#| eval: false
 proc logistic data=lung;  
     class dose_id (ref="3") sex (ref="1") /param=effect;
     model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
     CONTRAST "10mg vs. Placebo" dose_id 2 1 / e; 
 run;
-  
+```
+
 To compare the average of (10mg Active and 20mg Active) vs Placebo, we would do the following:
+
+```default
 ((α + β1 + α + β2 ) /2 ) - (α - β1 - β2)
 = α + 0.5 β1 + 0.5 β2 - α + β1 + β2  
 = 1.5 β1 + 1.5 β2
+```
 
 This equates to a contrast statement as follows:
+
+```{sas}
+#| eval: false
 proc logistic data=lung;  
     class dose_id (ref="3") sex (ref="1") /param=effect;
     model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
     CONTRAST "Active (10mg + 20mg) vs. Placebo" dose_id 1.5 1.5 / e; 
 run;
+```
 
 As you can see, these contrasts are not very intuitive and hence it is not reccomended to use the default SAS option of /param=effect, since its easy to end up with the wrong contrasts.
 
+```default
 Contract Test Results
 Contrast                           DF        Wald Chi-Square      Pr>ChiSq
 --------------------------------------------------------
 Active (10mg +20mg) vs Placebo     1          1.1610               0.2813
-              
 ```
 
 ### CLASS X Y Z /PARAM=glm
 
 Now let's look at the `param=glm` option. GLM parameterization has a design variable for each level of a parameter. Hence for dose with 3 levels, we have 3 design variables (β1, β2 and β3).
 
-```{r}
+```{sas}
 #| eval: false
 proc logistic data=lung;  
     class dose_id (ref="3") sex (ref="1") /param=glm;
     model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
 run;
+```
 
+```default
 Class Level Information
 Class       Value            Design Variables
 --------------------------------------------------------
@@ -309,8 +340,11 @@ dose_id      1                1           0       0
 SEX          1                1           0
              2                0           1
 --------------------------------------------------------
+```
 
 If we want to estimate the effect of treatment (ignoring the other covariates), the Class Level Information can be translated into the table below, which is then used to form contrast statements.
+
+```default
 α is the intercept, and β1 and β2 and β3 (including the sign +/-) are from the design variables above.
                               
 Dose_id       Effect          
@@ -319,35 +353,50 @@ Dose_id       Effect
 20mg Active   Y = α + β2          
 Placebo       Y = α - β3    
 --------------------------------------------------------
-  
+```
+
 To compare 10mg Active vs Placebo, we would do the following:
- (α + β1 ) - (α - β3)
+
+```default
+(α + β1 ) - (α - β3)
 =  β1 - β3  
 = 1 β1 - 1 β3
+```
 
 This equates to a contrast statement as follows:
+
+```{sas}
+#| eval: false
 proc logistic data=lung;  
     class dose_id (ref="3") sex (ref="1") /param=glm;
     model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
     CONTRAST "10mg vs. Placebo" trt 1 -1 / e; 
 run;
-  
+```
 As you can see, this contrast is much more intuitive. If you want to compare the effect of Active (10mg) compared to placebo,  you take the effect of 10mg and subtract the effect of placebo !
 
 To compare the average of (10mg Active and 20mg Active) vs Placebo, we would do the following:
-((α + β1 + α + β2)/2 - (α + β3) 
+
+```default
+(α + β1 + α + β2)/2 - (α + β3) 
 = α + 0.5 β1 + 0.5 β2 - α - β3 
 = 0.5 β1 + 0.5 β2 - β3
+```
 
 This equates to a contrast statement as follows:
+
+```{sas}
+#| eval: false
 proc logistic data=lung;  
     class dose_id (ref="3") sex (ref="1") /param=glm;
     model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
 CONTRAST "Active (10mg + 20mg) vs. Placebo (1)" trt 0.5 0.5 -1 / e; 
 run;
+```
 
-As you can see, this contrast is much more intuitive. If you want to compare the average of Active (10mg + 20mg) compared to placebo,  you take half the effect of 10mg plus half the effect of 20mg and substract the effect of placebo !
-  
+As you can see, this contrast is much more intuitive. If you want to compare the average of Active (10mg + 20mg) compared to placebo,  you take half the effect of 10mg plus half the effect of 20mg and substract the effect of placebo!
+
+```default
 Contract Test Results
 Contrast                           DF        Wald Chi-Square      Pr>ChiSq
 --------------------------------------------------------
@@ -358,13 +407,15 @@ Active (10mg +20mg) vs Placebo     1          1.1610               0.2813
 
 Now let's look at the `param=ref` option. Similar to param=effect, ref parameterization uses 1 less design variable compared to the number of levels each parameter has, but the parameterization is different. For dose with 3 levels, we have 2 design variables (β1 and β2).
 
-```{r}
+```{sas}
 #| eval: false
 proc logistic data=lung;   
-class dose_id (ref="3") sex (ref="1") /param=ref;
-model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
+    class dose_id (ref="3") sex (ref="1") /param=ref;
+    model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
 run;
+```
 
+```default
 Class Level Information
 Class       Value            Design Variables
 --------------------------------------------------------
@@ -377,8 +428,11 @@ dose_id      1                1           0
 SEX          1                0           
              2                1           
 --------------------------------------------------------
+```
 
 If we want to estimate the effect of treatment (ignoring the other covariates), the Class Level Information can be translated into the table below, which is then used to form contrast statements.
+
+```default
 α is the intercept, and β1 and β2 and β3 (including the sign +/-) are from the design variables above.
                               
 Dose_id       Effect          
@@ -387,32 +441,46 @@ Dose_id       Effect
 20mg Active   Y = α + β2          
 Placebo       Y = α     
 --------------------------------------------------------
-  
+```
+
 To compare 10mg Active vs Placebo, we would do the following:
- (α + β1 ) - (α )
-=  β1  
+
+```default
+(α + β1 ) - (α ) =  β1  
+```
 
 This equates to a contrast statement as follows:
+```{sas}
+#| eval: false
 proc logistic data=lung;  
     class dose_id (ref="3") sex (ref="1") /param=glm;
     model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
     CONTRAST "10mg vs. Placebo" trt 1  / e; 
 run;
-  
+```
+
 To compare the average of (10mg Active and 20mg Active) vs Placebo, we would do the following:
-((α + β1 + α + β2)/2 -  α  
+
+```default
+(α + β1 + α + β2)/2 -  α  
 = α + 0.5 β1 + 0.5 β2 - α  
-= 0.5 β1 + 0.5 β2 
+= 0.5 β1 + 0.5 β2
+```
 
 This equates to a contrast statement as follows:
+
+```{sas}
+#| eval: false
 proc logistic data=lung;  
     class dose_id (ref="3") sex (ref="1") /param=glm;
     model  wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln;
 CONTRAST "Active (10mg + 20mg) vs. Placebo (1)" trt 0.5 0.5  / e; 
 run;
+```
 
-Again this is less intuitive than the param=glm parameterization,  but the same results are obtained.
-  
+Again this is less intuitive than the param=glm parameterization, but the same results are obtained.
+
+```default
 Contract Test Results
 Contrast                           DF        Wald Chi-Square      Pr>ChiSq
 --------------------------------------------------------
@@ -423,14 +491,16 @@ Active (10mg +20mg) vs Placebo     1          1.1610               0.2813
 
 The Contrast statement, only outputs the p-value for the contrast, but it is common to also require an estimate of the difference between the treatments, with associated 95% CI. You can do this by changing `contrast` to an `estimate` statement. Note that the parameterization of the contrast remains the same as when using a contrast statement as shown below. These estimates and 95% CI's can be back transformed to give you the Odds ratio of the contrast and associated 95% CI. The estimate coefficients table should be checked for accuracy versus the contrast you are trying to do.
 
-```{r}
+```{sas}
 #| eval: false
 proc logistic data=lung;
-class dose_id (ref="3") sex (ref="1") /param=glm;
-model wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln; 
-Estimate "Active (10mg + 20mg) vs. Placebo (1)" dose_id 0.5 0.5 -1 / e cl; 
+    class dose_id (ref="3") sex (ref="1") /param=glm;
+    model wt_gain(event="1") = dose_id age sex ph_ecog2 meal_caln; 
+    Estimate "Active (10mg + 20mg) vs. Placebo (1)" dose_id 0.5 0.5 -1 / e cl; 
 run;
+```
 
+```default
 Estimate Coefficients
 Parameter   dose_id    sex    Row1
 --------------------------------------------------------
@@ -438,7 +508,7 @@ dose_id 1   1                 0.5
 dose_id 2   2                 0.5 
 dose_id 3   3                 -1
 --------------------------------------------------------
-  
+
 Estimate
 Label      estimate   Std Err   Z value   Pr>|z| Alpha  Lower  Upper
 --------------------------------------------------------------------------
