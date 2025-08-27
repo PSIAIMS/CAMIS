@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Sample Size for Non-Inferiority Trials in SAS</title>
+<title>R vs SAS Recurrent Events</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,41 +19,6 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -104,35 +69,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
-
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN") {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -232,16 +168,11 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
-  <li><a href="#two-sample-non-inferiority-test-comparing-means-for-parallel-design-unpaired" id="toc-two-sample-non-inferiority-test-comparing-means-for-parallel-design-unpaired" class="nav-link" data-scroll-target="#two-sample-non-inferiority-test-comparing-means-for-parallel-design-unpaired"><strong>Two Sample Non-inferiority test: Comparing means for parallel design (unpaired)</strong></a></li>
-  <li><a href="#comparing-means-for-crossover-design-paired" id="toc-comparing-means-for-crossover-design-paired" class="nav-link" data-scroll-target="#comparing-means-for-crossover-design-paired"><strong>Comparing means for crossover design (paired)</strong></a>
+  <li><a href="#recurrent-event-models" id="toc-recurrent-event-models" class="nav-link active" data-scroll-target="#recurrent-event-models">Recurrent Event Models</a>
   <ul class="collapse">
-  <li><a href="#estimating-the-within-patient-variance-and-correlation." id="toc-estimating-the-within-patient-variance-and-correlation." class="nav-link" data-scroll-target="#estimating-the-within-patient-variance-and-correlation."><strong>Estimating the within patient variance and correlation.</strong></a>
-  <ul class="collapse">
-  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
-  <li><a href="#version" id="toc-version" class="nav-link" data-scroll-target="#version">Version</a></li>
+  <li><a href="#comparison-results" id="toc-comparison-results" class="nav-link" data-scroll-target="#comparison-results">Comparison Results</a></li>
   </ul></li>
-  </ul></li>
+  <li><a href="#summary-and-recommendation" id="toc-summary-and-recommendation" class="nav-link" data-scroll-target="#summary-and-recommendation">Summary and Recommendation</a></li>
   </ul>
 </nav>
     </div>
@@ -250,7 +181,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Sample Size for Non-Inferiority Trials in SAS</h1>
+<h1 class="title">R vs SAS Recurrent Events</h1>
 </div>
 
 
@@ -258,12 +189,6 @@ window.Quarto = {
 <div class="quarto-title-meta">
 
     
-    <div>
-    <div class="quarto-title-meta-heading">Published</div>
-    <div class="quarto-title-meta-contents">
-      <p class="date">27 August, 2025</p>
-    </div>
-  </div>
   
     
   </div>
@@ -273,85 +198,363 @@ window.Quarto = {
 </header>
 
 
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>PROC POWER<sup>1</sup> can be used for sample size calculations for non-inferiority testing. See <sup>2</sup> for explanation of non-inferiority and how to perform Sample size in SAS (including comparing proportions). Below we give 2 sample size examples for the following types of studies:</p>
-<ul>
-<li><p>two-sample comparison of means for Non-inferiority (i.e.&nbsp;testing if one treatment mean is non-inferior to the another treatment mean).</p></li>
-<li><p>Paired-sample comparison of means (i.e.&nbsp;2 treatment means recorded on 1 group of patients are equivalent within a set tolerance)</p></li>
-</ul>
+<section id="recurrent-event-models" class="level1">
+<h1>Recurrent Event Models</h1>
+<p>The following table shows the different recurrent event models, the capabilities of each language, and whether or not the results from each language match. For this comparison, we used the <code>survival::coxph()</code> function in R and the <code>phreg</code> procedure in SAS.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Analysis</th>
+<th>Supported in R</th>
+<th>Supported in SAS</th>
+<th>Results Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Original Andersen-Gill model</td>
+<td><a href="../R/recurrent_events.html">Yes</a> (using <code>ties = "breslow"</code>)</td>
+<td><a href="../SAS/recurrent_events.html">Yes</a> (default is ties = breslow)</td>
+<td>Yes</td>
+<td>You may also opt for the default tie handling in R and set <code>ties = efron</code> in SAS to make the results match</td>
+</tr>
+<tr class="even">
+<td>Improved Andersen-Gill model (LWYY model or proportional means/rates model)</td>
+<td><a href="../R/recurrent_events.html">Yes</a> (using <code>ties = "breslow"</code>)</td>
+<td><a href="../SAS/recurrent_events.html">Yes</a> (default is ties = breslow)</td>
+<td>Yes</td>
+<td>You may also opt for the default tie handling in R and set <code>ties = efron</code> in SAS to make the results match</td>
+</tr>
+<tr class="odd">
+<td>Prentice-Williams-Peterson total time model</td>
+<td><a href="../R/recurrent_events.html">Yes</a> (using <code>ties = "breslow"</code>)</td>
+<td><a href="../SAS/recurrent_events.html">Yes</a> (default is ties = breslow)</td>
+<td>Yes</td>
+<td>You may also opt for the default tie handling in R and set <code>ties = efron</code> in SAS to make the results match</td>
+</tr>
+<tr class="even">
+<td>Prentice-Williams-Peterson gap time model</td>
+<td><a href="../R/recurrent_events.html">Yes</a> (using <code>ties = "breslow"</code>)</td>
+<td><a href="../SAS/recurrent_events.html">Yes</a> (default is ties = breslow)</td>
+<td>Yes</td>
+<td>You may also opt for the default tie handling in R and set <code>ties = efron</code> in SAS to make the results match</td>
+</tr>
+<tr class="odd">
+<td>Wei-Lin-Weissfeld model</td>
+<td><a href="../R/recurrent_events.html">Yes</a> (using <code>ties = "breslow"</code>)</td>
+<td><a href="../SAS/recurrent_events.html">Yes</a> (default is ties = breslow)</td>
+<td>Yes</td>
+<td>You may also opt for the default tie handling in R and set <code>ties = efron</code> in SAS to make the results match</td>
+</tr>
+</tbody>
+</table>
+<p>The default methods for handling ties in Cox proportional hazards models are different in each language. R uses <code>ties = "efron"</code> by default, while SAS uses <code>ties = breslow</code> by default. If this argument remains unchanged in both languages, it can cause differences in outcome.</p>
+<section id="comparison-results" class="level2">
+<h2 class="anchored" data-anchor-id="comparison-results">Comparison Results</h2>
+<p>Here is a table of comparison values of the <em>overall</em> hazard ratio for <strong>rx</strong> (1 = placebo, 2 = thiotepa) between the <code>coxph()</code> function in R and the <code>phreg</code> procedure in SAS. The Andersen-Gill and Prentice-Williams-Peterson models used the <code>bladder2</code> dataset, while the Wei-Lin-Weissfeld model used the <code>bladder</code> dataset. More information on the <code>bladder</code> data can be found <a href="https://rdrr.io/cran/survival/man/bladder.html">here</a>.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>Statistic</strong></th>
+<th><strong>coxph()</strong></th>
+<th><strong>phreg</strong></th>
+<th><strong>Match</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Improved Andersen-Gill model (LWYY model or proportional means/rates model)</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Hazard ratio</td>
+<td>0.631</td>
+<td>0.631</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>Robust standard error</td>
+<td>0.258</td>
+<td>0.258</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>P-value</td>
+<td>0.0747</td>
+<td>0.0747</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>95% CI</td>
+<td>0.381 to 1.047</td>
+<td>0.381 to 1.047</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td><strong>Original Andersen-Gill</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Hazard ratio</td>
+<td>0.631</td>
+<td>0.631</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>Robust standard error</td>
+<td>0.229</td>
+<td>0.229</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>P-value</td>
+<td>0.0447</td>
+<td>0.0447</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>95% CI</td>
+<td>0.403 to 0.989</td>
+<td>0.403 to 0.989</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td><strong>Prentice-Williams-Peterson: total time</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Hazard ratio (overall)</td>
+<td>0.716</td>
+<td>0.716</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>Robust standard error</td>
+<td>0.197</td>
+<td>0.197</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>P-value</td>
+<td>0.0898</td>
+<td>0.0898</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>95% CI</td>
+<td>0.487 to 1.053</td>
+<td>0.486 to 1.053</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td><strong>Prentice-Williams-Peterson: gap time</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Hazard ratio (overall)</td>
+<td>0.764</td>
+<td>0.764</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>Robust standard error</td>
+<td>0.208</td>
+<td>0.208</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>P-value</td>
+<td>0.1952</td>
+<td>0.1952</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>95% CI</td>
+<td>0.508 to 1.148</td>
+<td>0.508 to 1.148</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td><strong>Wei-Lin-Weissfeld</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Hazard ratio (overall)</td>
+<td>0.560</td>
+<td>0.560</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>Robust standard error</td>
+<td>0.303</td>
+<td>0.303</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>P-value</td>
+<td>0.0560</td>
+<td>0.0560</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>95% CI</td>
+<td>0.309 to 1.015</td>
+<td>0.309 to 1.015</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p>The table below shows the same comparison, but for the <em>event-specific</em> hazard ratios for <strong>rx</strong> for the Prentice-Williams-Peterson and Wei-Lin-Weissfeld models.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 35%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>Statistic</strong></th>
+<th><strong>coxph()</strong></th>
+<th><strong>phreg</strong></th>
+<th><strong>Match</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Prentice-Williams-Peterson: total time</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Hazard ratios</td>
+<td>0.664, 0.660, 0.867, 1.111</td>
+<td>0.664, 0.659, 0.867, 1.111</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>Robust standard error</td>
+<td>0.287, 0.424, 0.405, 0.470</td>
+<td>0.287, 0.424, 0.405, 0.470</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>P-value</td>
+<td>0.1529, 0.3257, 0.7243, 0.8225</td>
+<td>0.1529, 0.3257, 0.7243, 0.8225</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>95% CI</td>
+<td>0.378 to 1.164,<br>
+0.288 to 1.513,<br>
+0.392 to 1.918,<br>
+0.443 to 2.790</td>
+<td>0.378 to 1.164,<br>
+0.287 to 1.513,<br>
+0.392 to 1.918,<br>
+0.443 to 2.790</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td><strong>Prentice-Williams-Peterson: gap time</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Hazard ratios</td>
+<td>0.646, 0.740, 1.015, 1.062</td>
+<td>0.646, 0.739, 1.015, 1.062</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>Robust standard error</td>
+<td>0.284, 0.389, 0.498, 0.540</td>
+<td>0.284, 0.389, 0.498, 0.540</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>P-value</td>
+<td>0.1239, 0.4379, 0.9762, 0.9112</td>
+<td>0.1239, 0.4379, 0.9762, 0.9112</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>95% CI</td>
+<td>0.371 to 1.127,<br>
+0.345 to 1.585,<br>
+0.382 to 2.696,<br>
+0.369 to 3.059</td>
+<td>0.371 to 1.127,<br>
+0.345 to 1.585,<br>
+0.382 to 2.696,<br>
+0.369 to 3.059</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td><strong>Wei-Lin-Weissfeld</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Hazard ratios</td>
+<td>0.620, 0.523, 0.488, 0.570</td>
+<td>0.619, 0.523, 0.488, 0.570</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>Robust standard error</td>
+<td>0.283, 0.368, 0.421, 0.496</td>
+<td>0.283, 0.368, 0.421, 0.496</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>P-value</td>
+<td>0.0908, 0.0779, 0.0885, 0.2573</td>
+<td>0.0908, 0.0780, 0.0886, 0.2573</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>95% CI</td>
+<td>0.356 to 1.079,<br>
+0.254 to 1.075,<br>
+0.214 to 1.114,<br>
+0.216 to 1.507</td>
+<td>0.356 to 1.079,<br>
+0.254 to 1.075,<br>
+0.214 to 1.114,<br>
+0.216 to 1.507</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
 </section>
-<section id="two-sample-non-inferiority-test-comparing-means-for-parallel-design-unpaired" class="level1">
-<h1><strong>Two Sample Non-inferiority test: Comparing means for parallel design (unpaired)</strong></h1>
-<p>This example is a sample size calculation for the following hypotheses: <span class="math inline">\(H_0:\mu2-\mu1\le -\theta\)</span> versus <span class="math inline">\(H_1: \mu2-\mu1\gt -\theta\)</span>.</p>
-<p>A client is interested in conducting a clinical trial to compare two cholesterol lowering agents for treatment of hypercholesterolemic patients through a parallel design. The primary efficacy parameter is a low-density lipidprotein cholesterol (LDL-C). We will consider the situation where the intended trial is for testing noninferiority. For establishing it, suppose the true mean difference is 0 and the noninferiority margin is chosen to be -0.05 (-5%). Assuming SD = 0.1, how many patients are required for an 80% power and an overall significance level of 5%?</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>PROC POWER  ;    </span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  twosamplemeans </span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  test<span class="ot">=</span>equiv_diff      </span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  lower  <span class="ot">=</span> <span class="dv">91</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  upper  <span class="ot">=</span> <span class="dv">101</span>  </span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  meandiff<span class="ot">=</span><span class="dv">96</span> </span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  stddev <span class="ot">=</span> <span class="dv">8</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  ntotal <span class="ot">=</span> .  </span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  power  <span class="ot">=</span> <span class="fl">0.8</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  alpha  <span class="ot">=</span> <span class="fl">0.05</span>;</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  RUN;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>As shown below, a total sample size of 102 is recommended, which equates to 51 in each group.</p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/sample_s_noninferiority/2_sample_parallelgroup_means.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
-</div>
-</div>
-</div>
 </section>
-<section id="comparing-means-for-crossover-design-paired" class="level1">
-<h1><strong>Comparing means for crossover design (paired)</strong></h1>
-<p>Here we assume there is no carry-over effect and that the variance is known. For more information see<sup>3</sup>. There is no obvious way in SAS to do cross over non-inferiority, however, given the one sided test, you can half the alpha using the equiv_diff option to give you the non-inferiority sample size.</p>
-<section id="estimating-the-within-patient-variance-and-correlation." class="level2">
-<h2 class="anchored" data-anchor-id="estimating-the-within-patient-variance-and-correlation."><strong>Estimating the within patient variance and correlation.</strong></h2>
-<p>Let’s consider a standard two-sequence, two period crossover design. Suppose that the sponsor is interested in showing non-inferiority of the test drug against the reference with the non-inferiority margin -20%. Assume power of 80%. Based on the results from previous trials, it is estimated that the variance (of the difference) is 0.2 (20%). Suppose that the true mean difference is -0.1 (-10%). What is the required sample size, assuming significance level of 5%?</p>
-<p>Alpha = 0.025 is used below, instead of 0.05 because you are doing non-inferiority (a one sided test). Note that this is still the sample size for alpha=0.05. The below shows a sample size of 13 patients is required.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>   pairedmeans </span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>   test<span class="ot">=</span>equiv_diff</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>      lower<span class="ot">=</span><span class="sc">-</span><span class="fl">0.3</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>      upper<span class="ot">=</span><span class="fl">0.1</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>      meandiff   <span class="ot">=</span> <span class="sc">-</span><span class="fl">0.1</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>      stddev<span class="ot">=</span><span class="fl">0.2</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>      corr          <span class="ot">=</span> <span class="fl">0.5</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>      alpha         <span class="ot">=</span> <span class="fl">0.025</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>      npairs        <span class="ot">=</span> .</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>      power         <span class="ot">=</span> <span class="fl">0.8</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/sample_s_noninferiority/2_sample_crossover_means.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-<section id="references" class="level3">
-<h3 class="anchored" data-anchor-id="references">References</h3>
-<ol type="1">
-<li><a href="https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_power_sect010.html">PROC POWER SAS online help</a></li>
-<li><a href="https://support.sas.com/kb/48/616.html">Sample Size Calculation Using SAS® for non-inferiority</a></li>
-<li><a href="https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_power_a0000001004.htm">Sample Size for Cross over non-inferiority</a></li>
-</ol>
-</section>
-<section id="version" class="level3">
-<h3 class="anchored" data-anchor-id="version">Version</h3>
-<p>{r} #| echo: false si &lt;- sessioninfo::session_info(“sample_s_noninferiority”, dependencies = FALSE) si$external &lt;- structure(list(“SAS” = “9.04.01M7P08062020”), class = c(“external_info”, “list”)) si</p>
+<section id="summary-and-recommendation" class="level1">
+<h1>Summary and Recommendation</h1>
+<p>Comparison between the R function <code>survival::coxph()</code> and SAS procedure <code>phreg</code> show identical results for the investigated datasets.</p>
 
 
-</section>
-</section>
 </section>
 
 </main> <!-- /main -->
