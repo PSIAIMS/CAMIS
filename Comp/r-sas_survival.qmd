@@ -7,7 +7,7 @@ title: "R vs SAS - Kaplan Meier and Cox-proportion hazards modelling"
 The following table shows the options available in SAS and R for Kaplan Meier and Cox Proportional Hazards modelling, the capabilities of each language, and whether or not the results from each language match.
 
 +-------------------------------------------------------------------------------+----------------------------------------------+----------------------------------------+---------------+--------------------------------------------------------------------------------------------------------------------------------------+
-| Analysis                                                                      | Supported in R                               | Supported in SAS                       | Results Match | Notes                                                                                                                                |
+| Analysis                                                                      | Supported in R using {survival}              | Supported in SAS                       | Results Match | Notes                                                                                                                                |
 +===============================================================================+==============================================+========================================+===============+======================================================================================================================================+
 | Kaplan Meier with confidence intervals using log-log method                   | Yes (using the option conf.type = "log-log") | Yes (Default)                          | Mostly        | 1\) Survival estimates can disagree when last event is censored and survival estimate does not cross the percentile being estimated. |
 |                                                                               |                                              |                                        |               |                                                                                                                                      |
@@ -110,30 +110,20 @@ knitr::include_graphics("../images/survival/r_sas_stratified.png")
 
 ## Reason 3: Convergence Criteria in Cox Proportional Hazards Model
 
-Another source of discrepancy between R and SAS in Cox models can arise from
-the default convergence criteria used by the two software packages.
+Another source of discrepancy between R and SAS in Cox models can arise from the default convergence criteria used by the two software packages.
 
-In R, the `survival::coxph()` function has a default convergence criterion
-for the relative change in log partial likelihood set at `1e-9`.
-On the other hand, SAS's `PHREG` procedure uses a default convergence criterion
-for the relative gradient convergence set at `1e-8`. This discrepancy in the
-convergence criteria can lead to slight differences in the hazard ratios (HR)
-obtained from the two software packages.
+In R, the `survival::coxph()` function has a default convergence criterion for the relative change in log partial likelihood set at `1e-9`. On the other hand, SAS's `PHREG` procedure uses a default convergence criterion for the relative gradient convergence set at `1e-8`. This discrepancy in the convergence criteria can lead to slight differences in the hazard ratios (HR) obtained from the two software packages.
 
-To achieve comparable results, it is possible to adjust the convergence
-criteria in SAS to match the more stringent criteria used by R.
-This can be done by specifying the `fconv` option in the model statement
-within `PHREG` to change the criteria to relative function convergence
-with a value of `1e-9`.
+To achieve comparable results, it is possible to adjust the convergence criteria in SAS to match the more stringent criteria used by R. This can be done by specifying the `fconv` option in the model statement within `PHREG` to change the criteria to relative function convergence with a value of `1e-9`.
 
-- R: default convergence criterion
+-   R: default convergence criterion
 
 ```{r}
 #| eval: false
 fit.cox <- coxph(Surv(LENFOLY, FSTAT) ~ AFB, data = dat)
 ```
 
-- SAS: adjust convergence criterion
+-   SAS: adjust convergence criterion
 
 ```{sas}
 *| eval: false;
@@ -143,14 +133,13 @@ model lenfol*fstat(0) = afb / rl fconv = 1e-9;
 run;
 ```
 
-By making this adjustment, the hazard ratios obtained from SAS will align
-more closely with those from R or even achieve bitwise reproducibility.
+By making this adjustment, the hazard ratios obtained from SAS will align more closely with those from R or even achieve bitwise reproducibility.
 
 The convergence criterion details are described in their documentation:
 
-- [SAS PHREG documentation](https://support.sas.com/documentation/onlinedoc/stat/131/phreg.pdf).
-- [R `survival::coxph()` documentation](https://stat.ethz.ch/R-manual/R-devel/library/survival/html/coxph.html).
-- [R `survival::coxph.control()` ancillary arguments documentation](https://stat.ethz.ch/R-manual/R-devel/library/survival/html/coxph.control.html).
+-   [SAS PHREG documentation](https://support.sas.com/documentation/onlinedoc/stat/131/phreg.pdf).
+-   [R `survival::coxph()` documentation](https://stat.ethz.ch/R-manual/R-devel/library/survival/html/coxph.html).
+-   [R `survival::coxph.control()` ancillary arguments documentation](https://stat.ethz.ch/R-manual/R-devel/library/survival/html/coxph.control.html).
 
 # Other Cases Where Discrepancies Are Found
 

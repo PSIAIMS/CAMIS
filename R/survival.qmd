@@ -56,6 +56,7 @@ library(tidyverse)
 library(haven)
 library(survival)
 library(survminer)
+library(ggsurvfit)
 library(broom)
 library(knitr)
 knitr::opts_chunk$set(echo = TRUE)
@@ -87,7 +88,16 @@ summary(fit.km, times = c(1, 3, 5))
 
 ### Log-rank test
 
+There are multiple ways to output the log-rank test. The survdiff() function from {survival} package performs a log-rank test (or its weighted variants) to compare survival curves between two or more treatment groups. rho=0 is the default and gives the standard log-rank test. rho=1 would output the Peto-Peto test (which weights earliest events more heavily).
+
+You can also use {survminer} package as shown below or {ggsurvfit} package using add_pvalue option if you want the p-value to be put into a KM plot - See example in Kaplan Meier section below.
+
 ```{r}
+#survdiff() from survival package: unrounded pvalue=0.0009646027
+survdiff(Surv(LENFOLY, FSTAT) ~ AFB, data = dat, rho=0)
+
+
+#surv_pvalue() from survminer
 survminer::surv_pvalue(fit.km, data = dat)
 ```
 
@@ -119,4 +129,43 @@ fit.cox.str <- coxph(Surv(LENFOLY, FSTAT) ~ AFB + strata(GENDER), data = dat)
 fit.cox.str %>% 
   tidy(exponentiate = TRUE, conf.int = TRUE, conf.level = 0.95) %>%
   select(term, estimate, conf.low, conf.high)
+```
+
+### Kaplan-Meier Graphs
+
+You can use {survminer} or {ggsurvfit} packages to create kaplan-meier graphs including presentation of the number at risk and number of events under the graph. Both methods are highly customizable.
+
+It is good practice to ensure your categorical factors are specified as such and are clearly labelled. {forcats} package is useful for recoding factors as shown below using fct_recode().
+
+{ggsurvfit} is shown here because the code coverage is higher for this package than for {survminer}.
+
+The code below, fits the model, adds a log-rank test p-value, limits the X axis, controls the major scale and minor scale of Y and X axis, adds a risk table under the graph showing number at risk and the cumulative events, color codes the lines to allow easy identification of AFB and Gender and adds appropriate titles and axis labels.
+
+```{r}
+
+dat2<- dat %>%
+  mutate(Treatment=fct_recode(AFB, 'Without AFB'='0','With AFB'='1')) %>% 
+  mutate(GENDER_F = factor(GENDER, labels=c('Female','Male')))
+
+survfit2(Surv(LENFOLY, FSTAT) ~ Treatment + GENDER_F, data = dat2) %>% 
+      ggsurvfit() + 
+      add_pvalue(rho=0) +
+      coord_cartesian(xlim = c(0, 6)) +
+       scale_y_continuous(breaks = seq(0, 1, by = 0.1), minor_breaks=NULL) +
+       scale_x_continuous(breaks = seq(0, 6, by = 1), minor_breaks=NULL) +
+       add_risktable(risktable_stats='{n.risk}({cum.event})') +
+       scale_color_manual(values=c('Blue','lightskyblue','red','hotpink')) +
+       labs(y='Percentage Survival',
+            x='Time (days)',
+            title='Time to death for patients with or without AFB')
+```
+
+# Reference
+
+```{r}
+#| echo: false
+#| List all the packages needed
+
+si <- sessioninfo::session_info(c('tidyverse','haven', 'survival','survminer','ggsurvfit','broom','knitr' )) 
+si
 ```
