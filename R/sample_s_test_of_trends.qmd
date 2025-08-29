@@ -31,15 +31,15 @@ Initially, we need to compute probabilities by defining the logit trend model (u
 
 ```{r}
 # logit function of trend to compute probabilities
-logit_trend <- function(p0, slope, xvec){
-    logit0 <- log(p0/(1-p0))
-    logit_seq <- logit0 + (xvec - xvec[1]) * slope
-    pvec <- 1/(1+exp(-logit_seq))
-    pvec
+logit_trend <- function(p0, slope, xvec) {
+  logit0 <- log(p0 / (1 - p0))
+  logit_seq <- logit0 + (xvec - xvec[1]) * slope
+  pvec <- 1 / (1 + exp(-logit_seq))
+  pvec
 }
 
 # vector of probabilities (from the logit model):
-p0 <- logit_trend(0.001, slope=0.5, x=c(1,2,4,8,16))
+p0 <- logit_trend(0.001, slope = 0.5, x = c(1, 2, 4, 8, 16))
 
 # or simply (based on the study design table):
 p0 <- c(0.001, 0.016, 0.0045, 0.0321, 0.6441)
@@ -49,12 +49,14 @@ p0 <- c(0.001, 0.016, 0.0045, 0.0321, 0.6441)
 Now, function power.CA.test can be used:
 
 ```{r}
-power.CA.test(N = 37, 
-              pvec=p0, 
-              n.prop = c(10,10,10,5,2), 
-              scores = c(1,2,4,8,16),
-              alternative = "greater",
-              sig.level=0.025)
+multiCA::power.CA.test(
+  N = 37,
+  pvec = p0,
+  n.prop = c(10, 10, 10, 5, 2),
+  scores = c(1, 2, 4, 8, 16),
+  alternative = "greater",
+  sig.level = 0.025
+)
 
 ```
 
@@ -65,11 +67,13 @@ Note: We can obtain the same results using **alternative = "two.sided"** and **s
 Function power.multiCA.test is designed to calculate power of detecting trend in a categorical (multinomial) outcome. It does work as well in the special case of a binary outcome. However, the computation uses an approximation that is difficult to avoid for the multinomial setting but is not strictly necessary with the binary setting -- as a result power may slightly biased away from 50%. Additionally, only two-sided power is implemented there, but we can still use it knowing that 5% is the two-sided significance level corresponding to the one-sided test with 2.5% significance level.
 
 ```{r}
-power.multiCA.test(N=37, 
-                   pmatrix=rbind(p0, 1-p0),  
-                   scores = c(1,2,4,8,16), 
-                   n.prop = c(10,10,10,5,2),
-                   sig.level=0.05)
+multiCA::power.multiCA.test(
+  N = 37,
+  pmatrix = rbind(p0, 1 - p0),
+  scores = c(1, 2, 4, 8, 16),
+  n.prop = c(10, 10, 10, 5, 2),
+  sig.level = 0.05
+)
 
 ```
 
@@ -92,14 +96,16 @@ R code:
 
 ```{r}
 # only using the power.CA.test and previously defined logit model:
-p1 <- logit_trend(0.0001, slope=0.049, x=c(0, 5, 30, 75))
+p1 <- logit_trend(0.0001, slope = 0.049, x = c(0, 5, 30, 75))
 
-power.CA.test(N = 7960, 
-              pvec=p1, 
-              n.prop = c(2500, 3600, 1450, 410), 
-              scores = c(0, 5, 30, 75),
-              alternative = "greater",
-              sig.level=0.025)
+multiCA::power.CA.test(
+  N = 7960,
+  pvec = p1,
+  n.prop = c(2500, 3600, 1450, 410),
+  scores = c(0, 5, 30, 75),
+  alternative = "greater",
+  sig.level = 0.025
+)
 ```
 
 Asymptotic power is equal to 72%.
@@ -120,11 +126,13 @@ What is the required sample size to achieve the power of 80% with the significan
 R code:
 
 ```{r}
-power.CA.test(power=0.8, 
-              pvec=c(0.10, 0.13, 0.16, 0.19, 0.22), 
-              scores = c(0, 1, 2, 4, 8),
-              alternative = "greater", 
-              sig.level=0.05)
+multiCA::power.CA.test(
+  power = 0.8,
+  pvec = c(0.10, 0.13, 0.16, 0.19, 0.22),
+  scores = c(0, 1, 2, 4, 8),
+  alternative = "greater",
+  sig.level = 0.05
+)
 ```
 
 Sample size N=527 subjects is required to achieve asymptotic power of 80%. That is the total sample size, including all the treatment arms/groups.
