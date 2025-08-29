@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.7.33">
+<meta name="generator" content="quarto-1.7.34">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -72,10 +72,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-ea385d0e468b0dd5ea5bf0780b1290d9.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-c8ad9e5dbd60b7b70b38521ab19b7da4.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-4620b7101ad70adb8f4429058170a3e5.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-f82ec6bb8c4646d867f4b22de3f70c54.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -165,7 +165,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     </a>
     <ul class="dropdown-menu" aria-labelledby="nav-menu-help">    
         <li>
-    <a class="dropdown-item" href="https://github.com/PSIAIMS/CAMIS/issues"><i class="bi bi-bug" role="img">
+    <a class="dropdown-item" href="https://github.com/PSIAIMS/CAMIS/issues"><i class="bi bi-bug-fill" role="img">
 </i> 
  <span class="dropdown-text">Report a Bug</span></a>
   </li>  
@@ -243,6 +243,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="objective" class="level2">
 <h2 class="anchored" data-anchor-id="objective">Objective</h2>
 <p>In this document we present how to estimate and test cause specific hazard ratio for the probability of experiencing a certain event at a given time in a competing risks model in R. We focus on the basic model where each subject experiences only one out of <em>k</em> possible events as depicted in the figure below.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survival)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
@@ -269,20 +273,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><p>For illustration, a categorical variable <code>waitCat</code> is created from <code>waitTime</code> as <code>waitCat = TRUE</code> if <code>waitTime &gt; 200</code>, and <code>FALSE</code> otherwise.</p></li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span>(dplyr)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>bmt <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_sas</span>(<span class="fu">file.path</span>(<span class="st">"../data/bmt.sas7bdat"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">Group =</span> <span class="fu">factor</span>(Group, </span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>                   <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>), </span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>                   <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">'ALL'</span>, <span class="st">'AML-Low Risk'</span>, <span class="st">'AML-High Risk'</span>)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">Status =</span> <span class="fu">factor</span>(Status,</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>                    <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>),</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>                    <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">'Censored'</span>, <span class="st">'Relapse'</span>, <span class="st">'Death'</span>)),</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">TYears =</span> T <span class="sc">/</span> <span class="fl">365.25</span>,</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">waitCat =</span> (WaitTime <span class="sc">&gt;</span> <span class="dv">200</span>),</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">ID =</span> <span class="fu">row_number</span>()</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>bmt <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_sas</span>(<span class="fu">file.path</span>(<span class="st">"../data/bmt.sas7bdat"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">Group =</span> <span class="fu">factor</span>(</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>      Group,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>),</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">'ALL'</span>, <span class="st">'AML-Low Risk'</span>, <span class="st">'AML-High Risk'</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">Status =</span> <span class="fu">factor</span>(</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>      Status,</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>),</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">'Censored'</span>, <span class="st">'Relapse'</span>, <span class="st">'Death'</span>)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">TYears =</span> T <span class="sc">/</span> <span class="fl">365.25</span>,</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">waitCat =</span> (WaitTime <span class="sc">&gt;</span> <span class="dv">200</span>),</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">ID =</span> <span class="fu">row_number</span>()</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 </section>
@@ -292,39 +298,58 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="syntax-1-all-competing-events-in-one-go" class="level3">
 <h3 class="anchored" data-anchor-id="syntax-1-all-competing-events-in-one-go">Syntax 1: All competing events in one go</h3>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span>(survival)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>csh<span class="fl">.1</span> <span class="ot">&lt;-</span> <span class="fu">coxph</span>(<span class="fu">Surv</span>(TYears, Status) <span class="sc">~</span> Group <span class="sc">+</span> <span class="fu">strata</span>(waitCat), </span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>               <span class="at">data =</span> bmt, </span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>               <span class="at">id =</span> ID, </span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>               <span class="at">ties =</span> <span class="st">'breslow'</span>, <span class="do">## default is 'efron'</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>               <span class="at">robust =</span> <span class="cn">FALSE</span>    <span class="do">## default is TRUE</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>               )</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(csh<span class="fl">.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>csh<span class="fl">.1</span> <span class="ot">&lt;-</span> survival<span class="sc">::</span><span class="fu">coxph</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  survival<span class="sc">::</span><span class="fu">Surv</span>(TYears, Status) <span class="sc">~</span> Group <span class="sc">+</span> survival<span class="sc">::</span><span class="fu">strata</span>(waitCat),</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> bmt,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">id =</span> ID,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">ties =</span> <span class="st">'breslow'</span>, <span class="do">## default is 'efron'</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">robust =</span> <span class="cn">FALSE</span> <span class="do">## default is TRUE</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(csh<span class="fl">.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Call:
-coxph(formula = Surv(TYears, Status) ~ Group + strata(waitCat), 
-    data = bmt, ties = "breslow", robust = FALSE, id = ID)
+survival::coxph(formula = survival::Surv(TYears, Status) ~ Group + 
+    survival::strata(waitCat), data = bmt, ties = "breslow", 
+    robust = FALSE, id = ID)
 
   n= 137, number of events= 83 
 
-                          coef exp(coef) se(coef)      z Pr(&gt;|z|)  
-GroupAML-Low Risk_1:2  -0.9453    0.3886   0.4508 -2.097   0.0360 *
-GroupAML-High Risk_1:2  0.6162    1.8519   0.3636  1.695   0.0901 .
-GroupAML-Low Risk_1:3  -0.3987    0.6712   0.3946 -1.010   0.3123  
-GroupAML-High Risk_1:3  0.1273    1.1358   0.4031  0.316   0.7521  
+                                             coef exp(coef) se(coef)      z
+GroupAML-Low Risk_1:2                     -0.9271    0.3957   0.4493 -2.063
+GroupAML-High Risk_1:2                     0.6227    1.8640   0.3635  1.713
+survival::strata(waitCat)waitCat=TRUE_1:2 -0.1310    0.8772   0.3240 -0.404
+GroupAML-Low Risk_1:3                     -0.3982    0.6715   0.3936 -1.012
+GroupAML-High Risk_1:3                     0.1177    1.1250   0.4034  0.292
+survival::strata(waitCat)waitCat=TRUE_1:3 -0.2487    0.7798   0.3456 -0.720
+                                          Pr(&gt;|z|)  
+GroupAML-Low Risk_1:2                       0.0391 *
+GroupAML-High Risk_1:2                      0.0867 .
+survival::strata(waitCat)waitCat=TRUE_1:2   0.6860  
+GroupAML-Low Risk_1:3                       0.3117  
+GroupAML-High Risk_1:3                      0.7704  
+survival::strata(waitCat)waitCat=TRUE_1:3   0.4717  
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-                       exp(coef) exp(-coef) lower .95 upper .95
-GroupAML-Low Risk_1:2     0.3886     2.5736    0.1606     0.940
-GroupAML-High Risk_1:2    1.8519     0.5400    0.9081     3.777
-GroupAML-Low Risk_1:3     0.6712     1.4899    0.3097     1.455
-GroupAML-High Risk_1:3    1.1358     0.8804    0.5154     2.503
+                                          exp(coef) exp(-coef) lower .95
+GroupAML-Low Risk_1:2                        0.3957     2.5272    0.1640
+GroupAML-High Risk_1:2                       1.8640     0.5365    0.9142
+survival::strata(waitCat)waitCat=TRUE_1:2    0.8772     1.1400    0.4649
+GroupAML-Low Risk_1:3                        0.6715     1.4891    0.3105
+GroupAML-High Risk_1:3                       1.1250     0.8889    0.5103
+survival::strata(waitCat)waitCat=TRUE_1:3    0.7798     1.2824    0.3961
+                                          upper .95
+GroupAML-Low Risk_1:2                        0.9546
+GroupAML-High Risk_1:2                       3.8005
+survival::strata(waitCat)waitCat=TRUE_1:2    1.6553
+GroupAML-Low Risk_1:3                        1.4525
+GroupAML-High Risk_1:3                       2.4801
+survival::strata(waitCat)waitCat=TRUE_1:3    1.5351
 
-Concordance= 0.619  (se = 0.031 )
-Likelihood ratio test= 17.36  on 4 df,   p=0.002
-Wald test            = 16.13  on 4 df,   p=0.003
-Score (logrank) test = 17.83  on 4 df,   p=0.001</code></pre>
+Concordance= 0.631  (se = 0.031 )
+Likelihood ratio test= 18.08  on 6 df,   p=0.006
+Wald test            = 16.52  on 6 df,   p=0.01
+Score (logrank) test = 18.71  on 6 df,   p=0.005</code></pre>
 </div>
 </div>
 <p>In the output, rows with suffix <code>1:2</code> are for <code>Status = 2</code>, or <code>Relapse</code>; and <code>1:3</code> are for <code>Status = 3</code>, or <code>Death</code>. As usual, censoring must be the lowest level in <code>Status</code>, which in this example is coded <code>0</code>.</p>
@@ -333,34 +358,43 @@ Score (logrank) test = 17.83  on 4 df,   p=0.001</code></pre>
 <section id="syntax-2-one-event-at-a-time" class="level3">
 <h3 class="anchored" data-anchor-id="syntax-2-one-event-at-a-time">Syntax 2: One event at a time</h3>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>csh<span class="fl">.2</span> <span class="ot">&lt;-</span> <span class="fu">coxph</span>(<span class="fu">Surv</span>(TYears, Status <span class="sc">==</span> <span class="st">'Relapse'</span>) <span class="sc">~</span> Group <span class="sc">+</span> <span class="fu">strata</span>(waitCat), </span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>               <span class="at">data =</span> bmt, </span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>               <span class="at">id =</span> ID, </span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>               <span class="at">ties =</span> <span class="st">'breslow'</span>, <span class="do">## default is 'efron'</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>               <span class="at">robust =</span> <span class="cn">FALSE</span>    <span class="do">## default is TRUE</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>               )</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(csh<span class="fl">.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>csh<span class="fl">.2</span> <span class="ot">&lt;-</span> survival<span class="sc">::</span><span class="fu">coxph</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  survival<span class="sc">::</span><span class="fu">Surv</span>(TYears, Status <span class="sc">==</span> <span class="st">'Relapse'</span>) <span class="sc">~</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    Group <span class="sc">+</span> survival<span class="sc">::</span><span class="fu">strata</span>(waitCat),</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> bmt,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">id =</span> ID,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">ties =</span> <span class="st">'breslow'</span>, <span class="do">## default is 'efron'</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">robust =</span> <span class="cn">FALSE</span> <span class="do">## default is TRUE</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(csh<span class="fl">.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Call:
-coxph(formula = Surv(TYears, Status == "Relapse") ~ Group + strata(waitCat), 
-    data = bmt, ties = "breslow", robust = FALSE, id = ID)
+survival::coxph(formula = survival::Surv(TYears, Status == "Relapse") ~ 
+    Group + survival::strata(waitCat), data = bmt, ties = "breslow", 
+    robust = FALSE, id = ID)
 
   n= 137, number of events= 42 
 
-                      coef exp(coef) se(coef)      z Pr(&gt;|z|)  
-GroupAML-Low Risk  -0.9453    0.3886   0.4508 -2.097   0.0360 *
-GroupAML-High Risk  0.6162    1.8519   0.3636  1.695   0.0901 .
+                                         coef exp(coef) se(coef)      z
+GroupAML-Low Risk                     -0.9271    0.3957   0.4493 -2.063
+GroupAML-High Risk                     0.6227    1.8640   0.3635  1.713
+survival::strata(waitCat)waitCat=TRUE -0.1310    0.8772   0.3240 -0.404
+                                      Pr(&gt;|z|)  
+GroupAML-Low Risk                       0.0391 *
+GroupAML-High Risk                      0.0867 .
+survival::strata(waitCat)waitCat=TRUE   0.6860  
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-                   exp(coef) exp(-coef) lower .95 upper .95
-GroupAML-Low Risk     0.3886      2.574    0.1606     0.940
-GroupAML-High Risk    1.8519      0.540    0.9081     3.777
+                                      exp(coef) exp(-coef) lower .95 upper .95
+GroupAML-Low Risk                        0.3957     2.5272    0.1640    0.9546
+GroupAML-High Risk                       1.8640     0.5365    0.9142    3.8005
+survival::strata(waitCat)waitCat=TRUE    0.8772     1.1400    0.4649    1.6553
 
-Concordance= 0.672  (se = 0.039 )
-Likelihood ratio test= 15.37  on 2 df,   p=5e-04
-Wald test            = 14.16  on 2 df,   p=8e-04
-Score (logrank) test = 15.83  on 2 df,   p=4e-04</code></pre>
+Concordance= 0.69  (se = 0.037 )
+Likelihood ratio test= 16.04  on 3 df,   p=0.001
+Wald test            = 14.49  on 3 df,   p=0.002
+Score (logrank) test = 16.66  on 3 df,   p=8e-04</code></pre>
 </div>
 </div>
 <p>The results are identical to those labeled with <code>1:2</code> in the earlier outputs under Syntax 1 above. However, since only <code>Relapse</code> is modeled, the global tests have only 2 degrees of freedom with the null hypothesis that there is no difference among different levels of <code>Group</code> for <code>Relapse</code>.</p>
@@ -386,33 +420,30 @@ Session Info
 <div id="callout-1" class="callout-1-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a> <span class="co">#| echo: false</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a> si <span class="ot">&lt;-</span> sessioninfo<span class="sc">::</span><span class="fu">session_info</span>(</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a> <span class="fu">c</span>(<span class="st">"cmprsk"</span>, <span class="st">"tidycmprsk"</span>, <span class="st">"survival"</span> ) <span class="co">#Vector of packages used </span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a> , <span class="at">dependencies =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a> si</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>─ Session info ───────────────────────────────────────────────────────────────
  setting  value
- version  R version 4.4.2 (2024-10-31 ucrt)
- os       Windows 11 x64 (build 26100)
- system   x86_64, mingw32
- ui       RTerm
+ version  R version 4.4.2 (2024-10-31)
+ os       macOS Sequoia 15.6.1
+ system   aarch64, darwin20
+ ui       X11
  language (EN)
- collate  English_United States.utf8
- ctype    English_United States.utf8
- tz       America/Chicago
- date     2025-08-18
- pandoc   3.4 @ C:/Program Files/RStudio/resources/app/bin/quarto/bin/tools/ (via rmarkdown)
+ collate  en_US.UTF-8
+ ctype    en_US.UTF-8
+ tz       Europe/London
+ date     2025-08-29
+ pandoc   3.4 @ /Applications/RStudio.app/Contents/Resources/app/quarto/bin/tools/aarch64/ (via rmarkdown)
 
 ─ Packages ───────────────────────────────────────────────────────────────────
- package    * version date (UTC) lib source
- cmprsk       2.2-12  2024-05-19 [1] RSPM (R 4.4.0)
- survival   * 3.7-0   2024-06-05 [2] CRAN (R 4.4.2)
- tidycmprsk   1.1.0   2024-08-17 [1] RSPM (R 4.4.0)
+ ! package    * version date (UTC) lib source
+   cmprsk       2.2-12  2024-05-19 [1] CRAN (R 4.4.0)
+ P survival   * 3.7-0   2024-06-05 [?] CRAN (R 4.4.0)
+   tidycmprsk   1.1.0   2024-08-17 [1] CRAN (R 4.4.0)
 
- [1] C:/Users/ljohn71/Desktop/CAMIS/renv/library/windows/R-4.4/x86_64-w64-mingw32
- [2] C:/Users/ljohn71/AppData/Local/Programs/R/R-4.4.2/library
+ [1] /Users/christinafillmore/Documents/GitHub/CAMIS/renv/library/macos/R-4.4/aarch64-apple-darwin20
+ [2] /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library
+
+ P ── Loaded and on-disk path mismatch.
 
 ──────────────────────────────────────────────────────────────────────────────</code></pre>
 </div>

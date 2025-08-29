@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.7.33">
+<meta name="generator" content="quarto-1.7.34">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -72,10 +72,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-ea385d0e468b0dd5ea5bf0780b1290d9.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-c8ad9e5dbd60b7b70b38521ab19b7da4.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-4620b7101ad70adb8f4429058170a3e5.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-f82ec6bb8c4646d867f4b22de3f70c54.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -194,7 +194,7 @@ window.Quarto = {
     </a>
     <ul class="dropdown-menu" aria-labelledby="nav-menu-help">    
         <li>
-    <a class="dropdown-item" href="https://github.com/PSIAIMS/CAMIS/issues"><i class="bi bi-bug" role="img">
+    <a class="dropdown-item" href="https://github.com/PSIAIMS/CAMIS/issues"><i class="bi bi-bug-fill" role="img">
 </i> 
  <span class="dropdown-text">Report a Bug</span></a>
   </li>  
@@ -273,44 +273,50 @@ window.Quarto = {
 <section id="available-r-packages" class="level2">
 <h2 class="anchored" data-anchor-id="available-r-packages">Available R packages</h2>
 <p>The commonly used R packages for power and sample size calculations utilizing a GSD are: <a href="https://keaven.github.io/gsDesign/">gsDesign</a> (also has a <a href="https://rinpharma.shinyapps.io/gsdesign/">web interface</a>), <a href="https://merck.github.io/gsDesign2/">gsDesign2</a>, and <a href="https://www.rpact.org/">rpact</a>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gsDesign)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gsDesign2)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rpact)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tibble)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 </section>
 <section id="design-assumptions" class="level2">
 <h2 class="anchored" data-anchor-id="design-assumptions">Design assumptions</h2>
 <p>Using a toy example, we will assume that a primary objective of a phase III oncology trial is to compare a new therapy to a control in terms of progression-free survival (PFS) and overall survival (OS). Note that, in this example, we have a family of primary endpoints, i.e., if at least one of the endpoints is successful, the study will be declared a success. A GSD will be utilized for each endpoint. PFS will be tested at one interim analysis (IA) for both efficacy and non-binding futility, while OS will be tested at two IAs for efficacy only. An O’Brien-Fleming spending function will be used for efficacy testing and a Hwang-Shih-Decani spending function with <span class="math inline">\(\gamma = -10\)</span> will be used for futility.</p>
 <p>Further design assumptions are as follows:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># PFS HR = 0.6</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>hr1_pfs <span class="ot">&lt;-</span> <span class="fl">0.6</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Median PFS of 9.4 months in the control arm</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>med_pfs <span class="ot">&lt;-</span> <span class="fl">9.4</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Median follow-up of 10 months for PFS</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>minfu_pfs <span class="ot">&lt;-</span> <span class="dv">10</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Monthly dropout of 0.019 for PFS</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>do_rate_pfs <span class="ot">&lt;-</span> <span class="fl">0.019</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># IA timing for PFS is at 75% information fraction</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>timing_pfs <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.75</span>, <span class="dv">1</span>)</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Power of 95% for PFS</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>power_pfs <span class="ot">&lt;-</span> <span class="fl">0.95</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co"># OS HR = 0.65</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>hr1_os <span class="ot">&lt;-</span> <span class="fl">0.65</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Median OS of 3 years in the control arm</span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>med_os <span class="ot">&lt;-</span> <span class="dv">12</span> <span class="sc">*</span> <span class="dv">3</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Median follow-up of 42 months for OS</span></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>minfu_os <span class="ot">&lt;-</span> <span class="dv">42</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Monthly dropout of 0.001 for OS</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>do_rate_os <span class="ot">&lt;-</span> <span class="fl">0.001</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="co"># IA timing for OS is at 60% and 80% information fraction</span></span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>timing_os <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.6</span>, <span class="fl">0.8</span>, <span class="dv">1</span>)</span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Power of 82% for OS</span></span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>power_os <span class="ot">&lt;-</span> <span class="fl">0.82</span></span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Enrollment period of 24 months</span></span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>enroll_dur <span class="ot">&lt;-</span> <span class="dv">24</span></span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="co"># 1:1 randomization ratio</span></span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>rand_ratio <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="co"># alpha level of 1.25% for each endpoint</span></span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>alphal <span class="ot">&lt;-</span> <span class="fl">0.0125</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># PFS HR = 0.6</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>hr1_pfs <span class="ot">&lt;-</span> <span class="fl">0.6</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Median PFS of 9.4 months in the control arm</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>med_pfs <span class="ot">&lt;-</span> <span class="fl">9.4</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Median follow-up of 10 months for PFS</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>minfu_pfs <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Monthly dropout of 0.019 for PFS</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>do_rate_pfs <span class="ot">&lt;-</span> <span class="fl">0.019</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co"># IA timing for PFS is at 75% information fraction</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>timing_pfs <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.75</span>, <span class="dv">1</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Power of 95% for PFS</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>power_pfs <span class="ot">&lt;-</span> <span class="fl">0.95</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co"># OS HR = 0.65</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>hr1_os <span class="ot">&lt;-</span> <span class="fl">0.65</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Median OS of 3 years in the control arm</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>med_os <span class="ot">&lt;-</span> <span class="dv">12</span> <span class="sc">*</span> <span class="dv">3</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Median follow-up of 42 months for OS</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>minfu_os <span class="ot">&lt;-</span> <span class="dv">42</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Monthly dropout of 0.001 for OS</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>do_rate_os <span class="ot">&lt;-</span> <span class="fl">0.001</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="co"># IA timing for OS is at 60% and 80% information fraction</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>timing_os <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.6</span>, <span class="fl">0.8</span>, <span class="dv">1</span>)</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Power of 82% for OS</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>power_os <span class="ot">&lt;-</span> <span class="fl">0.82</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Enrollment period of 24 months</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>enroll_dur <span class="ot">&lt;-</span> <span class="dv">24</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="co"># 1:1 randomization ratio</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>rand_ratio <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="co"># alpha level of 1.25% for each endpoint</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>alphal <span class="ot">&lt;-</span> <span class="fl">0.0125</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>We assume that given the above assumptions, we need to calculate the target number of events for each analysis as well as the total sample size.</p>
 </section>
@@ -322,10 +328,7 @@ window.Quarto = {
 <li>PFS calculations:</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gsDesign)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>pfs_gsDesign <span class="ot">&lt;-</span> <span class="fu">gsSurv</span>(</span>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>pfs_gsDesign <span class="ot">&lt;-</span> gsDesign<span class="sc">::</span><span class="fu">gsSurv</span>(</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">k =</span> <span class="fu">length</span>(timing_pfs),</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">timing =</span> timing_pfs,</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> enroll_dur,</span>
@@ -342,7 +345,8 @@ window.Quarto = {
 <span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">test.type =</span> <span class="dv">4</span></span>
 <span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>pfs_gsDesign <span class="sc">|&gt;</span> <span class="fu">gsBoundSummary</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>pfs_gsDesign <span class="sc">|&gt;</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  gsDesign<span class="sc">::</span><span class="fu">gsBoundSummary</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>    Analysis              Value Efficacy Futility
    IA 1: 75%                  Z   2.6584   0.7432
@@ -361,7 +365,7 @@ window.Quarto = {
 <li>OS calculations:</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>os_gsDesign <span class="ot">&lt;-</span> <span class="fu">gsSurv</span>(</span>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>os_gsDesign <span class="ot">&lt;-</span> gsDesign<span class="sc">::</span><span class="fu">gsSurv</span>(</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">k =</span> <span class="fu">length</span>(timing_os),</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">timing =</span> timing_os,</span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">R =</span> enroll_dur,</span>
@@ -376,7 +380,8 @@ window.Quarto = {
 <span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">test.type =</span> <span class="dv">1</span></span>
 <span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>os_gsDesign <span class="sc">|&gt;</span> <span class="fu">gsBoundSummary</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>os_gsDesign <span class="sc">|&gt;</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  gsDesign<span class="sc">::</span><span class="fu">gsBoundSummary</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>    Analysis               Value Efficacy
    IA 1: 60%                   Z   3.0205
@@ -403,66 +408,62 @@ window.Quarto = {
 <li>PFS calculations:</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gsDesign2)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tibble)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>enroll_rate <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">stratum =</span> <span class="st">"All"</span>,</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">duration =</span> enroll_dur,</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">rate =</span> <span class="dv">1</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>fail_rate_pfs <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">stratum =</span> <span class="st">"All"</span>,</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">duration =</span> <span class="cn">Inf</span>, <span class="co"># Can be set to `Inf` when proportional hazard is assumed</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">fail_rate =</span> <span class="fu">log</span>(<span class="dv">2</span>) <span class="sc">/</span> med_pfs,</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">hr =</span> hr1_pfs,</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">dropout_rate =</span> do_rate_pfs</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>pfs_gsDesign2 <span class="ot">&lt;-</span> <span class="fu">gs_design_ahr</span>(</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">enroll_rate =</span> enroll_rate,</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">fail_rate =</span> fail_rate_pfs,</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">ratio =</span> rand_ratio,</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta =</span> <span class="dv">1</span> <span class="sc">-</span> power_pfs,</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">alpha =</span> alphal,</span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">info_frac =</span> timing_pfs,</span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">analysis_time =</span> enroll_dur <span class="sc">+</span> minfu_pfs,</span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">upper =</span> gs_spending_bound,</span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">upar =</span> <span class="fu">list</span>(</span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">sf =</span> gsDesign<span class="sc">::</span>sfLDOF,</span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_spend =</span> alphal</span>
-<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>  ),</span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>  <span class="at">lower =</span> gs_spending_bound,</span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>  <span class="at">lpar =</span> <span class="fu">list</span>(</span>
-<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">sf =</span> gsDesign<span class="sc">::</span>sfHSD,</span>
-<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_spend =</span> <span class="dv">1</span> <span class="sc">-</span> power_pfs,</span>
-<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">param =</span> <span class="sc">-</span><span class="dv">10</span></span>
-<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>  ),</span>
-<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>  <span class="at">info_scale =</span> <span class="st">"h0_info"</span></span>
-<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>pfs_gsDesign2 <span class="sc">|&gt;</span></span>
-<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summary</span>() <span class="sc">|&gt;</span></span>
-<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_gt</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>enroll_rate <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">stratum =</span> <span class="st">"All"</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">duration =</span> enroll_dur,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">rate =</span> <span class="dv">1</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>fail_rate_pfs <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">stratum =</span> <span class="st">"All"</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">duration =</span> <span class="cn">Inf</span>, <span class="co"># Can be set to `Inf` when proportional hazard is assumed</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">fail_rate =</span> <span class="fu">log</span>(<span class="dv">2</span>) <span class="sc">/</span> med_pfs,</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">hr =</span> hr1_pfs,</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">dropout_rate =</span> do_rate_pfs</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>pfs_gsDesign2 <span class="ot">&lt;-</span> gsDesign2<span class="sc">::</span><span class="fu">gs_design_ahr</span>(</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">enroll_rate =</span> enroll_rate,</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">fail_rate =</span> fail_rate_pfs,</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">ratio =</span> rand_ratio,</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta =</span> <span class="dv">1</span> <span class="sc">-</span> power_pfs,</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">alpha =</span> alphal,</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">info_frac =</span> timing_pfs,</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">analysis_time =</span> enroll_dur <span class="sc">+</span> minfu_pfs,</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">upper =</span> gs_spending_bound,</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">upar =</span> <span class="fu">list</span>(</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">sf =</span> gsDesign<span class="sc">::</span>sfLDOF,</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_spend =</span> alphal</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>  <span class="at">lower =</span> gs_spending_bound,</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>  <span class="at">lpar =</span> <span class="fu">list</span>(</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">sf =</span> gsDesign<span class="sc">::</span>sfHSD,</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_spend =</span> <span class="dv">1</span> <span class="sc">-</span> power_pfs,</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">param =</span> <span class="sc">-</span><span class="dv">10</span></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>  <span class="at">info_scale =</span> <span class="st">"h0_info"</span></span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>pfs_gsDesign2 <span class="sc">|&gt;</span></span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summary</span>() <span class="sc">|&gt;</span></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_gt</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div id="kjhucvwrok" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#kjhucvwrok table {
+<div id="fnonbsrqws" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#fnonbsrqws table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#kjhucvwrok thead, #kjhucvwrok tbody, #kjhucvwrok tfoot, #kjhucvwrok tr, #kjhucvwrok td, #kjhucvwrok th {
+#fnonbsrqws thead, #fnonbsrqws tbody, #fnonbsrqws tfoot, #fnonbsrqws tr, #fnonbsrqws td, #fnonbsrqws th {
   border-style: none;
 }
 
-#kjhucvwrok p {
+#fnonbsrqws p {
   margin: 0;
   padding: 0;
 }
 
-#kjhucvwrok .gt_table {
+#fnonbsrqws .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -488,12 +489,12 @@ window.Quarto = {
   border-left-color: #D3D3D3;
 }
 
-#kjhucvwrok .gt_caption {
+#fnonbsrqws .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#kjhucvwrok .gt_title {
+#fnonbsrqws .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -505,7 +506,7 @@ window.Quarto = {
   border-bottom-width: 0;
 }
 
-#kjhucvwrok .gt_subtitle {
+#fnonbsrqws .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -517,7 +518,7 @@ window.Quarto = {
   border-top-width: 0;
 }
 
-#kjhucvwrok .gt_heading {
+#fnonbsrqws .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -529,13 +530,13 @@ window.Quarto = {
   border-right-color: #D3D3D3;
 }
 
-#kjhucvwrok .gt_bottom_border {
+#fnonbsrqws .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#kjhucvwrok .gt_col_headings {
+#fnonbsrqws .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -550,7 +551,7 @@ window.Quarto = {
   border-right-color: #D3D3D3;
 }
 
-#kjhucvwrok .gt_col_heading {
+#fnonbsrqws .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -570,7 +571,7 @@ window.Quarto = {
   overflow-x: hidden;
 }
 
-#kjhucvwrok .gt_column_spanner_outer {
+#fnonbsrqws .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -582,15 +583,15 @@ window.Quarto = {
   padding-right: 4px;
 }
 
-#kjhucvwrok .gt_column_spanner_outer:first-child {
+#fnonbsrqws .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#kjhucvwrok .gt_column_spanner_outer:last-child {
+#fnonbsrqws .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#kjhucvwrok .gt_column_spanner {
+#fnonbsrqws .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -602,11 +603,11 @@ window.Quarto = {
   width: 100%;
 }
 
-#kjhucvwrok .gt_spanner_row {
+#fnonbsrqws .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#kjhucvwrok .gt_group_heading {
+#fnonbsrqws .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -632,7 +633,7 @@ window.Quarto = {
   text-align: left;
 }
 
-#kjhucvwrok .gt_empty_group_heading {
+#fnonbsrqws .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -647,15 +648,15 @@ window.Quarto = {
   vertical-align: middle;
 }
 
-#kjhucvwrok .gt_from_md > :first-child {
+#fnonbsrqws .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#kjhucvwrok .gt_from_md > :last-child {
+#fnonbsrqws .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#kjhucvwrok .gt_row {
+#fnonbsrqws .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -674,7 +675,7 @@ window.Quarto = {
   overflow-x: hidden;
 }
 
-#kjhucvwrok .gt_stub {
+#fnonbsrqws .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -687,7 +688,7 @@ window.Quarto = {
   padding-right: 5px;
 }
 
-#kjhucvwrok .gt_stub_row_group {
+#fnonbsrqws .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -701,15 +702,15 @@ window.Quarto = {
   vertical-align: top;
 }
 
-#kjhucvwrok .gt_row_group_first td {
+#fnonbsrqws .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#kjhucvwrok .gt_row_group_first th {
+#fnonbsrqws .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#kjhucvwrok .gt_summary_row {
+#fnonbsrqws .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -719,16 +720,16 @@ window.Quarto = {
   padding-right: 5px;
 }
 
-#kjhucvwrok .gt_first_summary_row {
+#fnonbsrqws .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#kjhucvwrok .gt_first_summary_row.thick {
+#fnonbsrqws .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#kjhucvwrok .gt_last_summary_row {
+#fnonbsrqws .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -738,7 +739,7 @@ window.Quarto = {
   border-bottom-color: #D3D3D3;
 }
 
-#kjhucvwrok .gt_grand_summary_row {
+#fnonbsrqws .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -748,7 +749,7 @@ window.Quarto = {
   padding-right: 5px;
 }
 
-#kjhucvwrok .gt_first_grand_summary_row {
+#fnonbsrqws .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -758,7 +759,7 @@ window.Quarto = {
   border-top-color: #D3D3D3;
 }
 
-#kjhucvwrok .gt_last_grand_summary_row_top {
+#fnonbsrqws .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -768,11 +769,11 @@ window.Quarto = {
   border-bottom-color: #D3D3D3;
 }
 
-#kjhucvwrok .gt_striped {
+#fnonbsrqws .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#kjhucvwrok .gt_table_body {
+#fnonbsrqws .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -781,7 +782,7 @@ window.Quarto = {
   border-bottom-color: #D3D3D3;
 }
 
-#kjhucvwrok .gt_footnotes {
+#fnonbsrqws .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -795,7 +796,7 @@ window.Quarto = {
   border-right-color: #D3D3D3;
 }
 
-#kjhucvwrok .gt_footnote {
+#fnonbsrqws .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -804,7 +805,7 @@ window.Quarto = {
   padding-right: 5px;
 }
 
-#kjhucvwrok .gt_sourcenotes {
+#fnonbsrqws .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -818,7 +819,7 @@ window.Quarto = {
   border-right-color: #D3D3D3;
 }
 
-#kjhucvwrok .gt_sourcenote {
+#fnonbsrqws .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -826,72 +827,72 @@ window.Quarto = {
   padding-right: 5px;
 }
 
-#kjhucvwrok .gt_left {
+#fnonbsrqws .gt_left {
   text-align: left;
 }
 
-#kjhucvwrok .gt_center {
+#fnonbsrqws .gt_center {
   text-align: center;
 }
 
-#kjhucvwrok .gt_right {
+#fnonbsrqws .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#kjhucvwrok .gt_font_normal {
+#fnonbsrqws .gt_font_normal {
   font-weight: normal;
 }
 
-#kjhucvwrok .gt_font_bold {
+#fnonbsrqws .gt_font_bold {
   font-weight: bold;
 }
 
-#kjhucvwrok .gt_font_italic {
+#fnonbsrqws .gt_font_italic {
   font-style: italic;
 }
 
-#kjhucvwrok .gt_super {
+#fnonbsrqws .gt_super {
   font-size: 65%;
 }
 
-#kjhucvwrok .gt_footnote_marks {
+#fnonbsrqws .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#kjhucvwrok .gt_asterisk {
+#fnonbsrqws .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#kjhucvwrok .gt_indent_1 {
+#fnonbsrqws .gt_indent_1 {
   text-indent: 5px;
 }
 
-#kjhucvwrok .gt_indent_2 {
+#fnonbsrqws .gt_indent_2 {
   text-indent: 10px;
 }
 
-#kjhucvwrok .gt_indent_3 {
+#fnonbsrqws .gt_indent_3 {
   text-indent: 15px;
 }
 
-#kjhucvwrok .gt_indent_4 {
+#fnonbsrqws .gt_indent_4 {
   text-indent: 20px;
 }
 
-#kjhucvwrok .gt_indent_5 {
+#fnonbsrqws .gt_indent_5 {
   text-indent: 25px;
 }
 
-#kjhucvwrok .katex-display {
+#fnonbsrqws .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#kjhucvwrok div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#fnonbsrqws div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -983,52 +984,52 @@ Cumulative boundary crossing probability
 <li>OS calculations:</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>fail_rate_os <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">stratum =</span> <span class="st">"All"</span>,</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">duration =</span> <span class="cn">Inf</span>, <span class="co"># Can be set to `Inf` when proportional hazard is assumed</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">fail_rate =</span> <span class="fu">log</span>(<span class="dv">2</span>) <span class="sc">/</span> med_os,</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">hr =</span> hr1_os,</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">dropout_rate =</span> do_rate_os</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>os_gsDesign2 <span class="ot">&lt;-</span> <span class="fu">gs_design_ahr</span>(</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">enroll_rate =</span> pfs_gsDesign2<span class="sc">$</span>enroll_rate,</span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">fail_rate =</span> fail_rate_os,</span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">ratio =</span> rand_ratio,</span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta =</span> <span class="dv">1</span> <span class="sc">-</span> power_os,</span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">alpha =</span> alphal,</span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">info_frac =</span> timing_os,</span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">analysis_time =</span> enroll_dur <span class="sc">+</span> minfu_os,</span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">test_lower =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">upper =</span> gs_spending_bound,</span>
-<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">upar =</span> <span class="fu">list</span>(</span>
-<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">sf =</span> gsDesign<span class="sc">::</span>sfLDOF,</span>
-<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_spend =</span> alphal</span>
-<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>  ),</span>
-<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">info_scale =</span> <span class="st">"h0_info"</span></span>
-<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>os_gsDesign2 <span class="sc">|&gt;</span></span>
-<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summary</span>() <span class="sc">|&gt;</span></span>
-<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_gt</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>fail_rate_os <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">stratum =</span> <span class="st">"All"</span>,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">duration =</span> <span class="cn">Inf</span>, <span class="co"># Can be set to `Inf` when proportional hazard is assumed</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">fail_rate =</span> <span class="fu">log</span>(<span class="dv">2</span>) <span class="sc">/</span> med_os,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">hr =</span> hr1_os,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">dropout_rate =</span> do_rate_os</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>os_gsDesign2 <span class="ot">&lt;-</span> gsDesign2<span class="sc">::</span><span class="fu">gs_design_ahr</span>(</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">enroll_rate =</span> pfs_gsDesign2<span class="sc">$</span>enroll_rate,</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">fail_rate =</span> fail_rate_os,</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">ratio =</span> rand_ratio,</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta =</span> <span class="dv">1</span> <span class="sc">-</span> power_os,</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">alpha =</span> alphal,</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">info_frac =</span> timing_os,</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">analysis_time =</span> enroll_dur <span class="sc">+</span> minfu_os,</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">test_lower =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">upper =</span> gs_spending_bound,</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">upar =</span> <span class="fu">list</span>(</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">sf =</span> gsDesign<span class="sc">::</span>sfLDOF,</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_spend =</span> alphal</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">info_scale =</span> <span class="st">"h0_info"</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>os_gsDesign2 <span class="sc">|&gt;</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summary</span>() <span class="sc">|&gt;</span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_gt</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div id="bkdqeqkmmb" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#bkdqeqkmmb table {
+<div id="hvkdcquvgg" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#hvkdcquvgg table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#bkdqeqkmmb thead, #bkdqeqkmmb tbody, #bkdqeqkmmb tfoot, #bkdqeqkmmb tr, #bkdqeqkmmb td, #bkdqeqkmmb th {
+#hvkdcquvgg thead, #hvkdcquvgg tbody, #hvkdcquvgg tfoot, #hvkdcquvgg tr, #hvkdcquvgg td, #hvkdcquvgg th {
   border-style: none;
 }
 
-#bkdqeqkmmb p {
+#hvkdcquvgg p {
   margin: 0;
   padding: 0;
 }
 
-#bkdqeqkmmb .gt_table {
+#hvkdcquvgg .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -1054,12 +1055,12 @@ Cumulative boundary crossing probability
   border-left-color: #D3D3D3;
 }
 
-#bkdqeqkmmb .gt_caption {
+#hvkdcquvgg .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#bkdqeqkmmb .gt_title {
+#hvkdcquvgg .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -1071,7 +1072,7 @@ Cumulative boundary crossing probability
   border-bottom-width: 0;
 }
 
-#bkdqeqkmmb .gt_subtitle {
+#hvkdcquvgg .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -1083,7 +1084,7 @@ Cumulative boundary crossing probability
   border-top-width: 0;
 }
 
-#bkdqeqkmmb .gt_heading {
+#hvkdcquvgg .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -1095,13 +1096,13 @@ Cumulative boundary crossing probability
   border-right-color: #D3D3D3;
 }
 
-#bkdqeqkmmb .gt_bottom_border {
+#hvkdcquvgg .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#bkdqeqkmmb .gt_col_headings {
+#hvkdcquvgg .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1116,7 +1117,7 @@ Cumulative boundary crossing probability
   border-right-color: #D3D3D3;
 }
 
-#bkdqeqkmmb .gt_col_heading {
+#hvkdcquvgg .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1136,7 +1137,7 @@ Cumulative boundary crossing probability
   overflow-x: hidden;
 }
 
-#bkdqeqkmmb .gt_column_spanner_outer {
+#hvkdcquvgg .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1148,15 +1149,15 @@ Cumulative boundary crossing probability
   padding-right: 4px;
 }
 
-#bkdqeqkmmb .gt_column_spanner_outer:first-child {
+#hvkdcquvgg .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#bkdqeqkmmb .gt_column_spanner_outer:last-child {
+#hvkdcquvgg .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#bkdqeqkmmb .gt_column_spanner {
+#hvkdcquvgg .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -1168,11 +1169,11 @@ Cumulative boundary crossing probability
   width: 100%;
 }
 
-#bkdqeqkmmb .gt_spanner_row {
+#hvkdcquvgg .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#bkdqeqkmmb .gt_group_heading {
+#hvkdcquvgg .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1198,7 +1199,7 @@ Cumulative boundary crossing probability
   text-align: left;
 }
 
-#bkdqeqkmmb .gt_empty_group_heading {
+#hvkdcquvgg .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1213,15 +1214,15 @@ Cumulative boundary crossing probability
   vertical-align: middle;
 }
 
-#bkdqeqkmmb .gt_from_md > :first-child {
+#hvkdcquvgg .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#bkdqeqkmmb .gt_from_md > :last-child {
+#hvkdcquvgg .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#bkdqeqkmmb .gt_row {
+#hvkdcquvgg .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1240,7 +1241,7 @@ Cumulative boundary crossing probability
   overflow-x: hidden;
 }
 
-#bkdqeqkmmb .gt_stub {
+#hvkdcquvgg .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1253,7 +1254,7 @@ Cumulative boundary crossing probability
   padding-right: 5px;
 }
 
-#bkdqeqkmmb .gt_stub_row_group {
+#hvkdcquvgg .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1267,15 +1268,15 @@ Cumulative boundary crossing probability
   vertical-align: top;
 }
 
-#bkdqeqkmmb .gt_row_group_first td {
+#hvkdcquvgg .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#bkdqeqkmmb .gt_row_group_first th {
+#hvkdcquvgg .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#bkdqeqkmmb .gt_summary_row {
+#hvkdcquvgg .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1285,16 +1286,16 @@ Cumulative boundary crossing probability
   padding-right: 5px;
 }
 
-#bkdqeqkmmb .gt_first_summary_row {
+#hvkdcquvgg .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#bkdqeqkmmb .gt_first_summary_row.thick {
+#hvkdcquvgg .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#bkdqeqkmmb .gt_last_summary_row {
+#hvkdcquvgg .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1304,7 +1305,7 @@ Cumulative boundary crossing probability
   border-bottom-color: #D3D3D3;
 }
 
-#bkdqeqkmmb .gt_grand_summary_row {
+#hvkdcquvgg .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1314,7 +1315,7 @@ Cumulative boundary crossing probability
   padding-right: 5px;
 }
 
-#bkdqeqkmmb .gt_first_grand_summary_row {
+#hvkdcquvgg .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1324,7 +1325,7 @@ Cumulative boundary crossing probability
   border-top-color: #D3D3D3;
 }
 
-#bkdqeqkmmb .gt_last_grand_summary_row_top {
+#hvkdcquvgg .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1334,11 +1335,11 @@ Cumulative boundary crossing probability
   border-bottom-color: #D3D3D3;
 }
 
-#bkdqeqkmmb .gt_striped {
+#hvkdcquvgg .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#bkdqeqkmmb .gt_table_body {
+#hvkdcquvgg .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1347,7 +1348,7 @@ Cumulative boundary crossing probability
   border-bottom-color: #D3D3D3;
 }
 
-#bkdqeqkmmb .gt_footnotes {
+#hvkdcquvgg .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1361,7 +1362,7 @@ Cumulative boundary crossing probability
   border-right-color: #D3D3D3;
 }
 
-#bkdqeqkmmb .gt_footnote {
+#hvkdcquvgg .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -1370,7 +1371,7 @@ Cumulative boundary crossing probability
   padding-right: 5px;
 }
 
-#bkdqeqkmmb .gt_sourcenotes {
+#hvkdcquvgg .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1384,7 +1385,7 @@ Cumulative boundary crossing probability
   border-right-color: #D3D3D3;
 }
 
-#bkdqeqkmmb .gt_sourcenote {
+#hvkdcquvgg .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -1392,72 +1393,72 @@ Cumulative boundary crossing probability
   padding-right: 5px;
 }
 
-#bkdqeqkmmb .gt_left {
+#hvkdcquvgg .gt_left {
   text-align: left;
 }
 
-#bkdqeqkmmb .gt_center {
+#hvkdcquvgg .gt_center {
   text-align: center;
 }
 
-#bkdqeqkmmb .gt_right {
+#hvkdcquvgg .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#bkdqeqkmmb .gt_font_normal {
+#hvkdcquvgg .gt_font_normal {
   font-weight: normal;
 }
 
-#bkdqeqkmmb .gt_font_bold {
+#hvkdcquvgg .gt_font_bold {
   font-weight: bold;
 }
 
-#bkdqeqkmmb .gt_font_italic {
+#hvkdcquvgg .gt_font_italic {
   font-style: italic;
 }
 
-#bkdqeqkmmb .gt_super {
+#hvkdcquvgg .gt_super {
   font-size: 65%;
 }
 
-#bkdqeqkmmb .gt_footnote_marks {
+#hvkdcquvgg .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#bkdqeqkmmb .gt_asterisk {
+#hvkdcquvgg .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#bkdqeqkmmb .gt_indent_1 {
+#hvkdcquvgg .gt_indent_1 {
   text-indent: 5px;
 }
 
-#bkdqeqkmmb .gt_indent_2 {
+#hvkdcquvgg .gt_indent_2 {
   text-indent: 10px;
 }
 
-#bkdqeqkmmb .gt_indent_3 {
+#hvkdcquvgg .gt_indent_3 {
   text-indent: 15px;
 }
 
-#bkdqeqkmmb .gt_indent_4 {
+#hvkdcquvgg .gt_indent_4 {
   text-indent: 20px;
 }
 
-#bkdqeqkmmb .gt_indent_5 {
+#hvkdcquvgg .gt_indent_5 {
   text-indent: 25px;
 }
 
-#bkdqeqkmmb .katex-display {
+#hvkdcquvgg .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#bkdqeqkmmb div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#hvkdcquvgg div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -1547,32 +1548,29 @@ Cumulative boundary crossing probability
 <li>PFS calculations:</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rpact)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>pfs_rpact_gsd <span class="ot">&lt;-</span> <span class="fu">getDesignGroupSequential</span>(</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">sided =</span> <span class="dv">1</span>,</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">alpha =</span> alphal,</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">informationRates =</span> timing_pfs,</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">typeOfDesign =</span> <span class="st">"asOF"</span>,</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta =</span> <span class="dv">1</span> <span class="sc">-</span> power_pfs,</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">typeBetaSpending =</span> <span class="st">"bsHSD"</span>,</span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">gammaB =</span> <span class="sc">-</span><span class="dv">10</span>,</span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">bindingFutility =</span> <span class="cn">FALSE</span></span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>pfs_rpact <span class="ot">&lt;-</span> <span class="fu">getSampleSizeSurvival</span>(</span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">design =</span> pfs_rpact_gsd,</span>
-<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">accrualTime =</span> enroll_dur,</span>
-<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">followUpTime =</span> minfu_pfs,</span>
-<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">lambda2 =</span> <span class="fu">log</span>(<span class="dv">2</span>) <span class="sc">/</span> med_pfs,</span>
-<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">hazardRatio =</span> hr1_pfs,</span>
-<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">dropoutRate1 =</span> <span class="fl">0.2</span>,</span>
-<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">dropoutRate2 =</span> <span class="fl">0.2</span>,</span>
-<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">dropoutTime =</span> <span class="dv">12</span></span>
-<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">summary</span>(pfs_rpact))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>pfs_rpact_gsd <span class="ot">&lt;-</span> rpact<span class="sc">::</span><span class="fu">getDesignGroupSequential</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">sided =</span> <span class="dv">1</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">alpha =</span> alphal,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">informationRates =</span> timing_pfs,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">typeOfDesign =</span> <span class="st">"asOF"</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta =</span> <span class="dv">1</span> <span class="sc">-</span> power_pfs,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">typeBetaSpending =</span> <span class="st">"bsHSD"</span>,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">gammaB =</span> <span class="sc">-</span><span class="dv">10</span>,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">bindingFutility =</span> <span class="cn">FALSE</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>pfs_rpact <span class="ot">&lt;-</span> rpact<span class="sc">::</span><span class="fu">getSampleSizeSurvival</span>(</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">design =</span> pfs_rpact_gsd,</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">accrualTime =</span> enroll_dur,</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">followUpTime =</span> minfu_pfs,</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">lambda2 =</span> <span class="fu">log</span>(<span class="dv">2</span>) <span class="sc">/</span> med_pfs,</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">hazardRatio =</span> hr1_pfs,</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">dropoutRate1 =</span> <span class="fl">0.2</span>,</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">dropoutRate2 =</span> <span class="fl">0.2</span>,</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">dropoutTime =</span> <span class="dv">12</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">summary</span>(pfs_rpact))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning in kable.ParameterSet(summary(pfs_rpact)): Manual use of kable() for
 rpact result objects is no longer needed, as the formatting and display will be
@@ -1708,26 +1706,26 @@ handled automatically by the rpact package</code></pre>
 <li>OS calculations:</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>os_rpact_gsd <span class="ot">&lt;-</span> <span class="fu">getDesignGroupSequential</span>(</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">sided =</span> <span class="dv">1</span>,</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">alpha =</span> alphal,</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">informationRates =</span> timing_os,</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">typeOfDesign =</span> <span class="st">"asOF"</span>,</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta =</span> <span class="dv">1</span> <span class="sc">-</span> power_os</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>os_rpact <span class="ot">&lt;-</span> <span class="fu">getSampleSizeSurvival</span>(</span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">design =</span> os_rpact_gsd,</span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">accrualTime =</span> enroll_dur,</span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">followUpTime =</span> minfu_os,</span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">lambda2 =</span> <span class="fu">log</span>(<span class="dv">2</span>) <span class="sc">/</span> med_os,</span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">hazardRatio =</span> hr1_os,</span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">dropoutRate1 =</span> <span class="dv">1</span> <span class="sc">-</span> <span class="fu">exp</span>(<span class="sc">-</span>do_rate_os <span class="sc">*</span> <span class="dv">12</span>),</span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">dropoutRate2 =</span> <span class="dv">1</span> <span class="sc">-</span> <span class="fu">exp</span>(<span class="sc">-</span>do_rate_os <span class="sc">*</span> <span class="dv">12</span>),</span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">dropoutTime =</span> <span class="dv">12</span></span>
-<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">summary</span>(os_rpact))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>os_rpact_gsd <span class="ot">&lt;-</span> rpact<span class="sc">::</span><span class="fu">getDesignGroupSequential</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">sided =</span> <span class="dv">1</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">alpha =</span> alphal,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">informationRates =</span> timing_os,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">typeOfDesign =</span> <span class="st">"asOF"</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta =</span> <span class="dv">1</span> <span class="sc">-</span> power_os</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>os_rpact <span class="ot">&lt;-</span> rpact<span class="sc">::</span><span class="fu">getSampleSizeSurvival</span>(</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">design =</span> os_rpact_gsd,</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">accrualTime =</span> enroll_dur,</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">followUpTime =</span> minfu_os,</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">lambda2 =</span> <span class="fu">log</span>(<span class="dv">2</span>) <span class="sc">/</span> med_os,</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">hazardRatio =</span> hr1_os,</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">dropoutRate1 =</span> <span class="dv">1</span> <span class="sc">-</span> <span class="fu">exp</span>(<span class="sc">-</span>do_rate_os <span class="sc">*</span> <span class="dv">12</span>),</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">dropoutRate2 =</span> <span class="dv">1</span> <span class="sc">-</span> <span class="fu">exp</span>(<span class="sc">-</span>do_rate_os <span class="sc">*</span> <span class="dv">12</span>),</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">dropoutTime =</span> <span class="dv">12</span></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">summary</span>(os_rpact))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <p><em>Sample size calculation for a survival endpoint</em></p>
 <p>Sequential analysis with a maximum of 3 looks (group sequential design), one-sided overall significance level 1.25%, power 82%. The results were calculated for a two-sample logrank test, H0: hazard ratio = 1, H1: hazard ratio = 0.65, control lambda(2) = 0.019, accrual time = 24, accrual intensity = 16.5, follow-up time = 42, dropout rate(1) = 0.012, dropout rate(2) = 0.012, dropout time = 12.</p>

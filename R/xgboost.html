@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.7.33">
+<meta name="generator" content="quarto-1.7.34">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -72,10 +72,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-ea385d0e468b0dd5ea5bf0780b1290d9.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-c8ad9e5dbd60b7b70b38521ab19b7da4.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-4620b7101ad70adb8f4429058170a3e5.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-f82ec6bb8c4646d867f4b22de3f70c54.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -165,7 +165,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     </a>
     <ul class="dropdown-menu" aria-labelledby="nav-menu-help">    
         <li>
-    <a class="dropdown-item" href="https://github.com/PSIAIMS/CAMIS/issues"><i class="bi bi-bug" role="img">
+    <a class="dropdown-item" href="https://github.com/PSIAIMS/CAMIS/issues"><i class="bi bi-bug-fill" role="img">
 </i> 
  <span class="dropdown-text">Report a Bug</span></a>
   </li>  
@@ -259,10 +259,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MASS)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidymodels)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(xgboost)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(birthwt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rsample)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(parsnip)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(xgboost)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(birthwt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Our modeling goal using the <code>birthwt</code> dataset is to predict whether the birth weight is low or not low based on factors such as mother’s age, smoking status, and history of hypertension.</p>
 </section>
@@ -270,29 +271,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="example-code">Example Code</h2>
 <p>Use {tidymodels} metadata package to split the data into training and testing data. For classification, we need to change the Low variable into a factor, since currently coded as an integer (0,1).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>birthwt <span class="ot">&lt;-</span> </span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  birthwt <span class="sc">%&gt;%</span> </span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">low_f =</span> <span class="fu">lvls_revalue</span>(<span class="fu">factor</span>(low), <span class="fu">c</span>(<span class="st">"Not Low"</span>, <span class="st">"Low"</span>)),</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">smoke_f =</span> <span class="fu">lvls_revalue</span>(<span class="fu">factor</span>(smoke), <span class="fu">c</span>(<span class="st">"Non-smoker"</span>, <span class="st">"Smoker"</span>))</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>brthwt_split <span class="ot">&lt;-</span> <span class="fu">initial_split</span>(birthwt, <span class="at">strata =</span> low)</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>brthwt_train <span class="ot">&lt;-</span> <span class="fu">training</span>(brthwt_split)</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>brthwt_test <span class="ot">&lt;-</span> <span class="fu">testing</span>(brthwt_split)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>birthwt <span class="ot">&lt;-</span> birthwt <span class="sc">|&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">low_f =</span> <span class="fu">lvls_revalue</span>(<span class="fu">factor</span>(low), <span class="fu">c</span>(<span class="st">"Not Low"</span>, <span class="st">"Low"</span>)),</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">smoke_f =</span> <span class="fu">lvls_revalue</span>(<span class="fu">factor</span>(smoke), <span class="fu">c</span>(<span class="st">"Non-smoker"</span>, <span class="st">"Smoker"</span>))</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>brthwt_split <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">initial_split</span>(birthwt, <span class="at">strata =</span> low)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>brthwt_train <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">training</span>(brthwt_split)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>brthwt_test <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">testing</span>(brthwt_split)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <section id="classification" class="level3">
 <h3 class="anchored" data-anchor-id="classification">Classification</h3>
 <p>After creating the data split, we setup the params of the model.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>xgboost_spec <span class="ot">&lt;-</span> </span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">boost_tree</span>(<span class="at">trees =</span> <span class="dv">15</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># This model can be used for classification or regression, so set mode</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"xgboost"</span>)</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>xgboost_spec</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>xgboost_spec <span class="ot">&lt;-</span> parsnip<span class="sc">::</span><span class="fu">boost_tree</span>(<span class="at">trees =</span> <span class="dv">15</span>) <span class="sc">|&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># This model can be used for classification or regression, so set mode</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  parsnip<span class="sc">::</span><span class="fu">set_mode</span>(<span class="st">"classification"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  parsnip<span class="sc">::</span><span class="fu">set_engine</span>(<span class="st">"xgboost"</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>xgboost_spec</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Boosted Tree Model Specification (classification)
 
@@ -301,8 +299,9 @@ Main Arguments:
 
 Computational engine: xgboost </code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>xgboost_cls_fit <span class="ot">&lt;-</span> xgboost_spec <span class="sc">%&gt;%</span> <span class="fu">fit</span>(low_f <span class="sc">~</span> ., <span class="at">data =</span> brthwt_train)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>xgboost_cls_fit</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>xgboost_cls_fit <span class="ot">&lt;-</span> xgboost_spec <span class="sc">|&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit</span>(low_f <span class="sc">~</span> ., <span class="at">data =</span> brthwt_train)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>xgboost_cls_fit</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>parsnip model object
 
@@ -329,7 +328,7 @@ evaluation_log:
      2       0.31033704
    ---              ---
     14       0.01571681
-    15       0.01400478</code></pre>
+    15       0.01396153</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bind_cols</span>(</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">predict</span>(xgboost_cls_fit, brthwt_test),</span>
@@ -339,11 +338,11 @@ evaluation_log:
 <pre><code># A tibble: 48 × 3
    .pred_class `.pred_Not Low` .pred_Low
    &lt;fct&gt;                 &lt;dbl&gt;     &lt;dbl&gt;
- 1 Not Low               0.979    0.0209
- 2 Not Low               0.979    0.0209
- 3 Not Low               0.985    0.0150
- 4 Not Low               0.985    0.0150
- 5 Not Low               0.988    0.0116
+ 1 Not Low               0.985    0.0151
+ 2 Not Low               0.985    0.0151
+ 3 Not Low               0.985    0.0151
+ 4 Not Low               0.985    0.0151
+ 5 Not Low               0.985    0.0151
  6 Not Low               0.988    0.0116
  7 Not Low               0.988    0.0116
  8 Not Low               0.988    0.0116
@@ -357,13 +356,12 @@ evaluation_log:
 <h3 class="anchored" data-anchor-id="regression">Regression</h3>
 <p>To perform xgboost with regression, when setting up the parameter of the model, set the mode of xgboost to regression. After that switch and then changing the variable of interest back to an integer, the rest of the code is the same.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>xgboost_reg_spec <span class="ot">&lt;-</span> </span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">boost_tree</span>(<span class="at">trees =</span> <span class="dv">15</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># This model can be used for classification or regression, so set mode</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"regression"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"xgboost"</span>)</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>xgboost_reg_spec</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>xgboost_reg_spec <span class="ot">&lt;-</span> parsnip<span class="sc">::</span><span class="fu">boost_tree</span>(<span class="at">trees =</span> <span class="dv">15</span>) <span class="sc">|&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># This model can be used for classification or regression, so set mode</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  parsnip<span class="sc">::</span><span class="fu">set_mode</span>(<span class="st">"regression"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  parsnip<span class="sc">::</span><span class="fu">set_engine</span>(<span class="st">"xgboost"</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>xgboost_reg_spec</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Boosted Tree Model Specification (regression)
 
@@ -373,8 +371,9 @@ Main Arguments:
 Computational engine: xgboost </code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For a regression model, the outcome should be `numeric`, not a `factor`.</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>xgboost_reg_fit <span class="ot">&lt;-</span> xgboost_reg_spec <span class="sc">%&gt;%</span> <span class="fu">fit</span>(low<span class="sc">~</span> ., <span class="at">data =</span> brthwt_train)</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>xgboost_reg_fit </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>xgboost_reg_fit <span class="ot">&lt;-</span> xgboost_reg_spec <span class="sc">|&gt;</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit</span>(low <span class="sc">~</span> ., <span class="at">data =</span> brthwt_train)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>xgboost_reg_fit</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>parsnip model object
 
@@ -403,7 +402,7 @@ evaluation_log:
     14   0.003690328
     15   0.002599106</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">predict</span>(xgboost_reg_fit , brthwt_test)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">predict</span>(xgboost_reg_fit, brthwt_test)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 48 × 1
      .pred
@@ -444,108 +443,82 @@ Session Info
 <div class="cell-output cell-output-stdout">
 <pre><code>─ Session info ───────────────────────────────────────────────────────────────
  setting  value
- version  R version 4.4.2 (2024-10-31 ucrt)
- os       Windows 11 x64 (build 26100)
- system   x86_64, mingw32
- ui       RTerm
+ version  R version 4.4.2 (2024-10-31)
+ os       macOS Sequoia 15.6.1
+ system   aarch64, darwin20
+ ui       X11
  language (EN)
- collate  English_United States.utf8
- ctype    English_United States.utf8
- tz       America/Chicago
- date     2025-08-18
- pandoc   3.4 @ C:/Program Files/RStudio/resources/app/bin/quarto/bin/tools/ (via rmarkdown)
+ collate  en_US.UTF-8
+ ctype    en_US.UTF-8
+ tz       Europe/London
+ date     2025-08-29
+ pandoc   3.4 @ /Applications/RStudio.app/Contents/Resources/app/quarto/bin/tools/aarch64/ (via rmarkdown)
 
 ─ Packages ───────────────────────────────────────────────────────────────────
- ! package      * version    date (UTC) lib source
- P backports      1.5.0      2024-05-23 [?] RSPM (R 4.4.0)
- P broom        * 1.0.7      2024-09-26 [?] RSPM (R 4.4.0)
-   class          7.3-22     2023-05-03 [2] CRAN (R 4.4.2)
- P cli            3.6.3      2024-06-21 [?] RSPM (R 4.4.0)
-   codetools      0.2-20     2024-03-31 [2] CRAN (R 4.4.2)
- P colorspace     2.1-1      2024-07-26 [?] RSPM (R 4.4.0)
- P data.table     1.16.0     2024-08-27 [?] RSPM (R 4.4.0)
- P dials        * 1.3.0      2024-07-30 [?] RSPM (R 4.4.0)
- P DiceDesign     1.10       2023-12-07 [?] RSPM (R 4.4.0)
- P digest         0.6.37     2024-08-19 [?] RSPM (R 4.4.0)
- P dplyr        * 1.1.4      2023-11-17 [?] RSPM (R 4.4.0)
- P evaluate       1.0.0      2024-09-17 [?] RSPM (R 4.4.0)
- P fansi          1.0.6      2023-12-08 [?] RSPM (R 4.4.0)
- P fastmap        1.2.0      2024-05-15 [?] RSPM (R 4.4.0)
- P forcats      * 1.0.0      2023-01-29 [?] RSPM (R 4.4.0)
- P foreach        1.5.2      2022-02-02 [?] RSPM (R 4.4.0)
- P furrr          0.3.1      2022-08-15 [?] RSPM (R 4.4.0)
- P future         1.34.0     2024-07-29 [?] RSPM (R 4.4.0)
- P future.apply   1.11.2     2024-03-28 [?] RSPM (R 4.4.0)
- P generics       0.1.3      2022-07-05 [?] RSPM (R 4.4.0)
- P ggplot2      * 3.5.1      2024-04-23 [?] RSPM (R 4.4.0)
- P globals        0.16.3     2024-03-08 [?] RSPM (R 4.4.0)
-   glue           1.8.0      2024-09-30 [2] CRAN (R 4.4.3)
- P gower          1.0.1      2022-12-22 [?] RSPM (R 4.4.0)
- P GPfit          1.0-8      2019-02-08 [?] RSPM (R 4.4.0)
- P gtable         0.3.5      2024-04-22 [?] RSPM (R 4.4.0)
- P hardhat        1.4.0      2024-06-02 [?] RSPM (R 4.4.0)
- P hms            1.1.3      2023-03-21 [?] RSPM (R 4.4.0)
- P htmltools      0.5.8.1    2024-04-04 [?] RSPM (R 4.4.0)
- P htmlwidgets    1.6.4      2023-12-06 [?] RSPM (R 4.4.0)
- P infer        * 1.0.7      2024-03-25 [?] RSPM (R 4.4.0)
- P ipred          0.9-15     2024-07-18 [?] RSPM (R 4.4.0)
- P iterators      1.0.14     2022-02-05 [?] RSPM (R 4.4.0)
- P jsonlite       1.8.9      2024-09-20 [?] RSPM (R 4.4.0)
- P knitr          1.50       2025-03-16 [?] RSPM (R 4.4.0)
-   lattice        0.22-6     2024-03-20 [2] CRAN (R 4.4.2)
- P lava           1.8.0      2024-03-05 [?] RSPM (R 4.4.0)
- P lhs            1.2.0      2024-06-30 [?] RSPM (R 4.4.0)
-   lifecycle      1.0.4      2023-11-07 [2] CRAN (R 4.4.3)
- P listenv        0.9.1      2024-01-29 [?] RSPM (R 4.4.0)
- P lubridate    * 1.9.3      2023-09-27 [?] RSPM (R 4.4.0)
-   magrittr       2.0.3      2022-03-30 [2] CRAN (R 4.4.3)
-   MASS         * 7.3-61     2024-06-13 [2] CRAN (R 4.4.2)
-   Matrix         1.7-1      2024-10-18 [2] CRAN (R 4.4.2)
- P modeldata    * 1.4.0      2024-06-19 [?] RSPM (R 4.4.0)
- P munsell        0.5.1      2024-04-01 [?] RSPM (R 4.4.0)
-   nnet           7.3-19     2023-05-03 [2] CRAN (R 4.4.2)
- P parallelly     1.38.0     2024-07-27 [?] RSPM (R 4.4.0)
- P parsnip      * 1.2.1      2024-03-22 [?] RSPM (R 4.4.0)
- P pillar         1.9.0      2023-03-22 [?] RSPM (R 4.4.0)
- P pkgconfig      2.0.3      2019-09-22 [?] RSPM (R 4.4.0)
- P prodlim        2024.06.25 2024-06-24 [?] RSPM (R 4.4.0)
- P purrr        * 1.0.2      2023-08-10 [?] RSPM (R 4.4.0)
- P R6             2.5.1      2021-08-19 [?] RSPM (R 4.4.0)
- P Rcpp           1.0.13     2024-07-17 [?] RSPM (R 4.4.0)
- P readr        * 2.1.5      2024-01-10 [?] RSPM (R 4.4.0)
- P recipes      * 1.1.0      2024-07-04 [?] RSPM (R 4.4.0)
-   renv           1.0.10     2024-10-05 [1] RSPM (R 4.4.2)
- P rlang          1.1.4      2024-06-04 [?] RSPM (R 4.4.0)
- P rmarkdown      2.28       2024-08-17 [?] RSPM (R 4.4.0)
-   rpart          4.1.23     2023-12-05 [2] CRAN (R 4.4.2)
- P rsample      * 1.2.1      2024-03-25 [?] RSPM (R 4.4.0)
- P rstudioapi     0.16.0     2024-03-24 [?] RSPM (R 4.4.0)
- P scales       * 1.3.0      2023-11-28 [?] RSPM (R 4.4.0)
- P sessioninfo    1.2.2      2021-12-06 [?] RSPM (R 4.4.0)
- P stringi        1.8.4      2024-05-06 [?] RSPM (R 4.4.0)
- P stringr      * 1.5.1      2023-11-14 [?] RSPM (R 4.4.0)
-   survival       3.7-0      2024-06-05 [2] CRAN (R 4.4.2)
- P tibble       * 3.2.1      2023-03-20 [?] RSPM (R 4.4.0)
- P tidymodels   * 1.2.0      2024-03-25 [?] RSPM (R 4.4.0)
- P tidyr        * 1.3.1      2024-01-24 [?] RSPM (R 4.4.0)
- P tidyselect     1.2.1      2024-03-11 [?] RSPM (R 4.4.0)
- P tidyverse    * 2.0.0      2023-02-22 [?] RSPM (R 4.4.0)
- P timechange     0.3.0      2024-01-18 [?] RSPM (R 4.4.0)
- P timeDate       4041.110   2024-09-22 [?] RSPM (R 4.4.0)
- P tune         * 1.2.1      2024-04-18 [?] RSPM (R 4.4.0)
- P tzdb           0.4.0      2023-05-12 [?] RSPM (R 4.4.0)
- P utf8           1.2.4      2023-10-22 [?] RSPM (R 4.4.0)
-   vctrs          0.6.5      2023-12-01 [2] CRAN (R 4.4.3)
- P withr          3.0.1      2024-07-31 [?] RSPM (R 4.4.0)
- P workflows    * 1.1.4      2024-02-19 [?] RSPM (R 4.4.0)
- P workflowsets * 1.1.0      2024-03-21 [?] RSPM (R 4.4.0)
- P xfun           0.52       2025-04-02 [?] RSPM (R 4.4.0)
- P xgboost      * 1.7.8.1    2024-07-24 [?] RSPM (R 4.4.0)
-   yaml           2.3.10     2024-07-26 [2] CRAN (R 4.4.3)
- P yardstick    * 1.3.1      2024-03-21 [?] RSPM (R 4.4.0)
+ ! package     * version date (UTC) lib source
+ P BiocManager   1.30.25 2024-08-28 [?] CRAN (R 4.4.1)
+ P cli           3.6.3   2024-06-21 [?] CRAN (R 4.4.0)
+   codetools     0.2-20  2024-03-31 [2] CRAN (R 4.4.2)
+ P colorspace    2.1-1   2024-07-26 [?] CRAN (R 4.4.0)
+ P data.table    1.16.0  2024-08-27 [?] CRAN (R 4.4.1)
+ P digest        0.6.37  2024-08-19 [?] CRAN (R 4.4.1)
+ P dplyr       * 1.1.4   2023-11-17 [?] CRAN (R 4.4.0)
+ P evaluate      1.0.0   2024-09-17 [?] CRAN (R 4.4.1)
+ P fansi         1.0.6   2023-12-08 [?] CRAN (R 4.4.0)
+ P fastmap       1.2.0   2024-05-15 [?] CRAN (R 4.4.0)
+ P forcats     * 1.0.0   2023-01-29 [?] CRAN (R 4.4.0)
+ P furrr         0.3.1   2022-08-15 [?] CRAN (R 4.4.0)
+ P future        1.34.0  2024-07-29 [?] CRAN (R 4.4.0)
+ P generics      0.1.3   2022-07-05 [?] CRAN (R 4.4.0)
+ P ggplot2     * 3.5.1   2024-04-23 [?] CRAN (R 4.4.0)
+ P globals       0.16.3  2024-03-08 [?] CRAN (R 4.4.0)
+ P glue          1.8.0   2024-09-30 [?] CRAN (R 4.4.1)
+ P gtable        0.3.5   2024-04-22 [?] CRAN (R 4.4.0)
+ P hardhat       1.4.0   2024-06-02 [?] CRAN (R 4.4.0)
+ P hms           1.1.3   2023-03-21 [?] CRAN (R 4.4.0)
+ P htmltools     0.5.8.1 2024-04-04 [?] CRAN (R 4.4.0)
+ P htmlwidgets   1.6.4   2023-12-06 [?] CRAN (R 4.4.0)
+ P jsonlite      1.8.9   2024-09-20 [?] CRAN (R 4.4.1)
+   knitr         1.50    2025-03-16 [1] RSPM (R 4.4.0)
+   lattice       0.22-6  2024-03-20 [2] CRAN (R 4.4.2)
+ P lifecycle     1.0.4   2023-11-07 [?] CRAN (R 4.4.0)
+ P listenv       0.9.1   2024-01-29 [?] CRAN (R 4.4.0)
+ P lubridate   * 1.9.3   2023-09-27 [?] CRAN (R 4.4.0)
+ P magrittr      2.0.3   2022-03-30 [?] CRAN (R 4.4.0)
+   MASS        * 7.3-61  2024-06-13 [2] CRAN (R 4.4.2)
+   Matrix        1.7-1   2024-10-18 [2] CRAN (R 4.4.2)
+ P munsell       0.5.1   2024-04-01 [?] CRAN (R 4.4.0)
+ P parallelly    1.38.0  2024-07-27 [?] CRAN (R 4.4.0)
+ P parsnip     * 1.2.1   2024-03-22 [?] CRAN (R 4.4.0)
+ P pillar        1.9.0   2023-03-22 [?] CRAN (R 4.4.0)
+ P pkgconfig     2.0.3   2019-09-22 [?] CRAN (R 4.4.0)
+ P purrr       * 1.0.2   2023-08-10 [?] CRAN (R 4.4.0)
+ P R6            2.5.1   2021-08-19 [?] CRAN (R 4.4.0)
+ P readr       * 2.1.5   2024-01-10 [?] CRAN (R 4.4.0)
+   renv          1.0.10  2024-10-05 [1] CRAN (R 4.4.1)
+ P rlang         1.1.4   2024-06-04 [?] CRAN (R 4.4.0)
+ P rmarkdown     2.28    2024-08-17 [?] CRAN (R 4.4.0)
+ P rsample     * 1.2.1   2024-03-25 [?] CRAN (R 4.4.0)
+ P rstudioapi    0.16.0  2024-03-24 [?] CRAN (R 4.4.0)
+ P scales        1.3.0   2023-11-28 [?] CRAN (R 4.4.0)
+ P sessioninfo   1.2.2   2021-12-06 [?] CRAN (R 4.4.0)
+ P stringi       1.8.4   2024-05-06 [?] CRAN (R 4.4.0)
+ P stringr     * 1.5.1   2023-11-14 [?] CRAN (R 4.4.0)
+ P tibble      * 3.2.1   2023-03-20 [?] CRAN (R 4.4.0)
+ P tidyr       * 1.3.1   2024-01-24 [?] CRAN (R 4.4.0)
+ P tidyselect    1.2.1   2024-03-11 [?] CRAN (R 4.4.0)
+ P tidyverse   * 2.0.0   2023-02-22 [?] CRAN (R 4.4.0)
+ P timechange    0.3.0   2024-01-18 [?] CRAN (R 4.4.0)
+ P tzdb          0.4.0   2023-05-12 [?] CRAN (R 4.4.0)
+ P utf8          1.2.4   2023-10-22 [?] CRAN (R 4.4.0)
+ P vctrs         0.6.5   2023-12-01 [?] CRAN (R 4.4.0)
+ P withr         3.0.1   2024-07-31 [?] CRAN (R 4.4.0)
+   xfun          0.52    2025-04-02 [1] RSPM (R 4.4.0)
+ P xgboost     * 1.7.8.1 2024-07-24 [?] CRAN (R 4.4.0)
+ P yaml          2.3.10  2024-07-26 [?] CRAN (R 4.4.0)
 
- [1] C:/Users/ljohn71/Desktop/CAMIS/renv/library/windows/R-4.4/x86_64-w64-mingw32
- [2] C:/Users/ljohn71/AppData/Local/Programs/R/R-4.4.2/library
+ [1] /Users/christinafillmore/Documents/GitHub/CAMIS/renv/library/macos/R-4.4/aarch64-apple-darwin20
+ [2] /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library
 
  P ── Loaded and on-disk path mismatch.
 
