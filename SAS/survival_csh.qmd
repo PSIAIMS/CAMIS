@@ -35,24 +35,25 @@ The bone marrow transplant (BTM) dataset as presented by Guo & So (2018) is used
 
 -   For illustration, a categorical variable `waitCat` is created from `waitTime` as `waitCat = TRUE` if `waitTime > 200`, and `FALSE` otherwise.
 
-```{r}
+```{sas}
 #| eval: false
 proc format;
-  value DiseaseGroup 1='ALL'
-                     2='AML-Low Risk'
-                     3='AML-High Risk';
-  value EventStatus  0='Censored'
-                     1='Relapse'
-                     2='Death';
+    value DiseaseGroup 1='ALL'
+                      2='AML-Low Risk'
+                      3='AML-High Risk';
+    value EventStatus  0='Censored'
+                      1='Relapse'
+                      2='Death';
 run;
+
 libname datalib "..\data";
 data bmt;
-  set datalib.bmt;
-  TYears = T / 365.25;
-  waitCat = (waitTime>200);
-  ID = _n_;
-  format Group DiseaseGroup.;
-  format Status EventStatus.;
+    set datalib.bmt;
+    TYears = T / 365.25;
+    waitCat = (waitTime>200);
+    ID = _n_;
+    format Group DiseaseGroup.;
+    format Status EventStatus.;
 run;
 ```
 
@@ -62,12 +63,12 @@ run;
 
 Starting in SAS/STAT 14.3, all competing events can be estimated together. However, currently this syntax does not allow the `strata` statement.
 
-```{r}
+```{sas}
 #| eval: false
 proc phreg data=Bmt;
-	title 'Cause-Specific Hazard Regression for Relapse and Death without strata';
-	class Group (order=internal ref=first);
-	model T*Status(0)=Group / eventcode(cox)=1;
+    title 'Cause-Specific Hazard Regression for Relapse and Death without strata';
+    class Group (order=internal ref=first);
+    model T*Status(0)=Group / eventcode(cox)=1;
 run;
 ```
 
@@ -97,14 +98,14 @@ For more information, please see [Guo C and So Y. (2018)](https://support.sas.co
 
 We use `Relapse` as an example.
 
-```{r}
+```{sas}
 #| eval: false
 ods output ParameterEstimates=p1;
 proc phreg data=bmt; 
-  title 'Cause-Specific Hazard Regression for Relapse with strata';
-	class Group (order=internal ref=first) waitCat;
-	strata waitCat;
-	model TYears*Status(0,2) = Group / risklimits alpha = 0.05;
+    title 'Cause-Specific Hazard Regression for Relapse with strata';
+    class Group (order=internal ref=first) waitCat;
+    strata waitCat;
+    model TYears*Status(0,2) = Group / risklimits alpha = 0.05;
 run;
 quit;
 ```

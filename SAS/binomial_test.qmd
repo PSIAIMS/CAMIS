@@ -1,16 +1,13 @@
-
 ---
 title: "Binomial Test on Coin Flips and Clinical Data"
-format: html
-execute:
-  echo: true
 ---
 
 ## Simulating Coin Flips
 
 Set the seed for reproducibility and simulate 1000 coin flips using a Bernoulli distribution.
 
-```sas
+```{sas}
+#| eval: false
 /* Set the seed for reproducibility */
 %let seed = 19;
 
@@ -31,7 +28,8 @@ run;
 
 Use SQL to count how many heads and tails were observed in the simulation.
 
-```sas
+```{sas}
+#| eval: false
 proc sql;
     select 
         sum(result = "H") as heads_count,
@@ -46,7 +44,8 @@ quit;
 
 Print the counts using `%put` statements.
 
-```sas
+```{sas}
+#| eval: false
 %put Heads Count: &heads_count;
 %put Tails Count: &tails_count;
 %put Total Flips: &total_flips;
@@ -56,13 +55,11 @@ Print the counts using `%put` statements.
 
 Use `proc freq` to check if the observed results differ significantly from the expected probability of 0.5.
 
-```sas
+```{sas}
 proc freq data=coin_flips;
     tables result / binomial(p=0.5);
 run;
 ```
-
----
 
 ## Example: Binomial Test in Clinical Trial Data
 
@@ -70,7 +67,8 @@ We load a clinical dataset and test if the observed death proportion is signific
 
 ### Import Dataset
 
-```sas
+```{sas}
+#| eval: false
 proc import datafile='/home/u63532805/CAMIS/lung_cancer.csv'
     out=lung_cancer
     dbms=csv
@@ -81,7 +79,8 @@ run;
 
 ### Create Binary Flag for Deaths
 
-```sas
+```{sas}
+#| eval: false
 data lung_cancer;
     set lung_cancer;
     death_flag = (status = 1);
@@ -90,7 +89,8 @@ run;
 
 ### Perform Exact Binomial Test
 
-```sas
+```{sas}
+#| eval: false
 proc freq data=lung_cancer;
     tables death_flag / binomial(p=0.19 level='1');
     title "Exact Binomial Test for Death Proportion";
@@ -110,57 +110,55 @@ run;
 **The FREQ Procedure**
 
 | result | Frequency | Percent | Cumulative Frequency | Cumulative Percent |
-|--------|-----------|---------|----------------------|---------------------|
-| H      | 520       | 52.00   | 520                  | 52.00               |
-| T      | 480       | 48.00   | 1000                 | 100.00              |
+|--------|-----------|---------|----------------------|--------------------|
+| H      | 520       | 52.00   | 520                  | 52.00              |
+| T      | 480       | 48.00   | 1000                 | 100.00             |
 
 **Binomial Proportion for result = H**
 
-- Proportion: 0.5200  
-- ASE: 0.0158  
-- 95% Lower Conf Limit: 0.4890  
-- 95% Upper Conf Limit: 0.5510  
+-   Proportion: 0.5200\
+-   ASE: 0.0158\
+-   95% Lower Conf Limit: 0.4890\
+-   95% Upper Conf Limit: 0.5510
 
 **Exact Confidence Limits**
 
-- 95% Lower Conf Limit: 0.4885  
-- 95% Upper Conf Limit: 0.5514  
+-   95% Lower Conf Limit: 0.4885\
+-   95% Upper Conf Limit: 0.5514
 
 **Test of H0: Proportion = 0.5**
 
-- ASE under H0: 0.0158  
-- Z: 1.2649  
-- One-sided Pr > Z: 0.1030  
-- Two-sided Pr > |Z|: 0.2059  
-- Sample Size: 1000  
-
----
+-   ASE under H0: 0.0158\
+-   Z: 1.2649\
+-   One-sided Pr \> Z: 0.1030\
+-   Two-sided Pr \> \|Z\|: 0.2059\
+-   Sample Size: 1000
 
 ### Exact Binomial Test for Death Proportion
 
 **The FREQ Procedure**
 
 | death_flag | Frequency | Percent | Cumulative Frequency | Cumulative Percent |
-|------------|-----------|---------|----------------------|---------------------|
-| 0          | 165       | 72.37   | 165                  | 72.37               |
-| 1          | 63        | 27.63   | 228                  | 100.00              |
+|------------|-----------|---------|----------------------|--------------------|
+| 0          | 165       | 72.37   | 165                  | 72.37              |
+| 1          | 63        | 27.63   | 228                  | 100.00             |
 
 **Binomial Proportion for death_flag = 1**
 
-- Proportion: 0.2763  
-- ASE: 0.0296  
-- 95% Lower Conf Limit: 0.2183  
-- 95% Upper Conf Limit: 0.3344  
+-   Proportion: 0.2763\
+-   ASE: 0.0296\
+-   95% Lower Conf Limit: 0.2183\
+-   95% Upper Conf Limit: 0.3344
 
 **Exact Confidence Limits**
 
-- 95% Lower Conf Limit: 0.2193  
-- 95% Upper Conf Limit: 0.3392  
+-   95% Lower Conf Limit: 0.2193\
+-   95% Upper Conf Limit: 0.3392
 
 **Test of H0: Proportion = 0.19**
 
-- ASE under H0: 0.0260  
-- Z: 3.3223  
-- One-sided Pr > Z: 0.0004  
-- Two-sided Pr > |Z|: 0.0009  
-- Sample Size: 228  
+-   ASE under H0: 0.0260\
+-   Z: 3.3223\
+-   One-sided Pr \> Z: 0.0004\
+-   Two-sided Pr \> \|Z\|: 0.0009\
+-   Sample Size: 228

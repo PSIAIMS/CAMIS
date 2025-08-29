@@ -43,80 +43,80 @@ The same publicly available [dataset](https://r-packages.io/datasets/antidepress
 
 The relevant endpoint for the antidepressant trial was assessed using the Hamilton 17-item depression rating scale (HAMD17), which was measured at baseline and subsequently at weeks 1, 2, 3, 4 and 6 (visits 4-7). Study drug discontinuation occurred in 24% (20/84) of subjects in the active drug group, compared to 26% (23/88) of subjects in the placebo group. Importantly, all data after study drug discontinuation are missing and there is a single intermittent missing observation.
 
-```{r}
+```{sas}
 #| label: data_exploration_1
 #| eval: false
 proc print data=dat (obs=10);
-  var PATIENT GENDER THERAPY RELDAYS VISIT BASVAL HAMDTL17 CHANGE;
+    var PATIENT GENDER THERAPY RELDAYS VISIT BASVAL HAMDTL17 CHANGE;
 run;
 ```
 
 ```{r}
 #| label: data_exploration_1_png
 #| echo: false
-#| fig-align: 'center'
-#| out-width: '80%'
+#| fig-align: center
+#| out-width: 80%
 knitr::include_graphics("../images/tipping_point/SAS_data_exploration_1.PNG")
 ```
 
 The number of patients per visit and treatment group are:
 
-```{r}
+```{sas}
 #| label: data_exploration_2
 #| eval: false
 proc freq data=dat;
-  table VISIT*THERAPY / norow nocol nopercent nocum;
+    table VISIT*THERAPY / norow nocol nopercent nocum;
 run;
 ```
 
 ```{r}
 #| label: data_exploration_2_png
 #| echo: false
-#| fig-align: 'center'
-#| out-width: '80%'
+#| fig-align: center
+#| out-width: 80%
 knitr::include_graphics("../images/tipping_point/SAS_data_exploration_2.PNG")
 ```
 
 The mean change from baseline of the HAMD17 endpoint per visit and treatment group using only the complete cases are:
 
-```{r}
+```{sas}
 #| label: data_exploration_3
 #| eval: false
 proc means data=dat n mean nonobs;
-  class VISIT THERAPY;
-  var CHANGE;
+    class VISIT THERAPY;
+    var CHANGE;
 run;
 ```
 
 ```{r}
 #| label: data_exploration_3_png
 #| echo: false
-#| fig-align: 'center'
-#| out-width: '80%'
+#| fig-align: center
+#| out-width: 80%
 knitr::include_graphics("../images/tipping_point/SAS_data_exploration_3.PNG")
 ```
 
 The missingness pattern is:
 
-```{r}
+```{sas}
 #| label: data_exploration_4
 #| eval: false
 proc transpose data=dat out=HAMD_wide(drop=_NAME_) prefix=CHG;
-	by PATIENT THERAPY BASVAL;
-	id VISIT;
-	var CHANGE;
+    by PATIENT THERAPY BASVAL;
+    id VISIT;
+    var CHANGE;
 run;
 
 proc mi data=HAMD_wide nimpute=0 displaypattern=NOMEANS;
-	var CHG4 CHG5 CHG6 CHG7;
+    var CHG4 CHG5 CHG6 CHG7;
 run;
 ```
 
 ```{r}
 #| label: data_exploration_4_png
 #| echo: false
-#| fig-align: 'center'
-#| out-width: '80%'
+#| fig-align: center
+#| out-width: 80%
 knitr::include_graphics("../images/tipping_point/SAS_data_exploration_4.PNG")
 ```
 
@@ -142,7 +142,7 @@ As mentioned, we will illustrate the use of the so-called `five macros` in SAS f
 
 To conduct a tipping point analysis under the MAR assumption, we simply specify `method = MAR` under `Part2A()` of the `five macros`. Generally, the rest of `Part1` and `Part2` are the same as in the scenario without any delta adjustment.
 
-```{r}
+```{sas}
 #| label: part_1_2
 #| eval: false
 %part1A(jobname = HAMD, 
@@ -153,13 +153,16 @@ To conduct a tipping point analysis under the MAR assumption, we simply specify 
         Treat = THERAPY,
         Covbytime = BASVAL,
         Catcov = GENDER);
+
 %part1B(jobname = HAMD,
         Ndraws = 500,
         thin = 10,
         seed = 12345);
+
 %part2A(jobname = HAMD_MAR,
         inname = HAMD,
         method = MAR);
+
 %part2B(jobname = HAMD_MAR,
         seed = 12345);
 ```
@@ -174,81 +177,77 @@ A clear description of these arguments is given in the documentation:
 
 To automate the tipping point analysis, you can create a new macro like shown below. The first part of this macro prints all results, while the second part prints the non-significant and significant results separately by filtering on `Probt`.
 
-```{r}
+```{sas}
 #| label: MAR_all_results
 #| eval: false
 data all_results;
-	length DELTA 8 VISIT $10 THERAPY $20 _THERAPY $20 Diff SE_Diff df Probt LCL_Diff UCL_Diff 8;
-	stop;
+    length DELTA 8 VISIT $10 THERAPY $20 _THERAPY $20 Diff SE_Diff df Probt LCL_Diff UCL_Diff 8;
+    stop;
 run;
 
 %macro part3_TP;
 
-  %do delta = -5 %to 10 %by 1;
-  	%part3(Jobname = HAMD_MAR, anref=PLACEBO, Delta = &delta &delta &delta &delta, DLag = 1 0 0 0, DGroups = DRUG, Label=MAR);
-  		
-  	data current_result;
-  		set HAMD_MAR_OUT(keep = VISIT THERAPY _THERAPY Diff SE_Diff df Probt LCL_Diff UCL_Diff);
-  		DELTA = &delta;
-  	run;
-  	
-  	proc append base=all_results data=current_result force nowarn;
-  	run;
-  	
-  %end;
-  	
-  proc print data = all_results noobs label;
-  	where VISIT = "7";
-  	var DELTA VISIT THERAPY _THERAPY Diff SE_Diff df Probt LCL_Diff UCL_Diff;
-  	title "MAR: all results";
-  run;
+%do delta = -5 %to 10 %by 1;
+%part3(Jobname = HAMD_MAR, anref=PLACEBO, Delta = &delta &delta &delta &delta, DLag = 1 0 0 0, DGroups = DRUG, Label=MAR);
 
-  (...)
+data current_result;
+    set HAMD_MAR_OUT(keep = VISIT THERAPY _THERAPY Diff SE_Diff df Probt LCL_Diff UCL_Diff);
+    DELTA = &delta;
+run;
+
+proc append base=all_results data=current_result force nowarn;
+run;
+
+%end;
+proc print data = all_results noobs label;
+    where VISIT = "7";
+    var DELTA VISIT THERAPY _THERAPY Diff SE_Diff df Probt LCL_Diff UCL_Diff;
+    title "MAR: all results";
+run;
 ```
 
 ```{r}
 #| label: MAR_all_results_png
 #| echo: false
-#| fig-align: 'center'
-#| out-width: '80%'
+#| fig-align: center
+#| out-width: 80%
 knitr::include_graphics("../images/tipping_point/SAS_MAR_all_results.png")
 ```
 
-```{r}
+```{sas}
 #| label: MAR_filtered_results
 #| eval: false
-  (...)
-  
-  proc sql noprint;
-	  create table delta_ge_05 as
-		select distinct DELTA
-		from all_results
-		where Probt >= 0.05 and not missing(Probt) and VISIT = "7";
-		
-		select DELTA into :non_sig_delta separated by ' '
-		from delta_ge_05;
-		
-		create table delta_lt_05 as
-		select distinct DELTA
-		from all_results
-		where Probt < 0.05 and not missing(Probt) and VISIT = "7";
-		
-		select DELTA into :sig_delta separated by ' '
-		from delta_lt_05;
-	quit;
-	
-	proc print data = all_results noobs label;
-	  where DELTA in (&non_sig_delta.) and VISIT = "7";
-		var DELTA VISIT THERAPY _THERAPY Diff SE_Diff df Probt LCL_Diff UCL_Diff;
-		title "MAR: non-significant results";
-	run;
 
-	proc print data = all_results noobs label;
-		where DELTA in (&sig_delta.) and VISIT = "7";
-		var DELTA VISIT THERAPY _THERAPY Diff SE_Diff df Probt LCL_Diff UCL_Diff;
-		title "MAR: significant results";
-	run;
-	
+proc sql noprint;
+    create table delta_ge_05 as
+    select distinct DELTA
+    from all_results
+    where Probt >= 0.05 and not missing(Probt) and VISIT = "7";
+
+    select DELTA into :non_sig_delta separated by ' '
+    from delta_ge_05;
+
+    create table delta_lt_05 as
+    select distinct DELTA
+    from all_results
+    where Probt < 0.05 and not missing(Probt) and VISIT = "7";
+
+    select DELTA into :sig_delta separated by ' '
+    from delta_lt_05;
+quit;
+
+proc print data = all_results noobs label;
+    where DELTA in (&non_sig_delta.) and VISIT = "7";
+    var DELTA VISIT THERAPY _THERAPY Diff SE_Diff df Probt LCL_Diff UCL_Diff;
+    title "MAR: non-significant results";
+run;
+
+proc print data = all_results noobs label;
+    where DELTA in (&sig_delta.) and VISIT = "7";
+    var DELTA VISIT THERAPY _THERAPY Diff SE_Diff df Probt LCL_Diff UCL_Diff;
+    title "MAR: significant results";
+run;
+
 %mend;
 
 %part3_TP;
@@ -257,16 +256,16 @@ knitr::include_graphics("../images/tipping_point/SAS_MAR_all_results.png")
 ```{r}
 #| label: MAR_non_sig_results_png
 #| echo: false
-#| fig-align: 'center'
-#| out-width: '80%'
+#| fig-align: center
+#| out-width: 80%
 knitr::include_graphics("../images/tipping_point/SAS_MAR_non_sig_results.png")
 ```
 
 ```{r}
 #| label: MAR_sig_results_png
 #| echo: false
-#| fig-align: 'center'
-#| out-width: '80%'
+#| fig-align: center
+#| out-width: 80%
 knitr::include_graphics("../images/tipping_point/SAS_MAR_sig_results.png")
 ```
 
@@ -275,8 +274,8 @@ To determine the **exact** tipping point between the last "significant" delta an
 ```{r}
 #| label: MAR_TP_png
 #| echo: false
-#| fig-align: 'center'
-#| out-width: '80%'
+#| fig-align: center
+#| out-width: 80%
 knitr::include_graphics("../images/tipping_point/SAS_MAR_TP.png")
 ```
 
@@ -289,8 +288,8 @@ A nice visualization of this tipping point analysis for the MAR approach is:
 ```{r}
 #| label: MAR_est_pval_plot_png
 #| echo: false
-#| fig-align: 'center'
-#| out-width: '80%'
+#| fig-align: center
+#| out-width: 80%
 knitr::include_graphics("../images/tipping_point/SAS_MAR_est_pval.png")
 ```
 
@@ -320,14 +319,14 @@ Of all considered approaches, the MAR approach yields the largest delta adjustme
 ```{r}
 #| label: comparison_est_plot_png
 #| echo: false
-#| fig-align: 'center'
+#| fig-align: center
 knitr::include_graphics("../images/tipping_point/SAS_comparison_est.png")
 ```
 
 ```{r}
 #| label: comparison_pval_plot_png
 #| echo: false
-#| fig-align: 'center'
+#| fig-align: center
 knitr::include_graphics("../images/tipping_point/SAS_comparison_pval.png")
 ```
 
@@ -376,15 +375,15 @@ Let's now consider the antidepressant data again. Suppose we apply a delta adjus
 
 To program this, we would define `Delta`, `DLag` and `DGroups` in `Part3()` of the `five macros` as follows:
 
-```{r}
+```{sas}
 #| eval: false
 #| label: flexible_delta
 %part3(Jobname = HAMD_MAR, 
-       anref=PLACEBO, 
-       Delta = 2 2 2 2, 
-       DLag = 1 1 1 1, 
-       DGroups = DRUG, 
-       Label=MAR);
+        anref=PLACEBO, 
+        Delta = 2 2 2 2, 
+        DLag = 1 1 1 1, 
+        DGroups = DRUG, 
+        Label=MAR);
 ```
 
 Notice that `DLag = 1 1 1 1` is the default for this argument in SAS, you may also leave it unspecified in this case.
@@ -402,14 +401,14 @@ As already illustrated in the tipping point analysis assuming MAR above, you may
 
 To apply this delta = 5 to both groups we leave `DGroups` unspecified.
 
-```{r}
+```{sas}
 #| eval: false
 #| label: fixed_delta
 %part3(Jobname = HAMD_MAR, 
-       anref=PLACEBO, 
-       Delta = 5 5 5 5, 
-       DLag = 1 0 0 0, 
-       Label=MAR);
+        anref=PLACEBO, 
+        Delta = 5 5 5 5, 
+        DLag = 1 0 0 0, 
+        Label=MAR);
 ```
 
 [**Note:**]{.underline} In the `five macros`, delta adjustments are not applied to intermittent missing observations, but only to missing observations after withdrawal. From the documentation, it seems like this cannot be altered. In contrast, the choice of which missing data to apply delta adjustments to can be more freely managed using the `rbmi` R package. This may lead to discrepancies between tipping point analyses conducted in SAS and R, and may have important implications for datasets with high proportions of intermittent missing values in particular.

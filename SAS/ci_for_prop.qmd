@@ -22,7 +22,7 @@ For more information about these methods in R & SAS, including which performs be
 
 The adcibc data stored [here](../data/adcibc.csv) was used in this example, creating a binary treatment variable `trt` taking the values of `Act` or `PBO` and a binary response variable `resp` taking the values of `Yes` or `No`. For this example, a response is defined as a score greater than 4.
 
-```{r}
+```{sas}
 #| eval: false
 data adcibc2 (keep=trt resp) ;
     set adcibc;     
@@ -35,10 +35,10 @@ run;
 
 The below shows that for the Actual Treatment, there are 36 responders out of 154 subjects = 0.2338 (23.38% responders).
 
-```{r}
+```{sas}
 #| eval: false 
 proc freq data=adcibc;
-  table trt*resp/ nopct nocol;
+    table trt*resp/ nopct nocol;
 run;
 ```
 
@@ -148,15 +148,15 @@ By adding the option `BINOMIAL(LEVEL="Yes")` to your 'PROC FREQ', SAS outputs th
 
 The output consists of the proportion of resp=Yes, the Asymptotic SE, 95% CIs using normal-approximation method, 95% CI using the Clopper-Pearson method (Exact), and then a Binomial test statistic and p-value for the null hypothesis of H0: Proportion = 0.5.
 
-```{R}
+```{sas}
 #| eval: false
 proc sort data=adcibc;
-by trt; 
+    by trt; 
 run; 
 
 proc freq data=adcibc ; 
-table resp/ nopct nocol BINOMIAL(LEVEL="Yes");
-by trt;
+    table resp/ nopct nocol BINOMIAL(LEVEL="Yes");
+    by trt;
 run;
 ```
 
@@ -177,18 +177,16 @@ By adding the option `BINOMIAL(LEVEL="Yes" CL=<name of CI method>)`, the other C
 
 -   `BINOMIALc(LEVEL="Yes" CL=WILSON(CORRECT)  WALD(CORRECT));`will return Wilson(with continuity correction) and Wald (with continuity correction)
 
-```{R}
+```{sas}
 #| eval: false
-
 proc freq data=adcibc;
-         table resp/ nopct nocol 
-                     BINOMIAL(LEVEL="Yes" 
-                              CL= CLOPPERPEARSON WALD WILSON 
-                                  AGRESTICOULL JEFFREYS MIDP 
-                                  LIKELIHOODRATIO LOGIT BLAKER);
-  by trt; 
+    table resp/ nopct nocol 
+    BINOMIAL(LEVEL="Yes" 
+            CL= CLOPPERPEARSON WALD WILSON 
+            AGRESTICOULL JEFFREYS MIDP 
+            LIKELIHOODRATIO LOGIT BLAKER);
+    by trt;
 run;
-
 ```
 
 ```{r}
@@ -198,14 +196,13 @@ run;
 knitr::include_graphics("../images/ci_for_prop/binomial_prop_all_act.png")
 ```
 
-```{R}
+```{sas}
 #| eval: false
-
 proc freq data=adcibc;
-         table resp/ nopct nocol 
-                     BINOMIAL(LEVEL="Yes" 
-                              CL= WILSON(CORRECT)  WALD(CORRECT));
-  by trt; 
+    table resp/ nopct nocol 
+        BINOMIAL(LEVEL="Yes" 
+        CL= WILSON(CORRECT)  WALD(CORRECT));
+    by trt; 
 run;
 
 ```
@@ -234,16 +231,16 @@ In all these cases, the calculated proportions for the 2 groups are not independ
 
 Using a cross over study as our example, a 2 x 2 table can be formed as follows:
 
-+-----------------------+---------------+---------------+--------------+
-|                       | Placebo\      | Placebo\      | Total        |
-|                       | Response= Yes | Response = No |              |
-+=======================+===============+===============+==============+
-| Active Response = Yes | r             | s             | r+s          |
-+-----------------------+---------------+---------------+--------------+
-| Active Response = No  | t             | u             | t+u          |
-+-----------------------+---------------+---------------+--------------+
-| Total                 | r+t           | s+u           | N = r+s+t+u  |
-+-----------------------+---------------+---------------+--------------+
++-----------------------+---------------+---------------+---------------+
+|                       | Placebo\      | Placebo\      | Total         |
+|                       | Response= Yes | Response = No |               |
++=======================+===============+===============+===============+
+| Active Response = Yes | r             | s             | r+s           |
++-----------------------+---------------+---------------+---------------+
+| Active Response = No  | t             | u             | t+u           |
++-----------------------+---------------+---------------+---------------+
+| Total                 | r+t           | s+u           | N = r+s+t+u   |
++-----------------------+---------------+---------------+---------------+
 
 The proportions of subjects responding on each treatment are:
 
@@ -352,10 +349,10 @@ The default method is Mantel-Haenszel confidence limits. SAS can also Score (Mie
 
 As you can see below, this is not a CI for difference in proportions of 0.196, it is a CI for the risk difference of 0.0260. So must be interpreted with much consideration.
 
-```{R}
+```{sas}
 #| eval: false 
 proc freq data=adcibc; 
-table act*pbo/commonriskdiff(cl=MH); 
+    table act*pbo/commonriskdiff(cl=MH); 
 run;
 ```
 
@@ -370,23 +367,21 @@ knitr::include_graphics("../images/ci_for_prop/riskdiff_matched.png")
 
 This [paper](https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf)^8^ describes many methods for the calculation of confidence intervals for 2 independent proportions. The most commonly used are: Wald with continuity correction and Wilson with continuity correction. The Wilson method may be more applicable when sample sizes are smaller and/or the proportion is closer to 0 or 1, since reliance on a normal distribution may be inappropriate.
 
-SAS is able to calculate CIs using the following methods: 
-Exact, Agresti/Caffo, Wald, Wald with Continuity correction, Wilson/Newcombe Score, Wilson/Newcombe score with continuity correction, Miettinen and Nurminen, and Hauck-Anderson. Example code is shown below, before provision of a much more detailed analysis using Wald and Wilson with and without continuity correction. 
-```{R}
+SAS is able to calculate CIs using the following methods: Exact, Agresti/Caffo, Wald, Wald with Continuity correction, Wilson/Newcombe Score, Wilson/Newcombe score with continuity correction, Miettinen and Nurminen, and Hauck-Anderson. Example code is shown below, before provision of a much more detailed analysis using Wald and Wilson with and without continuity correction.
+
+```{sas}
 #| eval: false
 # Wald, Wilson, Agresti/Caffo, Hauck-Anderson, and Miettinen and Nurminen methods
 proc freq data=adcibc order=data;
-table trt*resp /riskdiff(CL=(wald wilson ac ha mn ));
+    table trt*resp /riskdiff(CL=(wald wilson ac ha mn ));
 run;
 
 # exact method
 proc freq data=adcibc order=data;
-exact riskdiff (method=noscore);
-table trt*resp/riskdiff(CL=(exact)); 
+    exact riskdiff (method=noscore);
+    table trt*resp/riskdiff(CL=(exact)); 
 run;
-
 ```
-
 
 ### Normal Approximation Method (Also known as the Wald or asymptotic CI Method)
 
@@ -430,21 +425,20 @@ It is important to check the output to ensure that you are modelling Active - Pl
 
 Options for riskdiff(CL=XXX) consist of AC:Agresti-Caffo, EXACT=exact, HA:Hauck-Anderson, MN or SCORE:Miettinen-Nurminen (another type of Score CI), WILSON or NEWCOMBE: Wilson method described above, and WALD: normal approximation wald method described above. Examples using Wald and Wilson are shown below with and without continuity correction.
 
-```{R}
+```{sas}
 #| eval: false
 proc sort data=adcibc;
- by  trt descending resp;
+    by  trt descending resp;
 run;
 
-#without continuity correction
+# without continuity correction
 proc freq data=adcibc order=data;
-  table trt*resp/riskdiff(CL=(wald wilson)); 
+    table trt*resp/riskdiff(CL=(wald wilson)); 
 run;
 
-#with continuity correction
-
+# with continuity correction
 proc freq data=adcibc order=data;
-  table trt*resp/riskdiff(CORRECT CL=(wald wilson)); 
+    table trt*resp/riskdiff(CORRECT CL=(wald wilson)); 
 run;
 ```
 

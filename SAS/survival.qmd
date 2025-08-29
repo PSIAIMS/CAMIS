@@ -32,7 +32,7 @@ Below is a standard mock-up for survival analysis in clinical trials.
 #| echo: false
 #| fig-align: center
 #| out-width: 75%
-knitr::include_graphics("../images/survival/layout.png")   
+knitr::include_graphics("../images/survival/layout.png")
 ```
 
 ## Example Data
@@ -49,13 +49,13 @@ The data include 500 subjects from the Worcester Heart Attack Study. This study 
 
 -   gender: males = 0, females = 1 - stratification factor
 
-```{r}
+```{sas}
 #| eval: false
 libname mylib "..\data";
 
 data dat;
-set mylib.whas500;
-lenfoly = round(lenfol/365.25, 0.01);  /* change follow-up days to years for better visualization*/
+    set mylib.whas500;
+    lenfoly = round(lenfol/365.25, 0.01);  /* change follow-up days to years for better visualization*/
 run;
 ```
 
@@ -67,11 +67,11 @@ The KM estimators and log-rank test are from `PROC LIFETEST`, and Cox PH model i
 
 ### KM estimators and log-rank test
 
-```{r}
+```{sas}
 #| eval: false
 proc lifetest data=dat outsurv=_SurvEst timelist= 1 3 5 reduceout stderr; 
-time lenfoly*fstat(0);
-strata afb;
+    time lenfoly*fstat(0);
+    strata afb;
 run;
 ```
 
@@ -81,7 +81,7 @@ The landmark estimates and quartile estimates for AFB = 0 group are as shown in 
 #| echo: false
 #| fig-align: center
 #| out-width: 75%
-knitr::include_graphics("../images/survival/sas_km_afib0.png")   
+knitr::include_graphics("../images/survival/sas_km_afib0.png")
 ```
 
 The logrank test result is in below:
@@ -90,16 +90,16 @@ The logrank test result is in below:
 #| echo: false
 #| fig-align: center
 #| out-width: 75%
-knitr::include_graphics("../images/survival/sas_logrank.png")   
+knitr::include_graphics("../images/survival/sas_logrank.png")
 ```
 
 ### Cox PH model
 
-```{r}
+```{sas}
 #| eval: false
 proc phreg data = dat;
-class afb;
-model lenfol*fstat(0) = afb/rl;
+    class afb;
+    model lenfol*fstat(0) = afb/rl;
 run;
 ```
 
@@ -109,25 +109,25 @@ The hazard ratio and confidence intervals are shown as below:
 #| echo: false
 #| fig-align: center
 #| out-width: 75%
-knitr::include_graphics("../images/survival/sas_cox.png")   
+knitr::include_graphics("../images/survival/sas_cox.png")
 ```
 
 ## The Stratified Model
 
 In a stratified model, the Kaplan-Meier estimators remain the same as those in the non-stratified model. To implement stratified log-rank tests and Cox proportional hazards models, simply add the `STRATA` option in both `PROC LIFETEST` and `PROC PHREG`.
 
-```{r}
+```{sas}
 #| eval: false
 # KM estimators and log-rank test
 proc lifetest data=dat;
-time lenfoly*fstat(0);
-strata gender/group = afb;
+    time lenfoly*fstat(0);
+    strata gender/group = afb;
 run;
 
 # Cox PH model
 proc phreg data=dat;
-class afb;
-model lenfol*fstat(0) = afb/rl;
-strata gender;
+    class afb;
+    model lenfol*fstat(0) = afb/rl;
+    strata gender;
 run;
 ```
