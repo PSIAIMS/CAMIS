@@ -31,7 +31,7 @@ Comparing the non-stratified model results side-by-side, the CIs for the quartil
 #| fig-align: center
 #| out-width: 75%
 library(tibble)
-knitr::include_graphics("../images/survival/r_sas_default.png")   
+knitr::include_graphics("../images/survival/r_sas_default.png")
 ```
 
 ## Reason 1: Cox Regression Handling of Tied Survival Times
@@ -44,16 +44,20 @@ R uses "efron" by default. SAS uses "breslow" by default. Both R and SAS are abl
 
 ```{r}
 #| eval: false
-fit.cox <- coxph(Surv(LENFOLY, FSTAT) ~ AFB, ties = "breslow", data = dat)
+fit.cox <- survival::coxph(
+  survival::Surv(LENFOLY, FSTAT) ~ AFB,
+  ties = "breslow",
+  data = dat
+)
 ```
 
 -   SAS: change method for ties to use "efron"
 
-```{r}
+```{sas}
 #| eval: false
 proc phreg data=dat;
-class afb;
-model lenfol*fstat(0) = afb/rl ties = efron;
+    class afb;
+    model lenfol*fstat(0) = afb/rl ties = efron;
 run;
 ```
 
@@ -73,16 +77,20 @@ R uses "log" by default, and SAS uses "log-log" by default. As shown below, usin
 
 ```{r}
 #| eval: false
-fit.km <- survfit(Surv(LENFOLY, FSTAT) ~ AFB, conf.type = "log-log", data = dat)
+fit.km <- survival::survfit(
+  survival::Surv(LENFOLY, FSTAT) ~ AFB,
+  conf.type = "log-log",
+  data = dat
+)
 ```
 
 -   SAS: change to "log"
 
-```{r}
+```{sas}
 #| eval: false
 proc lifetest data=dat conftype=log;
-time lenfoly*fstat(0);
-strata afb;
+    time lenfoly*fstat(0);
+    strata afb;
 run;
 ```
 
@@ -96,7 +104,7 @@ Now if we change the confidence interval type in SAS to "log" and tie handling t
 #| echo: false
 #| fig-align: center
 #| out-width: 75%
-knitr::include_graphics("../images/survival/r_sas_chg_default.png")   
+knitr::include_graphics("../images/survival/r_sas_chg_default.png")
 ```
 
 Below is the side-by-side comparison for stratified analysis with default methods in SAS matched to R's, the results are also identical.
@@ -105,46 +113,35 @@ Below is the side-by-side comparison for stratified analysis with default method
 #| echo: false
 #| fig-align: center
 #| out-width: 75%
-knitr::include_graphics("../images/survival/r_sas_stratified.png")   
+knitr::include_graphics("../images/survival/r_sas_stratified.png")
 ```
 
 ## Reason 3: Convergence Criteria in Cox Proportional Hazards Model
 
-Another source of discrepancy between R and SAS in Cox models can arise from
-the default convergence criteria used by the two software packages.
+Another source of discrepancy between R and SAS in Cox models can arise fromthe default convergence criteria used by the two software packages.
 
-In R, the `survival::coxph()` function has a default convergence criterion
-for the relative change in log partial likelihood set at `1e-9`.
-On the other hand, SAS's `PHREG` procedure uses a default convergence criterion
-for the relative gradient convergence set at `1e-8`. This discrepancy in the
-convergence criteria can lead to slight differences in the hazard ratios (HR)
-obtained from the two software packages.
+In R, the `survival::coxph()` function has a default convergence criterion for the relative change in log partial likelihood set at `1e-9`. On the other hand, SAS's `PHREG` procedure uses a default convergence criterion for the relative gradient convergence set at `1e-8`. This discrepancy in the convergence criteria can lead to slight differences in the hazard ratios (HR) obtained from the two software packages.
 
-To achieve comparable results, it is possible to adjust the convergence
-criteria in SAS to match the more stringent criteria used by R.
-This can be done by specifying the `fconv` option in the model statement
-within `PHREG` to change the criteria to relative function convergence
-with a value of `1e-9`.
+To achieve comparable results, it is possible to adjust the convergence criteria in SAS to match the more stringent criteria used by R. This can be done by specifying the `fconv` option in the model statement within `PHREG` to change the criteria to relative function convergence with a value of `1e-9`.
 
 - R: default convergence criterion
 
 ```{r}
 #| eval: false
-fit.cox <- coxph(Surv(LENFOLY, FSTAT) ~ AFB, data = dat)
+fit.cox <- survival::coxph(survival::Surv(LENFOLY, FSTAT) ~ AFB, data = dat)
 ```
 
 - SAS: adjust convergence criterion
 
 ```{sas}
-*| eval: false;
+#| eval: false
 proc phreg data=dat;
-class afb;
-model lenfol*fstat(0) = afb / rl fconv = 1e-9;
+    class afb;
+    model lenfol*fstat(0) = afb / rl fconv = 1e-9;
 run;
 ```
 
-By making this adjustment, the hazard ratios obtained from SAS will align
-more closely with those from R or even achieve bitwise reproducibility.
+By making this adjustment, the hazard ratios obtained from SAS will align more closely with those from R or even achieve bitwise reproducibility.
 
 The convergence criterion details are described in their documentation:
 
@@ -157,8 +154,10 @@ The convergence criterion details are described in their documentation:
 Now we look at other cases when the data has some special type which causes a mismatch between SAS and R. Suppose a dataset has 10 observations, and the first 5 are all events, and the last 5 are all censored.
 
 ```{r}
-test <- tibble(time = c(54, 75, 77, 84, 87, 92, 103, 105, 112, 118), 
-                   status = c(1, 1, 1, 1, 1, 0, 0, 0, 0, 0))
+test <- tibble(
+  time = c(54, 75, 77, 84, 87, 92, 103, 105, 112, 118),
+  status = c(1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
+)
 
 test
 ```
@@ -171,19 +170,25 @@ Below is the R code:
 
 ```{r}
 #| eval: false
-fit.km <- survfit(Surv(time, status) ~ 1, conf.type = "log-log", data = test)
+fit.km <- survival::survfit(
+  survival::Surv(time, status) ~ 1,
+  conf.type = "log-log",
+  data = test
+)
+
 ## quantile estimates
 quantile(fit.km, probs = c(0.25, 0.5, 0.75))
+
 ## landmark estimates at 80, 100, 120-day
 summary(fit.km, times = c(80, 100, 120), extend = T)
 ```
 
 Below is the SAS code:
 
-```{r}
+```{sas}
 #| eval: false
 proc lifetest data=dat outsurv=_SurvEst timelist= 80 100 120 reduceout stderr; 
-time lenfoly*fstat(0);
+    time lenfoly*fstat(0);
 run;
 ```
 
@@ -193,7 +198,7 @@ Below is the side-by-side comparison:
 #| echo: false
 #| fig-align: center
 #| out-width: 75%
-knitr::include_graphics("../images/survival/r_sas_special.png")   
+knitr::include_graphics("../images/survival/r_sas_special.png")
 ```
 
 ## Reasons
@@ -210,17 +215,16 @@ For example, using the data above, the survival probability is exactly 0.5 at ti
 #| echo: false
 #| fig-align: center
 #| out-width: 75%
-knitr::include_graphics("../images/survival/other_diff_km.png")   
+knitr::include_graphics("../images/survival/other_diff_km.png")
 ```
 
 When using R, the median is the smallest time which survival estimate is \<= 0.5 --\> `(87+118) / 2 = 102.5.` However, SAS searches the smallest time which survival estimate is \< 0.5, which does not exist in this dataset, so it gives "NE" (Not evaluable).
 
 ```{r}
 #| eval: false
-pl <- survminer::ggsurvplot(fit.km, 
-                            conf.int = TRUE,
-                            ggtheme = theme_light()) 
-pl$plot +  geom_hline(yintercept = 0.5, color = "black", linetype = "solid")  
+pl <- survminer::ggsurvplot(fit.km, conf.int = TRUE, ggtheme = theme_light())
+
+pl$plot + geom_hline(yintercept = 0.5, color = "black", linetype = "solid")
 
 summary(fit.km)
 ```
@@ -232,8 +236,10 @@ For the 120-day event-free estimate, SAS considers that 120 days is beyond the m
 If we change the last observation in the dataset to be an event (instead of censored), R and SAS will both give 0 for the event-free survival estimate, because it is for sure that all subjects did not survive beyond 120 days.
 
 ```{r}
-test <- tibble(time = c(54, 75, 77, 84, 87, 92, 103, 105, 112, 118), 
-                   status = c(1, 1, 1, 1, 1, 0, 0, 0, 0, 1))
+test <- tibble(
+  time = c(54, 75, 77, 84, 87, 92, 103, 105, 112, 118),
+  status = c(1, 1, 1, 1, 1, 0, 0, 0, 0, 1)
+)
 
 test
 ```
@@ -242,7 +248,7 @@ test
 #| echo: false
 #| fig-align: center
 #| out-width: 75%
-knitr::include_graphics("../images/survival/r_sas_special_lst.png")   
+knitr::include_graphics("../images/survival/r_sas_special_lst.png")
 ```
 
 # References

@@ -7,6 +7,15 @@ title: "Estimating Cumulative Incidence Functions Using R"
 In this document we present how to estimate the cumulative incidence function (CIF) in R. We focus on the competing risks model where each subject experiences only one out of *k* possible events as depicted in the figure below.
 
 ```{r}
+#| message: false
+#| warning: false
+library(ggsurvfit)
+library(survival)
+library(tidycmprsk)
+library(tidyverse)
+```
+
+```{r}
 #| echo: false
 #| fig-align: center
 #| out-width: 25%
@@ -45,16 +54,18 @@ The bone marrow transplant (BTM) dataset as presented by Guo & So (2018) is used
 #| label: readdata
 #| message: false
 #| warning: false
-require(dplyr)
-bmt <- haven::read_sas(file.path("../data/bmt.sas7bdat")) %>%
+bmt <- haven::read_sas(file.path("../data/bmt.sas7bdat")) |>
   mutate(
-    Group = factor(Group, 
-                   levels = c(1, 2, 3), 
-                   labels = c('ALL', 'AML-Low Risk', 'AML-High Risk')
+    Group = factor(
+      Group,
+      levels = c(1, 2, 3),
+      labels = c('ALL', 'AML-Low Risk', 'AML-High Risk')
     ),
-    Status = factor(Status,
-                    levels = c(0, 1, 2),
-                    labels = c('Censored', 'Relapse', 'Death')),
+    Status = factor(
+      Status,
+      levels = c(0, 1, 2),
+      labels = c('Censored', 'Relapse', 'Death')
+    ),
     TYears = T / 365.25,
     ID = row_number()
   )
@@ -72,10 +83,7 @@ The `tidycmprsk::cuminc()` function requires a `Surv` object. Therefore, the fir
 #| label: cr.est
 #| message: false
 #| warning: false
-require(survival)
-require(tidycmprsk)
-require(tidyverse)
-cif.1 <- cuminc(Surv(TYears, Status) ~ Group, data = bmt) 
+cif.1 <- tidycmprsk::cuminc(Surv(TYears, Status) ~ Group, data = bmt)
 ```
 
 Gray's test statistics and p-value:
@@ -85,12 +93,12 @@ Gray's test statistics and p-value:
 #| message: false
 #| warning: false
 knitr::kable(
-  glance(cif.1) %>% 
-  pivot_longer(
-    everything(),
-    names_to = c(".value", "outcome_id"),
-    names_pattern = "(.*)_(.*)"
-  )
+  glance(cif.1) |>
+    pivot_longer(
+      everything(),
+      names_to = c(".value", "outcome_id"),
+      names_pattern = "(.*)_(.*)"
+    )
 )
 ```
 
@@ -101,13 +109,14 @@ CIF estimates for time to relapse at selected timepoints for 'AML-Low Risk' pati
 #| message: false
 #| warning: false
 knitr::kable(
-  cif.1 %>% 
-  tidy(times = c(0.5, 1, 1.5, 2, 3)) %>%
-  select(time, outcome, strata, estimate, std.error, conf.low, conf.high) %>% 
-  filter(outcome == 'Relapse' & strata == 'AML-Low Risk') %>%
-  mutate(time = as.character(time),
-         across(where(is.numeric), ~ num(., digits = 4))
-  )
+  cif.1 |>
+    tidy(times = c(0.5, 1, 1.5, 2, 3)) |>
+    select(time, outcome, strata, estimate, std.error, conf.low, conf.high) |>
+    filter(outcome == 'Relapse' & strata == 'AML-Low Risk') |>
+    mutate(
+      time = as.character(time),
+      across(where(is.numeric), ~ num(., digits = 4))
+    )
 )
 ```
 
@@ -123,16 +132,16 @@ Two points to note:
 #| label: cr.plot
 #| message: false
 #| warning: false
-require(ggsurvfit)
-cif.1 %>%
-  ggcuminc(outcome = 'Death') +
+cif.1 |>
+  ggsurvfit::ggcuminc(outcome = 'Death') +
   ## add_confidence_interval() +
-  add_risktable() +
+  ggsurvfit::add_risktable() +
   xlab('Time (years) to death')
-cif.1 %>%
-  ggcuminc(outcome = 'Relapse') +
+
+cif.1 |>
+  ggsurvfit::ggcuminc(outcome = 'Relapse') +
   ## add_confidence_interval() +
-  add_risktable() +
+  ggsurvfit::add_risktable() +
   xlab('Time (years) to relapse')
 ```
 
@@ -146,13 +155,14 @@ Using the bone marrow transplant example, the following code shows how to estima
 #| label: surv.est
 #| message: false
 #| warning: false
-cif.2 <- survfit(Surv(TYears, Status) ~ Group,
-                 data = bmt,
-                 se.fit = TRUE,
-                 conf.type = 'log-log', ## default is 'log'
-                 id = ID,
-                 robust = TRUE ## default for multi-state model
-                 )
+cif.2 <- survival::survfit(
+  survival::Surv(TYears, Status) ~ Group,
+  data = bmt,
+  se.fit = TRUE,
+  conf.type = 'log-log', ## default is 'log'
+  id = ID,
+  robust = TRUE ## default for multi-state model
+)
 ## summary(cif.2)
 ```
 
@@ -179,12 +189,14 @@ Certain options in SAS, e.g., the delta method for variance estimation or other 
 
 ::: {.callout-note collapse="true" title="Session Info"}
 ```{r}
- #| echo: false
- si <- sessioninfo::session_info(
- c("cmprsk", "tidycmprsk", "survival" ) #Vector of packages used 
- , dependencies = FALSE)
- si
+#| echo: false
+si <- sessioninfo::session_info(
+  c("cmprsk", "tidycmprsk", "survival"), #Vector of packages used
+  dependencies = FALSE
+)
+si
 ```
+
 :::
 
 ## Reference
