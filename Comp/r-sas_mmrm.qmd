@@ -1,20 +1,27 @@
 ---
 title: "R vs SAS MMRM"
+message: false
+warning: false
+echo: true
+eval: false
 ---
 
 ```{r}
 #| include: false
+#| eval: true
 knitr::opts_chunk$set(
-  collapse = TRUE, comment = "#>", out.width = "100%",
-  dpi = 150, fig.path = "../images/mmrm/"
+  collapse = TRUE,
+  comment = "#>",
+  out.width = "100%",
+  dpi = 150,
+  fig.path = "../images/mmrm/"
 )
 ```
 
 ```{r}
 #| label: review-setup
-#| message: false
-#| warning: false
 #| include: false
+#| eval: true
 
 library(dplyr)
 library(purrr)
@@ -25,22 +32,9 @@ library(knitr)
 library(emmeans)
 library(ggplot2)
 library(details)
-```
-
-```{r}
-#| label: load-data
-#| message: false
-#| warning: false
-#| include: false
+library(glmmTMB)
 
 load('../data/cached_mmrm_results.rda')
-```
-
-```{r}
-#| label: set-seed
-#| message: false
-#| warning: false
-#| include: false
 
 set.seed(5123)
 ```
@@ -57,7 +51,7 @@ Two datasets are used to illustrate model fitting with the `mmrm`, `lme4`, `nlme
 
 The FEV dataset contains measurements of FEV1 (forced expired volume in one second), a measure of how quickly the lungs can be emptied. Low levels of FEV1 may indicate chronic obstructive pulmonary disease (COPD). It is summarized below.
 
-```         
+```default
                                       Stratified by ARMCD
                                Overall       PBO           TRT
   n                              800           420           380
@@ -84,7 +78,7 @@ The FEV dataset contains measurements of FEV1 (forced expired volume in one seco
 
 The BCVA dataset contains data from a randomized longitudinal ophthalmology trial evaluating the change in baseline corrected visual acuity (BCVA) over the course of 10 visits. BCVA corresponds to the number of letters read from a visual acuity chart. A summary of the data is given below:
 
-```         
+```default
                                       Stratified by ARMCD
                                Overall         CTL            TRT
   n                             8605          4123           4482
@@ -134,354 +128,332 @@ Code for fitting MMRMs to the FEV data using each of the considered functions an
 
 ### `PROC GLIMMIX`
 
-```{=html}
-<pre><code>PROC GLIMMIX DATA = fev_data;
-CLASS AVISIT(ref = 'VIS1') ARMCD(ref = 'PBO') USUBJID;
-MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
-<b>RANDOM AVISIT / subject=USUBJID type=ANTE(1)</b>;
-</code></pre>
+```{sas}
+PROC GLIMMIX DATA = fev_data;
+    CLASS AVISIT(ref = 'VIS1') ARMCD(ref = 'PBO') USUBJID;
+    MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
+    RANDOM AVISIT / subject=USUBJID type=ANTE(1);
+RUN;
 ```
 
 ### `mmrm`
 
-```{=html}
-<pre><code>mmrm(
-  formula = FEV1 ~ ARMCD * AVISIT + <b>adh(VISITN | USUBJID)</b>,
+```{r}
+mmrm::mmrm(
+  formula = FEV1 ~ ARMCD * AVISIT + adh(VISITN | USUBJID),
   data = fev_data
 )
-</code></pre>
 ```
 
 ## Ante-dependence (homogeneous)
 
 ### `mmrm`
 
-```{=html}
-<pre><code>mmrm(
-  formula =FEV1 ~ ARMCD * AVISIT + <b>ad(VISITN | USUBJID)</b>,
+```{r}
+mmrm::mmrm(
+  formula = FEV1 ~ ARMCD * AVISIT + ad(VISITN | USUBJID),
   data = fev_data
 )
-</code></pre>
 ```
 
 ## Auto-regressive (heterogeneous)
 
 ### `PROC GLIMMIX`
 
-```{=html}
-<pre><code>PROC GLIMMIX DATA = fev_data;
-CLASS AVISIT(ref = 'VIS1') ARMCD(ref = 'PBO') USUBJID;
-MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
-<b>RANDOM AVISIT / subject=USUBJID type=ARH(1)</b>;
-</code></pre>
+```{sas}
+PROC GLIMMIX DATA = fev_data;
+    CLASS AVISIT(ref = 'VIS1') ARMCD(ref = 'PBO') USUBJID;
+    MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
+    RANDOM AVISIT / subject=USUBJID type=ARH(1);
+RUN;
 ```
 
 ### `mmrm`
 
-```{=html}
-<pre><code>mmrm(
-  formula = FEV1 ~ ARMCD * AVISIT + <b>ar1h(VISITN | USUBJID)</b>,
+```{r}
+mmrm::mmrm(
+  formula = FEV1 ~ ARMCD * AVISIT + ar1h(VISITN | USUBJID),
   data = fev_data
 )
-</code></pre>
 ```
 
 ### `gls`
 
-```{=html}
-<pre><code>gls(
+```{r}
+nlme::gls(
   formula = FEV1 ~ ARMCD * AVISIT,
   data = fev_data,
-  correlation = <b>corCAR1(form = ~AVISIT | USUBJID)</b>,
-  weights = <b>varIdent(form = ~1|AVISIT)</b>,
+  correlation = nlme::corCAR1(form = ~ AVISIT | USUBJID),
+  weights = nlme::varIdent(form = ~ 1 | AVISIT),
   na.action = na.omit
 )
-</code></pre>
 ```
 
 ## Auto-regressive (homogeneous)
 
 ### `PROC GLIMMIX`
 
-```{=html}
-<pre><code>PROC GLIMMIX DATA = fev_data;
-CLASS AVISIT(ref = 'VIS1') ARMCD(ref = 'PBO') USUBJID;
-MODEL FEV1 =  ARMCD|AVISIT / ddfm=satterthwaite solution chisq;
-<b>RANDOM AVISIT / subject=USUBJID type=AR(1)</b>;
-</code></pre>
+```{sas}
+PROC GLIMMIX DATA = fev_data;
+    CLASS AVISIT(ref = 'VIS1') ARMCD(ref = 'PBO') USUBJID;
+    MODEL FEV1 =  ARMCD|AVISIT / ddfm=satterthwaite solution chisq;
+    RANDOM AVISIT / subject=USUBJID type=AR(1);
+RUN;
 ```
 
 ### `mmrm`
 
-```{=html}
-<pre><code>mmrm(
-  formula = FEV1 ~ ARMCD * AVISIT + <b>ar1(VISITN | USUBJID)</b>,
+```{r}
+mmrm::mmrm(
+  formula = FEV1 ~ ARMCD * AVISIT + ar1(VISITN | USUBJID),
   data = fev_data
 )
-</code></pre>
 ```
 
 ### `gls`
 
-```{=html}
-<pre><code>gls(
+```{r}
+nlme::gls(
   formula = FEV1 ~ ARMCD * AVISIT,
   data = fev_data,
-  correlation = <b>corCAR1(form = ~AVISIT | USUBJID)</b>,
+  correlation = nlme::corCAR1(form = ~ AVISIT | USUBJID),
   na.action = na.omit
 )
-</code></pre>
 ```
 
 ### `glmmTMB`
 
-```{=html}
-<pre><code>glmmTMB(
-  FEV1 ~ ARMCD * AVISIT + <b>ar1(0 + AVISIT | USUBJID)</b>,
-  <b>dispformula = ~ 0</b>,
+```{r}
+glmmTMB::glmmTMB(
+  FEV1 ~ ARMCD * AVISIT + ar1(0 + AVISIT | USUBJID),
+  dispformula = ~0,
   data = fev_data
 )
-</code></pre>
 ```
 
 ## Compound symmetry (heterogeneous)
 
 ### `PROC GLIMMIX`
 
-```{=html}
-<pre><code>PROC GLIMMIX DATA = fev_data;
-CLASS AVISIT(ref = 'VIS1') ARMCD(ref = 'PBO') USUBJID;
-MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
-<b>RANDOM AVISIT / subject=USUBJID type=CSH</b>;
-</code></pre>
+```{sas}
+PROC GLIMMIX DATA = fev_data;
+    CLASS AVISIT(ref = 'VIS1') ARMCD(ref = 'PBO') USUBJID;
+    MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
+    RANDOM AVISIT / subject=USUBJID type=CSH;
+RUN;
 ```
 
 ### `mmrm`
 
-```{=html}
-<pre><code>mmrm(
-  formula = FEV1 ~ ARMCD * AVISIT + <b>csh(VISITN | USUBJID)</b>,
+```{r}
+mmrm::mmrm(
+  formula = FEV1 ~ ARMCD * AVISIT + csh(VISITN | USUBJID),
   data = fev_data
 )
-</code></pre>
 ```
 
 ### `gls`
 
-```{=html}
-<pre><code>gls(
+```{r}
+nlme::gls(
   formula = FEV1 ~ ARMCD * AVISIT,
   data = fev_data,
-  correlation = <b>corCompSymm(form = ~AVISIT | USUBJID)</b>,
-  weights = <b>varIdent(form = ~1|AVISIT)</b>,
+  correlation = nlme::corCompSymm(form = ~ AVISIT | USUBJID),
+  weights = nlme::varIdent(form = ~ 1 | AVISIT),
   na.action = na.omit
 )
-</code></pre>
 ```
 
 ### `glmmTMB`
 
-```{=html}
-<pre><code>glmmTMB(
-  FEV1 ~ ARMCD * AVISIT + <b>cs(0 + AVISIT | USUBJID)</b>,
-  <b>dispformula = ~ 0</b>,
+```{r}
+glmmTMB::glmmTMB(
+  FEV1 ~ ARMCD * AVISIT + cs(0 + AVISIT | USUBJID),
+  dispformula = ~0,
   data = fev_data
 )
-</code></pre>
 ```
 
 ## Compound symmetry (homogeneous)
 
 ### `PROC GLIMMIX`
 
-```{=html}
-<pre><code>PROC GLIMMIX DATA = fev_data;
-CLASS AVISIT(ref = 'VIS1') ARMCD(ref = 'PBO') USUBJID;
-MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
-<b>RANDOM AVISIT / subject=USUBJID type=CS</b>;
-</code></pre>
+```{sas}
+PROC GLIMMIX DATA = fev_data;
+    CLASS AVISIT(ref = 'VIS1') ARMCD(ref = 'PBO') USUBJID;
+    MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
+    RANDOM AVISIT / subject=USUBJID type=CS;
+RUN;
 ```
 
 ### `mmrm`
 
-```{=html}
-<pre><code>mmrm(
-  formula = FEV1 ~ ARMCD * AVISIT + <b>cs(VISITN | USUBJID)</b>,
+```{r}
+mmrm::mmrm(
+  formula = FEV1 ~ ARMCD * AVISIT + cs(VISITN | USUBJID),
   data = fev_data
 )
-</code></pre>
 ```
 
 ### `gls`
 
-```{=html}
-<pre><code>gls(
+```{r}
+nlme::gls(
   formula = FEV1 ~ ARMCD * AVISIT,
   data = fev_data,
-  correlation = <b>corCompSymm(form = ~AVISIT | USUBJID)</b>,
+  correlation = nlme::corCompSymm(form = ~ AVISIT | USUBJID),
   na.action = na.omit
 )
-</code></pre>
 ```
 
 ## Spatial exponential
 
 ### `PROC GLIMMIX`
 
-```{=html}
-<pre><code>PROC GLIMMIX DATA = fev_data;
-CLASS AVISIT(ref = 'VIS1') ARMCD(ref = 'PBO') USUBJID;
-MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
-<b>RANDOM / subject=USUBJID type=sp(exp)(visitn)</b> rcorr;
-</code></pre>
+```{sas}
+PROC GLIMMIX DATA = fev_data;
+    CLASS AVISIT(ref = 'VIS1') ARMCD(ref = 'PBO') USUBJID;
+    MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
+    RANDOM / subject=USUBJID type=sp(exp)(visitn) rcorr;
+RUN;
 ```
 
 ### `mmrm`
 
-```{=html}
-<pre><code>mmrm(
-  formula = FEV1 ~ ARMCD * AVISIT + <b>sp_exp(VISITN | USUBJID)</b>,
+```{r}
+mmrm::mmrm(
+  formula = FEV1 ~ ARMCD * AVISIT + sp_exp(VISITN | USUBJID),
   data = fev_data
 )
-</code></pre>
 ```
 
 ### `gls`
 
-```{=html}
-<pre><code>gls(
+```{r}
+nlme::gls(
   formula = FEV1 ~ ARMCD * AVISIT,
   data = fev_data,
-  correlation = <b>corExp(form = ~AVISIT | USUBJID)</b>,
-  weights = varIdent(form = ~1|AVISIT),
+  correlation = corExp(form = ~ AVISIT | USUBJID),
+  weights = varIdent(form = ~ 1 | AVISIT),
   na.action = na.omit
 )
-</code></pre>
 ```
 
 ### `glmmTMB`
 
-```{=html}
-<pre><code># NOTE: requires use of coordinates
-glmmTMB(
-  FEV1 ~ ARMCD * AVISIT + <b>exp(0 + AVISIT | USUBJID)</b>,
-  <b>dispformula = ~ 0</b>,
+```{r}
+# NOTE: requires use of coordinates
+glmmTMB::glmmTMB(
+  FEV1 ~ ARMCD * AVISIT + exp(0 + AVISIT | USUBJID),
+  dispformula = ~0,
   data = fev_data
 )
-</code></pre>
 ```
 
 ## Toeplitz (heterogeneous)
 
 ### `PROC GLIMMIX`
 
-```{=html}
-<pre><code>PROC GLIMMIX DATA = fev_data;
-CLASS AVISIT(ref = 'VIS1') ARMCD(ref = 'PBO') USUBJID;
-MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
-<b>RANDOM AVISIT / subject=USUBJID type=TOEPH</b>;
-</code></pre>
+```{sas}
+PROC GLIMMIX DATA = fev_data;
+    CLASS AVISIT(ref = 'VIS1') ARMCD(ref = 'PBO') USUBJID;
+    MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
+    RANDOM AVISIT / subject=USUBJID type=TOEPH;
+RUN;
 ```
 
 ### `mmrm`
 
-```{=html}
-<pre><code>mmrm(
-  formula = FEV1 ~ ARMCD * AVISIT + <b>toeph(AVISIT | USUBJID)</b>,
+```{r}
+mmrm::mmrm(
+  formula = FEV1 ~ ARMCD * AVISIT + toeph(AVISIT | USUBJID),
   data = fev_data
 )
-</code></pre>
 ```
 
 ### `glmmTMB`
 
-```{=html}
-<pre><code> glmmTMB(
-  FEV1 ~ ARMCD * AVISIT + <b>toep(0 + AVISIT | USUBJID)</b>,
-  <b>dispformula = ~ 0</b>,
+```{r}
+glmmTMB::glmmTMB(
+  FEV1 ~ ARMCD * AVISIT + toep(0 + AVISIT | USUBJID),
+  dispformula = ~0,
   data = fev_data
 )
-</code></pre>
 ```
 
 ## Toeplitz (homogeneous)
 
 ### `PROC GLIMMIX`
 
-```{=html}
-<pre><code>PROC GLIMMIX DATA = fev_data;
-CLASS AVISIT(ref = 'VIS1') ARMCD(ref = 'PBO') USUBJID;
-MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
-<b>RANDOM AVISIT / subject=USUBJID</b> <b>type=TOEP</b>;
-</code></pre>
+```{sas}
+PROC GLIMMIX DATA = fev_data;
+    CLASS AVISIT(ref = 'VIS1') ARMCD(ref = 'PBO') USUBJID;
+    MODEL FEV1 = AVISIT|ARMCD / ddfm=satterthwaite solution chisq;
+    RANDOM AVISIT / subject=USUBJID type=TOEP;
+RUN;
 ```
 
 ### `mmrm`
 
-```{=html}
-<pre><code>mmrm(
-  formula = FEV1 ~ ARMCD * AVISIT + <b>toep(AVISIT | USUBJID)</b>,
+```{r}
+mmrm::mmrm(
+  formula = FEV1 ~ ARMCD * AVISIT + toep(AVISIT | USUBJID),
   data = fev_data
 )
-</code></pre>
 ```
 
 ## Unstructured
 
 ### `PROC GLIMMIX`
 
-```{=html}
-<pre><code>PROC GLIMMIX DATA = fev_data;
-CLASS AVISIT(ref = 'VIS1') ARMCD(ref = 'PBO') USUBJID;
-MODEL FEV1 = ARMCD|AVISIT / ddfm=satterthwaite solution chisq;
-<b>RANDOM AVISIT / subject=USUBJID</b> <b>type=un</b>;
-</code></pre>
+```{sas}
+PROC GLIMMIX DATA = fev_data;
+    CLASS AVISIT(ref = 'VIS1') ARMCD(ref = 'PBO') USUBJID;
+    MODEL FEV1 = ARMCD|AVISIT / ddfm=satterthwaite solution chisq;
+    RANDOM AVISIT / subject=USUBJID type=un;
+RUN;
 ```
 
 ### `mmrm`
 
-```{=html}
-<pre><code>mmrm(
-  formula = FEV1 ~ ARMCD * AVISIT + <b>us(AVISIT | USUBJID)</b>,
+```{r}
+mmrm::mmrm(
+  formula = FEV1 ~ ARMCD * AVISIT + us(AVISIT | USUBJID),
   data = fev_data
 )
-</code></pre>
 ```
 
 ### `gls`
 
-```{=html}
-<pre><code>gls(
-  formula = FEV1 ~  ARMCD * AVISIT,
+```{r}
+nlme::gls(
+  formula = FEV1 ~ ARMCD * AVISIT,
   data = fev_data,
-  correlation = <b>corSymm(form = ~AVISIT | USUBJID)</b>,
-  weights = varIdent(form = ~1|AVISIT),
+  correlation = nlme::corSymm(form = ~ AVISIT | USUBJID),
+  weights = nlme::varIdent(form = ~ 1 | AVISIT),
   na.action = na.omit
 )
-</code></pre>
 ```
 
 ### `lmer`
 
-```{=html}
-<pre><code>lmer(
-  FEV1 ~ ARMCD * AVISIT + <b>(0 + AVISIT | USUBJID)</b>,
+```{r}
+lme4::lmer(
+  FEV1 ~ ARMCD * AVISIT + (0 + AVISIT | USUBJID),
   data = fev_data,
-  control = lmerControl(check.nobs.vs.nRE = "ignore"),
+  control = lme4::lmerControl(check.nobs.vs.nRE = "ignore"),
   na.action = na.omit
 )
-</code></pre>
 ```
 
 ### `glmmTMB`
 
-```{=html}
-<pre><code>glmmTMB(
-  FEV1 ~ ARMCD * AVISIT + <b>us(0 + AVISIT | USUBJID)</b>,
-  <b>dispformula = ~ 0</b>,
+```{r}
+glmmTMB::glmmTMB(
+  FEV1 ~ ARMCD * AVISIT + us(0 + AVISIT | USUBJID),
+  dispformula = ~0,
   data = fev_data
 )
-</code></pre>
 ```
 
 # Benchmarking
@@ -495,9 +467,8 @@ Next, the MMRM fitting procedures are compared using the FEV and BCVA datasets. 
 The `mmrm`, `PROC GLIMMIX`, `gls`, `lmer`, and `glmmTMB` functions are applied to the FEV dataset 10 times. The convergence times are recorded for each replicate and are reported in the table below.
 
 ```{r}
-#| message: false
-#| warning: false
 #| echo: false
+#| eval: true
 
 # format table in markdown
 cached_mmrm_results$conv_time_fev |>
@@ -509,7 +480,8 @@ cached_mmrm_results$conv_time_fev |>
     `Third Quartile` = upper
   ) |>
   knitr::kable(
-    caption = "Comparison of convergence times: milliseconds", digits = 2
+    caption = "Comparison of convergence times: milliseconds",
+    digits = 2
   )
 ```
 
@@ -520,9 +492,8 @@ It is clear from these results that `mmrm` converges significantly faster than o
 The MMRM implementations are now applied to the BCVA dataset 10 times. The convergence times are presented below.
 
 ```{r}
-#| message: false
-#| warning: false
 #| echo: false
+#| eval: true
 # format table in markdown
 cached_mmrm_results$conv_time_bcva |>
   arrange(median) |>
@@ -533,7 +504,8 @@ cached_mmrm_results$conv_time_bcva |>
     `Third Quartile` = upper
   ) |>
   knitr::kable(
-    caption = "Comparison of convergence times: seconds", digits = 2
+    caption = "Comparison of convergence times: seconds",
+    digits = 2
   )
 ```
 
@@ -547,9 +519,8 @@ We next estimate the marginal mean treatment effects for each visit in the FEV a
 
 ```{r}
 #| label: review-treatment-fev
-#| message: false
-#| warning: false
 #| echo: false
+#| eval: true
 # plot estimates
 ggplot(
   cached_mmrm_results$rel_diff_ests_tbl_fev,
@@ -571,9 +542,8 @@ The R procedures' estimates are very similar to those output by `PROC GLIMMIX`, 
 
 ```{r}
 #| label: review-treatment-bcva
-#| message: false
-#| warning: false
 #| echo: false
+#| eval: true
 # plot estimates
 ggplot(
   cached_mmrm_results$rel_diff_ests_tbl_bcva,
@@ -617,9 +587,8 @@ Ten datasets of 200 patients are generated each of the following levels of missi
 
 ```{r}
 #| label: review-missingness-table
-#| warning: false
-#| message: false
 #| echo: false
+#| eval: true
 ## construct the table
 cached_mmrm_results$df_missingness |>
   kable(caption = "Number of patients per visit")
@@ -629,9 +598,8 @@ The convergence rates of all implementations for stratified by missingness level
 
 ```{r}
 #| label: review-convergence-rate-missingness
-#| message: false
-#| warning: false
 #| echo: false
+#| eval: true
 ## plot the convergence rates
 cached_mmrm_results$conv_rate |>
   mutate(

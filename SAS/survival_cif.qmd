@@ -29,30 +29,32 @@ The bone marrow transplant (BTM) dataset as presented by Guo & So (2018) is used
 
 SAS code to prepare the data:
 
-```{r}
+```{sas}
 #| eval: false
 proc format;
-  value DiseaseGroup 1='ALL'
-                     2='AML-Low Risk'
-                     3='AML-High Risk';
-  value EventStatus  0='Censored'
-                     1='Relapse'
-                     2='Death';
+    value DiseaseGroup 1='ALL'
+                      2='AML-Low Risk'
+                      3='AML-High Risk';
+    value EventStatus  0='Censored'
+                      1='Relapse'
+                      2='Death';
 run;
+
 libname datalib "..\data";
 data bmt;
-  set datalib.bmt;
-  TYears = T / 365.25;
-  ID = _n_;
-  format Group DiseaseGroup.;
-  format Status EventStatus.;
+    set datalib.bmt;
+    TYears = T / 365.25;
+    ID = _n_;
+    format Group DiseaseGroup.;
+    format Status EventStatus.;
 run;
 ```
 
 ## Estimating CIFs in SAS
 
 PROC LIFETEST is used to estimate the CIFs in SAS. For illustration, we model the time to relapse.  
-```{r}
+
+```{sas}
 #| eval: false
 ods graphics on;
 proc lifetest data=bmt 
@@ -61,9 +63,9 @@ proc lifetest data=bmt
               conftype=loglog
               outcif=cif1 
               timelist=0.5 1 1.5 2 3; 
-  time Tyears * Status(0) / eventcode=1; 
-  strata Group / order=internal; 
-  format Group DiseaseGroup.;
+    time Tyears * Status(0) / eventcode=1; 
+    strata Group / order=internal; 
+    format Group DiseaseGroup.;
 run; 
 ods graphics off;
 ```
