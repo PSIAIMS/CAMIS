@@ -32,7 +32,7 @@ Below is a standard mock-up for survival analysis in clinical trials.
 #| echo: false
 #| fig-align: center
 #| out-width: 75%
-knitr::include_graphics("../images/survival/layout.png")   
+knitr::include_graphics("../images/survival/layout.png")
 ```
 
 ## Example Data
@@ -60,9 +60,11 @@ library(broom)
 library(knitr)
 knitr::opts_chunk$set(echo = TRUE)
 
-dat <- read_sas(file.path("../data/whas500.sas7bdat")) %>%
-  mutate(LENFOLY = round(LENFOL/365.25, 2), ## change follow-up days to years for better visualization
-         AFB = factor(AFB, levels = c(1, 0))) ## change AFB order to use "Yes" as the reference group to be consistent with SAS
+dat <- haven::read_sas(file.path("../data/whas500.sas7bdat")) |>
+  mutate(
+    LENFOLY = round(LENFOL / 365.25, 2), ## change follow-up days to years for better visualization
+    AFB = factor(AFB, levels = c(1, 0))
+  ) ## change AFB order to use "Yes" as the reference group to be consistent with SAS
 
 ```
 
@@ -75,13 +77,13 @@ The KM estimators are from `survival::survfit` function, the log-rank test uses 
 ### KM estimators
 
 ```{r}
-fit.km <- survfit(Surv(LENFOLY, FSTAT) ~ AFB, data = dat)
+fit.km <- survival::survfit(survival::Surv(LENFOLY, FSTAT) ~ AFB, data = dat)
 
 ## quantile estimates
-quantile(fit.km, probs = c(0.25, 0.5, 0.75)) 
+quantile(fit.km, probs = c(0.25, 0.5, 0.75))
 
 ## landmark estimates at 1, 3, 5-year
-summary(fit.km, times = c(1, 3, 5)) 
+summary(fit.km, times = c(1, 3, 5))
 
 ```
 
@@ -94,9 +96,9 @@ survminer::surv_pvalue(fit.km, data = dat)
 ### Cox PH model
 
 ```{r}
-fit.cox <- coxph(Surv(LENFOLY, FSTAT) ~ AFB, data = dat)
-fit.cox %>% 
-  tidy(exponentiate = TRUE, conf.int = TRUE, conf.level = 0.95) %>%
+fit.cox <- survival::coxph(survival::Surv(LENFOLY, FSTAT) ~ AFB, data = dat)
+fit.cox |>
+  tidy(exponentiate = TRUE, conf.int = TRUE, conf.level = 0.95) |>
   select(term, estimate, conf.low, conf.high)
 ```
 
@@ -107,7 +109,10 @@ In a stratified model, the Kaplan-Meier estimators remain the same as those in t
 ### Stratified Log-rank test
 
 ```{r}
-fit.km.str <- survfit(Surv(LENFOLY, FSTAT) ~ AFB + strata(GENDER), data = dat)
+fit.km.str <- survival::survfit(
+  survival::Surv(LENFOLY, FSTAT) ~ AFB + survival::strata(GENDER),
+  data = dat
+)
 
 survminer::surv_pvalue(fit.km.str, data = dat)
 ```
@@ -115,8 +120,11 @@ survminer::surv_pvalue(fit.km.str, data = dat)
 ### Stratified Cox PH model
 
 ```{r}
-fit.cox.str <- coxph(Surv(LENFOLY, FSTAT) ~ AFB + strata(GENDER), data = dat)
-fit.cox.str %>% 
-  tidy(exponentiate = TRUE, conf.int = TRUE, conf.level = 0.95) %>%
+fit.cox.str <- survival::coxph(
+  survival::Surv(LENFOLY, FSTAT) ~ AFB + survival::strata(GENDER),
+  data = dat
+)
+fit.cox.str |>
+  tidy(exponentiate = TRUE, conf.int = TRUE, conf.level = 0.95) |>
   select(term, estimate, conf.low, conf.high)
 ```

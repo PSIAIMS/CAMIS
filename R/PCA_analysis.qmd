@@ -1,7 +1,5 @@
 ---
 title: "Principle Component Analysis"
-format: html
-editor: visual
 ---
 
 ## Introduction
@@ -16,9 +14,9 @@ Principal Component Analysis (PCA) is a dimensionality reduction technique used 
 ```{r}
 library(factoextra)
 library(plotly)
-  
+
 data <- iris
-pca_result <- prcomp(data[, 1:4], scale = T)
+pca_result <- stats::prcomp(data[, 1:4], scale = T)
 pca_result
 ```
 
@@ -35,7 +33,7 @@ summary(pca_result)
 A scree plot shows the proportion of variance explained by each principal component.
 
 ```{r}
-fviz_eig(pca_result)
+factoextra::fviz_eig(pca_result)
 ```
 
 ### Biplot
@@ -43,9 +41,15 @@ fviz_eig(pca_result)
 A biplot shows the scores of the samples and the loadings of the variables on the first two principal components.
 
 ```{r}
-plt <- fviz_pca_biplot(pca_result, geom.ind = "point", pointshape = 21, 
-                pointsize = 2, fill.ind = iris$Species, 
-                col.var = "black", repel = TRUE)
+plt <- factoextra::fviz_pca_biplot(
+  pca_result,
+  geom.ind = "point",
+  pointshape = 21,
+  pointsize = 2,
+  fill.ind = iris$Species,
+  col.var = "black",
+  repel = TRUE
+)
 plt
 ```
 
@@ -65,7 +69,7 @@ We will plot this using `plotly` package.
 
 ```{r}
 
-pca_result2 <- prcomp(data[, 1:4], scale = T, rank. = 3)
+pca_result2 <- stats::prcomp(data[, 1:4], scale = T, rank. = 3)
 pca_result2
 ```
 
@@ -73,21 +77,22 @@ Next, we will create a dataframe of the 3 principle components and negate PC2 an
 
 ```{r}
 components <- as.data.frame(pca_result2$x)
-components$PC2 <- -components$PC2
-components$PC3 <- -components$PC3
+components$PC2 <- components$PC2
+components$PC3 <- components$PC3
 ```
 
 ```{r}
-fig <- plot_ly(components, 
-               x = ~PC1, 
-               y = ~PC2, 
-               z = ~PC3, 
-               color = ~data$Species, 
-               colors = c('darkgreen','darkblue','darkred')) %>%
+fig <- plotly::plot_ly(
+  components,
+  x = ~PC1,
+  y = ~PC2,
+  z = ~PC3,
+  color = ~ data$Species,
+  colors = c('darkgreen', 'darkblue', 'darkred')
+) |>
   add_markers(size = 12)
 
-fig <- fig %>%
-  layout(title = "3d Visualization of PCA",
-         scene = list(bgcolor = "lightgray"))
+fig <- fig |>
+  layout(title = "3d Visualization of PCA", scene = list(bgcolor = "lightgray"))
 fig
 ```
