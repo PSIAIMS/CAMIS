@@ -32,27 +32,28 @@ In order to get the ANOVA model fit and sum of squares you can use the `anova` f
 library(emmeans)
 drug_trial <- read.csv("../data/drug_trial.csv")
 
-lm_model <- lm(formula = post ~ pre + drug, data = drug_trial) 
-lm_model|>
+lm_model <- lm(formula = post ~ pre + drug, data = drug_trial)
+lm_model |>
   anova()
 ```
 
 It is recommended to use the `emmeans` package to get the contrasts between R.
 
 ```{r}
-lm_model |> 
-  emmeans("drug") |> 
-  contrast(method = list(
-    "C vs A"  = c(-1,  1, 0),
-    "E vs CA" = c(-1, -1, 2)
-  ))
+lm_model |>
+  emmeans("drug") |>
+  contrast(
+    method = list(
+      "C vs A" = c(-1, 1, 0),
+      "E vs CA" = c(-1, -1, 2)
+    )
+  )
 ```
 
 In SAS, all contrasts must be manually defined, but the syntax is largely similar in both.
 
-```{r}
+```{sas}
 #| eval: false
-# In SAS
 proc glm data=work.mycsv;
    class drug;
    model post = pre drug / solution;
@@ -114,7 +115,7 @@ Provided below is a detailed comparison of the results obtained from both SAS an
 
 Note, however, that there are some cases where the scale of the parameter estimates between SAS and R is off, though the test statistics and p-values are identical. In these cases, we can adjust the SAS code to include a divisor. As far as we can tell, this difference only occurs when using the predefined Base R contrast methods like `contr.helmert`.
 
-```{r}
+```{sas}
 #| eval: false
 proc glm data=work.mycsv;
    class drug;
