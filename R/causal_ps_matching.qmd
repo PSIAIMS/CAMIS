@@ -5,21 +5,20 @@ code-annotations: hover
 
 ## About this article
 
-This article provide a general and simple workflow of data analysis of propensity score matching using the `MatchIt` package. 
+This article provide a general and simple workflow of data analysis of propensity score matching using the `MatchIt` package.
 
 The dataset used here can be found in the data folder, with name `ps_data.csv`. It is the same data included in the **CAMIS** article on [Propensity score matching: SAS vs R](https://psiaims.github.io/CAMIS/Comp/r-sas_psmatch.html#matching-examples), which provides some good information on the comparison between SAS and R. For more details and different options, please refer to the doc there.
 
-This article is based on the [vignette](https://cran.r-project.org/web/packages/MatchIt/vignettes/MatchIt.html) for the [MatchIt](https://cran.r-project.org/web/packages/MatchIt/index.html) package. For more implementation and methodology details, please refer to the vignette. 
-
+This article is based on the [vignette](https://cran.r-project.org/web/packages/MatchIt/vignettes/MatchIt.html) for the [MatchIt](https://cran.r-project.org/web/packages/MatchIt/index.html) package. For more implementation and methodology details, please refer to the vignette.
 
 ## Propensity Score Matching with `MatchIt`
 
 A matching analysis has a few steps:
 
-1. planning
-2. matching
-3. assess quality of matches
-4. estimate treatment effect and uncertainty
+1.  planning
+2.  matching
+3.  assess quality of matches
+4.  estimate treatment effect and uncertainty
 
 In the following example, we will go through a data analysis that covers these steps.
 
@@ -31,6 +30,7 @@ We load the dataset `ps_data`. Also load the necessary packges: `MatchIt` and `d
 #| output: false
 library(MatchIt)
 library(dplyr)
+library(optmatch)
 ```
 
 Inspect the dataset
@@ -49,7 +49,6 @@ vars <- c('trtp', 'sex', 'bmi_cat')
 data[vars] <- lapply(data[vars], factor)
 ```
 
-
 ### Check initial imbalance
 
 We need to assess the balance in the treatment variable.
@@ -57,7 +56,6 @@ We need to assess the balance in the treatment variable.
 ```{r}
 table(data$trtp)
 ```
-
 
 The pre-matching imbalance can also be assessed in the following way.
 
@@ -71,15 +69,14 @@ m0 <- matchit(
 summary(m0)
 ```
 
-1. No matching is performed
-2. `glm` for generalized linear model - logistic regression
+1.  No matching is performed
+2.  `glm` for generalized linear model - logistic regression
 
-When checking the results, **standardized mean difference,  variance ratios, eCDF** are important measures. SMD and eCDF should be close to zero, while variance ratios should be close to 1.
-
+When checking the results, **standardized mean difference, variance ratios, eCDF** are important measures. SMD and eCDF should be close to zero, while variance ratios should be close to 1.
 
 ### Nearest neighbor matching
 
-The first matching method we use is the **1:1 nearest neighbor** (NN). 
+The first matching method we use is the **1:1 nearest neighbor** (NN).
 
 ```{r}
 m1 <- matchit(
@@ -97,7 +94,6 @@ Check the quality of the matches.
 summary(m1)
 ```
 
-
 ```{r}
 m1$weights # membership, 1 or 0
 m1$weights |> table() # 244 unmatched, 370 (185:185 tr ct)
@@ -109,9 +105,9 @@ Can also visualize the PS after matching.
 plot(m1, type = "jitter", interactive = FALSE)
 ```
 
-### Full matching 
+### Full matching
 
-A different method can be used (full matching). 
+A different method can be used (full matching).
 
 ```{r}
 m2 <- matchit(
@@ -129,7 +125,6 @@ Assess the balance with **Love plot**. Read more in `vignette('assessing-balance
 ```{r}
 plot(summary(m2))
 ```
-
 
 ### Estimate treatment effect
 
@@ -150,9 +145,9 @@ fit <- lm(
 )
 summary(fit)
 ```
-1. use the matched data 
-2. add weights. this is a column in `m.data`
 
+1.  use the matched data
+2.  add weights. this is a column in `m.data`
 
 In the end, you can also compare it with the model without matching (`lm`).
 
@@ -168,4 +163,4 @@ Interpreting the result is a different topic, which is not covered in this artic
 
 ## Summary
 
-There are many diffrent methods implemented in the `MatchIt` package that we have not elaborated in this article. Please read the [MatchIt vignette](https://cran.r-project.org/web/packages/MatchIt/vignettes/MatchIt.html) for more details on the options. 
+There are many diffrent methods implemented in the `MatchIt` package that we have not elaborated in this article. Please read the [MatchIt vignette](https://cran.r-project.org/web/packages/MatchIt/vignettes/MatchIt.html) for more details on the options.
