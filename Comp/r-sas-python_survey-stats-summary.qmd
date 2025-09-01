@@ -30,77 +30,100 @@ For the full R, SAS, and Python code and results used for this comparison, see b
 
 ```{r}
 #| message: false
-#| warning: false 
+#| warning: false
 library(survey)
 
 data("nhanes")
 
-nhanes_design <- svydesign(
+nhanes_design <- survey::svydesign(
   data = nhanes,
   id = ~SDMVPSU, # Specify the PSU/cluster column
-  strata = ~SDMVSTRA,  # The stratification column
-  weights = ~WTMEC2YR,  # The weighting column
-  nest = TRUE  # Allows for PSUs with the same name nested within different strata
+  strata = ~SDMVSTRA, # The stratification column
+  weights = ~WTMEC2YR, # The weighting column
+  nest = TRUE # Allows for PSUs with the same name nested within different strata
 )
 
 # Mean of HI_CHOL
-hi_chol_mean <- svymean(~HI_CHOL, nhanes_design, na.rm=TRUE)
+hi_chol_mean <- survey::svymean(~HI_CHOL, nhanes_design, na.rm = TRUE)
 
 # Sum of HI_CHOL
-hi_chol_sum <- svytotal(~HI_CHOL, nhanes_design, na.rm=TRUE)
+hi_chol_sum <- survey::svytotal(~HI_CHOL, nhanes_design, na.rm = TRUE)
 
 # Ratio of HI_CHOL / RIAGENDR
-hi_chol_ratio <- svyratio(
+hi_chol_ratio <- survey::svyratio(
   numerator = ~HI_CHOL,
   denominator = ~RIAGENDR,
   nhanes_design,
-  na.rm=TRUE,
-  ci=TRUE,
-  se=TRUE,
-  separate=FALSE
+  na.rm = TRUE,
+  ci = TRUE,
+  se = TRUE,
+  separate = FALSE
 )
 
 # Proportion of different AGECAT values
-agecat_props <- svymean(~agecat, nhanes_design, na.rm=TRUE)
+agecat_props <- survey::svymean(~agecat, nhanes_design, na.rm = TRUE)
 
 # Quantiles of HI_CHOL
-hi_chol_quart <- svyquantile(
+hi_chol_quart <- survey::svyquantile(
   ~HI_CHOL,
   nhanes_design,
-  quantiles=c(0.025, 0.5, 0.975),
-  na.rm=TRUE,
-  ci=TRUE
+  quantiles = c(0.025, 0.5, 0.975),
+  na.rm = TRUE,
+  ci = TRUE
 )
 
 # Domain analysis of mean of HI_CHOL by race, with design effect
-hi_chol_mean_by_race <- svyby(~HI_CHOL, ~race, nhanes_design, svymean, na.rm=TRUE, deff="replace")
+hi_chol_mean_by_race <- survey::svyby(
+  ~HI_CHOL,
+  ~race,
+  nhanes_design,
+  svymean,
+  na.rm = TRUE,
+  deff = "replace"
+)
 
 print(list(
   "Mean of HI_CHOL" = coef(hi_chol_mean),
-  "SE of Mean HI_CHOL" = SE(hi_chol_mean),
-  "CL of Mean HI_CHOL" = confint(hi_chol_mean, df=degf(nhanes_design)),
+  "SE of Mean HI_CHOL" = survey::SE(hi_chol_mean),
+  "CL of Mean HI_CHOL" = confint(
+    hi_chol_mean,
+    df = survey::degf(nhanes_design)
+  ),
   "Sum of HI_CHOL" = coef(hi_chol_sum),
-  "SE of Sum HI_CHOL" = SE(hi_chol_sum),
-  "CL of Sum HI_CHOL" = confint(hi_chol_sum, df=degf(nhanes_design)),
+  "SE of Sum HI_CHOL" = survey::SE(hi_chol_sum),
+  "CL of Sum HI_CHOL" = confint(hi_chol_sum, df = survey::degf(nhanes_design)),
   "Ratio of HI_CHOL / RIAGENDR" = coef(hi_chol_ratio),
-  "SE of Ratio HI_CHOL / RIAGENDR" = SE(hi_chol_ratio),
-  "CL of Ratio HI_CHOL / RIAGENDR" = confint(hi_chol_ratio, df=degf(nhanes_design)),
+  "SE of Ratio HI_CHOL / RIAGENDR" = survey::SE(hi_chol_ratio),
+  "CL of Ratio HI_CHOL / RIAGENDR" = confint(
+    hi_chol_ratio,
+    df = survey::degf(nhanes_design)
+  ),
   "Proportion of AGECAT" = coef(agecat_props),
-  "SE of Proportion AGECAT" = SE(agecat_props),
-  "CL of Proportion AGECAT" = confint(agecat_props, df=degf(nhanes_design)),
+  "SE of Proportion AGECAT" = survey::SE(agecat_props),
+  "CL of Proportion AGECAT" = confint(
+    agecat_props,
+    df = survey::degf(nhanes_design)
+  ),
   "Quantiles of HI_CHOL" = coef(hi_chol_quart),
-  "SE of Quantiles HI_CHOL" = SE(hi_chol_quart),
-  "CL of Quantiles HI_CHOL" = confint(hi_chol_quart, df=degf(nhanes_design)),
+  "SE of Quantiles HI_CHOL" = survey::SE(hi_chol_quart),
+  "CL of Quantiles HI_CHOL" = confint(
+    hi_chol_quart,
+    df = survey::degf(nhanes_design)
+  ),
   "Mean of HI_CHOL by race" = coef(hi_chol_mean_by_race),
-  "SE of HI_CHOL by race" = SE(hi_chol_mean_by_race),
-  "CL of HI_CHOL by race" = confint(hi_chol_mean_by_race, df=degf(nhanes_design)),
+  "SE of HI_CHOL by race" = survey::SE(hi_chol_mean_by_race),
+  "CL of HI_CHOL by race" = confint(
+    hi_chol_mean_by_race,
+    df = survey::degf(nhanes_design)
+  ),
   "Design Effect of HI_CHOL by race" = hi_chol_mean_by_race$DEff.HI_CHOL
 ))
 ```
 
 ## SAS
 
-``` default
+```{sas}
+#| eval: false
 * Mean, sum quantile of HI_CHOL;
 proc surveymeans data=nhanes mean sum clm quantile=(0.025 0.5 0.975);
     cluster SDMVPSU;
@@ -135,7 +158,7 @@ proc surveymeans data=nhanes mean deff;
 run;
 ```
 
-```         
+```default
 
                                                  The SURVEYMEANS Procedure
 
@@ -328,6 +351,7 @@ print(
     """
 )
 ```
+
 :::
 
 # Differences
@@ -342,20 +366,22 @@ library(survey)
 
 data("api")
 
-head(apisrs) |> gt::gt()
+head(apisrs) |>
+  gt::gt()
 ```
 
 In SAS, PROC SURVEYMEANS will calculate quantiles of specific probabilities as you request them, using Woodruff's method for intervals and a custom quantile method [@SAS_2018, pp. 9834]. The quantile method does not match any of the available `qrules` in R, and although the default `interval.types` in the R `survey::svyquantile` function also uses Woodruff's method, it is a different implementation.
 
 The method and results from SAS are as follows:
 
-``` default
+```{sas}
+#| eval: false
 proc surveymeans data=apisrs total=6194 quantile=(0.025 0.5 0.975);
     var growth;
 run;
 ```
 
-```         
+```default
                              The SURVEYMEANS Procedure
 
                                     Data Summary
@@ -379,14 +405,14 @@ run;
 If in R we use the default `qrule="math"` (equivalent to `qrule="hf1"` and matches `type=1` in the `quantile` function for unweighted data) along with the default `interval.type="mean"`, we get the following results:
 
 ```{r}
-srs_design <- svydesign(data = apisrs,id = ~1,fpc = ~fpc,)
+srs_design <- survey::svydesign(data = apisrs, id = ~1, fpc = ~fpc, )
 
-svyquantile(
+survey::svyquantile(
   ~growth,
   srs_design,
   quantiles = c(0.025, 0.5, 0.975),
-  ci=TRUE,
-  se=TRUE
+  ci = TRUE,
+  se = TRUE
 )
 ```
 
@@ -395,24 +421,32 @@ Here we can see that the quantiles, confidence intervals, and standard errors do
 ```{r}
 sas_qrule <- function(x, w, p) {
   # Custom qrule to match SAS, based on survey::oldsvyquantile's internal method
-  if (any(is.na(x))) 
+  if (any(is.na(x))) {
     return(NA * p)
+  }
   w <- rowsum(w, x, reorder = TRUE)
   x <- sort(unique(x))
-  cum.w <- cumsum(w)/sum(w)
-  cdf <- approxfun(cum.w, x, method = "linear", f = 1, 
-    yleft = min(x), yright = max(x), ties = min)
+  cum.w <- cumsum(w) / sum(w)
+  cdf <- approxfun(
+    cum.w,
+    x,
+    method = "linear",
+    f = 1,
+    yleft = min(x),
+    yright = max(x),
+    ties = min
+  )
   cdf(p)
 }
 
 
-sas_quants <- svyquantile(
+sas_quants <- survey::svyquantile(
   ~growth,
   srs_design,
   quantiles = c(0.025, 0.5, 0.975),
-  qrule=sas_qrule,
-  ci=TRUE,
-  se=TRUE
+  qrule = sas_qrule,
+  ci = TRUE,
+  se = TRUE
 )
 
 sas_quants
@@ -421,21 +455,25 @@ sas_quants
 Note that although the quantiles and standard errors match, the confidence intervals still do not match SAS. For this another custom calculation is required, based on the formula used in SAS:
 
 ```{r}
-sas_quantile_confint <- function(newsvyquantile, level=0.05, df=Inf) {
+sas_quantile_confint <- function(newsvyquantile, level = 0.05, df = Inf) {
   q <- coef(newsvyquantile)
-  se <- SE(newsvyquantile)
+  se <- survey::SE(newsvyquantile)
   ci <- cbind(
     q,
-    q + se * qt(level/2, df),
-    q - se * qt(1 - level/2, df),
+    q + se * qt(level / 2, df),
+    q - se * qt(1 - level / 2, df),
     se
   )
-  colnames(ci) <- c("quantile", paste0("ci.", c(100 * level / 2, 100 * (1 - level / 2))), "se")
+  colnames(ci) <- c(
+    "quantile",
+    paste0("ci.", c(100 * level / 2, 100 * (1 - level / 2))),
+    "se"
+  )
 
   ci
 }
 
-sas_quantile_confint(sas_quants, df=degf(srs_design))
+sas_quantile_confint(sas_quants, df = survey::degf(srs_design))
 ```
 
 ## Other considerations
@@ -467,7 +505,10 @@ si <- sessioninfo::session_info("survey", dependencies = FALSE)
 # So instead we delete this. (Currently bug with specifying info= multi
 # element vector in sessioninfo)
 si$python <- NULL
-si$external <- structure(list("SAS" = "9.04.01M7P080520"), class = c("external_info", "list"))
+si$external <- structure(
+  list("SAS" = "9.04.01M7P080520"),
+  class = c("external_info", "list")
+)
 si
 ```
 
@@ -490,4 +531,5 @@ message = (
 
 print(message)
 ```
+
 :::
