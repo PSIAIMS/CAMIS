@@ -1,0 +1,4873 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.34">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>R Recurrent Events</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../images/logo.png" rel="icon" type="image/png">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-c8ad9e5dbd60b7b70b38521ab19b7da4.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-f82ec6bb8c4646d867f4b22de3f70c54.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../images/logo.png" alt="" class="navbar-logo">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-publications-and-projects" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Publications and Projects</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-publications-and-projects">    
+        <li>
+    <a class="dropdown-item" href="../publication/white_paper.html"><i class="bi bi-file-earmark-word-fill" role="img">
+</i> 
+ <span class="dropdown-text">White Paper</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/conference.html"><i class="bi bi-easel3-fill" role="img">
+</i> 
+ <span class="dropdown-text">Conferences</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/dissertation.html"><i class="bi bi-mortarboard-fill" role="img">
+</i> 
+ <span class="dropdown-text">Academic Projects</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../minutes/index.html"> 
+<span class="menu-text">Meeting Minutes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../blogs/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-help" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Help</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-help">    
+        <li>
+    <a class="dropdown-item" href="https://github.com/PSIAIMS/CAMIS/issues"><i class="bi bi-bug-fill" role="img">
+</i> 
+ <span class="dropdown-text">Report a Bug</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/get_started.html"><i class="bi bi-git" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with Your Environment</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/contribution.html"><i class="bi bi-person-raised-hand" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with CAMIS</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/package_review.html"><i class="bi bi-box-fill" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with a New R Package</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+    <a href="https://github.com/PSIAIMS/CAMIS/" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#recurrent-event-models" id="toc-recurrent-event-models" class="nav-link active" data-scroll-target="#recurrent-event-models">Recurrent event models</a>
+  <ul class="collapse">
+  <li><a href="#setup" id="toc-setup" class="nav-link" data-scroll-target="#setup">Setup</a>
+  <ul class="collapse">
+  <li><a href="#general-libraries" id="toc-general-libraries" class="nav-link" data-scroll-target="#general-libraries">General libraries</a></li>
+  <li><a href="#methodology-specific-libraries" id="toc-methodology-specific-libraries" class="nav-link" data-scroll-target="#methodology-specific-libraries">Methodology specific libraries</a></li>
+  </ul></li>
+  <li><a href="#modelling-recurrent-events" id="toc-modelling-recurrent-events" class="nav-link" data-scroll-target="#modelling-recurrent-events">Modelling recurrent events</a>
+  <ul class="collapse">
+  <li><a href="#methodology-introduction" id="toc-methodology-introduction" class="nav-link" data-scroll-target="#methodology-introduction">Methodology introduction</a></li>
+  <li><a href="#counting-process-models" id="toc-counting-process-models" class="nav-link" data-scroll-target="#counting-process-models">Counting process models</a></li>
+  <li><a href="#conditional-models" id="toc-conditional-models" class="nav-link" data-scroll-target="#conditional-models">Conditional models</a></li>
+  <li><a href="#marginal-models" id="toc-marginal-models" class="nav-link" data-scroll-target="#marginal-models">Marginal models</a></li>
+  <li><a href="#overview-of-all-models" id="toc-overview-of-all-models" class="nav-link" data-scroll-target="#overview-of-all-models">Overview of all models</a></li>
+  </ul></li>
+  <li><a href="#modelling-recurrent-events-using-the-survival-package" id="toc-modelling-recurrent-events-using-the-survival-package" class="nav-link" data-scroll-target="#modelling-recurrent-events-using-the-survival-package">Modelling recurrent events using the <code>survival</code> package</a>
+  <ul class="collapse">
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
+  <li><a href="#analysis" id="toc-analysis" class="nav-link" data-scroll-target="#analysis">Analysis</a></li>
+  <li><a href="#interpretation" id="toc-interpretation" class="nav-link" data-scroll-target="#interpretation">Interpretation</a></li>
+  <li><a href="#event-specific-estimates" id="toc-event-specific-estimates" class="nav-link" data-scroll-target="#event-specific-estimates">Event-specific estimates</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">R Recurrent Events</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="recurrent-event-models" class="level1">
+<h1>Recurrent event models</h1>
+<section id="setup" class="level2">
+<h2 class="anchored" data-anchor-id="setup">Setup</h2>
+<section id="general-libraries" class="level3">
+<h3 class="anchored" data-anchor-id="general-libraries">General libraries</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'dplyr'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:stats':
+
+    filter, lag</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="methodology-specific-libraries" class="level3">
+<h3 class="anchored" data-anchor-id="methodology-specific-libraries">Methodology specific libraries</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survival)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="modelling-recurrent-events" class="level2">
+<h2 class="anchored" data-anchor-id="modelling-recurrent-events">Modelling recurrent events</h2>
+<section id="methodology-introduction" class="level3">
+<h3 class="anchored" data-anchor-id="methodology-introduction">Methodology introduction</h3>
+<p>Traditionally, survival analysis focuses on the time to a <em>single</em> first event. While there are many applications for such time-to-event analysis in clinical trials, this approach falls short when events of interest can occur multiple times within the same subject. Recurrent event models extend the traditional Cox proportional hazards framework to account for <em>multiple</em> events per subject (<a href="https://pubmed.ncbi.nlm.nih.gov/29301487/">Ozga et al.&nbsp;2018</a>, <a href="https://pubmed.ncbi.nlm.nih.gov/25501468/">Amorim &amp; Cai 2015</a>).</p>
+<p>In this tutorial, we will demonstrate how to implement different recurrent event models in R, specifically the Andersen-Gill, proportional means/rates, Prentice-Williams-Peterson, and Wei-Lin-Weissfeld models, using the well-known <a href="https://cran.r-project.org/web/packages/survival/vignettes/survival.pdf"><code>survival</code> package</a>. The R code follows the layout of <a href="https://www.lexjansen.com/phuse/2023/as/PAP_AS05.pdf">Amor 2023</a>, with additional insights taken from <a href="https://www.lexjansen.com/pharmasug/2018/EP/PharmaSUG-2018-EP02.pdf">Lu et al.&nbsp;2018</a>.</p>
+<p>Recurrent event models can roughly be divided in three categories: counting process models, conditional models and marginal models. In the section below, we will explore the difference between each of these approaches. In addition, important aspects of data structure will be discussed by means of two fictional subjects, one with 4 events and 0 censored observations (events at time 6, 9, 56 and 88), and another with 2 events and 1 censored observation (events at time 42, 57, and censored at time 91).</p>
+<p>Define the following:</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><span class="math display">\[*\]</span></p>
+<p><span class="math inline">\(\lambda_i(t)\)</span>: hazard function for the <span class="math inline">\(i\)</span>th subject at time <span class="math inline">\(t\)</span></p>
+<p><span class="math inline">\(\lambda_{ij}(t)\)</span>: hazard function for the <span class="math inline">\(j\)</span>th event of the <span class="math inline">\(i\)</span>th subject at time <span class="math inline">\(t\)</span></p>
+<p><span class="math inline">\(\lambda_0(t)\)</span>: common baseline hazard for all events</p>
+<p><span class="math inline">\(\lambda_{0j}(t)\)</span>: event-specific baseline hazard for the <span class="math inline">\(j\)</span>th event at time <span class="math inline">\(t\)</span></p>
+<p><span class="math inline">\(\beta\)</span>: common parameter vector</p>
+<p><span class="math inline">\(\beta_j\)</span>: event-specific parameter vector for the <span class="math inline">\(j\)</span>th event</p>
+<p><span class="math inline">\(X_{ij}\)</span>: covariate vector for the <span class="math inline">\(j\)</span>th event of the <span class="math inline">\(i\)</span>th subject</p>
+</div>
+</div>
+</section>
+<section id="counting-process-models" class="level3">
+<h3 class="anchored" data-anchor-id="counting-process-models">Counting process models</h3>
+<section id="andersen-gill-model-andersen-gill-1982" class="level4">
+<h4 class="anchored" data-anchor-id="andersen-gill-model-andersen-gill-1982">Andersen-Gill model (<a href="https://projecteuclid.org/journals/annals-of-statistics/volume-10/issue-4/Coxs-Regression-Model-for-Counting-Processes--A-Large-Sample/10.1214/aos/1176345976.full">Andersen &amp; Gill 1982</a>)</h4>
+<p><span class="math display">\[
+\lambda_i(t) = \lambda_0(t) \exp \left( \beta X_{ij}(t) \right) \ *
+\]</span></p>
+<ul>
+<li><p>Counting process approach: treats each subject as a multiple events counting process</p></li>
+<li><p>Common baseline hazard <span class="math inline">\(\lambda_0(t)\)</span></p></li>
+<li><p>Common regression coefficients <span class="math inline">\(\beta\)</span></p></li>
+<li><p>Unrestricted risk set: a subject contributes to the risk set for an event as long as the subject is under observation, i.e.&nbsp;it can be at risk for a subsequent event even though the previous event did not yet occur</p></li>
+<li><p>Order of events is not important</p></li>
+</ul>
+<p>An essential assumption of the Andersen-Gill model is that of <strong>independent events</strong> within subjects. This, however, is often not realistic in clinical trial data. For example, let’s say that we are modelling myocardial infarction (MI). If a patient has already experienced one MI, their risk of subsequent events may increase due to underlying cardiovascular damage or presence of other risk factors. Thus, the more events a patient has, the more likely they are to experience future events, indicating dependence rather than independence. To accurately model this within-subject correlation, extensions like time-varying covariates, a robust sandwich covariance estimator or frailty terms may be needed. In this tutorial, we will discuss the sandwich correction.</p>
+<p><strong>Lin-Wei-Yang-Ying (LWYY) model or proportional means/rates model (<a href="https://www.jstor.org/stable/2680616">Lin, Wei, Yang &amp; Ying 2000</a>)</strong></p>
+<p>Lin, Wei, Yang, and Ying introduced an improved version of the Andersen-Gill model in 2000 (often referred to as proportional means/rates model), featuring a robust sandwich estimator that explicitly accounts for individual subject clusters. These robust standard errors yield wider confidence intervals and provide asymptotically valid inference even when the independence assumption does not hold (<a href="https://pubmed.ncbi.nlm.nih.gov/40490702/">Lee et al.&nbsp;2025</a>). The original and improved Andersen-Gill model often appear interchangeable in the literature, and while they produce identical estimates, their robust standard errors can differ substantially, which may impact the conclusions drawn from statistical inference.</p>
+<p>For both versions of the Andersen-Gill model, the data must be structured as follows:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Subject</th>
+<th>Time interval</th>
+<th>Event</th>
+<th>Stratum</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>(0, 6]</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>(6, 9]</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>(9, 56]</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>(56, 88]</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>(0, 42]</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>(42, 87]</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>(87, 91]</td>
+<td>0</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>This can be visually represented:</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/recurrent_events/AG_lineplot.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:80.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>In both versions of the Andersen-Gill model, each new time interval starts where the previous one ends.</p>
+</section>
+</section>
+<section id="conditional-models" class="level3">
+<h3 class="anchored" data-anchor-id="conditional-models">Conditional models</h3>
+<section id="prentice-williams-peterson-model-prentice-williams-peterson-1981" class="level4">
+<h4 class="anchored" data-anchor-id="prentice-williams-peterson-model-prentice-williams-peterson-1981">Prentice-Williams-Peterson model (<a href="https://academic.oup.com/biomet/article-abstract/68/2/373/260402?redirectedFrom=fulltext">Prentice, Williams &amp; Peterson 1981</a>)</h4>
+<ul>
+<li><p>Conditional approach: incorporates conditional strata to account for ordering/dependence of events</p></li>
+<li><p>Stratified baseline hazard <span class="math inline">\(\lambda_{0j}(t)\)</span></p></li>
+<li><p>Stratified regression coefficients <span class="math inline">\(\beta_j\)</span>: can be pooled (<span class="math inline">\(\beta\)</span>) or kept as event-specific (<span class="math inline">\(\beta_j\)</span>) in the output</p></li>
+<li><p>Restricted risk set: contributions to the risk set for a subsequent event are restricted to only consider subjects that already experienced the previous event</p></li>
+<li><p>Order of events is important</p></li>
+</ul>
+<p>The Prentice-Williams-Peterson model can incorporate both overall and event-specific effects <span class="math inline">\(\beta_j\)</span> for each covariate. An often made assumption is to set <span class="math inline">\(\beta_1 = \beta_2 = ... = \beta_k = \beta\)</span> to estimate a common parameter <span class="math inline">\(\beta\)</span>.</p>
+<p>Depending on the outcome of interest, Prentice, Williams and Peterson suggested two distinct models:</p>
+<ol type="1">
+<li><strong>Total time model</strong></li>
+</ol>
+<p><span class="math display">\[
+\lambda_{ij}(t) = \lambda_{0j}(t) \exp \left( \beta_j X_{ij}(t) \right) \ *
+\]</span></p>
+<p>The total time variant of the Prentice-Williams-Peterson model uses the same time intervals as the counting process approach (Andersen-Gill model), which is useful for modelling the full time course (<span class="math inline">\(t\)</span>) of the recurrent event process, i.e.&nbsp;the hazard of <em>any</em> recurrence.</p>
+<p>For the total time model, the data must be structured as follows:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Subject</th>
+<th>Time interval</th>
+<th>Event</th>
+<th>Stratum</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>(0, 6]</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>(6, 9]</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>(9, 56]</td>
+<td>1</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>(56, 88]</td>
+<td>1</td>
+<td>4</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>(0, 42]</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>(42, 87]</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>(87, 91]</td>
+<td>0</td>
+<td>3</td>
+</tr>
+</tbody>
+</table>
+<p>This can be visually represented:</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/recurrent_events/PWPtt_lineplot.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:80.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Again, in the total time model, each new time intervals starts where the previous one ends.</p>
+<ol start="2" type="1">
+<li><strong>Gap time model</strong></li>
+</ol>
+<p><span class="math display">\[
+\lambda_{ij}(t) = \lambda_{0j}(t - t_{j-1}) \exp \left( \beta_j X_{ij}(t) \right) \ *
+\]</span></p>
+<p>The gap time variant of the Prentice-Williams-Peterson model uses time intervals that start at zero and end at the length of time until the next event, which is useful for modelling the time between each of the recurring events (<span class="math inline">\(t - t_{j-1}\)</span>), i.e.&nbsp;the hazard of recurrence <em>after the previous event</em>.</p>
+<p>For the gap time model, the data must be structured as follows:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Subject</th>
+<th>Time interval</th>
+<th>Event</th>
+<th>Stratum</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>(0, 6]</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>(0, 3]</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>(0, 47]</td>
+<td>1</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>(0, 32]</td>
+<td>1</td>
+<td>4</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>(0, 42]</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>(0, 45]</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>(0, 3]</td>
+<td>0</td>
+<td>3</td>
+</tr>
+</tbody>
+</table>
+<p>This can be visually represented:</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/recurrent_events/PWPgt_lineplot.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:80.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>In the gap time model, each time interval starts at zero and has a length equal to the gap time between two neighboring events.</p>
+</section>
+</section>
+<section id="marginal-models" class="level3">
+<h3 class="anchored" data-anchor-id="marginal-models">Marginal models</h3>
+<section id="wei-lin-weissfeld-model-wei-lin-weissfeld-1989" class="level4">
+<h4 class="anchored" data-anchor-id="wei-lin-weissfeld-model-wei-lin-weissfeld-1989">Wei-Lin-Weissfeld model (<a href="https://www.jstor.org/stable/2290084">Wei, Lin &amp; Weissfeld 1989</a>)</h4>
+<p><span class="math display">\[
+\lambda_{ij}(t) = \lambda_{0j}(t) \exp \left( \beta_j X_{ij}(t) \right) \ *
+\]</span></p>
+<ul>
+<li><p>Marginal approach: treats each (recurrent) event as having a separate, marginal process</p></li>
+<li><p>Stratified baseline hazard <span class="math inline">\(\lambda_{0j}(t)\)</span></p></li>
+<li><p>Stratified regression coefficients <span class="math inline">\(\beta_j\)</span>: can be pooled (<span class="math inline">\(\beta\)</span>) or kept as event-specific (<span class="math inline">\(\beta_j\)</span>) in the output</p></li>
+<li><p>Semi-restricted risk set: all subjects contribute follow-up times to all <em>potential</em> events, i.e.&nbsp;each subject is at risk for all <em>potential</em> events, regardless of how many events that subject actually experiences</p></li>
+<li><p>Order of events is not important</p></li>
+</ul>
+<p>Although the Wei-Lin-Weissfeld model has it roots in competing risks analysis, it conveniently lends itself to model recurrent events as well. Like the Andersen-Gill model, the Wei-Lin-Weissfeld model also assumes <strong>independence</strong> of events, which is often not feasible in practice. In addition, it is assumed there is no specific order among the events or that the events are different types of events, and not necessarily <em>recurrent</em> events.</p>
+<p>Like the Prentice-Williams-Peterson models, the Wei-Lin-Weissfeld model can incorporate both overall and event-specific effects <span class="math inline">\(\beta_j\)</span> for each covariate. An often made assumption is to set <span class="math inline">\(\beta_1 = \beta_2 = ... = \beta_k = \beta\)</span> to estimate a common parameter <span class="math inline">\(\beta\)</span>. Another approach is to combine event-specific effects <span class="math inline">\(\beta_j\)</span> to get an estimator of the average effect, as described in <a href="https://www.jstor.org/stable/2290084">Wei, Lin &amp; Weissfeld 1989</a> (this is not discussed further here).</p>
+<p>For Wei-Lin-Weissfeld models, the data must be structured as follows:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Subject</th>
+<th>Time interval</th>
+<th>Event</th>
+<th>Stratum</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>(0, 6]</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>(0, 9]</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>(0, 56]</td>
+<td>1</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>(0, 88]</td>
+<td>1</td>
+<td>4</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>(0, 42]</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>(0, 87]</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>(0, 91]</td>
+<td>0</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>(0, 91]</td>
+<td>0</td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<p>This can be visually represented:</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/recurrent_events/WLW_lineplot.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:80.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>In the Wei-Lin-Weissfeld model, each time intervals starts at zero and ends at its respective event time.</p>
+</section>
+</section>
+<section id="overview-of-all-models" class="level3">
+<h3 class="anchored" data-anchor-id="overview-of-all-models">Overview of all models</h3>
+<p>In summary, the selection of the model to use would depend on the type of events, the importance of the order of the events and the time intervals to be analyzed. We made an effort to summarize the similarities and differences between the models in the table below.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>AG</strong></th>
+<th><strong>PWPtt</strong></th>
+<th><strong>PWPgt</strong></th>
+<th><strong>WLW</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Approach</strong></td>
+<td>counting process</td>
+<td>conditional</td>
+<td>conditional</td>
+<td>marginal</td>
+</tr>
+<tr class="even">
+<td><strong>Baseline hazard</strong></td>
+<td>common</td>
+<td>stratified</td>
+<td>stratified</td>
+<td>stratified</td>
+</tr>
+<tr class="odd">
+<td><strong>Regression coefficients</strong></td>
+<td>common</td>
+<td>stratified possible</td>
+<td>stratified possible</td>
+<td>stratified possible</td>
+</tr>
+<tr class="even">
+<td><strong>Risk set</strong></td>
+<td>unrestricted</td>
+<td>restricted</td>
+<td>restricted</td>
+<td>semi-restricted</td>
+</tr>
+<tr class="odd">
+<td><strong>Time interval</strong></td>
+<td>total time</td>
+<td>total time</td>
+<td>gap time</td>
+<td>total time</td>
+</tr>
+<tr class="even">
+<td><strong>Order of events</strong></td>
+<td>not important</td>
+<td>important</td>
+<td>important</td>
+<td>not important</td>
+</tr>
+<tr class="odd">
+<td><strong>Hazard ratio (HR)</strong></td>
+<td>risk of any recurrence</td>
+<td>risk of any recurrence</td>
+<td>risk of recurrence after previous event</td>
+<td>risk of event of any type, not necessarily recurrent event</td>
+</tr>
+</tbody>
+</table>
+<p>Note that, because the ordering of events is not important in the Andersen-Gill and Wei-Lin-Weissfeld model, these models come with the assumption of <strong>independence</strong> of events. In contrast, the Prentice-Williams-Peterson models overcome the need for this assumption by capturing the dependence structure between recurrent events in conditional strata. Consequently, events are assumed to be <em>conditionally</em> independent in the Prentice-Williams-Peterson models.</p>
+<p>A nice visual representation of the stratification and time interval structure of each model is given below. The correct data structure is pivotal when modelling recurrent events and depends on the methodology you want to use, as illustrated in the figure.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/recurrent_events/combined_lineplot.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:80.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="modelling-recurrent-events-using-the-survival-package" class="level2">
+<h2 class="anchored" data-anchor-id="modelling-recurrent-events-using-the-survival-package">Modelling recurrent events using the <code>survival</code> package</h2>
+<section id="data" class="level3">
+<h3 class="anchored" data-anchor-id="data">Data</h3>
+<p>For this tutorial we will use the <a href="https://rdrr.io/cran/survival/man/bladder.html"><code>bladder</code> data</a> from the <a href="https://cran.r-project.org/web/packages/survival/survival.pdf"><code>survival</code> package</a>, which captures recurrences of bladder cancer from a clinical trial for an oncolytic called thiotepa. The <code>bladder</code> data is regularly used by many statisticians to demonstrate methodology for recurrent event modelling. Somewhat confusingly, there are three versions of this data available:</p>
+<ul>
+<li><p><code>bladder1</code>: original data from the study on all subjects (294 records)</p></li>
+<li><p><code>bladder2</code>: data in Andersen-Gill format on subset of subjects with nonzero follow-up time (178 records)</p></li>
+<li><p><code>bladder</code>: data in Wei-Lin-Weissfeld format on subset of subjects with nonzero follow-up time (340 records)</p></li>
+</ul>
+<p>For this tutorial, we will use <code>bladder2</code> to illustrate Andersen-Gill and Prentice-Williams-Peterson models, and <code>bladder</code> to illustrate the Wei-Lin-Weissfeld model.</p>
+<p>The variables included in both datasets are:</p>
+<ul>
+<li><p><strong>id</strong>: patient id</p></li>
+<li><p><strong>rx</strong>: treatment group (1 = placebo, 2 = thiotepa)</p></li>
+<li><p><strong>number</strong>: initial number of tumors (8 = 8 or more)</p></li>
+<li><p><strong>size</strong>: size in cm of largest initial tumor</p></li>
+<li><p><strong>start</strong>: start of time interval; this variable is <strong>not</strong> present in <code>bladder</code></p></li>
+<li><p><strong>stop</strong>: (recurrent) event or censoring time</p></li>
+<li><p><strong>event</strong>: event indicator (1 = event, 0 = censored)</p></li>
+<li><p><strong>enum</strong>: order of recurrence</p></li>
+</ul>
+<p>Importantly, both datasets collect the data in a <strong>counting process</strong> structure. This means that there is one record for each subject and time interval, where a time interval is defined as the time to its respective event (<strong>event</strong> = 1), or the time to follow-up if the event did not occur (<strong>event</strong> = 0).</p>
+<p>Let’s look more closely at the <code>bladder2</code> and <code>bladder</code> data:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>bladder2 <span class="ot">&lt;-</span> survival<span class="sc">::</span>bladder2</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">gt</span>(<span class="fu">head</span>(bladder2, <span class="dv">6</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="xmguuysfps" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#xmguuysfps table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#xmguuysfps thead, #xmguuysfps tbody, #xmguuysfps tfoot, #xmguuysfps tr, #xmguuysfps td, #xmguuysfps th {
+  border-style: none;
+}
+
+#xmguuysfps p {
+  margin: 0;
+  padding: 0;
+}
+
+#xmguuysfps .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#xmguuysfps .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#xmguuysfps .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#xmguuysfps .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#xmguuysfps .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#xmguuysfps .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#xmguuysfps .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#xmguuysfps .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#xmguuysfps .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#xmguuysfps .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#xmguuysfps .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#xmguuysfps .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#xmguuysfps .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#xmguuysfps .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#xmguuysfps .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#xmguuysfps .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#xmguuysfps .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#xmguuysfps .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#xmguuysfps .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xmguuysfps .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#xmguuysfps .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#xmguuysfps .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#xmguuysfps .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xmguuysfps .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#xmguuysfps .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#xmguuysfps .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#xmguuysfps .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xmguuysfps .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#xmguuysfps .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#xmguuysfps .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#xmguuysfps .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#xmguuysfps .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#xmguuysfps .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xmguuysfps .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#xmguuysfps .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xmguuysfps .gt_left {
+  text-align: left;
+}
+
+#xmguuysfps .gt_center {
+  text-align: center;
+}
+
+#xmguuysfps .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#xmguuysfps .gt_font_normal {
+  font-weight: normal;
+}
+
+#xmguuysfps .gt_font_bold {
+  font-weight: bold;
+}
+
+#xmguuysfps .gt_font_italic {
+  font-style: italic;
+}
+
+#xmguuysfps .gt_super {
+  font-size: 65%;
+}
+
+#xmguuysfps .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#xmguuysfps .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#xmguuysfps .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#xmguuysfps .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#xmguuysfps .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#xmguuysfps .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#xmguuysfps .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#xmguuysfps .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#xmguuysfps div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_col_headings header">
+<th id="id" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">id</th>
+<th id="rx" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">rx</th>
+<th id="number" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">number</th>
+<th id="size" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">size</th>
+<th id="start" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">start</th>
+<th id="stop" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">stop</th>
+<th id="event" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">event</th>
+<th id="enum" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">enum</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_right" headers="id">1</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">1</td>
+<td class="gt_row gt_right" headers="size">3</td>
+<td class="gt_row gt_right" headers="start">0</td>
+<td class="gt_row gt_right" headers="stop">1</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">1</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="id">2</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">2</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="start">0</td>
+<td class="gt_row gt_right" headers="stop">4</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">1</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="id">3</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">1</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="start">0</td>
+<td class="gt_row gt_right" headers="stop">7</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">1</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="id">4</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">5</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="start">0</td>
+<td class="gt_row gt_right" headers="stop">10</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">1</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="id">5</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">4</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="start">0</td>
+<td class="gt_row gt_right" headers="stop">6</td>
+<td class="gt_row gt_right" headers="event">1</td>
+<td class="gt_row gt_right" headers="enum">1</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="id">5</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">4</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="start">6</td>
+<td class="gt_row gt_right" headers="stop">10</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">2</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>bladder2 <span class="sc">%&gt;%</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(enum) <span class="sc">%&gt;%</span> <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span> <span class="fu">gt</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="nzglksluaq" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#nzglksluaq table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#nzglksluaq thead, #nzglksluaq tbody, #nzglksluaq tfoot, #nzglksluaq tr, #nzglksluaq td, #nzglksluaq th {
+  border-style: none;
+}
+
+#nzglksluaq p {
+  margin: 0;
+  padding: 0;
+}
+
+#nzglksluaq .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#nzglksluaq .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#nzglksluaq .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#nzglksluaq .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#nzglksluaq .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#nzglksluaq .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#nzglksluaq .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#nzglksluaq .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#nzglksluaq .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#nzglksluaq .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#nzglksluaq .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#nzglksluaq .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#nzglksluaq .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#nzglksluaq .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#nzglksluaq .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#nzglksluaq .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#nzglksluaq .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#nzglksluaq .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#nzglksluaq .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#nzglksluaq .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#nzglksluaq .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#nzglksluaq .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#nzglksluaq .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#nzglksluaq .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#nzglksluaq .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#nzglksluaq .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#nzglksluaq .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#nzglksluaq .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#nzglksluaq .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#nzglksluaq .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#nzglksluaq .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#nzglksluaq .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#nzglksluaq .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#nzglksluaq .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#nzglksluaq .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#nzglksluaq .gt_left {
+  text-align: left;
+}
+
+#nzglksluaq .gt_center {
+  text-align: center;
+}
+
+#nzglksluaq .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#nzglksluaq .gt_font_normal {
+  font-weight: normal;
+}
+
+#nzglksluaq .gt_font_bold {
+  font-weight: bold;
+}
+
+#nzglksluaq .gt_font_italic {
+  font-style: italic;
+}
+
+#nzglksluaq .gt_super {
+  font-size: 65%;
+}
+
+#nzglksluaq .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#nzglksluaq .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#nzglksluaq .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#nzglksluaq .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#nzglksluaq .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#nzglksluaq .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#nzglksluaq .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#nzglksluaq .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#nzglksluaq div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_col_headings header">
+<th id="enum" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">enum</th>
+<th id="n" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">n</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_right" headers="enum">1</td>
+<td class="gt_row gt_right" headers="n">85</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="enum">2</td>
+<td class="gt_row gt_right" headers="n">46</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="enum">3</td>
+<td class="gt_row gt_right" headers="n">27</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="enum">4</td>
+<td class="gt_row gt_right" headers="n">20</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>In <code>bladder2</code>, in the Andersen-Gill format, each subject has a variable amount of records, depending on the amount of events that subject experienced.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>bladder <span class="ot">&lt;-</span> survival<span class="sc">::</span>bladder</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">gt</span>(<span class="fu">head</span>(bladder, <span class="dv">20</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="nrhxkfnmot" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#nrhxkfnmot table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#nrhxkfnmot thead, #nrhxkfnmot tbody, #nrhxkfnmot tfoot, #nrhxkfnmot tr, #nrhxkfnmot td, #nrhxkfnmot th {
+  border-style: none;
+}
+
+#nrhxkfnmot p {
+  margin: 0;
+  padding: 0;
+}
+
+#nrhxkfnmot .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#nrhxkfnmot .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#nrhxkfnmot .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#nrhxkfnmot .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#nrhxkfnmot .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#nrhxkfnmot .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#nrhxkfnmot .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#nrhxkfnmot .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#nrhxkfnmot .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#nrhxkfnmot .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#nrhxkfnmot .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#nrhxkfnmot .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#nrhxkfnmot .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#nrhxkfnmot .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#nrhxkfnmot .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#nrhxkfnmot .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#nrhxkfnmot .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#nrhxkfnmot .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#nrhxkfnmot .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#nrhxkfnmot .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#nrhxkfnmot .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#nrhxkfnmot .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#nrhxkfnmot .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#nrhxkfnmot .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#nrhxkfnmot .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#nrhxkfnmot .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#nrhxkfnmot .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#nrhxkfnmot .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#nrhxkfnmot .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#nrhxkfnmot .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#nrhxkfnmot .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#nrhxkfnmot .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#nrhxkfnmot .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#nrhxkfnmot .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#nrhxkfnmot .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#nrhxkfnmot .gt_left {
+  text-align: left;
+}
+
+#nrhxkfnmot .gt_center {
+  text-align: center;
+}
+
+#nrhxkfnmot .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#nrhxkfnmot .gt_font_normal {
+  font-weight: normal;
+}
+
+#nrhxkfnmot .gt_font_bold {
+  font-weight: bold;
+}
+
+#nrhxkfnmot .gt_font_italic {
+  font-style: italic;
+}
+
+#nrhxkfnmot .gt_super {
+  font-size: 65%;
+}
+
+#nrhxkfnmot .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#nrhxkfnmot .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#nrhxkfnmot .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#nrhxkfnmot .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#nrhxkfnmot .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#nrhxkfnmot .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#nrhxkfnmot .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#nrhxkfnmot .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#nrhxkfnmot div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_col_headings header">
+<th id="id" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">id</th>
+<th id="rx" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">rx</th>
+<th id="number" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">number</th>
+<th id="size" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">size</th>
+<th id="stop" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">stop</th>
+<th id="event" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">event</th>
+<th id="enum" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">enum</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_right" headers="id">1</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">1</td>
+<td class="gt_row gt_right" headers="size">3</td>
+<td class="gt_row gt_right" headers="stop">1</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">1</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="id">1</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">1</td>
+<td class="gt_row gt_right" headers="size">3</td>
+<td class="gt_row gt_right" headers="stop">1</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">2</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="id">1</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">1</td>
+<td class="gt_row gt_right" headers="size">3</td>
+<td class="gt_row gt_right" headers="stop">1</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">3</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="id">1</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">1</td>
+<td class="gt_row gt_right" headers="size">3</td>
+<td class="gt_row gt_right" headers="stop">1</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">4</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="id">2</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">2</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="stop">4</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">1</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="id">2</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">2</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="stop">4</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">2</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="id">2</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">2</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="stop">4</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">3</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="id">2</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">2</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="stop">4</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">4</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="id">3</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">1</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="stop">7</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">1</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="id">3</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">1</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="stop">7</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">2</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="id">3</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">1</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="stop">7</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">3</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="id">3</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">1</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="stop">7</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">4</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="id">4</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">5</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="stop">10</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">1</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="id">4</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">5</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="stop">10</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">2</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="id">4</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">5</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="stop">10</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">3</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="id">4</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">5</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="stop">10</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">4</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="id">5</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">4</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="stop">6</td>
+<td class="gt_row gt_right" headers="event">1</td>
+<td class="gt_row gt_right" headers="enum">1</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="id">5</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">4</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="stop">10</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">2</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="id">5</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">4</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="stop">10</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">3</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="id">5</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">4</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="stop">10</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">4</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>bladder <span class="sc">%&gt;%</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(enum) <span class="sc">%&gt;%</span> <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span> <span class="fu">gt</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="rugtpcxhyt" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#rugtpcxhyt table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#rugtpcxhyt thead, #rugtpcxhyt tbody, #rugtpcxhyt tfoot, #rugtpcxhyt tr, #rugtpcxhyt td, #rugtpcxhyt th {
+  border-style: none;
+}
+
+#rugtpcxhyt p {
+  margin: 0;
+  padding: 0;
+}
+
+#rugtpcxhyt .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#rugtpcxhyt .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#rugtpcxhyt .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#rugtpcxhyt .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#rugtpcxhyt .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#rugtpcxhyt .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#rugtpcxhyt .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#rugtpcxhyt .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#rugtpcxhyt .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#rugtpcxhyt .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#rugtpcxhyt .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#rugtpcxhyt .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#rugtpcxhyt .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#rugtpcxhyt .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#rugtpcxhyt .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#rugtpcxhyt .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#rugtpcxhyt .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#rugtpcxhyt .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#rugtpcxhyt .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#rugtpcxhyt .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#rugtpcxhyt .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#rugtpcxhyt .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#rugtpcxhyt .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#rugtpcxhyt .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#rugtpcxhyt .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#rugtpcxhyt .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#rugtpcxhyt .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#rugtpcxhyt .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#rugtpcxhyt .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#rugtpcxhyt .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#rugtpcxhyt .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#rugtpcxhyt .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#rugtpcxhyt .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#rugtpcxhyt .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#rugtpcxhyt .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#rugtpcxhyt .gt_left {
+  text-align: left;
+}
+
+#rugtpcxhyt .gt_center {
+  text-align: center;
+}
+
+#rugtpcxhyt .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#rugtpcxhyt .gt_font_normal {
+  font-weight: normal;
+}
+
+#rugtpcxhyt .gt_font_bold {
+  font-weight: bold;
+}
+
+#rugtpcxhyt .gt_font_italic {
+  font-style: italic;
+}
+
+#rugtpcxhyt .gt_super {
+  font-size: 65%;
+}
+
+#rugtpcxhyt .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#rugtpcxhyt .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#rugtpcxhyt .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#rugtpcxhyt .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#rugtpcxhyt .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#rugtpcxhyt .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#rugtpcxhyt .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#rugtpcxhyt .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#rugtpcxhyt div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_col_headings header">
+<th id="enum" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">enum</th>
+<th id="n" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">n</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_right" headers="enum">1</td>
+<td class="gt_row gt_right" headers="n">85</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="enum">2</td>
+<td class="gt_row gt_right" headers="n">85</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="enum">3</td>
+<td class="gt_row gt_right" headers="n">85</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="enum">4</td>
+<td class="gt_row gt_right" headers="n">85</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>In <code>bladder</code>, in the Wei-Lin-Weissfeld format, each subject has four records, regardless of how many events that subject actually experienced. In addition, there is no <code>start</code> variable, as all time intervals start at zero.</p>
+</section>
+<section id="analysis" class="level3">
+<h3 class="anchored" data-anchor-id="analysis">Analysis</h3>
+<p>In the <code>survival</code> package, any survival analysis based on the Cox proportional hazard model can be conducted using the <code>coxph()</code> function. Hence, conveniently, when modelling time-to-event data with recurrent events, the same function can be used. The caveat here is that an adequate data structure is required, which must be in correspondence with the model you want to use.</p>
+<p>In this section of the tutorial, we will explain how the arguments of the <code>coxph()</code> function and data structure must be defined to fit every type of recurrent event model correctly.</p>
+<section id="andersen-gill-model" class="level4">
+<h4 class="anchored" data-anchor-id="andersen-gill-model">Andersen-Gill model</h4>
+<ol type="1">
+<li><strong>Improved Andersen-Gill model (LWYY model or proportional means/rates model)</strong></li>
+</ol>
+<p>For the improved version of the Andersen-Gill model you must specify:</p>
+<ul>
+<li><p><code>formula = Surv(start, stop, event) ~ 'predictors'</code></p></li>
+<li><p><code>cluster = id</code></p></li>
+</ul>
+<p>And the data structure must be:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Id</th>
+<th>Time interval</th>
+<th>Start</th>
+<th>Stop</th>
+<th>Event</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>(0, 1]</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>(0, 4]</td>
+<td>0</td>
+<td>4</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>(0, 7]</td>
+<td>0</td>
+<td>7</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>(0, 10]</td>
+<td>0</td>
+<td>10</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>(0, 6]</td>
+<td>0</td>
+<td>6</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>5</td>
+<td>(6, 10]</td>
+<td>6</td>
+<td>10</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>We will use the <code>bladder2</code> data for this.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>AG <span class="ot">&lt;-</span> <span class="fu">coxph</span>(<span class="fu">Surv</span>(start, stop, event) <span class="sc">~</span> <span class="fu">as.factor</span>(rx) <span class="sc">+</span> number <span class="sc">+</span> size,</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>            <span class="at">ties =</span> <span class="st">"breslow"</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">cluster =</span> id,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">data =</span> bladder2)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(AG)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+coxph(formula = Surv(start, stop, event) ~ as.factor(rx) + number + 
+    size, data = bladder2, ties = "breslow", cluster = id)
+
+  n= 178, number of events= 112 
+
+                   coef exp(coef) se(coef) robust se      z Pr(&gt;|z|)   
+as.factor(rx)2 -0.45979   0.63142  0.19996   0.25801 -1.782  0.07474 . 
+number          0.17164   1.18726  0.04733   0.06131  2.799  0.00512 **
+size           -0.04256   0.95833  0.06903   0.07555 -0.563  0.57317   
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+               exp(coef) exp(-coef) lower .95 upper .95
+as.factor(rx)2    0.6314     1.5837    0.3808     1.047
+number            1.1873     0.8423    1.0528     1.339
+size              0.9583     1.0435    0.8264     1.111
+
+Concordance= 0.634  (se = 0.032 )
+Likelihood ratio test= 16.77  on 3 df,   p=8e-04
+Wald test            = 11.76  on 3 df,   p=0.008
+Score (logrank) test = 18.57  on 3 df,   p=3e-04,   Robust = 11.44  p=0.01
+
+  (Note: the likelihood ratio and score tests assume independence of
+     observations within a cluster, the Wald and robust score tests do not).</code></pre>
+</div>
+</div>
+<p>By defining the <code>cluster</code> argument, <code>coxph()</code> will automatically set <code>robust = TRUE</code>, and compute a robust sandwich covariance. The summary function will then display both the non-robust (<code>se(coef)</code>) and robust (<code>robust se</code>) standard error estimates. Under the hood, the robust standard errors will consider all <strong>id</strong> clusters separately and ultimately sum up the score residuals for each distinct cluster.</p>
+<ol start="2" type="1">
+<li><strong>Original Andersen-Gill model</strong></li>
+</ol>
+<p>To our knowledge, the original Andersen-Gill model of 1989 can only be fitted in R by adding an artificial clustering variable with unique entries to the <code>bladder2</code> data, which we call <code>id2</code>. This artificial clustering variable will ignore any clustering that is actually present in the data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>bladder2 <span class="ot">&lt;-</span> bladder2 <span class="sc">%&gt;%</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">id2 =</span> <span class="fu">row_number</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Except for <code>cluster = id2</code>, the rest of the code remains the same.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>AG_original <span class="ot">&lt;-</span> <span class="fu">coxph</span>(<span class="fu">Surv</span>(start, stop, event) <span class="sc">~</span> <span class="fu">as.factor</span>(rx) <span class="sc">+</span> number <span class="sc">+</span> size,</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>            <span class="at">ties =</span> <span class="st">"breslow"</span>,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">cluster =</span> id2,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">data =</span> bladder2)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(AG_original)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+coxph(formula = Surv(start, stop, event) ~ as.factor(rx) + number + 
+    size, data = bladder2, ties = "breslow", cluster = id2)
+
+  n= 178, number of events= 112 
+
+                   coef exp(coef) se(coef) robust se      z Pr(&gt;|z|)   
+as.factor(rx)2 -0.45979   0.63142  0.19996   0.22902 -2.008  0.04468 * 
+number          0.17164   1.18726  0.04733   0.06469  2.653  0.00797 **
+size           -0.04256   0.95833  0.06903   0.07325 -0.581  0.56119   
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+               exp(coef) exp(-coef) lower .95 upper .95
+as.factor(rx)2    0.6314     1.5837    0.4031    0.9891
+number            1.1873     0.8423    1.0459    1.3477
+size              0.9583     1.0435    0.8302    1.1063
+
+Concordance= 0.634  (se = 0.032 )
+Likelihood ratio test= 16.77  on 3 df,   p=8e-04
+Wald test            = 9.36  on 3 df,   p=0.02
+Score (logrank) test = 18.57  on 3 df,   p=3e-04,   Robust = 14.27  p=0.003
+
+  (Note: the likelihood ratio and score tests assume independence of
+     observations within a cluster, the Wald and robust score tests do not).</code></pre>
+</div>
+</div>
+<p>Although the original Andersen-Gill model does not consider separate <strong>id</strong> clusters, it still computes robust standard errors using the sandwich estimator, as <code>robust = TRUE</code>. The resulting robust standard errors (<code>robust se</code>) differ from those provided for the improved Andersen-Gill model, while the estimated coefficients (<code>coef</code>) and non-robust standard errors (<code>se(coef)</code>) remain perfectly unchanged.</p>
+</section>
+<section id="prentice-williams-peterson-model" class="level4">
+<h4 class="anchored" data-anchor-id="prentice-williams-peterson-model">Prentice-Williams-Peterson model</h4>
+<ol type="1">
+<li><strong>Total time model</strong></li>
+</ol>
+<p>For the Prentice-Williams-Peterson total time model you must specify:</p>
+<ul>
+<li><p><code>formula = Surv(start, stop, event) ~ 'predictors' + strata(enum)</code></p></li>
+<li><p><code>cluster = id</code></p></li>
+</ul>
+<p>And the data structure must be:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Id</th>
+<th>Time interval</th>
+<th>Start</th>
+<th>Stop</th>
+<th>Event</th>
+<th>Enum</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>(0, 1]</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>(0, 4]</td>
+<td>0</td>
+<td>4</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>(0, 7]</td>
+<td>0</td>
+<td>7</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>(0, 10]</td>
+<td>0</td>
+<td>10</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>(0, 6]</td>
+<td>0</td>
+<td>6</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>5</td>
+<td>(6, 10]</td>
+<td>6</td>
+<td>10</td>
+<td>0</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<p>We will use the <code>bladder2</code> data for this.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>PWPtt <span class="ot">&lt;-</span> <span class="fu">coxph</span>(<span class="fu">Surv</span>(start, stop, event) <span class="sc">~</span> <span class="fu">as.factor</span>(rx) <span class="sc">+</span> number <span class="sc">+</span> size <span class="sc">+</span> <span class="fu">strata</span>(enum),</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>            <span class="at">ties =</span> <span class="st">"breslow"</span>,</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">cluster =</span> id,</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">data =</span> bladder2)</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(PWPtt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+coxph(formula = Surv(start, stop, event) ~ as.factor(rx) + number + 
+    size + strata(enum), data = bladder2, ties = "breslow", cluster = id)
+
+  n= 178, number of events= 112 
+
+                    coef exp(coef)  se(coef) robust se      z Pr(&gt;|z|)  
+as.factor(rx)2 -0.334295  0.715842  0.216087  0.197064 -1.696   0.0898 .
+number          0.115653  1.122606  0.053681  0.049913  2.317   0.0205 *
+size           -0.008051  0.991982  0.072725  0.060124 -0.134   0.8935  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+               exp(coef) exp(-coef) lower .95 upper .95
+as.factor(rx)2    0.7158     1.3970    0.4865     1.053
+number            1.1226     0.8908    1.0180     1.238
+size              0.9920     1.0081    0.8817     1.116
+
+Concordance= 0.615  (se = 0.032 )
+Likelihood ratio test= 6.11  on 3 df,   p=0.1
+Wald test            = 7.19  on 3 df,   p=0.07
+Score (logrank) test = 6.45  on 3 df,   p=0.09,   Robust = 8.76  p=0.03
+
+  (Note: the likelihood ratio and score tests assume independence of
+     observations within a cluster, the Wald and robust score tests do not).</code></pre>
+</div>
+</div>
+<p>The conditional strata of the Prentice-Williams-Peterson model are set by <code>strata(enum)</code> in the formula, where <code>enum</code> captures the ordering of recurrent events.</p>
+<ol start="2" type="1">
+<li><strong>Gap time model</strong></li>
+</ol>
+<p>For the Prentice-Williams-Peterson gap time model you must specify:</p>
+<ul>
+<li><p><code>formula = Surv(gtime, event) ~ 'predictors' + strata(enum)</code></p></li>
+<li><p><code>cluster = id</code></p></li>
+</ul>
+<p>And the data structure must be:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Id</th>
+<th>Time interval</th>
+<th>Start</th>
+<th>Stop</th>
+<th>Event</th>
+<th>Enum</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>(0, 1]</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>(0, 4]</td>
+<td>0</td>
+<td>4</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>(0, 7]</td>
+<td>0</td>
+<td>7</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>(0, 10]</td>
+<td>0</td>
+<td>10</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>(0, 6]</td>
+<td>0</td>
+<td>6</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>5</td>
+<td>(0, 4]</td>
+<td>0</td>
+<td>4</td>
+<td>0</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<p>This data structure can be achieved in <code>bladder2</code> by adding a <code>gtime</code> variable.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>bladder2 <span class="ot">&lt;-</span> bladder2 <span class="sc">%&gt;%</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">gtime =</span> stop <span class="sc">-</span> start)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="fu">gt</span>(<span class="fu">head</span>(bladder2, <span class="dv">6</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div id="mwpidsqutb" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#mwpidsqutb table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#mwpidsqutb thead, #mwpidsqutb tbody, #mwpidsqutb tfoot, #mwpidsqutb tr, #mwpidsqutb td, #mwpidsqutb th {
+  border-style: none;
+}
+
+#mwpidsqutb p {
+  margin: 0;
+  padding: 0;
+}
+
+#mwpidsqutb .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#mwpidsqutb .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#mwpidsqutb .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#mwpidsqutb .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#mwpidsqutb .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#mwpidsqutb .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#mwpidsqutb .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#mwpidsqutb .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#mwpidsqutb .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#mwpidsqutb .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#mwpidsqutb .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#mwpidsqutb .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#mwpidsqutb .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#mwpidsqutb .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#mwpidsqutb .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#mwpidsqutb .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#mwpidsqutb .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#mwpidsqutb .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#mwpidsqutb .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#mwpidsqutb .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#mwpidsqutb .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#mwpidsqutb .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#mwpidsqutb .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#mwpidsqutb .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#mwpidsqutb .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#mwpidsqutb .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#mwpidsqutb .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#mwpidsqutb .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#mwpidsqutb .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#mwpidsqutb .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#mwpidsqutb .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#mwpidsqutb .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#mwpidsqutb .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#mwpidsqutb .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#mwpidsqutb .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#mwpidsqutb .gt_left {
+  text-align: left;
+}
+
+#mwpidsqutb .gt_center {
+  text-align: center;
+}
+
+#mwpidsqutb .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#mwpidsqutb .gt_font_normal {
+  font-weight: normal;
+}
+
+#mwpidsqutb .gt_font_bold {
+  font-weight: bold;
+}
+
+#mwpidsqutb .gt_font_italic {
+  font-style: italic;
+}
+
+#mwpidsqutb .gt_super {
+  font-size: 65%;
+}
+
+#mwpidsqutb .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#mwpidsqutb .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#mwpidsqutb .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#mwpidsqutb .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#mwpidsqutb .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#mwpidsqutb .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#mwpidsqutb .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#mwpidsqutb .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#mwpidsqutb div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_col_headings header">
+<th id="id" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">id</th>
+<th id="rx" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">rx</th>
+<th id="number" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">number</th>
+<th id="size" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">size</th>
+<th id="start" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">start</th>
+<th id="stop" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">stop</th>
+<th id="event" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">event</th>
+<th id="enum" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">enum</th>
+<th id="id2" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">id2</th>
+<th id="gtime" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">gtime</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_right" headers="id">1</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">1</td>
+<td class="gt_row gt_right" headers="size">3</td>
+<td class="gt_row gt_right" headers="start">0</td>
+<td class="gt_row gt_right" headers="stop">1</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">1</td>
+<td class="gt_row gt_right" headers="id2">1</td>
+<td class="gt_row gt_right" headers="gtime">1</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="id">2</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">2</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="start">0</td>
+<td class="gt_row gt_right" headers="stop">4</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">1</td>
+<td class="gt_row gt_right" headers="id2">2</td>
+<td class="gt_row gt_right" headers="gtime">4</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="id">3</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">1</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="start">0</td>
+<td class="gt_row gt_right" headers="stop">7</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">1</td>
+<td class="gt_row gt_right" headers="id2">3</td>
+<td class="gt_row gt_right" headers="gtime">7</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="id">4</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">5</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="start">0</td>
+<td class="gt_row gt_right" headers="stop">10</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">1</td>
+<td class="gt_row gt_right" headers="id2">4</td>
+<td class="gt_row gt_right" headers="gtime">10</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="id">5</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">4</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="start">0</td>
+<td class="gt_row gt_right" headers="stop">6</td>
+<td class="gt_row gt_right" headers="event">1</td>
+<td class="gt_row gt_right" headers="enum">1</td>
+<td class="gt_row gt_right" headers="id2">5</td>
+<td class="gt_row gt_right" headers="gtime">6</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="id">5</td>
+<td class="gt_row gt_right" headers="rx">1</td>
+<td class="gt_row gt_right" headers="number">4</td>
+<td class="gt_row gt_right" headers="size">1</td>
+<td class="gt_row gt_right" headers="start">6</td>
+<td class="gt_row gt_right" headers="stop">10</td>
+<td class="gt_row gt_right" headers="event">0</td>
+<td class="gt_row gt_right" headers="enum">2</td>
+<td class="gt_row gt_right" headers="id2">6</td>
+<td class="gt_row gt_right" headers="gtime">4</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>We artificially set start = 0 for each gap time interval by including <code>gtime</code> instead of <code>start, stop</code> in the <code>Surv()</code> object.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>PWPgt <span class="ot">&lt;-</span> <span class="fu">coxph</span>(<span class="fu">Surv</span>(gtime, event) <span class="sc">~</span> <span class="fu">as.factor</span>(rx) <span class="sc">+</span> number <span class="sc">+</span> size <span class="sc">+</span> <span class="fu">strata</span>(enum),</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>            <span class="at">ties =</span> <span class="st">"breslow"</span>,</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">cluster =</span> id,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">data =</span> bladder2)</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(PWPgt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+coxph(formula = Surv(gtime, event) ~ as.factor(rx) + number + 
+    size + strata(enum), data = bladder2, ties = "breslow", cluster = id)
+
+  n= 178, number of events= 112 
+
+                   coef exp(coef) se(coef) robust se      z Pr(&gt;|z|)   
+as.factor(rx)2 -0.26952   0.76375  0.20766   0.20808 -1.295  0.19522   
+number          0.15353   1.16595  0.05211   0.04889  3.140  0.00169 **
+size            0.00684   1.00686  0.07001   0.06222  0.110  0.91246   
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+               exp(coef) exp(-coef) lower .95 upper .95
+as.factor(rx)2    0.7637     1.3093    0.5080     1.148
+number            1.1659     0.8577    1.0594     1.283
+size              1.0069     0.9932    0.8913     1.137
+
+Concordance= 0.596  (se = 0.032 )
+Likelihood ratio test= 8.76  on 3 df,   p=0.03
+Wald test            = 12.14  on 3 df,   p=0.007
+Score (logrank) test = 9.6  on 3 df,   p=0.02,   Robust = 10.21  p=0.02
+
+  (Note: the likelihood ratio and score tests assume independence of
+     observations within a cluster, the Wald and robust score tests do not).</code></pre>
+</div>
+</div>
+</section>
+<section id="wei-lin-weissfeld-model" class="level4">
+<h4 class="anchored" data-anchor-id="wei-lin-weissfeld-model">Wei-Lin-Weissfeld model</h4>
+<p>For the Wei-Lin-Weissfeld model you must specify:</p>
+<ul>
+<li><p><code>formula = Surv(stop, event) ~ 'predictors' + strata(enum)</code></p></li>
+<li><p><code>cluster = id</code></p></li>
+</ul>
+<p>And the data structure must be:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Id</th>
+<th>Time interval</th>
+<th>Start</th>
+<th>Stop</th>
+<th>Event</th>
+<th>Enum</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>(0, 1]</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>(0, 1]</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td>(0, 1]</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>(0, 1]</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>4</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>(0, 4]</td>
+<td>0</td>
+<td>4</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>(0, 4]</td>
+<td>0</td>
+<td>4</td>
+<td>0</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>(0, 4]</td>
+<td>0</td>
+<td>4</td>
+<td>0</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>(0, 4]</td>
+<td>0</td>
+<td>4</td>
+<td>0</td>
+<td>4</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>(0, 7]</td>
+<td>0</td>
+<td>7</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td>(0, 7]</td>
+<td>0</td>
+<td>7</td>
+<td>0</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>(0, 7]</td>
+<td>0</td>
+<td>7</td>
+<td>0</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td>(0, 7]</td>
+<td>0</td>
+<td>7</td>
+<td>0</td>
+<td>4</td>
+</tr>
+<tr class="odd">
+<td>4</td>
+<td>(0, 10]</td>
+<td>0</td>
+<td>10</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>(0, 10]</td>
+<td>0</td>
+<td>10</td>
+<td>0</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>4</td>
+<td>(0, 10]</td>
+<td>0</td>
+<td>10</td>
+<td>0</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>(0, 10]</td>
+<td>0</td>
+<td>10</td>
+<td>0</td>
+<td>4</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>(0, 6]</td>
+<td>0</td>
+<td>6</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>5</td>
+<td>(0, 10]</td>
+<td>0</td>
+<td>10</td>
+<td>0</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>(0, 10]</td>
+<td>0</td>
+<td>10</td>
+<td>0</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>5</td>
+<td>(0, 10]</td>
+<td>0</td>
+<td>10</td>
+<td>0</td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<p>We will use the <code>bladder</code> data for this.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>WLW <span class="ot">&lt;-</span> <span class="fu">coxph</span>(<span class="fu">Surv</span>(stop, event) <span class="sc">~</span> <span class="fu">as.factor</span>(rx) <span class="sc">+</span> number <span class="sc">+</span> size <span class="sc">+</span> <span class="fu">strata</span>(enum),</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>            <span class="at">ties =</span> <span class="st">"breslow"</span>,</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">cluster =</span> id,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">data =</span> bladder)</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(WLW)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+coxph(formula = Surv(stop, event) ~ as.factor(rx) + number + 
+    size + strata(enum), data = bladder, ties = "breslow", cluster = id)
+
+  n= 340, number of events= 112 
+
+                   coef exp(coef) se(coef) robust se      z Pr(&gt;|z|)   
+as.factor(rx)2 -0.57986   0.55998  0.20118   0.30344 -1.911   0.0560 . 
+number          0.20849   1.23182  0.04691   0.06567  3.175   0.0015 **
+size           -0.05094   0.95034  0.06967   0.09304 -0.548   0.5840   
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+               exp(coef) exp(-coef) lower .95 upper .95
+as.factor(rx)2    0.5600     1.7858    0.3089     1.015
+number            1.2318     0.8118    1.0830     1.401
+size              0.9503     1.0523    0.7919     1.140
+
+Concordance= 0.663  (se = 0.036 )
+Likelihood ratio test= 24.71  on 3 df,   p=2e-05
+Wald test            = 15.56  on 3 df,   p=0.001
+Score (logrank) test = 27.89  on 3 df,   p=4e-06,   Robust = 11.75  p=0.008
+
+  (Note: the likelihood ratio and score tests assume independence of
+     observations within a cluster, the Wald and robust score tests do not).</code></pre>
+</div>
+</div>
+<p>Importantly, the strata of the Wei-Lin-Weissfeld model as set by <code>strata(enum)</code> are substantially different from the conditional strata of the Prentice-Williams-Peterson model. The <code>enum</code> variable is now no longer assumed to be an ordinal variable.</p>
+</section>
+<section id="notes" class="level4">
+<h4 class="anchored" data-anchor-id="notes">Notes</h4>
+<p><u><strong>Note:</strong></u> For all recurrent event models, another way of defining the subject clusters is by using <code>cluster(id)</code> in the formula, rather than setting <code>cluster = id</code>. This results in the same outcomes, as shown below.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>AG_v1 <span class="ot">&lt;-</span> <span class="fu">coxph</span>(<span class="fu">Surv</span>(start, stop, event) <span class="sc">~</span> <span class="fu">as.factor</span>(rx) <span class="sc">+</span> number <span class="sc">+</span> size,</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>            <span class="at">ties =</span> <span class="st">"breslow"</span>,</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">cluster =</span> id,</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">data =</span> bladder2)</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(AG_v1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+coxph(formula = Surv(start, stop, event) ~ as.factor(rx) + number + 
+    size, data = bladder2, ties = "breslow", cluster = id)
+
+  n= 178, number of events= 112 
+
+                   coef exp(coef) se(coef) robust se      z Pr(&gt;|z|)   
+as.factor(rx)2 -0.45979   0.63142  0.19996   0.25801 -1.782  0.07474 . 
+number          0.17164   1.18726  0.04733   0.06131  2.799  0.00512 **
+size           -0.04256   0.95833  0.06903   0.07555 -0.563  0.57317   
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+               exp(coef) exp(-coef) lower .95 upper .95
+as.factor(rx)2    0.6314     1.5837    0.3808     1.047
+number            1.1873     0.8423    1.0528     1.339
+size              0.9583     1.0435    0.8264     1.111
+
+Concordance= 0.634  (se = 0.032 )
+Likelihood ratio test= 16.77  on 3 df,   p=8e-04
+Wald test            = 11.76  on 3 df,   p=0.008
+Score (logrank) test = 18.57  on 3 df,   p=3e-04,   Robust = 11.44  p=0.01
+
+  (Note: the likelihood ratio and score tests assume independence of
+     observations within a cluster, the Wald and robust score tests do not).</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>AG_v2 <span class="ot">&lt;-</span> <span class="fu">coxph</span>(<span class="fu">Surv</span>(start, stop, event) <span class="sc">~</span> <span class="fu">as.factor</span>(rx) <span class="sc">+</span> number <span class="sc">+</span> size <span class="sc">+</span> <span class="fu">cluster</span>(id),</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>            <span class="at">ties =</span> <span class="st">"breslow"</span>,</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">data =</span> bladder2)</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(AG_v2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+coxph(formula = Surv(start, stop, event) ~ as.factor(rx) + number + 
+    size, data = bladder2, ties = "breslow", cluster = id)
+
+  n= 178, number of events= 112 
+
+                   coef exp(coef) se(coef) robust se      z Pr(&gt;|z|)   
+as.factor(rx)2 -0.45979   0.63142  0.19996   0.25801 -1.782  0.07474 . 
+number          0.17164   1.18726  0.04733   0.06131  2.799  0.00512 **
+size           -0.04256   0.95833  0.06903   0.07555 -0.563  0.57317   
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+               exp(coef) exp(-coef) lower .95 upper .95
+as.factor(rx)2    0.6314     1.5837    0.3808     1.047
+number            1.1873     0.8423    1.0528     1.339
+size              0.9583     1.0435    0.8264     1.111
+
+Concordance= 0.634  (se = 0.032 )
+Likelihood ratio test= 16.77  on 3 df,   p=8e-04
+Wald test            = 11.76  on 3 df,   p=0.008
+Score (logrank) test = 18.57  on 3 df,   p=3e-04,   Robust = 11.44  p=0.01
+
+  (Note: the likelihood ratio and score tests assume independence of
+     observations within a cluster, the Wald and robust score tests do not).</code></pre>
+</div>
+</div>
+<p><u><strong>Note:</strong></u> R uses <code>ties = "efron"</code> by default, while SAS uses <code>ties = breslow</code> by default. In this tutorial, we forced R to use <code>ties = "breslow"</code> to match SAS for all recurrent event models. For more information, be sure to check the <a href="https://psiaims.github.io/CAMIS/Comp/r-sas_survival.html">CAMIS webpage</a> on the comparison of Cox proportional hazards models in R and SAS.</p>
+</section>
+</section>
+<section id="interpretation" class="level3">
+<h3 class="anchored" data-anchor-id="interpretation">Interpretation</h3>
+<p>In terms of interpretation, hazard ratios (<span class="math inline">\(\exp(\beta_j)\)</span>) are often used when making inferences based on Cox proportional hazards models. Now, as you may remember from the overview presented earlier, it is important to recognize that each of the recurrent event models comes with a slightly different interpretation of the hazard ratio, as defined by the assumptions around the model.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th><strong>AG</strong></th>
+<th><strong>PWPtt</strong></th>
+<th><strong>PWPgt</strong></th>
+<th><strong>WLW</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Hazard ratio (HR)</strong></td>
+<td>risk of any recurrence</td>
+<td>risk of any recurrence</td>
+<td>risk of recurrence after previous event</td>
+<td>risk of event of any type, not necessarily recurrent event</td>
+</tr>
+</tbody>
+</table>
+<p>This means that, for the <code>bladder</code> data, we can draw slightly different conclusions on the hazard ratio of the group treated with thiotepa (<strong>rx</strong> = 2) versus the placebo group (<strong>rx</strong> = 1).</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>HR: rx2 vs rx1</th>
+<th>95% CI</th>
+<th>P-value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>AG</td>
+<td>0.631</td>
+<td>0.381 to 1.047</td>
+<td>0.0747</td>
+</tr>
+<tr class="even">
+<td>Original AG</td>
+<td>0.631</td>
+<td>0.403 to 0.989</td>
+<td>0.0447</td>
+</tr>
+<tr class="odd">
+<td>PWPtt</td>
+<td>0.716</td>
+<td>0.487 to 1.053</td>
+<td>0.0898</td>
+</tr>
+<tr class="even">
+<td>PWPgt</td>
+<td>0.764</td>
+<td>0.508 to 1.148</td>
+<td>0.1952</td>
+</tr>
+<tr class="odd">
+<td>WLW</td>
+<td>0.560</td>
+<td>0.309 to 1.015</td>
+<td>0.0560</td>
+</tr>
+</tbody>
+</table>
+<p>These conclusions are:</p>
+<ul>
+<li><p><strong>Andersen-Gill</strong>: the risk of having <em>any new tumor recurrence</em> in the treatment group is 0.631 (0.381 - 1.047) times that of the placebo group</p></li>
+<li><p><strong>Prentice-Williams-Peterson: total time</strong>: the risk of having <em>any new tumor recurrence</em> in the treatment group is 0.716 (0.487 - 1.053) times that of the placebo group</p></li>
+<li><p><strong>Prentice-Williams-Peterson: gap time</strong>: the risk of having <em>a new tumor recurrence after a previous event</em> in the treatment group is 0.764 (0.508 - 1.148) times that of the placebo group</p></li>
+<li><p><strong>Wei-Lin-Weissfeld</strong>: the risk of having <em>any type of event</em> in the treatment group is 0.560 (0.309 - 1.015) times that of the placebo group</p></li>
+</ul>
+<p><u><strong>Note:</strong></u> The improved Andersen-Gill model (LWYY model or proportional means/rates model) is preferred over the original Andersen-Gill model.</p>
+</section>
+<section id="event-specific-estimates" class="level3">
+<h3 class="anchored" data-anchor-id="event-specific-estimates">Event-specific estimates</h3>
+<p>For the Prentice-Williams-Peterson and Wei-Lin-Weissfeld models we can incorporate both overall (<span class="math inline">\(\beta\)</span>) and event-specific (<span class="math inline">\(\beta_j\)</span>) effects for each covariate. To arrive at pooled model parameters these models assume that <span class="math inline">\(\beta_1 = \beta_2 = ... = \beta_k = \beta\)</span>. Until now, we have only considered pooled model parameters, but given the underlying stratification of these two models in particular, it may be valuable to look into the event-specific estimates as well (<a href="https://pubmed.ncbi.nlm.nih.gov/25501468/">Amorim &amp; Cai 2015</a>).</p>
+<p>To output event-specific estimates for the treatment effect (<strong>rx</strong>), we simply specify <code>rx:strata(enum)</code> in the formula.</p>
+<section id="prentice-williams-peterson-model-1" class="level4">
+<h4 class="anchored" data-anchor-id="prentice-williams-peterson-model-1">Prentice-Williams-Peterson model</h4>
+<p><strong>Total time model</strong></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>PWPtt_stratified <span class="ot">&lt;-</span> <span class="fu">coxph</span>(<span class="fu">Surv</span>(start, stop, event) <span class="sc">~</span> rx<span class="sc">:</span><span class="fu">strata</span>(enum) <span class="sc">+</span> number <span class="sc">+</span> size,</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>                          <span class="at">ties =</span> <span class="st">"breslow"</span>, <span class="at">cluster =</span> id, <span class="at">data =</span> bladder2)</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(PWPtt_stratified)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+coxph(formula = Surv(start, stop, event) ~ rx:strata(enum) + 
+    number + size, data = bladder2, ties = "breslow", cluster = id)
+
+  n= 178, number of events= 112 
+
+                           coef exp(coef)  se(coef) robust se      z Pr(&gt;|z|)  
+number                 0.111071  1.117475  0.054397  0.050063  2.219   0.0265 *
+size                  -0.006674  0.993349  0.073173  0.061409 -0.109   0.9135  
+rx:strata(enum)enum=1 -0.409893  0.663721  0.304293  0.286737 -1.430   0.1529  
+rx:strata(enum)enum=2 -0.416339  0.659457  0.398266  0.423632 -0.983   0.3257  
+rx:strata(enum)enum=3 -0.142970  0.866780  0.593818  0.405303 -0.353   0.7243  
+rx:strata(enum)enum=4  0.105362  1.111112  0.679095  0.469706  0.224   0.8225  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+                      exp(coef) exp(-coef) lower .95 upper .95
+number                   1.1175     0.8949    1.0130     1.233
+size                     0.9933     1.0067    0.8807     1.120
+rx:strata(enum)enum=1    0.6637     1.5067    0.3784     1.164
+rx:strata(enum)enum=2    0.6595     1.5164    0.2875     1.513
+rx:strata(enum)enum=3    0.8668     1.1537    0.3917     1.918
+rx:strata(enum)enum=4    1.1111     0.9000    0.4425     2.790
+
+Concordance= 0.609  (se = 0.033 )
+Likelihood ratio test= 6.73  on 6 df,   p=0.3
+Wald test            = 8.22  on 6 df,   p=0.2
+Score (logrank) test = 7.02  on 6 df,   p=0.3,   Robust = 9.37  p=0.2
+
+  (Note: the likelihood ratio and score tests assume independence of
+     observations within a cluster, the Wald and robust score tests do not).</code></pre>
+</div>
+</div>
+<p><strong>Gap time model</strong></p>
+<p>PWPgt_stratified &lt;- coxph(Surv(gtime, event) ~ rx:strata(enum) + number + size,</p>
+<p>ties = “breslow”, cluster = id, data = bladder2)</p>
+<p>summary(PWPgt_stratified)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>PWPgt_stratified <span class="ot">&lt;-</span> <span class="fu">coxph</span>(<span class="fu">Surv</span>(gtime, event) <span class="sc">~</span> rx<span class="sc">:</span><span class="fu">strata</span>(enum) <span class="sc">+</span> number <span class="sc">+</span> size,</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>                          <span class="at">ties =</span> <span class="st">"breslow"</span>, <span class="at">cluster =</span> id, <span class="at">data =</span> bladder2)</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(PWPgt_stratified)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+coxph(formula = Surv(gtime, event) ~ rx:strata(enum) + number + 
+    size, data = bladder2, ties = "breslow", cluster = id)
+
+  n= 178, number of events= 112 
+
+                          coef exp(coef) se(coef) robust se      z Pr(&gt;|z|)   
+number                 0.15193   1.16408  0.05259   0.04864  3.124  0.00179 **
+size                   0.01319   1.01328  0.07021   0.06297  0.209  0.83406   
+rx:strata(enum)enum=1 -0.43665   0.64620  0.30521   0.28376 -1.539  0.12385   
+rx:strata(enum)enum=2 -0.30182   0.73947  0.39752   0.38907 -0.776  0.43789   
+rx:strata(enum)enum=3  0.01485   1.01497  0.47722   0.49843  0.030  0.97622   
+rx:strata(enum)enum=4  0.06019   1.06204  0.58289   0.53982  0.112  0.91122   
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+                      exp(coef) exp(-coef) lower .95 upper .95
+number                   1.1641     0.8590    1.0582     1.281
+size                     1.0133     0.9869    0.8956     1.146
+rx:strata(enum)enum=1    0.6462     1.5475    0.3705     1.127
+rx:strata(enum)enum=2    0.7395     1.3523    0.3449     1.585
+rx:strata(enum)enum=3    1.0150     0.9853    0.3821     2.696
+rx:strata(enum)enum=4    1.0620     0.9416    0.3687     3.059
+
+Concordance= 0.603  (se = 0.032 )
+Likelihood ratio test= 9.73  on 6 df,   p=0.1
+Wald test            = 14.45  on 6 df,   p=0.02
+Score (logrank) test = 10.49  on 6 df,   p=0.1,   Robust = 11.41  p=0.08
+
+  (Note: the likelihood ratio and score tests assume independence of
+     observations within a cluster, the Wald and robust score tests do not).</code></pre>
+</div>
+</div>
+</section>
+<section id="wei-lin-weissfeld-model-1" class="level4">
+<h4 class="anchored" data-anchor-id="wei-lin-weissfeld-model-1">Wei-Lin-Weissfeld model</h4>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>WLW_stratified <span class="ot">&lt;-</span> <span class="fu">coxph</span>(<span class="fu">Surv</span>(stop, event) <span class="sc">~</span> rx<span class="sc">:</span><span class="fu">strata</span>(enum) <span class="sc">+</span> number <span class="sc">+</span> size,</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>                        <span class="at">ties =</span> <span class="st">"breslow"</span>, <span class="at">cluster =</span> id, <span class="at">data =</span> bladder)</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(WLW_stratified)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+coxph(formula = Surv(stop, event) ~ rx:strata(enum) + number + 
+    size, data = bladder, ties = "breslow", cluster = id)
+
+  n= 340, number of events= 112 
+
+                          coef exp(coef) se(coef) robust se      z Pr(&gt;|z|)   
+number                 0.20747   1.23056  0.04685   0.06573  3.156   0.0016 **
+size                  -0.05187   0.94945  0.06966   0.09300 -0.558   0.5770   
+rx:strata(enum)enum=1 -0.47890   0.61947  0.30583   0.28313 -1.691   0.0908 . 
+rx:strata(enum)enum=2 -0.64914   0.52249  0.39217   0.36826 -1.763   0.0779 . 
+rx:strata(enum)enum=3 -0.71783   0.48781  0.45971   0.42148 -1.703   0.0885 . 
+rx:strata(enum)enum=4 -0.56175   0.57021  0.56143   0.49592 -1.133   0.2573   
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+                      exp(coef) exp(-coef) lower .95 upper .95
+number                   1.2306     0.8126    1.0818     1.400
+size                     0.9494     1.0532    0.7912     1.139
+rx:strata(enum)enum=1    0.6195     1.6143    0.3556     1.079
+rx:strata(enum)enum=2    0.5225     1.9139    0.2539     1.075
+rx:strata(enum)enum=3    0.4878     2.0500    0.2135     1.114
+rx:strata(enum)enum=4    0.5702     1.7537    0.2157     1.507
+
+Concordance= 0.661  (se = 0.036 )
+Likelihood ratio test= 24.95  on 6 df,   p=3e-04
+Wald test            = 16.54  on 6 df,   p=0.01
+Score (logrank) test = 28.19  on 6 df,   p=9e-05,   Robust = 11.92  p=0.06
+
+  (Note: the likelihood ratio and score tests assume independence of
+     observations within a cluster, the Wald and robust score tests do not).</code></pre>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p><a href="https://www.lexjansen.com/phuse/2023/as/PAP_AS05.pdf">Amor 2023</a>. Eat, Sleep, R, Repeat.</p>
+<p><a href="https://pubmed.ncbi.nlm.nih.gov/25501468/">Amorim &amp; Cai 2015</a>. Modelling recurrent events: a tutorial for analysis in epidemiology. <em>International Journal of Epidemiology</em>. 2015 Feb;44(1):324-33.</p>
+<p><a href="https://www.jstor.org/stable/2240714">Andersen &amp; Gill 1982</a>. Cox’s Regression Model for Counting Processes: A Large Sample Study. <em>The Annals of Statistics</em>. 10(4):1100–1120.</p>
+<p><a href="https://rdrr.io/cran/survival/man/bladder.html">bladder data</a></p>
+<p><a href="https://pubmed.ncbi.nlm.nih.gov/40490702/">Lee et al.&nbsp;2025</a>. Comparison of total event analysis and first event analysis in relation to heterogeneity in cardiovascular trials. <em>BMC Medical Research Methodology</em>. 2025 Jun 9;25(1):159.</p>
+<p><a href="https://www.jstor.org/stable/2680616">Lin, Wei, Yang &amp; Ying 2000</a>. Semiparametric regression for the mean and rate functions of recurrent events. <em>Journal of the Royal Statistical Society: Series B.</em> 62(4):711–730.</p>
+<p><a href="https://www.lexjansen.com/pharmasug/2018/EP/PharmaSUG-2018-EP02.pdf">Lu &amp; Shen 2018</a>. Application of Survival Analysis in Multiple Events Using SAS. <em>PharmaSUG 2018</em>.</p>
+<p><a href="https://pubmed.ncbi.nlm.nih.gov/29301487/">Ozga et al.&nbsp;2018</a>. A systematic comparison of recurrent event models for application to composite endpoints. <em>BMC Medical Research Methodology</em>. 2018 Jan 4;18(1):2.</p>
+<p><a href="https://www.jstor.org/stable/2335582">Prentice, Williams &amp; Peterson 1981</a>. On the Regression Analysis of Multivariate Failure Time Data. <em>Biometrika</em>. 68(2):373–379.</p>
+<p><a href="https://cran.r-project.org/web/packages/survival/vignettes/survival.pdf">survival package</a></p>
+<p><a href="https://www.jstor.org/stable/2290084">Wei, Lin &amp; Weissfeld 1989</a>. Regression Analysis of Multivariate Incomplete Failure Time Data by Modeling Marginal Distributions. <em>Journal of the American Statistical Association</em>. 84(408):1065–1073.</p>
+<div class="callout callout-style-default callout-note callout-titled" title="Session info">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Session info
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>─ Session info ───────────────────────────────────────────────────────────────
+ setting  value
+ version  R version 4.4.2 (2024-10-31)
+ os       macOS Sequoia 15.6.1
+ system   aarch64, darwin20
+ ui       X11
+ language (EN)
+ collate  en_US.UTF-8
+ ctype    en_US.UTF-8
+ tz       Europe/London
+ date     2025-08-29
+ pandoc   3.4 @ /Applications/RStudio.app/Contents/Resources/app/quarto/bin/tools/aarch64/ (via rmarkdown)
+
+─ Packages ───────────────────────────────────────────────────────────────────
+ ! package     * version date (UTC) lib source
+ P BiocManager   1.30.25 2024-08-28 [?] CRAN (R 4.4.1)
+ P cli           3.6.3   2024-06-21 [?] CRAN (R 4.4.0)
+ P digest        0.6.37  2024-08-19 [?] CRAN (R 4.4.1)
+ P dplyr       * 1.1.4   2023-11-17 [?] CRAN (R 4.4.0)
+ P evaluate      1.0.0   2024-09-17 [?] CRAN (R 4.4.1)
+ P fansi         1.0.6   2023-12-08 [?] CRAN (R 4.4.0)
+ P fastmap       1.2.0   2024-05-15 [?] CRAN (R 4.4.0)
+ P generics      0.1.3   2022-07-05 [?] CRAN (R 4.4.0)
+ P glue          1.8.0   2024-09-30 [?] CRAN (R 4.4.1)
+ P gt          * 0.11.1  2024-10-04 [?] CRAN (R 4.4.1)
+ P htmltools     0.5.8.1 2024-04-04 [?] CRAN (R 4.4.0)
+ P htmlwidgets   1.6.4   2023-12-06 [?] CRAN (R 4.4.0)
+ P jsonlite      1.8.9   2024-09-20 [?] CRAN (R 4.4.1)
+   knitr         1.50    2025-03-16 [1] RSPM (R 4.4.0)
+   lattice       0.22-6  2024-03-20 [2] CRAN (R 4.4.2)
+ P lifecycle     1.0.4   2023-11-07 [?] CRAN (R 4.4.0)
+ P magrittr      2.0.3   2022-03-30 [?] CRAN (R 4.4.0)
+   Matrix        1.7-1   2024-10-18 [2] CRAN (R 4.4.2)
+ P pillar        1.9.0   2023-03-22 [?] CRAN (R 4.4.0)
+ P pkgconfig     2.0.3   2019-09-22 [?] CRAN (R 4.4.0)
+ P R6            2.5.1   2021-08-19 [?] CRAN (R 4.4.0)
+   renv          1.0.10  2024-10-05 [1] CRAN (R 4.4.1)
+ P rlang         1.1.4   2024-06-04 [?] CRAN (R 4.4.0)
+ P rmarkdown     2.28    2024-08-17 [?] CRAN (R 4.4.0)
+ P rstudioapi    0.16.0  2024-03-24 [?] CRAN (R 4.4.0)
+ P sass          0.4.9   2024-03-15 [?] CRAN (R 4.4.0)
+ P sessioninfo   1.2.2   2021-12-06 [?] CRAN (R 4.4.0)
+ P survival    * 3.7-0   2024-06-05 [?] CRAN (R 4.4.0)
+ P tibble        3.2.1   2023-03-20 [?] CRAN (R 4.4.0)
+ P tidyselect    1.2.1   2024-03-11 [?] CRAN (R 4.4.0)
+ P utf8          1.2.4   2023-10-22 [?] CRAN (R 4.4.0)
+ P vctrs         0.6.5   2023-12-01 [?] CRAN (R 4.4.0)
+ P withr         3.0.1   2024-07-31 [?] CRAN (R 4.4.0)
+   xfun          0.52    2025-04-02 [1] RSPM (R 4.4.0)
+ P xml2          1.3.6   2023-12-04 [?] CRAN (R 4.4.0)
+ P yaml          2.3.10  2024-07-26 [?] CRAN (R 4.4.0)
+
+ [1] /Users/christinafillmore/Documents/GitHub/CAMIS/renv/library/macos/R-4.4/aarch64-apple-darwin20
+ [2] /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library
+
+ P ── Loaded and on-disk path mismatch.
+
+──────────────────────────────────────────────────────────────────────────────</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/psiaims\.github\.io\/CAMIS\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
