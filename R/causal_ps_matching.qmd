@@ -1,0 +1,166 @@
+---
+title: "PS matching with R"
+code-annotations: hover
+---
+
+## About this article
+
+This article provide a general and simple workflow of data analysis of propensity score matching using the `MatchIt` package.
+
+The dataset used here can be found in the data folder, with name `ps_data.csv`. It is the same data included in the **CAMIS** article on [Propensity score matching: SAS vs R](https://psiaims.github.io/CAMIS/Comp/r-sas_psmatch.html#matching-examples), which provides some good information on the comparison between SAS and R. For more details and different options, please refer to the doc there.
+
+This article is based on the [vignette](https://cran.r-project.org/web/packages/MatchIt/vignettes/MatchIt.html) for the [MatchIt](https://cran.r-project.org/web/packages/MatchIt/index.html) package. For more implementation and methodology details, please refer to the vignette.
+
+## Propensity Score Matching with `MatchIt`
+
+A matching analysis has a few steps:
+
+1.  planning
+2.  matching
+3.  assess quality of matches
+4.  estimate treatment effect and uncertainty
+
+In the following example, we will go through a data analysis that covers these steps.
+
+### Example
+
+We load the dataset `ps_data`. Also load the necessary packges: `MatchIt` and `dplyr`.
+
+```{r}
+#| output: false
+library(MatchIt)
+library(dplyr)
+library(optmatch)
+```
+
+Inspect the dataset
+
+```{r}
+# load data
+data <- read.csv('../data/ps_data.csv')
+glimpse(data)
+```
+
+Do a bit of data processing: some character variables need to be factors.
+
+```{r}
+# maybe need to set factors
+vars <- c('trtp', 'sex', 'bmi_cat')
+data[vars] <- lapply(data[vars], factor)
+```
+
+### Check initial imbalance
+
+We need to assess the balance in the treatment variable.
+
+```{r}
+table(data$trtp)
+```
+
+The pre-matching imbalance can also be assessed in the following way.
+
+```{r}
+m0 <- matchit(
+  trtp ~ age + sex + weight + bmi_cat,
+  data = data,
+  method = NULL, #<1>
+  distance = "glm" #<2>
+)
+summary(m0)
+```
+
+1.  No matching is performed
+2.  `glm` for generalized linear model - logistic regression
+
+When checking the results, **standardized mean difference, variance ratios, eCDF** are important measures. SMD and eCDF should be close to zero, while variance ratios should be close to 1.
+
+### Nearest neighbor matching
+
+The first matching method we use is the **1:1 nearest neighbor** (NN).
+
+```{r}
+m1 <- matchit(
+  trtp ~ age + sex + weight + bmi_cat,
+  data = data,
+  method = "nearest", # set method NN
+  distance = "glm"
+)
+m1
+```
+
+Check the quality of the matches.
+
+```{r}
+summary(m1)
+```
+
+```{r}
+m1$weights # membership, 1 or 0
+m1$weights |> table() # 244 unmatched, 370 (185:185 tr ct)
+```
+
+Can also visualize the PS after matching.
+
+```{r}
+plot(m1, type = "jitter", interactive = FALSE)
+```
+
+### Full matching
+
+A different method can be used (full matching).
+
+```{r}
+m2 <- matchit(
+  trtp ~ age + sex + weight + bmi_cat,
+  data = data,
+  method = "full",
+  distance = "glm",
+  link = "probit"
+)
+summary(m2)
+```
+
+Assess the balance with **Love plot**. Read more in `vignette('assessing-balance')`.
+
+```{r}
+plot(summary(m2))
+```
+
+### Estimate treatment effect
+
+First match the data. We focus on the full matching. Some new columns are added.
+
+```{r}
+m.data <- match_data(m2)
+head(m.data)
+```
+
+Fit model with weights
+
+```{r}
+fit <- lm(
+  weight ~ trtp + age + sex + bmi_cat,
+  data = m.data, #<1>
+  weights = weights #<2>
+)
+summary(fit)
+```
+
+1.  use the matched data
+2.  add weights. this is a column in `m.data`
+
+In the end, you can also compare it with the model without matching (`lm`).
+
+```{r}
+fit0 <- lm(
+  weight ~ trtp + age + sex + bmi_cat,
+  data = data
+)
+summary(fit0)
+```
+
+Interpreting the result is a different topic, which is not covered in this article.
+
+## Summary
+
+There are many diffrent methods implemented in the `MatchIt` package that we have not elaborated in this article. Please read the [MatchIt vignette](https://cran.r-project.org/web/packages/MatchIt/vignettes/MatchIt.html) for more details on the options.
