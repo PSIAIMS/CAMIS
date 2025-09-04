@@ -1,5 +1,5 @@
 ---
-title: "SAS Delta Adjustment (tipping point): Continuous Data"
+title: "SAS Tipping Point (Delta Adjustment): Continuous Data"
 ---
 
 ```{r}
@@ -7,7 +7,7 @@ title: "SAS Delta Adjustment (tipping point): Continuous Data"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Delta Adjustment / Tipping Point
+# Tipping Point / Delta Adjustment
 
 ## Reference-based multiple imputation (rbmi)
 
@@ -122,7 +122,7 @@ knitr::include_graphics("../images/tipping_point/SAS_data_exploration_4.PNG")
 
 There is a single patient with an intermittent missing observation at visit 5, which is patient 3618. Special considerations need to be taken when applying delta adjustments to intermittent missing observations like this one (more on this below).
 
-## Delta adjustment and tipping point analysis
+## Tipping point analysis and delta adjustment
 
 ### Methodology introduction
 
@@ -130,7 +130,7 @@ When analyses for endpoints are performed under MAR or MNAR assumptions for miss
 
 Generally, tipping point analysis explores the influence of missingness on the overall conclusion of the treatment difference by shifting imputed missing values in the treatment group towards the reference group until the result becomes non-significant. The tipping point is the minimum shift needed to make the result non-significant. If the minimum shift needed to make the result non-significant is implausible, then greater confidence in the primary results can be inferred.
 
-Tipping point analysis generally happens by adjusting imputing values by a so-called delta values. The observed tipping point is the minimum delta needed to make the result non-significant. Mostly a range of delta values is explored and only imputed values from the active treatment group are adjusted by the delta value. However, delta adjustments to the control group is possible as well. Naturally, the range of acceptable values for delta should be agreed a priori, before taking this approach.
+Tipping point analysis generally happens by adjusting imputing values by a so-called delta values. The observed tipping point is the minimum delta needed to make the result non-significant. Mostly a range of delta values is explored and only imputed values from the active treatment group are adjusted by the delta value. However, delta adjustments to the control group are possible as well. Naturally, the range of acceptable values for delta should be agreed a priori, before taking this approach.
 
 For an extensive discussion on delta adjustment methods, we refer to [Cro et al. 2020](https://pubmed.ncbi.nlm.nih.gov/32419182/).
 
@@ -168,8 +168,8 @@ Then, in `Part3()`, we create a series of delta values that increases sequential
 
 A clear description of these arguments is given in the documentation:
 
--   `Delta`: A vector of delta values that is applied at each visit (default is not applying a delta adjustment)
--   `Dlag`: A vector multipliers to be applied to delta based upon which visit the ICE occurred (default is all values of 1)
+-   `Delta`: A vector of Delta values from visit 1 up to the final visit  (default is not applying a delta adjustment)
+-   `Dlag`: A vector of multipliers for each Lag after withdrawal for the Delta values (default is all values of 1)
 -   `Dgroups`: The treatment groups to which Delta should be applied (default is all treatment groups)
 
 To automate the tipping point analysis, you can create a new macro like shown below. The first part of this macro prints all results, while the second part prints the non-significant and significant results separately by filtering on `Probt`.
@@ -215,7 +215,7 @@ knitr::include_graphics("../images/tipping_point/SAS_MAR_all_results.png")
 ```
 
 ```{r}
-#| label: MAR_filtered_results
+#| label: MAR_non_sig_results
 #| eval: false
   (...)
   
@@ -284,7 +284,7 @@ knitr::include_graphics("../images/tipping_point/SAS_MAR_TP.png")
 
 ### Visualize results
 
-A nice visualization of this tipping point analysis for the MAR approach is:
+A nice visualization of this tipping point analysis for the MAR approach is shown below. The dashed horizontal line indicates a p-value of 0.05 in the left plot and no treatment effect in the right plot.
 
 ```{r}
 #| label: MAR_est_pval_plot_png
@@ -321,6 +321,7 @@ Of all considered approaches, the MAR approach yields the largest delta adjustme
 #| label: comparison_est_plot_png
 #| echo: false
 #| fig-align: 'center'
+#| out-width: '80%'
 knitr::include_graphics("../images/tipping_point/SAS_comparison_est.png")
 ```
 
@@ -328,6 +329,7 @@ knitr::include_graphics("../images/tipping_point/SAS_comparison_est.png")
 #| label: comparison_pval_plot_png
 #| echo: false
 #| fig-align: 'center'
+#| out-width: '80%'
 knitr::include_graphics("../images/tipping_point/SAS_comparison_pval.png")
 ```
 
@@ -359,7 +361,7 @@ Assume instead, that the subject’s first visit affected by the ICE was visit 3
 | Delta \* DLag  | 0       | 0       | 7       | 16      |
 | Cumulative sum | 0       | 0       | 7       | 23      |
 
-Here, the subject would have a delta adjustment of 0 applied to visits 1 and 2, 7 for visit 3 and 23 for visit 4.
+And thus the subject would have a delta adjustment of 0 applied to visits 1 and 2, 7 for visit 3 and 23 for visit 4.
 
 Another way of using these arguments is to set `Delta` to the difference in time between visits and `DLag` to be the amount of delta per unit of time. For example, let’s say that visits occur on weeks 1, 5, 6 and 9 and that we want a delta of 3 to be applied for each week after an ICE. For simplicity, we assume that the ICE occurs immediately after the subject’s last visit which is not affected by the ICE. This this could be achieved by setting `Delta = 1 4 1 3`, i.e. the difference in weeks between each visit, and `DLag = 3 3 3 3`.
 
@@ -412,11 +414,11 @@ To apply this delta = 5 to both groups we leave `DGroups` unspecified.
        Label=MAR);
 ```
 
-[**Note:**]{.underline} In the `five macros`, delta adjustments are not applied to intermittent missing observations, but only to missing observations after withdrawal. From the documentation, it seems like this cannot be altered. In contrast, the choice of which missing data to apply delta adjustments to can be more freely managed using the `rbmi` R package. This may lead to discrepancies between tipping point analyses conducted in SAS and R, and may have important implications for datasets with high proportions of intermittent missing values in particular.
+In the `five macros`, delta adjustments are not applied to intermittent missing observations, but only to missing observations after withdrawal. From the documentation, it seems like this cannot be altered. In contrast, the choice of which missing data to apply delta adjustments to can be more freely managed using the `rbmi` R package. This may lead to discrepancies between tipping point analyses conducted in SAS and R, and may have important implications for datasets with high proportions of intermittent missing values in particular.
 
-[**Note:**]{.underline} By making use of the `DGroupsV` argument in macro `part3` (see `five macros` documentation) one can specify a variable in the dataset that indicates whether a delta adjustment should be applied to any imputed value for the record after withdrawal. The `five macros` documentation states that "*As an alternative to DGroups=, this option specifies a numeric variable with a logical value indicating whether Delta should be applied to any imputed value for the record. This variable should be Numeric holding a logical value.*". However, from our experience the intermittent missing values are not delta adjusted using this argument, only the missing values after withdrawal.
+[**Note:**]{.underline} By making use of the `DGroupsV` argument in `Part3` (see `five macros` documentation) one can specify a variable in the dataset that indicates whether a delta adjustment should be applied to any imputed value for the record after withdrawal. The `five macros` documentation states that "*As an alternative to DGroups=, this option specifies a numeric variable with a logical value indicating whether Delta should be applied to any imputed value for the record. This variable should be Numeric holding a logical value.*". However, from our experience the intermittent missing values are not delta adjusted using this argument, only the missing values after withdrawal.
 
-[**Note:**]{.underline} By making use of the `DeltaV` argument in macro `part3` (see `five macros` documentation) one can set specific delta adjustments by records.
+[**Note:**]{.underline} By making use of the `DeltaV` argument in `Part3` (see `five macros` documentation) one can set specific delta adjustments by records.
 
 ## References
 
