@@ -4,7 +4,9 @@ output: html_document
 date: "2023-06-01"
 ---
 
-```{r setup, include=FALSE}
+```{r}
+#| label: setup
+#| include: false
 knitr::opts_chunk$set(echo = TRUE)
 library(tibble)
 library(dplyr)
@@ -13,7 +15,7 @@ library(emmeans)
 library(rstatix)
 library(gt)
 
-df_sas <- 
+df_sas <-
   tribble(
     ~drug, ~pre, ~post,
       "A",   11,     6,   
@@ -45,14 +47,15 @@ df_sas <-
       "F",   12,     5,   
       "F",   12,    16,   
       "F",    7,     1,   
-      "F",   12,    20) %>% 
+      "F",   12,    20) |>
   mutate(drug = factor(drug))
+
 my_formula <- as.formula(post ~ drug + pre)
 ```
 
 ## Introduction
 
-ANOVA is a statistical method used to compare the means of three or more groups to determine if at least one group mean is significantly different from the others. Please see the [anova.qmd](ANOVA%20page) for more information. ANCOVA is an extension to ANOVA.
+ANOVA is a statistical method used to compare the means of three or more groups to determine if at least one group mean is significantly different from the others. Please see the [ANOVA document](anova.qmd) for more information. ANCOVA is an extension to ANOVA.
 
 ANCOVA (Analysis of Covariance) is a statistical method that compares the means of two or more groups while controlling for one or more continuous covariates. By adjusting for these covariates, ANCOVA helps to reduce potential confounding effects, allowing for a clearer assessment of the main treatment effects. It assumes linear relationships between covariates and the dependent variable, along with normality and homogeneity of variances.
 
@@ -61,68 +64,147 @@ We follow the example from link [Analysis of Covariance](https://documentation.s
 ## Data Summary
 
 ```{r}
-df_sas %>% glimpse()
-df_sas %>% summary()
+df_sas |> glimpse()
+df_sas |> summary()
 ```
 
 ## The Model
 
 ```{r}
 model_ancova <- lm(post ~ drug + pre, data = df_sas)
-model_glance <- model_ancova %>% glance()
-model_tidy   <- model_ancova %>% tidy()
-model_glance %>% gt()
-model_tidy   %>% gt()
-```
 
-```{r}
-model_table <- 
-  model_ancova %>% 
-  anova() %>% 
-  tidy() %>% 
-  add_row(term = "Total", df = sum(.$df), sumsq = sum(.$sumsq))
-model_table %>% gt()
-```
-
-### Type 1
-
-```{r}
-df_sas %>%
-  anova_test(post ~ drug + pre, type = 1, detailed = TRUE) %>% 
-  get_anova_table() %>%
+model_glance <- model_ancova |>
+  glance()
+model_tidy <- model_ancova |>
+  tidy()
+model_glance |>
+  gt()
+model_tidy |>
   gt()
 ```
 
-### Type 2
-
 ```{r}
-df_sas %>% 
-  anova_test(post ~ drug + pre, type = 2, detailed = TRUE) %>% 
-  get_anova_table() %>% 
+model_table <- model_ancova |>
+  anova() |>
+  tidy()
+
+total_df <- sum(model_table$df)
+total_sumsq <- sum(model_table$sumsq)
+
+model_table |>
+  add_row(term = "Total", df = total_df, sumsq = total_sumsq) |>
   gt()
 ```
 
-### Type 3
+### Sums of Squares Tables {.unnumbered}
+
+#### Type I
+This can be calculated using, the base R {stats} package or the {rstatix} package. Both give the same result.
+
+##### stats
 
 ```{r}
-df_sas %>%
-  anova_test(post ~ drug + pre, type = 3, detailed = TRUE) %>% 
-  get_anova_table() %>% 
+stats::anova(model_ancova)
+```
+
+##### rstatix
+
+```{r}
+df_sas |>
+  anova_test(post ~ drug + pre, type = 1, detailed = TRUE) |>
+  get_anova_table() |>
+  gt()
+```
+
+#### Type II
+
+This can be calculated using the {car} package or the {rstatix} package. Both give the same result.
+
+##### car
+
+```{r}
+car::Anova(model_ancova, type = "II")
+```
+
+##### rstatix
+
+```{r}
+df_sas |>
+  anova_test(post ~ drug + pre, type = 2, detailed = TRUE) |>
+  get_anova_table() |>
+  gt()
+```
+
+#### Type III
+
+This can be calculated using the base R {stats} package, the {car} package or the {rstatix} package. All give the same result.
+
+Note: Calculating type III sums of squares in R is a bit tricky, because the multi-way ANOVA model is over-paramerterised. So when running the linear model we need to select a design matrix that sums to zero. In R those options will be either `"contr.sum"` or `"contr.poly"`
+
+```{r}
+# Drug design matrix
+contr.sum(4) # Using 4 here as we have 4 levels of drug
+
+# Disease design matrix
+contr.sum(3)
+```
+
+While not relevant for this example as the disease variable isn't ordinal the polynomial design matrix would look like
+
+```{r}
+contr.poly(3)
+```
+
+```{r}
+model_ancova <- lm(
+  post ~ drug + pre, data = df_sas,
+  contrasts = list(drug = "contr.sum")
+)
+```
+
+##### stats
+
+Using the base stats package, you can use the `drop1()` function which drops all possible single terms in a model. The scope term specifies how things can be dropped.
+
+```{r}
+stats::drop1(model_ancova, scope = . ~ ., test = "F")
+```
+
+##### car
+
+```{r}
+car::Anova(model_ancova, type = "III")
+```
+
+
+```{r}
+df_sas |>
+  anova_test(post ~ drug + pre, type = 3, detailed = TRUE) |>
+  get_anova_table() |>
   gt()
 ```
 
 ### Least Squares Means
 
 ```{r}
-model_ancova %>% emmeans::lsmeans("drug") %>% emmeans::pwpm(pvals = TRUE, means = TRUE) 
-model_ancova %>% emmeans::lsmeans("drug") %>% plot(comparisons = TRUE)
+model_ancova |>
+  emmeans::lsmeans("drug") |>
+  emmeans::pwpm(pvals = TRUE, means = TRUE)
+
+model_ancova |>
+  emmeans::lsmeans("drug") |>
+  plot(comparisons = TRUE)
 ```
 
 ## sasLM Package
 
 The following code performs an ANCOVA analysis using the **sasLM** package. This package was written specifically to replicate SAS statistics. The console output is also organized in a manner that is similar to SAS.
 
-```{r eval=TRUE, echo = TRUE, message=FALSE, warning=FALSE}
+```{r}
+#| eval: true
+#| echo: true
+#| message: false
+#| warning: false
 library(sasLM)
 
 sasLM::GLM(post ~ drug + pre, df_sas, BETA = TRUE, EMEAN = TRUE)

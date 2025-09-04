@@ -30,20 +30,22 @@ library(survey)
 data("api")
 
 # View the first few rows of the main dataset
-head(apisrs) |> gt::gt()
+head(apisrs) |>
+  gt::gt()
 ```
 
 ## Mean
 
 If we want to calculate a mean of a variable in a dataset which has been obtained from a **s**imple **r**andom **s**ample such as `apisrs`, in SAS we can do the following (*nb. here `total=6194` is obtained from the constant `fpc` column, and provides the finite population correction*):
 
-``` default
+```{sas}
+#| eval: false
 proc surveymeans data=apisrs total=6194 mean;
     var growth;
 run;
 ```
 
-```         
+``` default
                              The SURVEYMEANS Procedure
 
                                     Data Summary
@@ -64,7 +66,8 @@ run;
 
 To calculate population totals, we can request the `sum`. However SAS requires the user to specify the weights, otherwise the totals will be incorrect. These weights in this case are equivalent to the total population size divided by the sample size:
 
-``` default
+```{sas}
+#| eval: false
 data apisrs;
     set apisrs nobs=n;
     weight = fpc / n;
@@ -76,7 +79,7 @@ proc surveymeans data=apisrs total=6194 sum;
 run;
 ```
 
-```         
+``` default
        The SURVEYMEANS Procedure
 
               Data Summary
@@ -98,13 +101,14 @@ growth            197589           12949
 
 To perform ratio analysis for means or proportions of analysis variables in SAS, we can use the following:
 
-``` default
+```{sas}
+#| eval: false
 proc surveymeans data=apisrs total=6194;
     ratio api00 / api99;
 run;
 ```
 
-```         
+``` default
                              The SURVEYMEANS Procedure
 
                                     Data Summary
@@ -135,13 +139,14 @@ api00     api99                200        1.051066        0.003604    1.04395882
 
 To calculate a proportion in SAS, we use the `PROC SURVEYFREQ`, in the simplest case below:
 
-``` default
+```{sas}
+#| eval: false
 proc surveyfreq data=apisrs total=6194;
-table 'sch.wide'n / cl;
+    table 'sch.wide'n / cl;
 run;
 ```
 
-```         
+``` default
                           The SURVEYFREQ Procedure
 
                                 Data Summary
@@ -164,13 +169,14 @@ run;
 
 To calculate quantiles in SAS, we can use the `quantile` option to request specific quantiles, or can use keywords to request common quantiles (e.g. quartiles or the median). This will use Woodruff's method for confidence intervals, and a custom quantile method [@SAS_2018, pp. 9834].
 
-``` default
+```{sas}
+#| eval: false
 proc surveymeans data=apisrs total=6194 quantile=(0.025 0.5 0.975);
     var growth;
 run;
 ```
 
-```         
+``` default
                              The SURVEYMEANS Procedure
 
                                     Data Summary
@@ -199,12 +205,14 @@ Much of the previous examples and notes still stand for more complex survey desi
 #| echo: false
 data("nhanes")
 
-head(nhanes) |> gt::gt()
+head(nhanes) |>
+  gt::gt()
 ```
 
 To produce means and standard quartiles for this sample, taking account of sample design, we can use the following:
 
-``` default
+```{sas}
+#| eval: false
 proc surveymeans data=nhanes mean quartiles;
     cluster SDMVPSU;
     strata SDMVSTRA;
@@ -213,7 +221,7 @@ proc surveymeans data=nhanes mean quartiles;
 run;
 ```
 
-```         
+``` default
                              The SURVEYMEANS Procedure
 
                                     Data Summary
@@ -246,7 +254,8 @@ run;
 
 To produce an analysis of separate subpopulations in SAS we can use the `DOMAIN` statement (note: do not use the `BY` statement as it will not give statistically valid analysis), here we also request the design effect:
 
-``` default
+```{sas}
+#| eval: false
 proc surveymeans data=nhanes mean deff;
     cluster SDMVPSU;
     strata SDMVSTRA;
@@ -256,8 +265,7 @@ proc surveymeans data=nhanes mean deff;
 run;
 ```
 
-```         
-
+``` default
                The SURVEYMEANS Procedure
 
                       Data Summary
@@ -292,7 +300,11 @@ race    Variable            Mean         of Mean          Effect
 ```{r}
 #| echo: false
 si <- sessioninfo::session_info("survey", dependencies = FALSE)
-si$external <- structure(list("SAS" = "9.04.01M7P080520"), class = c("external_info", "list"))
+si$external <- structure(
+  list("SAS" = "9.04.01M7P080520"),
+  class = c("external_info", "list")
+)
 si
 ```
+
 :::

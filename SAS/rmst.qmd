@@ -1,6 +1,5 @@
 ---
 title: "Restricted Mean Survival Time (RMST) in SAS"
-output: html_document
 date: last-modified
 date-format: D MMMM, YYYY
 ---
@@ -24,7 +23,10 @@ A common mistake is to get the (0) or (1) indicator the wrong way around. For ex
 
 Throughout this page, we will use cnsr(1) approach.
 
-```{r, echo=FALSE, fig.align='center', out.width="50%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 50%
 knitr::include_graphics("../images/rmst/SASrmstreg2.png")
 ```
 
@@ -32,7 +34,10 @@ knitr::include_graphics("../images/rmst/SASrmstreg2.png")
 
 The selection of `tau` for RMST analysis is very important. It's the period of time the average (or AUC for proc lifetest) is calculated over. If events are no longer occurring on both treatment groups, then you may not be looking at the key time period of interest. Therefore, it is better practice, to calculate `tau` yourself and set this as an option in the SAS code, (commonly based on the minimum time of the last event observed in each treatment group).
 
-```{r, echo=FALSE, fig.align='center', out.width="50%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 50%
 knitr::include_graphics("../images/rmst/SASrmstreg1.png")
 ```
 
@@ -68,14 +73,18 @@ It is good practice to first view the shape of your Kaplan-Meier curves. As you 
 
 It is very important to pre-specify your approach for selection of `tau`. As you can see from the curves, if we compared the period 0 to 6 months, vs 0 to 18 months, we would get very different results for the treatment comparison.
 
-```{r eval=FALSE}
-proc lifetest data=adcibc  conftype=log ;
- time time*cnsr(1) ;
- strata trt01pn;
+```{sas}
+#| eval: false
+proc lifetest data=adcibc  conftype=log;
+    time time*cnsr(1);
+    strata trt01pn;
 Run;
 ```
 
-```{r, echo=FALSE, fig.align='center', out.width="50%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 50%
 knitr::include_graphics("../images/rmst/kmplot.png")
 ```
 
@@ -83,29 +92,30 @@ knitr::include_graphics("../images/rmst/kmplot.png")
 
 The code below calculates `tau` as the minimum time of the last event observed in each treatment group. This will be the period of time, our AUC will be calculated over. As cnsr=0 are events, we only select these observations. Below, the maximum event in treatment 1 = 883 days and in treatment 2 = 350 days. We therefore set `tau` = 350. This method avoids including in the AUC a period of time where events are no longer occurring in both treatments. You can see why setting `tau` is very important as we are likely to get very different AUCs calculating over the 350 day as opposed to the 883 day period!
 
-```{r eval=FALSE}
+```{sas}
+#| eval: false
 proc sort data=lung_cancer (where=(cnsr=0)) out=tau1;
-  by  trt01pn time;
+    by  trt01pn time;
 run;
 
 data tau1 (keep=studyid trt01pn time);
-  set tau1 ;
-  by trt01pn time;
-  if last.trt01pn then output;
+    set tau1 ;
+    by trt01pn time;
+    if last.trt01pn then output;
 run;
 
 proc sort data=tau1;
-by descending time;
+    by descending time;
 run;
 
 data tau2;
-  set tau1 end=last;
-  by descending time;
-  if last then call symput("_tau",put(time,best8.));
+    set tau1 end=last;
+    by descending time;
+    if last then call symput("_tau",put(time,best8.));
 run;
 
 %put &_tau;
- 350
+350
 ```
 
 ## Method 1: Inverse Probability Censoring Weighting (IPCW) Estimation (proc rmstreg)
@@ -120,22 +130,29 @@ In the output, its important to check that your event/censoring flag is the righ
 
 ### Linear link model - provides estimates of treatment differences
 
-```{r eval=FALSE}
+```{sas}
+#| eval: false
 proc rmstreg data=adcibc tau=&_tau;
-class trt01pn sex;
-model time*cnsr(1) =trt01pn sex age /link=linear method=ipcw (strata=trt01pn);
-lsmeans trt01pn/pdiff=control('2') cl alpha=0.05;
-ods output lsmeans=lsm diffs= diff;
-Run;
+    class trt01pn sex;
+    model time*cnsr(1) =trt01pn sex age /link=linear method=ipcw (strata=trt01pn);
+    lsmeans trt01pn/pdiff=control('2') cl alpha=0.05;
+    ods output lsmeans=lsm diffs= diff;
+run;
 ```
 
-```{r, echo=FALSE, fig.align='center', out.width="50%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 50%
 knitr::include_graphics("../images/rmst/rmstreg_output1.png")
 ```
 
 The above model results in a `restricted mean survival time` estimate of 257.16 days on treatment 1 vs 267.04 days on treatment 2. The difference (Active-Placebo) is -9.88 days (95% CI: -39.0 to 19.25, p=0.5061). Hence, there is no evidence of a difference between the treatments with respect to RMST when we look over the Kaplan-Meier plot from 0 to 350 days.
 
-```{r, echo=FALSE, fig.align='center', out.width="50%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 50%
 knitr::include_graphics("../images/rmst/rmstreg_output2.png")
 ```
 
@@ -145,17 +162,20 @@ The code is similar to above. We include the option `exp` on the lsmeans row, si
 
 Similar to the linear model, we obtain results of a `restricted mean survival time` estimate of 255.21 days on treatment 1 vs 264.75 days on treatment 2. The difference (Active-Placebo) on the log scale is -0.03667 (95% CI: -0.1493 to 0.07596, p=0.5234) but this is hard to interpret. Hence, once back transformed, the treatment ratio (Active/Placebo) is 0.9640 (95% CI: 0.8613 to 1.0789, p=0.5234).
 
-```{r eval=FALSE}
-
+```{sas}
+#| eval: false
 proc rmstreg data=adcibc tau=&_tau;
-class trt01pn sex;
-model time*cnsr(1) =trt01pn sex age /link=log method=ipcw (strata=trt01pn);
-lsmeans trt01pn/pdiff=control('2') cl alpha=0.05 exp;
-ods output lsmeans=lsm diffs= diff;
-Run;
+    class trt01pn sex;
+    model time*cnsr(1) =trt01pn sex age /link=log method=ipcw (strata=trt01pn);
+    lsmeans trt01pn/pdiff=control('2') cl alpha=0.05 exp;
+    ods output lsmeans=lsm diffs= diff;
+run;
 ```
 
-```{r, echo=FALSE, fig.align='center', out.width="50%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 50%
 knitr::include_graphics("../images/rmst/rmstreg_output3.png")
 ```
 
@@ -163,24 +183,26 @@ knitr::include_graphics("../images/rmst/rmstreg_output3.png")
 
 The pseudo-observations method [Andersen, Hansen and Klein 2004](https://pubmed.ncbi.nlm.nih.gov/15690989/), is available in SAS using the method=pv option. You use the link=linear or link=log options and output is similarly interpreted as described for Method 1 IPCW method.
 
-```{r eval=FALSE}
+```{sas}
+#| eval: false
 proc rmstreg data=adcibc tau=&_tau;
-class trt01pn sex ;
- model time*cnsr(1) =trt01pn sex age /link=linear  method=pv;
- lsmeans trt01pn/pdiff=control('2') cl alpha=0.05;
- ods output lsmeans=lsm diffs= diff;
-Run;
+    class trt01pn sex ;
+    model time*cnsr(1) =trt01pn sex age /link=linear  method=pv;
+    lsmeans trt01pn/pdiff=control('2') cl alpha=0.05;
+    ods output lsmeans=lsm diffs= diff;
+run;
 ```
 
 ## Method 3: RMST Area under the curve method (proc lifetest)
 
 A non-parametric method to calculate the RMST is available using the AUC Kaplan-Meier curves.
 
-```{r eval=FALSE}
+```{sas}
+#| eval: false
 proc lifetest data=adcibc plots=(rmst  s) rmst  (tau=&_tau);
- time time*cnsr(1) ;
- strata trt01pn / diff=control('2') ;
-Run;
+    time time*cnsr(1) ;
+    strata trt01pn / diff=control('2') ;
+run;
 ```
 
 As shown below, SAS only outputs the estimates and SEs. However, a 95% CI (assuming a normal distribution) can be calculated in an additional datastep using estimate +/- 1.96 \* SE.
@@ -189,7 +211,10 @@ The AUC method results in a `restricted mean survival time` estimate of 248.2156
 
 Various multiple testing p-value adjustments are also available using this method.
 
-```{r, echo=FALSE, fig.align='center', out.width="50%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 50%
 knitr::include_graphics("../images/rmst/rmstreg_output4.png")
 ```
 
@@ -209,8 +234,10 @@ knitr::include_graphics("../images/rmst/rmstreg_output4.png")
 
 ```{r}
 #| echo: false
-si <- sessioninfo::session_info("rmst", dependencies = FALSE) 
-si$external <- structure(list("SAS" = "9.04.01M7P08062020"), 
-                         class = c("external_info", "list")) 
+si <- sessioninfo::session_info("rmst", dependencies = FALSE)
+si$external <- structure(
+  list("SAS" = "9.04.01M7P08062020"),
+  class = c("external_info", "list")
+)
 si
 ```

@@ -1,8 +1,11 @@
 ---
 title: "R vs SAS CMH"
+echo: false
 ---
 
-```{r setup, include=FALSE}
+```{r}
+#| label: setup
+#| include: false
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(tibble)
@@ -14,7 +17,8 @@ library(tidyr)
 
 The CMH procedure tests for conditional independence in partial contingency tables for a 2 x 2 x K design. However, it can be generalized to tables of X x Y x K dimensions.
 
-```{r, echo = FALSE, fig.align='center'}
+```{r}
+#| fig-align: center
 knitr::include_graphics('../images/cmh/img.png')
 ```
 
@@ -44,10 +48,9 @@ The `scale` of the exposure (X) and response (Y) variables dictate which test st
 
 To begin investigating the differences in the SAS and R implementations of the CMH test, we decided to use the CDISC Pilot data set, which is publicly available on the PHUSE Test Data Factory repository. We applied very basic filtering conditions upfront (see below) and this data set served as the basis of the examples to follow.
 
-```{r, echo=FALSE}
-data<-read.csv("../data/adcibc.csv")
+```{r}
+data <- read.csv("../data/adcibc.csv")
 head(data)
-
 ```
 
 ## Schemes
@@ -71,7 +74,8 @@ Here the results can be seen:
 
 ## CMH Statistics
 
-```{r, echo = FALSE, warning = FALSE}
+```{r}
+#| warning: false
 sas_results <- tribble(
   ~Scenario, ~Test, ~Chisq, ~Df, ~Prob,
   1L ,"Correlation",         0.2166, 1, 0.617,
@@ -96,33 +100,60 @@ sas_results <- tribble(
   mutate(lang = "SAS")
 ```
 
-```{r, echo=FALSE}
+```{r}
 library(vcdExtra)
-data2 <- data %>% 
-         filter(TRTPN !="54" & AGEGR1 !=">80")
-s1 <- CMHtest(Freq ~ TRTP + SEX | AGEGR1, data = data2, overall = TRUE)$ALL$table
-s2 <- CMHtest(Freq ~ TRTP + SEX | AGEGR1, data = data, overall = TRUE)$ALL$table
-s3 <- CMHtest(Freq ~ TRTP + SEX | RACE, data = data, overall = TRUE)$ALL$table
-s6 <- CMHtest(Freq ~ TRTP + AVAL | SEX, data = data, overall = TRUE)$ALL$table
-# Unable to run 
+
+data2 <- data |>
+  filter(TRTPN != "54" & AGEGR1 != ">80")
+
+s1 <- vcdExtra::CMHtest(
+  Freq ~ TRTP + SEX | AGEGR1,
+  data = data2,
+  overall = TRUE
+)$ALL$table
+
+s2 <- vcdExtra::CMHtest(
+  Freq ~ TRTP + SEX | AGEGR1,
+  data = data,
+  overall = TRUE
+)$ALL$table
+
+s3 <- vcdExtra::CMHtest(
+  Freq ~ TRTP + SEX | RACE,
+  data = data,
+  overall = TRUE
+)$ALL$table
+
+s6 <- vcdExtra::CMHtest(
+  Freq ~ TRTP + AVAL | SEX,
+  data = data,
+  overall = TRUE
+)$ALL$table
+
+# Unable to run
 # For large sparse table (many strata) CMHTest will occasionally throw an error in solve.default(AVA) because of singularity
 # s9 <- CMHtest(Freq ~ TRTP + AVAL | SITEID, data = data, overall = TRUE)$ALL$table
-s10 <- CMHtest(Freq ~ AVAL + AGEGR1 | TRTP, data = data, overall = TRUE)$ALL$table
+s10 <- vcdExtra::CMHtest(
+  Freq ~ AVAL + AGEGR1 | TRTP,
+  data = data,
+  overall = TRUE
+)$ALL$table
 
 r_results <- list(s1, s2, s3, s6, s10) |>
-  map(function(x){
-    as_tibble(x) |> 
-      mutate(across(everything(), unlist),
-             Test = rownames(x))
-  }) |> 
-  reduce(bind_rows) |> 
-  mutate(Scenario = rep(c(1,2,3,6,10), each = 4), 
-         Test = case_when(
-           Test == "cor" ~ "Correlation",       
-           Test == "rmeans" ~ "Row Means",         
-           Test == "general" ~ "General Association"
-         ),
-         lang = "R") |> 
+  map(function(x) {
+    as_tibble(x) |>
+      mutate(across(everything(), unlist), Test = rownames(x))
+  }) |>
+  reduce(bind_rows) |>
+  mutate(
+    Scenario = rep(c(1, 2, 3, 6, 10), each = 4),
+    Test = case_when(
+      Test == "cor" ~ "Correlation",
+      Test == "rmeans" ~ "Row Means",
+      Test == "general" ~ "General Association"
+    ),
+    lang = "R"
+  ) |>
   filter(!is.na(Test))
 ```
 
@@ -130,48 +161,52 @@ scenarios this is a test
 
 As it can be seen, there are two schemata where R does not provide any results:
 
-```{r, echo = FALSE}
+```{r}
 library(gt)
+
 bind_rows(sas_results, r_results) |>
-  arrange(Scenario) |> 
-  pivot_wider(names_from = lang, values_from = c("Chisq", "Df", "Prob")) |> 
+  arrange(Scenario) |>
+  pivot_wider(names_from = lang, values_from = c("Chisq", "Df", "Prob")) |>
   gt(
     groupname_col = "Scenario"
-  ) |> 
+  ) |>
   tab_spanner(
     label = "Chi-Square",
     columns = starts_with("Chisq")
-  ) |> 
+  ) |>
   tab_spanner(
     label = "df",
     columns = starts_with("Df")
-  ) |> 
+  ) |>
   tab_spanner(
     label = "p-value",
     columns = starts_with("Prob")
-  ) |> 
+  ) |>
   cols_label(
     Chisq_SAS = "SAS",
     Chisq_R = "R",
     Df_SAS = "SAS",
-    Df_R = "R", 
+    Df_R = "R",
     Prob_SAS = "SAS",
     Prob_R = "R"
   ) |>
   tab_options(row_group.as_column = TRUE) |>
   tab_footnote(
-    footnote = md("**Reason for NaN in schema 3**: Stratum k = AMERICAN INDIAN OR ALASKA NATIVE can not be compared because there are only values for one treatment and one gender."),
+    footnote = md(
+      "**Reason for NaN in schema 3**: Stratum k = AMERICAN INDIAN OR ALASKA NATIVE can not be compared because there are only values for one treatment and one gender."
+    ),
     cells_row_groups(groups = "3"),
     placement = "right"
-  ) |> 
+  ) |>
   tab_footnote(
-    footnote = md("**Reason for Error 4:**
-For large sparse table (many strata) CMHTest will occasionally throw an error in solve.default(AVA) because of singularity"),
-cells_row_groups(groups = "9"),
-placement = "right"
+    footnote = md(
+      "**Reason for Error 4:**
+For large sparse table (many strata) CMHTest will occasionally throw an error in solve.default(AVA) because of singularity"
+    ),
+    cells_row_groups(groups = "9"),
+    placement = "right"
   ) |>
   opt_footnote_marks(marks = "standard")
-
 
 ```
 

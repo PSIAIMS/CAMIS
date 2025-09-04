@@ -138,24 +138,22 @@ In SAS, descriptive statistics for assessing balance are primarily generated thr
 
 The dataset used in the example below can be found here: \[ps_data.csv\](<https://github.com/PSIAIMS/CAMIS/blob/main/data/ps_data.csv>)
 
-```         
-
+``` default
                            trt              control       Standardized
 Characteristic          (N = 120)          (N = 180)       Mean Diff.
 
   sex                                                        0.1690
     F                  70 (58.3 %)        90 (50.0 %)        
     M                  50 (41.7 %)        90 (50.0 %)
-    
+
   age                 61.5 (17.12)       49.4 (10.55)        0.7057
-  
+
   weight              67.3 ( 7.33)       63.8 ( 9.64)        0.4741
-  
+
   bmi_cat   
     underweight        34 (28.3 %)        63 (35.0 %)       -0.1479  
     normal             57 (47.5 %)        61 (33.9 %)        0.2726
     overweight         29 (24.2 %)        56 (31.1 %)       -0.1622
-    
 ```
 
 # Matching Examples
@@ -164,7 +162,8 @@ Characteristic          (N = 120)          (N = 180)       Mean Diff.
 
 ### SAS
 
-```         
+```{sas}
+#| eval: false
 proc psmatch data=data region=cs(extend=0);
     class trtp sex bmi_cat;
     psmodel trtp(Treated="trt")= sex weight age bmi_cat;
@@ -177,19 +176,24 @@ run;
 
 ### R
 
-```         
-ps_res <- matchit(trtp ~ sex + weight + age + bmi_cat, 
-                  data=data, 
-                  method="nearest", 
-                  distance="glm", 
-                  link="logit", 
-                  discard="both",
-                  m.order="largest",
-                  replace=FALSE,
-                  caliper=0.25, 
-                  std.caliper=FALSE,
-                  ratio=1,
-                  normalize=FALSE)
+```{r}
+#| eval: false
+library(MatchIt)
+
+ps_res <- MatchIt::matchit(
+  trtp ~ sex + weight + age + bmi_cat,
+  data = data,
+  method = "nearest",
+  distance = "glm",
+  link = "logit",
+  discard = "both",
+  m.order = "largest",
+  replace = FALSE,
+  caliper = 0.25,
+  std.caliper = FALSE,
+  ratio = 1,
+  normalize = FALSE
+)
 ```
 
 The following arguments, when altered in the previous example, can still produce matching results comparable between SAS and R:

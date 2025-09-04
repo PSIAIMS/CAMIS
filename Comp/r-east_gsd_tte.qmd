@@ -36,11 +36,10 @@ med_pfs <- 9.4
 minfu_pfs <- 10
 # Monthly exponential dropout of 0.019  for PFS
 do_rate_pfs <- 0.019
-# IA timing for PFS is at approximately 75% information fraction, and is derived 
+# IA timing for PFS is at approximately 75% information fraction, and is derived
 # using the number of events that was calculated by EAST which sets integer event counts to approximate targeted information
-timing_pfs_rpact <- c(176/235, 1)
+timing_pfs_rpact <- c(176 / 235, 1)
 timing_pfs_gs <- c(0.75, 1)
-
 
 # power of approximately 95% for PFS, EAST reported power will be used
 power_pfs <- 0.9505021
@@ -59,7 +58,9 @@ Note that, in EAST the number of target events is reported as an integer, howeve
 
 For ease of comparison the results from EAST are summarized below:
 
-```{r, echo=FALSE, warning=FALSE}
+```{r}
+#| echo: false
+#| warning: false
 library(flextable)
 pfs_east <- tibble::tribble(
   ~analysis, ~value, ~eff_125, ~fut_125,
@@ -78,17 +79,17 @@ pfs_east <- tibble::tribble(
   '',           'P(Cross) if HR=0.60',   0.9505021,           NA_real_            
 )
 
-pfs_east |> 
-  flextable() |>
-  autofit() |>
-  set_header_labels(
+pfs_east |>
+  flextable::flextable() |>
+  flextable::autofit() |>
+  flextable::set_header_labels(
     analysis = 'Analysis',
-     value= 'Value',
-     eff_125 = "Efficacy",
-     fut_125 = "Futility"
-    ) |>
-  hline(i = c(5, 10)) |>
-  colformat_double(j = c(3, 4), digits = 4)
+    value = 'Value',
+    eff_125 = "Efficacy",
+    fut_125 = "Futility"
+  ) |>
+  flextable::hline(i = c(5, 10)) |>
+  flextable::colformat_double(j = c(3, 4), digits = 4)
 ```
 
 -   The comparison between EAST and gsDesign/gsDesign/rpact results is presented below using absolute difference in efficacy/futility boundaries and crossing probabilities up to 4 decimals. Non-zero values are highlighted.
@@ -100,59 +101,67 @@ pfs_east |>
 
 -   gsDesign code to reproduce the above EAST results:
 
-```{r, warning=FALSE}
+```{r}
+#| warning: false
 library(gsDesign)
-pfs_gsDesign <- gsSurv(
+
+pfs_gsDesign <- gsDesign::gsSurv(
   k = length(timing_pfs_gs),
-  timing = timing_pfs_gs, 
-  R = enroll_dur, 
-  eta =  do_rate_pfs, 
+  timing = timing_pfs_gs,
+  R = enroll_dur,
+  eta = do_rate_pfs,
   minfup = minfu_pfs,
-  T = enroll_dur + minfu_pfs, 
-  lambdaC = log(2)/med_pfs,
+  T = enroll_dur + minfu_pfs,
+  lambdaC = log(2) / med_pfs,
   hr = hr1_pfs,
   beta = 1 - power_pfs,
   alpha = alphal,
   sfu = sfLDOF,
-  sfl = sfHSD, 
+  sfl = sfHSD,
   sflpar = -10,
   test.type = 4
-  ) |> 
+) |>
   toInteger()
-  
 
-pfs_gsDesign |> gsBoundSummary()
+
+pfs_gsDesign |>
+  gsDesign::gsBoundSummary()
 ```
 
 -   gsDesign vs EAST comparison using absolute differences:
 
-```{r, echo=FALSE}
+```{r}
+#| echo: false
 digit_comp <- 4
 pfs_gsDesign |>
-  gsBoundSummary(digits = digit_comp) |>
+  gsDesign::gsBoundSummary(digits = digit_comp) |>
   dplyr::select(eff_gs = Efficacy, fut_gs = Futility) |>
   dplyr::bind_cols(
-    pfs_east |> 
+    pfs_east |>
       dplyr::select(
-        value, analysis, eff_east = eff_125, fut_east = fut_125
-        ) |>
+        value,
+        analysis,
+        eff_east = eff_125,
+        fut_east = fut_125
+      ) |>
       dplyr::mutate(
         eff_east = ifelse(value == 'Z', -eff_east, eff_east),
         fut_east = ifelse(value == 'Z', -fut_east, fut_east)
-        )
-    ) |>
+      )
+  ) |>
   dplyr::mutate(
-    diff_eff_gsDesign =  abs(eff_east - eff_gs),
-    diff_fut_gsDesign =  abs(fut_east - fut_gs)
-
-    ) |>
+    diff_eff_gsDesign = abs(eff_east - eff_gs),
+    diff_fut_gsDesign = abs(fut_east - fut_gs)
+  ) |>
   dplyr::select(
-    Analysis = analysis, Value = value, diff_eff_gsDesign,
+    Analysis = analysis,
+    Value = value,
+    diff_eff_gsDesign,
     diff_fut_gsDesign
-    ) |>
+  ) |>
   flextable::flextable() |>
   flextable::autofit() |>
-    flextable::set_header_labels(
+  flextable::set_header_labels(
     diff_eff_gsDesign = 'Efficacy',
     diff_fut_gsDesign = 'Futility'
   ) |>
@@ -160,12 +169,14 @@ pfs_gsDesign |>
   flextable::colformat_double(j = c(3, 4), digits = digit_comp) |>
   flextable::bg(
     ~ round(abs(diff_eff_gsDesign), digit_comp) != 0,
-    ~ diff_eff_gsDesign, bg = '#6ECEB2'
-    ) |>
+    ~diff_eff_gsDesign,
+    bg = '#6ECEB2'
+  ) |>
   flextable::bg(
-    ~ round(abs(diff_fut_gsDesign), digit_comp) != 0,  ~
-      diff_fut_gsDesign, bg = '#6ECEB2'
-    ) 
+    ~ round(abs(diff_fut_gsDesign), digit_comp) != 0,
+    ~diff_fut_gsDesign,
+    bg = '#6ECEB2'
+  )
 ```
 
 ### gsDesign2 code
@@ -173,150 +184,169 @@ pfs_gsDesign |>
 -   gsDesign2 code to reproduce the above EAST results appears below.
 -   Note that, here `gsDesign2::gs_power_ahr()` is used given the number of target events for each analysis based on EAST results.
 
-```{r, echo=FALSE}
+```{r}
+#| echo: false
 #helper function to align the gsDesign2 summary with gsDesign summary
-as_gs <- function(xnph){
-  
+as_gs <- function(xnph) {
   k <- max(xnph$bound$analysis) # better to have it in gs_design_ahr() output
   ratio <- 1 # better to have it in gs_design_ahr() output
-  
+
   timing_df <- tibble::tibble(
     analysis = seq(k),
     timing = xnph$analysis$event[1:k] / max(xnph$analysis$event)
   )
-  x <- xnph$bound %>% 
+  x <- xnph$bound |>
     dplyr::left_join(
       timing_df,
-      by = 'analysis') %>% 
+      by = 'analysis'
+    ) |>
     dplyr::mutate(
       bound = dplyr::case_when(
-        bound=='upper'~'Efficacy', 
-        bound=='lower'~'Futility'
+        bound == 'upper' ~ 'Efficacy',
+        bound == 'lower' ~ 'Futility'
       )
-    ) %>%
+    ) |>
     dplyr::left_join(
-      xnph$analysis %>%
+      xnph$analysis |>
         dplyr::select(analysis, n, event, ahr, time),
       by = 'analysis'
     )
-  
-  t1 <- x %>% 
-    dplyr::select(analysis, timing, bound, z) %>% 
+
+  t1 <- x |>
+    dplyr::select(analysis, timing, bound, z) |>
     dplyr::mutate(
       id = analysis,
       analysis = ifelse(
-        analysis!=k, 
+        analysis != k,
         paste0("IA ", analysis, ": ", round(100 * timing, 0), "%"),
-        "Final"),
+        "Final"
+      ),
       value = "Z"
-    ) %>% 
-    dplyr::mutate(z = ifelse(z %in% c(-Inf, Inf), NA, z)) %>%
+    ) |>
+    dplyr::mutate(z = ifelse(z %in% c(-Inf, Inf), NA, z)) |>
     tidyr::pivot_wider(
-      id_cols = c(id, analysis, value), 
-      names_from = bound, values_from = z
+      id_cols = c(id, analysis, value),
+      names_from = bound,
+      values_from = z
     )
-  
-  t2 <- x %>% 
-    dplyr::select(analysis, n, bound, pval = `nominal p`) %>% 
+
+  t2 <- x |>
+    dplyr::select(analysis, n, bound, pval = `nominal p`) |>
     dplyr::mutate(
-      id = analysis, 
-      analysis = paste0("N: ", ifelse((ceiling(n) %%2) == 0, ceiling(n), ceiling(n) + 1)),
+      id = analysis,
+      analysis = paste0(
+        "N: ",
+        ifelse((ceiling(n) %% 2) == 0, ceiling(n), ceiling(n) + 1)
+      ),
       value = "p (1-sided)"
-      )%>% 
+    ) |>
     tidyr::pivot_wider(
-      id_cols = c(id, analysis, value), 
-      names_from = bound, 
-      values_from = pval) 
-  
-  t3 <- x %>% 
-    dplyr::select(analysis, event, z, bound, ahr) %>% 
+      id_cols = c(id, analysis, value),
+      names_from = bound,
+      values_from = pval
+    )
+
+  t3 <- x |>
+    dplyr::select(analysis, event, z, bound, ahr) |>
     dplyr::mutate(
-      id = analysis, 
+      id = analysis,
       analysis = paste0("Events: ", round(event, 0)),
       value = "~HR at bound",
-      hr = ifelse(z %in% c(-Inf, Inf), 
-                  NA, 
-                  gsDesign::zn2hr(z = z, n = event, hr0 = 1, hr1 = ahr, ratio = xnph$input$ratio))
-    ) %>% 
+      hr = ifelse(
+        z %in% c(-Inf, Inf),
+        NA,
+        gsDesign::zn2hr(
+          z = z,
+          n = event,
+          hr0 = 1,
+          hr1 = ahr,
+          ratio = xnph$input$ratio
+        )
+      )
+    ) |>
     tidyr::pivot_wider(
-      id_cols = c(id, analysis, value), 
-      names_from = bound, 
-      values_from = hr) 
-  
+      id_cols = c(id, analysis, value),
+      names_from = bound,
+      values_from = hr
+    )
+
   fr <- xnph$fail_rate
   fr$hr <- 1
-  
-  t4 <- x %>% 
-    dplyr::select(analysis, time, z, bound, ahr, probability0) %>% 
+
+  t4 <- x |>
+    dplyr::select(analysis, time, z, bound, ahr, probability0) |>
     dplyr::mutate(
-      id = analysis, 
+      id = analysis,
       analysis = paste0("Month: ", round(time)),
       value = "P(Cross) if HR=1"
-    ) %>%  
+    ) |>
     tidyr::pivot_wider(
-      id_cols = c(id, analysis, value), 
-      names_from = bound, 
+      id_cols = c(id, analysis, value),
+      names_from = bound,
       values_from = probability0
     )
-  
-  t5 <- x %>% 
-    dplyr::select(analysis, time, z, bound, probability, ahr) %>% 
+
+  t5 <- x |>
+    dplyr::select(analysis, time, z, bound, probability, ahr) |>
     dplyr::mutate(
       probability = ifelse(z %in% c(-Inf, Inf), NA, probability),
-      id = analysis, 
+      id = analysis,
       analysis = "",
       value = paste0("P(Cross) if AHR=", round(ahr, 2))
-    )  %>% 
+    ) |>
     tidyr::pivot_wider(
-      id_cols = c(id, analysis, value), 
-      names_from = bound, 
+      id_cols = c(id, analysis, value),
+      names_from = bound,
       values_from = probability
     )
-  
-  rbind(t1, t2, t3, t4, t5) %>% 
-    dplyr::group_by(id) %>% 
-    dplyr::arrange(id) %>% 
-    dplyr::ungroup() %>% 
-    dplyr::select(-c(id)) %>% 
+
+  rbind(t1, t2, t3, t4, t5) |>
+    dplyr::group_by(id) |>
+    dplyr::arrange(id) |>
+    dplyr::ungroup() |>
+    dplyr::select(-c(id)) |>
     data.frame()
 }
 
 ```
 
-```{r, warning=FALSE, message=FALSE}
+```{r}
+#| warning: false
+#| message: false
 library(gsDesign2)
 library(tibble)
+
 enroll_rate <- tibble(
-  stratum = "All", 
+  stratum = "All",
   duration = enroll_dur,
-  rate = 398/enroll_dur
+  rate = 398 / enroll_dur
 )
 fail_rate_pfs <- tibble(
-  stratum = "All", 
+  stratum = "All",
   duration = Inf, #could be set to Inf when proportional hazard is assumed
-  fail_rate = log(2)/med_pfs,
-  hr = hr1_pfs, 
+  fail_rate = log(2) / med_pfs,
+  hr = hr1_pfs,
   dropout_rate = do_rate_pfs
-  )
+)
 
 pfs_gsDesign2 <- gs_power_ahr(
   enroll_rate = enroll_rate,
   fail_rate = fail_rate_pfs,
-  ratio = rand_ratio, 
+  ratio = rand_ratio,
   event = c(176, 235),
-  upper = gs_spending_bound, 
+  upper = gs_spending_bound,
   upar = list(
-    sf = gsDesign::sfLDOF, 
+    sf = gsDesign::sfLDOF,
     total_spend = alphal
-    ), 
+  ),
   lower = gs_spending_bound,
   lpar = list(
-    sf = gsDesign::sfHSD, 
-    total_spend = 1 - power_pfs, 
+    sf = gsDesign::sfHSD,
+    total_spend = 1 - power_pfs,
     param = -10
-    ),
+  ),
   info_scale = "h0_info"
-  ) |> 
+) |>
   to_integer()
 
 pfs_gsDesign2 |>
@@ -326,55 +356,64 @@ pfs_gsDesign2 |>
 
 -   gsDesign2 vs EAST comparison using absolute differences:
 
-```{r, echo=FALSE}
+```{r}
+#| echo: false
 pfs_gsDesign2 |>
-  as_gs()|>
+  as_gs() |>
   dplyr::select(eff_gs2 = Efficacy, fut_gs2 = Futility) |>
   dplyr::bind_cols(
     pfs_east |>
       dplyr::select(
-        value, analysis, eff_east = eff_125, fut_east = fut_125
-        ) |>
+        value,
+        analysis,
+        eff_east = eff_125,
+        fut_east = fut_125
+      ) |>
       dplyr::mutate(
         eff_east = ifelse(value == 'Z', -eff_east, eff_east),
         fut_east = ifelse(value == 'Z', -fut_east, fut_east)
-        )
-    ) |>
+      )
+  ) |>
   dplyr::mutate(
-    diff_eff_gsDesign =  abs(eff_east - eff_gs2),
-    diff_fut_gsDesign =  abs(fut_east - fut_gs2)
-
-    ) |>
+    diff_eff_gsDesign = abs(eff_east - eff_gs2),
+    diff_fut_gsDesign = abs(fut_east - fut_gs2)
+  ) |>
   dplyr::select(
-    Analysis = analysis, Value = value,
-    diff_eff_gsDesign, diff_fut_gsDesign
-    ) |>
+    Analysis = analysis,
+    Value = value,
+    diff_eff_gsDesign,
+    diff_fut_gsDesign
+  ) |>
   flextable::flextable() |>
   flextable::autofit() |>
-    flextable::set_header_labels(
+  flextable::set_header_labels(
     diff_eff_gsDesign = 'Efficacy',
     diff_fut_gsDesign = 'Futility'
   ) |>
   flextable::hline(i = c(5, 10)) |>
   flextable::colformat_double(j = c(3, 4), digits = digit_comp) |>
   flextable::bg(
-    ~ round(abs(diff_eff_gsDesign), digit_comp) != 0,  ~
-      diff_eff_gsDesign, bg = '#6ECEB2'
-    ) |>
+    ~ round(abs(diff_eff_gsDesign), digit_comp) != 0,
+    ~diff_eff_gsDesign,
+    bg = '#6ECEB2'
+  ) |>
   flextable::bg(
-    ~ round(abs(diff_fut_gsDesign), digit_comp) != 0,  ~
-      diff_fut_gsDesign, bg = '#6ECEB2'
-    ) 
+    ~ round(abs(diff_fut_gsDesign), digit_comp) != 0,
+    ~diff_fut_gsDesign,
+    bg = '#6ECEB2'
+  )
 ```
 
 ### rpact code
 
 -   rpact code to reproduce the above EAST results appears below.
 
-```{r, warning=FALSE}
+```{r}
+#| warning: false
 library(rpact)
-pfs_rpact_gsd <- getDesignGroupSequential(
-  sided = 1, 
+
+pfs_rpact_gsd <- rpact::getDesignGroupSequential(
+  sided = 1,
   alpha = alphal,
   informationRates = timing_pfs_rpact,
   typeOfDesign = "asOF",
@@ -382,16 +421,16 @@ pfs_rpact_gsd <- getDesignGroupSequential(
   typeBetaSpending = "bsHSD",
   gammaB = -10,
   bindingFutility = FALSE
-  )
+)
 
-pfs_rpact <- getSampleSizeSurvival(
+pfs_rpact <- rpact::getSampleSizeSurvival(
   design = pfs_rpact_gsd,
   accrualTime = enroll_dur,
   followUpTime = minfu_pfs,
-  lambda2 = log(2)/med_pfs,
+  lambda2 = log(2) / med_pfs,
   hazardRatio = hr1_pfs,
-  dropoutRate1 = 0.2, 
-  dropoutRate2 = 0.2, 
+  dropoutRate1 = 0.2,
+  dropoutRate2 = 0.2,
   dropoutTime = 12
 )
 
@@ -400,24 +439,48 @@ kable(summary(pfs_rpact))
 
 -   rpact vs EAST comparison using absolute differences:
 
-```{r, echo=FALSE}
+```{r}
+#| echo: false
+
 pcross_h1_eff <- cumsum(pfs_rpact$rejectPerStage)
 pcross_h1_fut <- pfs_rpact$futilityPerStage[1]
+
 hr_bound_eff <- pfs_rpact$criticalValuesEffectScale
 hr_bound_fut <- pfs_rpact$futilityBoundsEffectScale
+
 pval_eff <- pfs_rpact$criticalValuesPValueScale
-pval_fut <- pfs_rpact$futilityBoundsPValueScale 
+pval_fut <- pfs_rpact$futilityBoundsPValueScale
+
 zval_eff <- pfs_rpact_gsd$criticalValues
 zval_fut <- pfs_rpact_gsd$futilityBounds
+
 pcross_h0_eff <- pfs_rpact_gsd$alphaSpent
 pcross_h0_fut <- summary(pfs_rpact)$summaryItems |>
   Filter(\(x) x$title == "Exit probability for futility (under H0)", x = _) |>
   sapply(\(x) as.numeric(x$values))
 
-ia1_eff <- c(zval_eff[1], pval_eff[1], hr_bound_eff[1], pcross_h0_eff[1], pcross_h1_eff[1])
-fa_eff <-  c(zval_eff[2], pval_eff[2], hr_bound_eff[2], pcross_h0_eff[2], pcross_h1_eff[2])
+ia1_eff <- c(
+  zval_eff[1],
+  pval_eff[1],
+  hr_bound_eff[1],
+  pcross_h0_eff[1],
+  pcross_h1_eff[1]
+)
+fa_eff <- c(
+  zval_eff[2],
+  pval_eff[2],
+  hr_bound_eff[2],
+  pcross_h0_eff[2],
+  pcross_h1_eff[2]
+)
 
-ia1_fut <- c(zval_fut[1], pval_fut[1], hr_bound_fut[1], pcross_h0_fut[1], pcross_h1_fut[1])
+ia1_fut <- c(
+  zval_fut[1],
+  pval_fut[1],
+  hr_bound_fut[1],
+  pcross_h0_fut[1],
+  pcross_h1_fut[1]
+)
 
 
 pfs_rpact_sum <- tibble::tibble(
@@ -429,37 +492,44 @@ pfs_rpact_sum |>
   dplyr::bind_cols(
     pfs_east |>
       dplyr::select(
-        value, analysis, eff_east = eff_125, fut_east = fut_125
-        ) |>
+        value,
+        analysis,
+        eff_east = eff_125,
+        fut_east = fut_125
+      ) |>
       dplyr::mutate(
         eff_east = ifelse(value == 'Z', -eff_east, eff_east),
         fut_east = ifelse(value == 'Z', -fut_east, fut_east)
-        )
-    ) |>
+      )
+  ) |>
   dplyr::mutate(
-    diff_eff_gsDesign =  abs(eff_east - rpact_eff),
-    diff_fut_gsDesign =  abs(fut_east - rpact_fut)
-    ) |>
+    diff_eff_gsDesign = abs(eff_east - rpact_eff),
+    diff_fut_gsDesign = abs(fut_east - rpact_fut)
+  ) |>
   dplyr::select(
-    Analysis = analysis, Value = value, diff_eff_gsDesign,
+    Analysis = analysis,
+    Value = value,
+    diff_eff_gsDesign,
     diff_fut_gsDesign
-    ) |>
+  ) |>
   flextable::flextable() |>
   flextable::autofit() |>
-    flextable::set_header_labels(
+  flextable::set_header_labels(
     diff_eff_gsDesign = 'Efficacy',
     diff_fut_gsDesign = 'Futility'
   ) |>
   flextable::hline(i = c(5, 10)) |>
   flextable::colformat_double(j = c(3, 4), digits = digit_comp) |>
   flextable::bg(
-    ~ round(abs(diff_eff_gsDesign), digit_comp) != 0,  ~
-      diff_eff_gsDesign, bg = '#6ECEB2'
-    ) |>
+    ~ round(abs(diff_eff_gsDesign), digit_comp) != 0,
+    ~diff_eff_gsDesign,
+    bg = '#6ECEB2'
+  ) |>
   flextable::bg(
-    ~ round(abs(diff_fut_gsDesign), digit_comp) != 0,  ~
-      diff_fut_gsDesign, bg = '#6ECEB2'
-    ) 
+    ~ round(abs(diff_fut_gsDesign), digit_comp) != 0,
+    ~diff_fut_gsDesign,
+    bg = '#6ECEB2'
+  )
 
 ```
 

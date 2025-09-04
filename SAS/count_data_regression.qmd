@@ -1,6 +1,5 @@
 ---
 title: "Poisson and Negative Binomial Regression in SAS"
-output: html_document
 date: last-modified
 date-format: D MMMM, YYYY
 ---
@@ -39,42 +38,42 @@ It is generally good practice to apply the OM option on the lsmeans statement. T
 
 You can use exponential of the maximum likelihood parameter estimate (for treat and age in this example), and the exponential of the Wald 95% Confidence Limits to obtain the odds ratios and 95% CIs. Estimates of the least squares means and CI's for each treatment are output using the lsmeans option. These estimates also have to be back transformed using exponential distribution to get the mean count back onto the original scale. Proc Genmod uses GLM parameterization.
 
-```{r eval=FALSE}
-
+```{sas}
+#| eval: false
 ods output ParameterEstimates=ORs lsmeans=lsm;
 proc genmod data=polyps;       
-  class treat (ref="placebo")  ;    
-  model  number = treat age  /  dist=poisson ;
-  lsmeans treat/ cl OM;
+    class treat (ref="placebo");    
+    model  number = treat age  /  dist=poisson;
+    lsmeans treat/ cl OM;
 run; 
 ods output close;
 
-#read in ORs and back transform the estimates (lsm can be done same way)
+# read in ORs and back transform the estimates (lsm can be done same way)
 data bt_or;
-  set ors;
-  OR=exp(estimate);
-  OR_low=exp(lowerwaldcl);
-  OR_high=exp(upperwaldcl);
- run;
-
+    set ors;
+    OR=exp(estimate);
+    OR_low=exp(lowerwaldcl);
+    OR_high=exp(upperwaldcl);
+run;
 ```
 
-```{r, echo=FALSE, fig.align='center', out.width="50%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 50%
 knitr::include_graphics("../images/count_data_regression/poisson1.png")
 knitr::include_graphics("../images/count_data_regression/poisson2.png")
 ```
-
 
 Back transformation of the parameter estimates and 95% CIs produces the following results
 
 Lsmean number of polyps (95% CI) on Drug: 9.02 (7.30 - 11.13)
 
-Lsmean  number of polyps (95% CI) on Placebo: 35.10 (31.72-38.84)
+Lsmean number of polyps (95% CI) on Placebo: 35.10 (31.72-38.84)
 
 Odds ratio (95% CI)= 0.2569 (0.2040 - 0.3235)
 
 Hence, patients on Drug have significantly less polyps than those on placebo.
-
 
 ## **Example: negative binomial in SAS**
 
@@ -82,28 +81,30 @@ In SAS, we can use proc genmod to perform negative binomial regression. The belo
 
 Model parameterization is very similar to poisson
 
-```{r eval=FALSE}
-
+```{sas}
+#| eval: false
 ods output ParameterEstimates=ORs lsmeans=lsm;
-  proc genmod data=polyps; 
-  class treat (ref="placebo")  ; 
-  model  number = treat age  /  dist=negbin link=log ;
-  lsmeans treat/ cl OM;
+proc genmod data=polyps; 
+    class treat (ref="placebo"); 
+    model  number = treat age  /  dist=negbin link=log;
+    lsmeans treat/ cl OM;
 run;
 
 ods output close;
 
-
-#read in lsmeans and back transform the estimates (ORs can be done same way)
+# read in lsmeans and back transform the estimates (ORs can be done same way)
 data bt_lsm;
-  set lsm;
-  lsmean_count=exp(estimate);
-  mean_low=exp(lower);
-  mean_high=exp(upper);
- run;
+    set lsm;
+    lsmean_count=exp(estimate);
+    mean_low=exp(lower);
+    mean_high=exp(upper);
+run;
 ```
 
-```{r, echo=FALSE, fig.align='center', out.width="50%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 50%
 knitr::include_graphics("../images/count_data_regression/negbin1.png")
 knitr::include_graphics("../images/count_data_regression/negbin2.png")
 ```
@@ -112,13 +113,11 @@ Back transformation of the parameter estimates and 95% CIs produces the followin
 
 Lsmean number of polyps (95% CI) on Drug: 8.97 (5.18 - 15.53)
 
-Lsmean  number of polyps (95% CI) on Placebo: 35.24 (22.12-56.13)
+Lsmean number of polyps (95% CI) on Placebo: 35.24 (22.12-56.13)
 
 Odds ratio Drug/Placebo (95% CI)= 0.2546 (0.1232 - 0.5259)
 
 Hence, patients on Drug have significantly less polyps than those on placebo.
-
- 
 
 # References
 

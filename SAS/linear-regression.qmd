@@ -1,20 +1,22 @@
 ---
 title: "Linear Regression"
-output: html_document
 date: last-modified
 date-format: D MMMM, YYYY
 ---
 
 To demonstrate the use of linear regression we examine a dataset that illustrates the relationship between Height and Weight in a group of 237 teen-aged boys and girls. The dataset is available at (../data/htwt.csv) and is imported to sas using proc import procedure.
- 
+
 ### Descriptive Statistics
 
 The first step is to obtain the simple descriptive statistics for the numeric variables of htwt data, and one-way frequencies for categorical variables. This is accomplished by employing proc means and proc freq procedures There are 237 participants who are from 13.9 to 25 years old. It is a cross-sectional study, with each participant having one observation. We can use this data set to examine the relationship of participants' height to their age and sex.
 
-```{r eval=FALSE}
+```{sas}
+#| eval: false
 proc means data=htwt;
 run;
+```
 
+```default
                     Descriptive Statistics for HTWT Data Set                  
                              The MEANS Procedure
 
@@ -24,14 +26,16 @@ AGE       AGE     237    16.4430380     1.8425767    13.9000000    25.0000000
 HEIGHT    HEIGHT  237    61.3645570     3.9454019    50.5000000    72.0000000
 WEIGHT    WEIGHT  237   101.3080169    19.4406980    50.5000000   171.5000000
 ----------------------------------------------------------------------------
-
 ```
 
-```{r eval=FALSE}
+```{sas}
+#| eval: false
 proc freq data=htwt;
-tables sex;
+    tables sex;
 run;
+```
 
+```default
     Oneway Frequency Tabulation for Sex for HTWT Data Set                    
                     The FREQ Procedure
 
@@ -44,26 +48,32 @@ m           126           53.16           237       100.00
 
 In order to create a regression model to demonstrate the relationship between age and height for females, we first need to create a flag variable identifying females and an interaction variable between age and female gender flag.
 
-```{r eval=FALSE}
+```{sas}
+#| eval: false
 data htwt2;
   set htwt;
   if sex="f" then female=1;
   if sex="m" then female=0; 
- 
+
   *model to demonstrate interaction between female gender and age;
   fem_age = female * age;  
 run;
 ```
+
 ### Regression Analysis
+
 Next, we fit a regression model, representing the relationships between gender, age, height and the interaction variable created in the datastep above. We again use a where statement to restrict the analysis to those who are less than or equal to 19 years old. We use the clb option to get a 95% confidence interval for each of the parameters in the model. The model that we are fitting is ***height = b0 + b1 x female + b2 x age + b3 x fem_age + e***
 
-```{r eval=FALSE}
+```{sas}
+#| eval: false
 proc reg data=htwt2;
-  where age <=19;
-  model height = female age fem_age / clb;
-run; quit;
+    where age <=19;
+    model height = female age fem_age / clb;
+run; 
+quit;
+```
 
-
+```default
                         Number of Observations Read         219
                         Number of Observations Used         219
 
@@ -83,7 +93,7 @@ run; quit;
 
 We examine the parameter estimates in the output below.
 
-```{r eval=FALSE}
+```default
                             Parameter Estimates
                             Parameter       Standard
        Variable     DF       Estimate          Error    t Value    Pr > |t|       95% Confidence Limits

@@ -44,9 +44,11 @@ Below are summary of findings from a numerical comparison using example data, wh
 
 Maximum Likelihood Estimates and p-values for the Model Parameters have an exact match (at 0.001 level) using `glm` in R vs `PROC LOGISTIC` procedure (without Firth option) in SAS.
 
-When using GLM parameterization (see [SAS page](https://psiaims.github.io/CAMIS/SAS/logistic-regr.html) for explanation of parameterization types), the parameters estimates (and 95% CIs) can be exponentiated to provide odds ratios and 95% CIs for odds ratios.
+When using GLM parameterization (see [SAS page](https://psiaims.github.io/CAMIS/SAS/logistic-regr.html) for explanation of SAS parameterization types), the parameters estimates (and 95% CIs) can be exponentiated to provide odds ratios and 95% CIs for odds ratios.
 
-An exact match (at 0.001 level) is obtained for the Odds ratios and CIs when the same method is used, however SAS Proc Logistic can only calculate Wald CI's. Profile likelihood CIs are not available.
+As default for categorical variables, R uses the first category as reference see [R page](https://psiaims.github.io/CAMIS/R/logistic-regr.html), and SAS uses the last category as reference group. Check your design matrix in SAS, and `contr.` options in R to ensure interpretation of estimates from the model is correct, then results align.
+
+An exact match (at 0.001 level) is obtained for the Odds ratios and CIs when the same method and same parameterization is used, however SAS Proc Logistic can only calculate Wald CI's. Profile likelihood CIs are not available.
 
 R using glm() function, can use the confint() function to calculate CI's using the profile likelihood method or the confint.default() function to calculate CIs using the Wald method.
 :::
@@ -72,7 +74,9 @@ In the following sections, the parameterisation of logistic regression implement
 
 ## R packages
 
-```{r, output = FALSE, message = FALSE}
+```{r}
+#| output: false
+#| message: false
 library(tidyverse)
 library(survival) # for example data
 library(logistf) # for firth regression
@@ -87,10 +91,10 @@ We use the `lung` dataset provided with {survival} R package. Initial data prepa
 
 ```{r}
 # the lung dataset is available in ./data/lung_cancer.csv
-lung2 <- survival::lung %>% 
+lung2 <- survival::lung |>
   mutate(
     wt_grp = factor(wt.loss > 0, labels = c("weight loss", "weight gain"))
-  ) 
+  )
 glimpse(lung2)
 ```
 
@@ -103,7 +107,9 @@ data("trial01")
 
 trial01$trtp <- factor(trial01$trtp) ## set treatment to a factor
 
-trial01 <- trial01 %>% filter(!is.na(aval)) ## remove missing data i.e complete cases analysis
+trial01 <- trial01 |>
+  filter(!is.na(aval)) ## remove missing data i.e complete cases analysis
+
 # save the dataset to be imported in SAS
 # write.csv(trial01, file = "data/trial01.csv", na = ".")
 ```
@@ -136,8 +142,12 @@ Note, the default fitting method in `glm` is consistent with the default fitting
 -   Default fitting method for `PROC LOGISTIC` procedure is Fisher's scoring method, which is reported as part of the SAS default output, and it is equivalent to "Iteratively reweighted least squares" method as reported in this [documentation](https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_logistic_sect033.htm).
 
 ```{r}
-# stats::glm function
-m1 <- glm(wt_grp ~ age + sex + ph.ecog + meal.cal, data = lung2, family = binomial(link="logit"))
+m1 <- stats::glm(
+  wt_grp ~ age + sex + ph.ecog + meal.cal,
+  data = lung2,
+  family = binomial(link = "logit")
+)
+
 # model coefficients summary
 summary(m1)$coefficients
 ```
@@ -145,13 +155,13 @@ summary(m1)$coefficients
 Note, function `confint.default` gives the Wald confidence limits, which is the default option in SAS `PROC LOGISTIC` procedure; whereas `confint` gives the profile-likelihood limits. Conditional odds ratio is calculated by taking the exponential of the model parameters.
 
 ```{r}
-cbind(est = coef(m1), 
-          confint.default(m1))
+cbind(est = coef(m1), confint.default(m1))
 ```
 
 ### `PROC LOGISTIC` in SAS (without firth option)
 
-```{sas, eval = FALSE}
+```{sas}
+#| eval: false
 PROC LOGISTIC DATA=LUNG2; # import lung
 	MODEL WT_GRP(EVENT="weight_gain") = AGE SEX PH_ECOG MEAL_CAL;
 	ods output ESTIMATEs=estimates;
@@ -205,12 +215,16 @@ Note that while Firth logistic regression is not required for our example datase
 -   By default, `logistf` function in R computes the confidence interval estimates and hypothesis tests (including p-value) for each parameter based on profile likelihood, which is also reported in the output below. However, Wald method (confidence interval and tests) can be specified by specifying the `control` argument with [`pl = FALSE`](https://cran.r-project.org/web/packages/logistf/logistf.pdf).
 
 ```{r}
-firth_mod <- logistf(wt_grp ~ age + sex + ph.ecog + meal.cal,
-                     data=lung2, 
-                     control = logistf.control(fit ="IRLS", 
-                                               xconv = 0.00000001, 
-                                               gconv = 1, 
-                                               lconv = 1))
+firth_mod <- logistf(
+  wt_grp ~ age + sex + ph.ecog + meal.cal,
+  data = lung2,
+  control = logistf.control(
+    fit = "IRLS",
+    xconv = 0.00000001,
+    gconv = 1,
+    lconv = 1
+  )
+)
 summary(firth_mod)$coefficients
 
 ## Code below would give Wald CI and tests results by adding `pl = FALSE`
@@ -220,8 +234,7 @@ summary(firth_mod)$coefficients
 Note, function `confint` gives the profile-likelihood limits. Given the parameters from Firth's bias-reduced logistic regression is estimated using penalized maximum likelihood, `confint` function is used. Conditional odds ratio is calculated by taking the exponential of the model parameters.
 
 ```{r}
-cbind(est = coef(firth_mod), 
-          confint(firth_mod))
+cbind(est = coef(firth_mod), confint(firth_mod))
 ```
 
 ### `PROC LOGISTIC` in SAS (with firth option)
@@ -230,9 +243,11 @@ cbind(est = coef(firth_mod),
 
 -   `XCONV` specifies relative parameter convergence criterion, which should correspond to the `xconv` in `logistf` function in R. We specify `XCONV = 0.00000001` so it should be consistent with the R code above.
 
-```{sas, eval = FALSE}
+```{sas}
+#| eval: false
 PROC LOGISTIC DATA=LUNG2;
-	MODEL WT_GRP(EVENT="weight gain") = AGE SEX PH_ECOG MEAL_CAL / firth clodds=PL clparm=PL xconv = 0.00000001;
+	MODEL WT_GRP(EVENT="weight gain") = AGE SEX PH_ECOG MEAL_CAL / firth 
+  clodds=PL clparm=PL xconv = 0.00000001;
 	ods output ESTIMATEs=estimates;
 run;
 ```
@@ -265,46 +280,51 @@ We compare two implementions of g-computation in SAS:
 
 We fit a logistic regression model with covariate adjustment to estimate the marginal treatment effect using the delta method for variance estimation: as outlined in Ge et al (2011).
 
-```{r glm}
+```{r}
+#| label: glm
 ## fit the model including model based variance estimation with delta method
-fit1 <-
-  glm(aval ~ trtp + bl_cov, family = "binomial", data = trial01) %>% 
-  get_marginal_effect(
+fit1 <- stats::glm(aval ~ trtp + bl_cov, family = "binomial", data = trial01) |>
+  beeca::get_marginal_effect(
     trt = "trtp",
     method = "Ge",
     contrast = "diff",
     reference = "0",
     type = "model-based"
   )
-cat("Marginal treatment effect = ", fit1$marginal_est, "\n",
-    "Standard error = ", fit1$marginal_se, "\n"
-    )
+
+"Marginal treatment effect"
+fit1$marginal_est
+
+"Standard error"
+fit1$marginal_se
+
 ```
 
 ### `%Margins` macro in SAS
 
-We now use the SAS \[`%Margins`\] (https://support.sas.com/kb/63/038.html) macro to perform the Ge et al. (2011) method on `trial01` to estimate the marginal risk difference and it's standard error.
+We now use the SAS [`%Margins`](https://support.sas.com/kb/63/038.html) macro to perform the Ge et al. (2011) method on `trial01` to estimate the marginal risk difference and it's standard error.
 
-```{r engine='sas', eval=FALSE}
+```{sas}
+#| eval: false
 %Margins(data      = myWork.trial01,
-         class     = trtp,
-         classgref = first, /*Set reference to first level*/
-         response  = avaln,
-         roptions  = event='1', /*Ensure event is set to 1 = Yes */
-         dist      = binomial,  
-         model     = trtp bl_cov,
-         margins   = trtp, 
-         options   = cl diff reverse, /*Specify risk difference contrast and 
+          class     = trtp,
+          classgref = first, /*Set reference to first level*/
+          response  = avaln,
+          roptions  = event='1', /*Ensure event is set to 1 = Yes */
+          dist      = binomial,  
+          model     = trtp bl_cov,
+          margins   = trtp, 
+          options   = cl diff reverse, /*Specify risk difference contrast and 
                                       direction of treatment effect is correct*/
          link      = logit);  /*Specify logit link function */
 	
 ** Store output data sets ; 
 data myWork.margins_trt_estimates;
-  set work._MARGINS;
+    set work._MARGINS;
 run;
-         
+
 data myWork.margins_trt_diffs;
-  set work._DIFFSPM;
+    set work._DIFFSPM;
 run;
 ```
 
@@ -312,7 +332,8 @@ run;
 
 ### `%LR` macro in SAS (Ge et al, 2011)
 
-```{r engine='sas', eval=FALSE}
+```{sas}
+#| eval: false
 %LR(data = myWork.trial01, /* input data set */
 	var1 = bl_cov, /* continuous covariates in the logistic regression */
 	var2 = trtp, /* categorical covariates in the logistic regression */

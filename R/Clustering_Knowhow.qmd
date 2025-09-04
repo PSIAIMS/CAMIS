@@ -1,11 +1,12 @@
 ---
-title: "Clustering_knowhow"
+title: "Clustering Data"
 author: "Niladri Dasgupta"
 date: "2024-08-12"
-output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r}
+#| label: setup
+#| include: false
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -66,23 +67,25 @@ We will repeat the 4th and 5th steps until no further switching of data points b
 
 First, we’ll load below packages that contain several useful functions regarding k-means clustering in R.
 
-```{r, message=FALSE}
-library(cluster) #Contain cluster function
-library(dplyr) #Data manipulation
-library(ggplot2) #Plotting function
-library(readr) #Read and write excel/csv files
-library(factoextra) #Extract and Visualize the Results of Multivariate Data Analyses
+```{r}
+#| message: false
+library(cluster) # Contain cluster function
+library(dplyr) # Data manipulation
+library(ggplot2) # Plotting function
+library(readr) # Read and write excel/csv files
+library(factoextra) # Extract and Visualize the Results of Multivariate Data Analyses
 ```
 
 **Step 2: Load Data**
 
 We have used the “Mall_Customer” dataset in R for this case study.
 
-```{r, message=FALSE}
-#Loading the data
+```{r}
+#| message: false
+# Loading the data
 df <- read_csv("../data/Mall_Customers.csv")
 
-#Structure of the data
+# Structure of the data
 str(df)
 ```
 
@@ -90,18 +93,21 @@ dataset consists of 200 customers data with their age, annual income and Spendin
 
 ```{r}
 
-#Rename the columns
-df <- df %>% 
-  rename("Annual_Income"= `Annual Income (k$)`, "Spending_score"= `Spending Score (1-100)`)
+# Rename the columns
+df <- df |>
+  rename(
+    "Annual_Income" = `Annual Income (k$)`,
+    "Spending_score" = `Spending Score (1-100)`
+  )
 
-#remove rows with missing values
+# remove rows with missing values
 df <- na.omit(df)
 
-#scale each variable to have a mean of 0 and sd of 1
-df1 <- df %>% 
+# scale each variable to have a mean of 0 and sd of 1
+df1 <- df |>
   mutate(across(where(is.numeric), scale))
 
-#view first six rows of dataset
+# view first six rows of dataset
 head(df1)
 
 ```
@@ -112,8 +118,7 @@ We have separated the CustomerID and Genre from the dataset. The reason for remo
 To create cluster with categorical or ordinal variable we can use k-Medoid clustering. <br>
 
 ```{r}
-df1 <- df1[,4:5]
-
+df1 <- df1[, 4:5]
 ```
 
 **Step 3: Find the Optimal Number of Clusters**
@@ -146,17 +151,16 @@ It has two parts as explained below-
 
 ```{r}
 set.seed(1)
-wss<- NULL
+wss <- NULL
 
-#Feeding different centroid/cluster and record WSS
-
-for (i in 1:10){
-  fit = kmeans(df1,centers = i,nstart=25)
+# Feeding different centroid/cluster and record WSS
+for (i in 1:10) {
+  fit = stats::kmeans(df1, centers = i, nstart = 25)
   wss = c(wss, fit$tot.withinss)
 }
 
-#Visualize the plot
-plot(1:10, wss, type = "o", xlab='Number of clusters(k)')
+# Visualize the plot
+plot(1:10, wss, type = "o", xlab = 'Number of clusters(k)')
 
 ```
 
@@ -165,7 +169,7 @@ Based on the above plot at k=5 we can see an “elbow” where the sum of square
 The above process to compute the “Elbow method” has been wrapped up in a single function (fviz_nbclust):
 
 ```{r}
-fviz_nbclust(df1, kmeans, method = "wss",nstart=25)
+factoextra::fviz_nbclust(df1, kmeans, method = "wss", nstart = 25)
 ```
 
 [**B. Silhouette Method:**]{.underline}
@@ -183,15 +187,22 @@ In this demonstration, we are going to see how silhouette method is used.
 
 ```{r}
 
-silhouette_score <- function(k){
-  km <- kmeans(df1, centers = k,nstart = 25)
-  ss <- silhouette(km$cluster, dist(df1))
+silhouette_score <- function(k) {
+  km <- stats::kmeans(df1, centers = k, nstart = 25)
+  ss <- cluster::silhouette(km$cluster, dist(df1))
   mean(ss[, 3])
 }
 k <- 2:10
 
 avg_sil <- sapply(k, silhouette_score)
-plot(k, type='b', avg_sil, xlab='Number of clusters', ylab='Average Silhouette Scores', frame=FALSE)
+plot(
+  k,
+  type = 'b',
+  avg_sil,
+  xlab = 'Number of clusters',
+  ylab = 'Average Silhouette Scores',
+  frame = FALSE
+)
 ```
 
 From the above method we can see the silhouette width is highest at cluster 5 so the optimal number of cluster should be 5.
@@ -199,7 +210,7 @@ From the above method we can see the silhouette width is highest at cluster 5 so
 Similar to the elbow method, this process to compute the “average silhoutte method” has been wrapped up in a single function (fviz_nbclust):
 
 ```{r}
-fviz_nbclust(df1, kmeans, method='silhouette',nstart=25)
+factoextra::fviz_nbclust(df1, kmeans, method = 'silhouette', nstart = 25)
 ```
 
 The optimal number of clusters is 5.
@@ -209,37 +220,37 @@ The optimal number of clusters is 5.
 Lastly, we can perform k-means clustering on the dataset using the optimal value for k of 5:
 
 ```{r}
-
-#make this example reproducible
+# make this example reproducible
 set.seed(1)
 
-#perform k-means clustering with k = 5 clusters
-fit <- kmeans(df1, 5, nstart=25)
-#view results
+# perform k-means clustering with k = 5 clusters
+fit <- stats::kmeans(df1, 5, nstart = 25)
 fit
 ```
 
 We can visualize the clusters on a scatterplot that displays the first two principal components on the axes using the fivz_cluster() function:
 
 ```{r}
-#plot results of final k-means model
-
-fviz_cluster(fit, data = df1)
+# plot results of final k-means model
+factoextra::fviz_cluster(fit, data = df1)
 ```
 
 **Step 5: Exporting the data by adding generated clusters**
 
 ```{r}
-#Adding the clusters in the main data
+# Adding the clusters in the main data
+df_cluster <- df |>
+  mutate(cluster = fit$cluster)
 
-df_cluster <- df %>% 
-  mutate(cluster=fit$cluster)
-
-#Creating Summary of created clusters based on existing variables
-
-df_summary <- df_cluster %>% 
-  group_by(cluster) %>% 
-  summarise(records=n(),avg_age=mean(Age),avg_annual_income=mean(Annual_Income),avg_spending_score=mean(Spending_score))
+# Creating Summary of created clusters based on existing variables
+df_summary <- df_cluster |>
+  group_by(cluster) |>
+  summarise(
+    records = n(),
+    avg_age = mean(Age),
+    avg_annual_income = mean(Annual_Income),
+    avg_spending_score = mean(Spending_score)
+  )
 
 print(df_summary)
 ```

@@ -6,7 +6,17 @@ title: "Estimating and Testing Cause Specific Hazard Ratio Using R"
 
 In this document we present how to estimate and test cause specific hazard ratio for the probability of experiencing a certain event at a given time in a competing risks model in R. We focus on the basic model where each subject experiences only one out of *k* possible events as depicted in the figure below.
 
-```{r, echo=FALSE, fig.align='center', out.width="25%"}
+```{r}
+#| message: false
+#| warning: false
+library(survival)
+library(tidyverse)
+```
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 25%
 knitr::include_graphics("../images/survival_competing_risks/cr.jpg")
 ```
 
@@ -32,17 +42,22 @@ The bone marrow transplant (BTM) dataset as presented by Guo & So (2018) is used
 
 -   For illustration, a categorical variable `waitCat` is created from `waitTime` as `waitCat = TRUE` if `waitTime > 200`, and `FALSE` otherwise.
 
-```{r readdata, message=FALSE, warning=FALSE}
-require(dplyr)
+```{r}
+#| label: readdata
+#| message: false
+#| warning: false
 bmt <- haven::read_sas(file.path("../data/bmt.sas7bdat")) %>%
   mutate(
-    Group = factor(Group, 
-                   levels = c(1, 2, 3), 
-                   labels = c('ALL', 'AML-Low Risk', 'AML-High Risk')
+    Group = factor(
+      Group,
+      levels = c(1, 2, 3),
+      labels = c('ALL', 'AML-Low Risk', 'AML-High Risk')
     ),
-    Status = factor(Status,
-                    levels = c(0, 1, 2),
-                    labels = c('Censored', 'Relapse', 'Death')),
+    Status = factor(
+      Status,
+      levels = c(0, 1, 2),
+      labels = c('Censored', 'Relapse', 'Death')
+    ),
     TYears = T / 365.25,
     waitCat = (WaitTime > 200),
     ID = row_number()
@@ -55,14 +70,17 @@ Syntax-wise there are two ways to generate the estimates and related outputs usi
 
 ### Syntax 1: All competing events in one go
 
-```{r cif.est, message=FALSE, warning=FALSE}
-require(survival)
-csh.1 <- coxph(Surv(TYears, Status) ~ Group + strata(waitCat), 
-               data = bmt, 
-               id = ID, 
-               ties = 'breslow', ## default is 'efron'
-               robust = FALSE    ## default is TRUE
-               )
+```{r}
+#| label: cif.est
+#| message: false
+#| warning: false
+csh.1 <- survival::coxph(
+  survival::Surv(TYears, Status) ~ Group + survival::strata(waitCat),
+  data = bmt,
+  id = ID,
+  ties = 'breslow', ## default is 'efron'
+  robust = FALSE ## default is TRUE
+)
 summary(csh.1)
 ```
 
@@ -73,12 +91,14 @@ Since both events (`Relapse` and `Death`) are model together, the global tests h
 ### Syntax 2: One event at a time
 
 ```{r}
-csh.2 <- coxph(Surv(TYears, Status == 'Relapse') ~ Group + strata(waitCat), 
-               data = bmt, 
-               id = ID, 
-               ties = 'breslow', ## default is 'efron'
-               robust = FALSE    ## default is TRUE
-               )
+csh.2 <- survival::coxph(
+  survival::Surv(TYears, Status == 'Relapse') ~
+    Group + survival::strata(waitCat),
+  data = bmt,
+  id = ID,
+  ties = 'breslow', ## default is 'efron'
+  robust = FALSE ## default is TRUE
+)
 summary(csh.2)
 ```
 
@@ -94,12 +114,14 @@ The results are identical to those labeled with `1:2` in the earlier outputs und
 
 ::: {.callout-note collapse="true" title="Session Info"}
 ```{r}
- #| echo: false
- si <- sessioninfo::session_info(
- c("cmprsk", "tidycmprsk", "survival" ) #Vector of packages used 
- , dependencies = FALSE)
- si
+#| echo: false
+si <- sessioninfo::session_info(
+  c("cmprsk", "tidycmprsk", "survival"), #Vector of packages used
+  dependencies = FALSE
+)
+si
 ```
+
 :::
 
 ## Reference

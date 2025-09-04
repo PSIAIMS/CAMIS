@@ -11,12 +11,12 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Setup
 
-### General libraries
-
 ```{r}
 #| label: general_libraries
 #| output: false
 #| warning: false
+
+# General libraries
 library(mice)
 library(dplyr)
 library(tidyr)
@@ -25,14 +25,8 @@ library(labelled)
 library(purrr)
 library(ggplot2)
 library(gridExtra)
-```
 
-### Methodology specific libraries
-
-```{r}
-#| label: methodology_specific_libraries
-#| output: false
-#| warning: false
+# Methodology specific libraries
 library(emmeans)
 library(mmrm)
 library(rstan)
@@ -72,20 +66,29 @@ The relevant endpoint for the antidepressant trial was assessed using the Hamilt
 #| label: data_exploration_1
 data("antidepressant_data")
 
-dat <- antidepressant_data %>%
-  dplyr::select(PATIENT, GENDER, THERAPY, RELDAYS, VISIT, BASVAL, HAMDTL17, CHANGE) %>%
-  dplyr::mutate(THERAPY = factor(THERAPY, levels = c("PLACEBO", "DRUG"))) %>%
-  remove_labels()
+dat <- antidepressant_data |>
+  dplyr::select(
+    PATIENT,
+    GENDER,
+    THERAPY,
+    RELDAYS,
+    VISIT,
+    BASVAL,
+    HAMDTL17,
+    CHANGE
+  ) |>
+  dplyr::mutate(THERAPY = factor(THERAPY, levels = c("PLACEBO", "DRUG"))) |>
+  labelled::remove_labels()
 
-gt(head(dat, n=10))
+gt(head(dat, n = 10))
 ```
 
 The number of patients per visit and treatment group are:
 
 ```{r}
 #| label: data_exploration_2
-dat %>%
-  group_by(VISIT, THERAPY) %>%
+dat |>
+  group_by(VISIT, THERAPY) |>
   dplyr::summarise(N = n())
 ```
 
@@ -93,32 +96,33 @@ The mean change from baseline of the HAMD17 endpoint per visit and treatment gro
 
 ```{r}
 #| label: data_exploration_3
-dat %>%
-  group_by(VISIT, THERAPY) %>%
-  dplyr::summarise(N = n(),
-                   MEAN = mean(CHANGE))
+dat |>
+  group_by(VISIT, THERAPY) |>
+  dplyr::summarise(N = n(), MEAN = mean(CHANGE))
 ```
 
 The missingness pattern is:
 
 ```{r}
 #| label: data_exploration_4
-dat_wide = dat %>%
-  dplyr::select(PATIENT, VISIT, CHANGE) %>%
-  pivot_wider(id_cols = PATIENT,
-              names_from = VISIT,
-              names_prefix = "VISIT_",
-              values_from = CHANGE)
+dat_wide = dat |>
+  dplyr::select(PATIENT, VISIT, CHANGE) |>
+  pivot_wider(
+    id_cols = PATIENT,
+    names_from = VISIT,
+    names_prefix = "VISIT_",
+    values_from = CHANGE
+  )
 
-dat_wide %>%
-  dplyr::select(starts_with("VISIT_")) %>%
-  md.pattern(plot=TRUE, rotate.names = TRUE)
+dat_wide |>
+  dplyr::select(starts_with("VISIT_")) |>
+  mice::md.pattern(plot = TRUE, rotate.names = TRUE)
 ```
 
 There is a single patient with an intermittent missing observation at visit 5, which is patient 3618. Special considerations need to be taken when applying delta adjustments to intermittent missing observations like this one (more on this later).
 
 ```{r}
-dat_expand <- expand_locf(
+dat_expand <- rbmi::expand_locf(
   dat,
   PATIENT = levels(dat$PATIENT),
   VISIT = levels(dat$VISIT),
@@ -127,7 +131,9 @@ dat_expand <- expand_locf(
   order = c("PATIENT", "VISIT")
 )
 
-gt(dat_expand %>% dplyr::filter(PATIENT == "3618"))
+dat_expand |>
+  dplyr::filter(PATIENT == "3618") |>
+  gt()
 ```
 
 ### Preparation
@@ -137,22 +143,22 @@ This tutorial will focus on tipping point analysis and delta adjustment. We assu
 ```{r}
 #| label: MAR_data
 #| include: false
-dat_ice <- dat_expand %>% 
-  arrange(PATIENT, VISIT) %>% 
-  filter(is.na(CHANGE)) %>% 
-  group_by(PATIENT) %>% 
-  slice(1) %>%
-  ungroup() %>% 
-  select(PATIENT, VISIT) %>% 
+dat_ice <- dat_expand |>
+  arrange(PATIENT, VISIT) |>
+  filter(is.na(CHANGE)) |>
+  group_by(PATIENT) |>
+  slice(1) |>
+  ungroup() |>
+  select(PATIENT, VISIT) |>
   mutate(strategy = "MAR")
 
-dat_ice <- dat_ice[-which(dat_ice$PATIENT == 3618),]
+dat_ice <- dat_ice[-which(dat_ice$PATIENT == 3618), ]
 ```
 
 ```{r}
 #| label: MAR_imputation_model
 #| include: false
-vars <- set_vars(
+vars <- rbmi::set_vars(
   outcome = "CHANGE",
   visit = "VISIT",
   subjid = "PATIENT",
@@ -160,12 +166,12 @@ vars <- set_vars(
   covariates = c("GENDER", "BASVAL*VISIT", "THERAPY*VISIT")
 )
 
-method <- method_bayes(
+method <- rbmi::method_bayes(
   n_samples = 500,
   control = control_bayes(warmup = 500, thin = 10)
 )
 
-drawObj <- draws(
+drawObj <- rbmi::draws(
   data = dat_expand,
   data_ice = dat_ice,
   vars = vars,
@@ -173,15 +179,16 @@ drawObj <- draws(
   quiet = TRUE
 )
 
-imputeObj <- impute(
+imputeObj <- rbmi::impute(
   draws = drawObj,
-  references = NULL)
+  references = NULL
+)
 ```
 
 ```{r}
 #| label: MAR_analysis_model
 #| include: false
-vars_analyse <- set_vars(
+vars_analyse <- rbmi::set_vars(
   outcome = "CHANGE",
   visit = "VISIT",
   subjid = "PATIENT",
@@ -215,14 +222,18 @@ By default, `delta_template()` will set `delta` to 0 for all observations.
 # delta template
 dat_delta_0 <- delta_template(imputations = imputeObj)
 
-gt(dat_delta_0 %>% dplyr::filter(PATIENT %in% c("1513", "1514")) %>% head(8))
+
+dat_delta_0 |>
+  dplyr::filter(PATIENT %in% c("1513", "1514")) |>
+  head(8) |>
+  gt()
 ```
 
 You can add the delta values to the outcome variable (CHANGE) of one of the imputed datasets by using the `apply_delta()` function. Of course, nothing is changed here as delta = 0.
 
 ```{r}
 #| label: extract_imputed_dfs_on_which_to_apply_delta
-imputed_dfs = extract_imputed_dfs(imputeObj)
+imputed_dfs = rbmi::extract_imputed_dfs(imputeObj)
 MI_10 = imputed_dfs[[10]]
 MI_10$PATIENT2 = MI_10$PATIENT
 MI_10$PATIENT = dat_expand$PATIENT
@@ -248,7 +259,10 @@ You may have noticed that the `is_missing` and `is_post_ice` columns of the delt
 dat_delta_5_v1 <- delta_template(imputations = imputeObj) %>%
     mutate(delta = is_missing * 5)
 
-gt(dat_delta_5_v1 %>% dplyr::filter(PATIENT %in% c("1513", "1514")) %>% head(8))
+dat_delta_5_v1 |>
+  dplyr::filter(PATIENT %in% c("1513", "1514")) |>
+  head(8) |>
+  gt()
 ```
 
 ```{r}
@@ -290,7 +304,9 @@ If you consider the `is_post_ice` column too, you can restrict the delta adjustm
 dat_delta_5_v2 <- delta_template(imputations = imputeObj) %>%
     mutate(delta = is_missing * is_post_ice * 5)
 
-gt(dat_delta_5_v2 %>% dplyr::filter(PATIENT == "3618"))
+dat_delta_5_v2 |>
+  dplyr::filter(PATIENT == "3618") |>
+  gt()
 ```
 
 ```{r}
@@ -312,14 +328,17 @@ Besides choosing which missing data to apply the delta adjustment to, you may al
 delta_control = 0
 delta_intervention = 5
 
-dat_delta_0_5 <- delta_template(imputations = imputeObj) %>%
+dat_delta_0_5 <- rbmi::delta_template(imputations = imputeObj) |>
   mutate(
     delta_ctl = (THERAPY == "PLACEBO") * is_missing * delta_control,
     delta_int = (THERAPY == "DRUG") * is_missing * delta_intervention,
     delta = delta_ctl + delta_int
-    )
+  )
 
-gt(dat_delta_0_5 %>% dplyr::filter(PATIENT %in% c("1513", "1514")) %>% head(8))
+dat_delta_0_5 |>
+  dplyr::filter(PATIENT %in% c("1513", "1514")) |>
+  head(8) |>
+  gt()
 ```
 
 ```{r}
@@ -341,19 +360,19 @@ Here, we apply the delta adjustment of 5 to **all** imputed values of the outcom
 
 ```{r}
 #| label: MAR_analysis_model_with_delta_adjustment
-anaObj <- analyse(
-    imputations = imputeObj,
-    fun = ancova,
-    delta = dat_delta_0_5,
-    vars = vars_analyse
+anaObj <- rbmi::analyse(
+  imputations = imputeObj,
+  fun = ancova,
+  delta = dat_delta_0_5,
+  vars = vars_analyse
 )
 
 poolObj <- rbmi::pool(anaObj)
 
-poolObj %>%
-  data.frame() %>%
-  dplyr::filter(grepl("7", parameter)) %>%
-  gt()  
+poolObj |>
+  data.frame() |>
+  dplyr::filter(grepl("7", parameter)) |>
+  gt()
 ```
 
 ## Tipping point analysis: MAR approach
@@ -365,17 +384,17 @@ To perform a tipping point analysis under the MAR assumption, we must create a r
 ```{r}
 #| label: sequential_delta_specification_v1
 delta_df1 <- expand.grid(
-    delta_control = 0,
-    delta_intervention = seq(-5, 10, by = 1)
-    ) %>%
-    as_tibble()
+  delta_control = 0,
+  delta_intervention = seq(-5, 10, by = 1)
+) |>
+  as_tibble()
 ```
 
 To cut down on computation time, you may want to increase the number of parallel processes.
 
 ```{r}
 #| label: cluster_specification
-cl <- make_rbmi_cluster(ncores = 4)
+cl <- rbmi::make_rbmi_cluster(ncores = 4)
 ```
 
 ### Perform tipping point analysis
@@ -385,15 +404,14 @@ To enable a tipping point analysis within a single function, we create `perform_
 ```{r}
 #| label: function_tipping_point_analysis
 perform_tipp_analysis <- function(delta_control, delta_intervention, cl) {
-
-  dat_delta <- delta_template(imputeObj) %>%
+  dat_delta <- rbmi::delta_template(imputeObj) |>
     mutate(
       delta_ctl = (THERAPY == "PLACEBO") * is_missing * delta_control,
       delta_int = (THERAPY == "DRUG") * is_missing * delta_intervention,
       delta = delta_ctl + delta_int
     )
 
-  anaObj <- analyse(
+  anaObj <- rbmi::analyse(
     imputations = imputeObj,
     fun = ancova,
     delta = dat_delta,
@@ -401,9 +419,9 @@ perform_tipp_analysis <- function(delta_control, delta_intervention, cl) {
     ncores = cl
   )
 
-  poolObj <- as.data.frame(pool(anaObj)) %>%
+  poolObj <- as.data.frame(pool(anaObj)) |>
     dplyr::filter(grepl("trt_7", parameter))
-  
+
   list(
     trt_7 = poolObj[["est"]],
     pval_7 = poolObj[["pval"]],
@@ -417,14 +435,19 @@ Now, let's apply this function to the antidepressant data as follows:
 
 ```{r}
 #| label: MAR_v1_tipping_point_analysis
-MAR_tipp_df1 <- delta_df1 %>%
+MAR_tipp_df1 <- delta_df1 |>
   mutate(
-    results_list = map2(delta_control, delta_intervention, perform_tipp_analysis, cl = cl),
+    results_list = map2(
+      delta_control,
+      delta_intervention,
+      perform_tipp_analysis,
+      cl = cl
+    ),
     trt_7 = map_dbl(results_list, "trt_7"),
     pval_7 = map_dbl(results_list, "pval_7"),
     lci_7 = map_dbl(results_list, "lci_7"),
     uci_7 = map_dbl(results_list, "uci_7")
-  ) %>%
+  ) |>
   select(-results_list)
 ```
 
@@ -432,8 +455,8 @@ The results of the tipping point analysis under MAR with p-value $\geq$ 0.05 are
 
 ```{r}
 #| label: MAR_v1_non-significant_results
-MAR_tipp_df1 %>%
-  filter(pval_7 >= 0.05) %>%
+MAR_tipp_df1 |>
+  filter(pval_7 >= 0.05) |>
   gt()
 ```
 
@@ -441,8 +464,8 @@ The results of the tipping point analysis under MAR with p-value $<$ 0.05 are:
 
 ```{r}
 #| label: MAR_v1_significant_results
-MAR_tipp_df1 %>%
-  filter(pval_7 < 0.05) %>%
+MAR_tipp_df1 |>
+  filter(pval_7 < 0.05) |>
   gt()
 ```
 
@@ -450,23 +473,38 @@ We can derive an **exact** tipping point by linearly interpolating between the l
 
 ```{r}
 #| label: MAR_v1_tipping_point
-delta_tp <- approx(x = MAR_tipp_df1$pval_7, 
-                   y = MAR_tipp_df1$delta_intervention, 
-                   xout = 0.05)$y
+delta_tp <- approx(
+  x = MAR_tipp_df1$pval_7,
+  y = MAR_tipp_df1$delta_intervention,
+  xout = 0.05
+)$y
 
-trt_tp <- approx(x = MAR_tipp_df1$delta_intervention, 
-                 y = MAR_tipp_df1$trt_7,
-                 xout = delta_tp)$y
+trt_tp <- approx(
+  x = MAR_tipp_df1$delta_intervention,
+  y = MAR_tipp_df1$trt_7,
+  xout = delta_tp
+)$y
 
-lci_tp <- approx(x = MAR_tipp_df1$delta_intervention, 
-                 y = MAR_tipp_df1$lci_7,
-                 xout = delta_tp)$y
+lci_tp <- approx(
+  x = MAR_tipp_df1$delta_intervention,
+  y = MAR_tipp_df1$lci_7,
+  xout = delta_tp
+)$y
 
-uci_tp <- approx(x = MAR_tipp_df1$delta_intervention, 
-                 y = MAR_tipp_df1$uci_7,
-                 xout = delta_tp)$y
+uci_tp <- approx(
+  x = MAR_tipp_df1$delta_intervention,
+  y = MAR_tipp_df1$uci_7,
+  xout = delta_tp
+)$y
 
-data.frame(delta_control = 0, delta_intervention = delta_tp, trt_7 = trt_tp, pval_7 = 0.05, lci_7 = lci_tp, uci_7 = uci_tp) %>%
+data.frame(
+  delta_control = 0,
+  delta_intervention = delta_tp,
+  trt_7 = trt_tp,
+  pval_7 = 0.05,
+  lci_7 = lci_tp,
+  uci_7 = uci_tp
+) |>
   gt()
 ```
 
@@ -479,19 +517,22 @@ A nice visualization of this tipping point analysis for the MAR approach is show
 MAR_est <- ggplot(MAR_tipp_df1, aes(delta_intervention, trt_7)) +
   geom_line() +
   geom_point() +
-  geom_ribbon(aes(delta_intervention, ymin = lci_7, ymax = uci_7), alpha = 0.25) +
+  geom_ribbon(
+    aes(delta_intervention, ymin = lci_7, ymax = uci_7),
+    alpha = 0.25
+  ) +
   geom_hline(yintercept = 0.0, linetype = 2) +
   geom_vline(xintercept = delta_tp, linetype = 2) +
   scale_x_continuous(breaks = seq(-6, 10, 2)) +
-  labs(x = "Delta (intervention)", y = "Treatment effect (95% CI)") 
-  
+  labs(x = "Delta (intervention)", y = "Treatment effect (95% CI)")
+
 MAR_pval <- ggplot(MAR_tipp_df1, aes(delta_intervention, pval_7)) +
   geom_line() +
   geom_point() +
   geom_hline(yintercept = 0.05, linetype = 2) +
   geom_vline(xintercept = delta_tp, linetype = 2) +
   scale_x_continuous(breaks = seq(-6, 10, 2)) +
-  labs(x = "Delta (intervention)", y = "P-value") 
+  labs(x = "Delta (intervention)", y = "P-value")
 
 grid.arrange(MAR_pval, MAR_est, nrow = 1)
 ```
@@ -505,27 +546,38 @@ Let's now create a sequence of delta's for the control group too, and carry out 
 ```{r}
 #| label: sequential_delta_specification_v2
 delta_df2 <- expand.grid(
-    delta_control = seq(-5, 10, by = 1),
-    delta_intervention = seq(-5, 10, by = 1)
-    ) %>%
-    as_tibble()
+  delta_control = seq(-5, 10, by = 1),
+  delta_intervention = seq(-5, 10, by = 1)
+) |>
+  as_tibble()
 ```
 
 ```{r}
 #| label: MAR_v2_tipping_point_analysis
-MAR_tipp_df2 <- delta_df2 %>%
+MAR_tipp_df2 <- delta_df2 |>
   mutate(
-    results_list = map2(delta_control, delta_intervention, perform_tipp_analysis, cl = cl),
+    results_list = map2(
+      delta_control,
+      delta_intervention,
+      perform_tipp_analysis,
+      cl = cl
+    ),
     trt_7 = map_dbl(results_list, "trt_7"),
     pval_7 = map_dbl(results_list, "pval_7")
-  ) %>%
-  select(-results_list) %>%
+  ) |>
+  select(-results_list) |>
   mutate(
     pval = cut(
       pval_7,
       c(0, 0.001, 0.01, 0.05, 0.2, 1),
       right = FALSE,
-      labels = c("<0.001", "0.001 - <0.01", "0.01 - <0.05", "0.05 - <0.20", ">= 0.20")
+      labels = c(
+        "<0.001",
+        "0.001 - <0.01",
+        "0.01 - <0.05",
+        "0.05 - <0.20",
+        ">= 0.20"
+      )
     )
   )
 ```
@@ -534,12 +586,17 @@ We can visualize the result of this tipping point analysis using a heatmap. Here
 
 ```{r}
 #| label: MAR_v2_tipping_point_visualization
-MAR_heat <- ggplot(MAR_tipp_df2, aes(delta_control, delta_intervention, fill = pval)) +
+MAR_heat <- ggplot(
+  MAR_tipp_df2,
+  aes(delta_control, delta_intervention, fill = pval)
+) +
   geom_raster() +
-  scale_fill_manual(values = c("darkgreen", "lightgreen", "lightyellow", "orange", "red")) +
+  scale_fill_manual(
+    values = c("darkgreen", "lightgreen", "lightyellow", "orange", "red")
+  ) +
   scale_x_continuous(breaks = seq(-5, 10, 1)) +
   scale_y_continuous(breaks = seq(-5, 10, 1)) +
-  labs(x = "Delta (control)", y = "Delta (intervention)", fill = "P-value") 
+  labs(x = "Delta (control)", y = "Delta (intervention)", fill = "P-value")
 MAR_heat
 ```
 
@@ -637,23 +694,29 @@ To program this, we first use the `delta` and `dlag` arguments of `delta_templat
 
 ```{r}
 #| label: template_delta_scaled
-dat_delta <- delta_template(
+dat_delta <- rbmi::delta_template(
   imputeObj,
   delta = c(2, 2, 2, 2),
   dlag = c(1, 1, 1, 1)
 )
 
-gt(dat_delta %>% dplyr::filter(PATIENT %in% c("1513", "1514")) %>% head(8))
+dat_delta |>
+  dplyr::filter(PATIENT %in% c("1513", "1514")) |>
+  head(8) |>
+  gt()
 ```
 
 Then, we use some metadata variables provided by `delta_template()` to manually reset the delta values for the control group back to 0.
 
 ```{r}
 #| label: stratified_delta_scaled
-dat_delta <- dat_delta %>%
-    mutate(delta = if_else(THERAPY == "PLACEBO", 0, delta))
+dat_delta <- dat_delta |>
+  mutate(delta = if_else(THERAPY == "PLACEBO", 0, delta))
 
-gt(dat_delta %>% dplyr::filter(PATIENT %in% c("1513", "1514")) %>% head(8))
+dat_delta |>
+  dplyr::filter(PATIENT %in% c("1513", "1514")) |>
+  head(8) |>
+  gt()
 ```
 
 And lastly we use `dat_delta` to apply the desired delta offset to our analysis model under the `delta` argument of the `analyse()` function.
@@ -661,11 +724,11 @@ And lastly we use `dat_delta` to apply the desired delta offset to our analysis 
 ```{r}
 #| label: analysis_model_with_scaled_delta_adjustment
 #| output: false
-anaObj <- analyse(
-    imputations = imputeObj,
-    fun = ancova,
-    delta = dat_delta,
-    vars = vars_analyse
+anaObj <- rbmi::analyse(
+  imputations = imputeObj,
+  fun = ancova,
+  delta = dat_delta,
+  vars = vars_analyse
 )
 
 poolObj <- rbmi::pool(anaObj)
@@ -761,4 +824,5 @@ One should be aware of this discrepancy when using the `rbmi` package for delta 
 si <- sessioninfo::session_info(c())
 si
 ```
+
 :::

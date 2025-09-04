@@ -6,7 +6,10 @@ title: "Estimating and Testing Cause Specific Hazard Ratio Using SAS"
 
 In this document we present how to estimate and test cause specific hazard ratio for the probability of experiencing a certain event at a given time in a competing risks model in SAS (version 9.4). We focus on the basic model where each subject experiences only one out of *k* possible events as depicted in the figure below.
 
-```{r, echo=FALSE, fig.align='center', out.width="25%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 25%
 knitr::include_graphics("../images/survival_competing_risks/cr.jpg")
 ```
 
@@ -32,23 +35,25 @@ The bone marrow transplant (BTM) dataset as presented by Guo & So (2018) is used
 
 -   For illustration, a categorical variable `waitCat` is created from `waitTime` as `waitCat = TRUE` if `waitTime > 200`, and `FALSE` otherwise.
 
-```{r eval=FALSE}
+```{sas}
+#| eval: false
 proc format;
-  value DiseaseGroup 1='ALL'
-                     2='AML-Low Risk'
-                     3='AML-High Risk';
-  value EventStatus  0='Censored'
-                     1='Relapse'
-                     2='Death';
+    value DiseaseGroup 1='ALL'
+                      2='AML-Low Risk'
+                      3='AML-High Risk';
+    value EventStatus  0='Censored'
+                      1='Relapse'
+                      2='Death';
 run;
+
 libname datalib "..\data";
 data bmt;
-  set datalib.bmt;
-  TYears = T / 365.25;
-  waitCat = (waitTime>200);
-  ID = _n_;
-  format Group DiseaseGroup.;
-  format Status EventStatus.;
+    set datalib.bmt;
+    TYears = T / 365.25;
+    waitCat = (waitTime>200);
+    ID = _n_;
+    format Group DiseaseGroup.;
+    format Status EventStatus.;
 run;
 ```
 
@@ -58,17 +63,22 @@ run;
 
 Starting in SAS/STAT 14.3, all competing events can be estimated together. However, currently this syntax does not allow the `strata` statement.
 
-```{r eval=FALSE}
+```{sas}
+#| eval: false
 proc phreg data=Bmt;
-	title 'Cause-Specific Hazard Regression for Relapse and Death without strata';
-	class Group (order=internal ref=first);
-	model T*Status(0)=Group / eventcode(cox)=1;
+    title 'Cause-Specific Hazard Regression for Relapse and Death without strata';
+    class Group (order=internal ref=first);
+    model T*Status(0)=Group / eventcode(cox)=1;
 run;
 ```
 
 The results for both events are given below:
 
-```{r, echo=FALSE, fig.align='center', out.width="100%", out.height="120%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 100%
+#| out-height: 120%
 knitr::include_graphics("../images/survival_competing_risks/cshSAS_1.png")
 ```
 
@@ -88,20 +98,24 @@ For more information, please see [Guo C and So Y. (2018)](https://support.sas.co
 
 We use `Relapse` as an example.
 
-```{r eval=FALSE}
+```{sas}
+#| eval: false
 ods output ParameterEstimates=p1;
 proc phreg data=bmt; 
-  title 'Cause-Specific Hazard Regression for Relapse with strata';
-	class Group (order=internal ref=first) waitCat;
-	strata waitCat;
-	model TYears*Status(0,2) = Group / risklimits alpha = 0.05;
+    title 'Cause-Specific Hazard Regression for Relapse with strata';
+    class Group (order=internal ref=first) waitCat;
+    strata waitCat;
+    model TYears*Status(0,2) = Group / risklimits alpha = 0.05;
 run;
 quit;
 ```
 
 The results for event `Relapse` are given below:
 
-```{r, echo=FALSE, fig.align='center', out.width="100%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 100%
 knitr::include_graphics("../images/survival_competing_risks/cshSAS_2.png")
 ```
 

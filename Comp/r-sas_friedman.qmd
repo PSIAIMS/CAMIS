@@ -2,12 +2,13 @@
 title: "R vs SAS Non-parametric Analysis - Friedman test"
 ---
 
-```{r review-setup}
-#| message: FALSE
-#| warning: FALSE
-#| eval: TRUE
+```{r}
+#| label: review-setup
+#| message: false
+#| warning: false
+#| eval: true
 library(tidyverse)
-library(rstatix) 
+library(rstatix)
 library(ggpubr)
 ```
 
@@ -18,9 +19,11 @@ Friedman's test is used when you have one within-subjects independent variable w
 ```{r}
 set.seed(123)
 
-df_bp = data.frame(bp = runif(n = 50, 138, 200)) %>% 
-  mutate(subjid = as.factor(row_number() %% 5),  
-         time_point = as.factor((row_number()-1) %/% 5 + 1))
+df_bp = data.frame(bp = runif(n = 50, 138, 200)) |>
+  mutate(
+    subjid = as.factor(row_number() %% 5),
+    time_point = as.factor((row_number() - 1) %/% 5 + 1)
+  )
 
 head(df_bp)
 ```
@@ -36,7 +39,7 @@ ggpubr::ggboxplot(df_bp, x = "time_point", y = "bp", add = "jitter")
 In R, **friedman_test** can be used to compare multiple means of rank in `bp` grouped by `time_point`, stratified by `subjid`.
 
 ```{r}
-res.fried <- df_bp %>% 
+res.fried <- df_bp |>
   friedman_test(bp ~ time_point | subjid)
 res.fried
 ```
@@ -45,13 +48,14 @@ res.fried
 
 In SAS, **CMH2** option of PROC FREQ is used to perform Friedman's test.
 
-``` sas
+```{sas}
+#| eval: false
 proc freq data=data_bp;
-   tables patient*dos*bp / 
+  tables patient*dos*bp / 
           cmh2 scores=rank noprint;
 run;
-
 ```
+
 ## Comparison
 
 The Row Mean Scores Differ statistic of SAS result is compared with statistic of R result, together with *p*-value.
@@ -82,8 +86,10 @@ SAS `PROC FREQ` documentation: <https://support.sas.com/documentation/cdl/en/sta
 ```{r}
 #| echo: false
 si <- sessioninfo::session_info(
-  c("rstatix"), #Vector of packages used 
-  dependencies = FALSE)
+  c("rstatix"), #Vector of packages used
+  dependencies = FALSE
+)
 si
 ```
+
 :::

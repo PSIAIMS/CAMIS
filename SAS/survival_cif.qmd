@@ -6,7 +6,10 @@ title: "Estimating Cumulative Incidence Functions Using SAS"
 
 In this document we present how to estimate the cumulative incidence function (CIF) in SAS (version 9.4). We focus on the competing risks model where each subject experiences only one out of *k* possible events as depicted in the figure below.
 
-```{r, echo=FALSE, fig.align='center', out.width="25%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 25%
 knitr::include_graphics("../images/survival_competing_risks/cr.jpg")
 ```
 
@@ -26,29 +29,33 @@ The bone marrow transplant (BTM) dataset as presented by Guo & So (2018) is used
 
 SAS code to prepare the data:
 
-```{r eval=FALSE}
+```{sas}
+#| eval: false
 proc format;
-  value DiseaseGroup 1='ALL'
-                     2='AML-Low Risk'
-                     3='AML-High Risk';
-  value EventStatus  0='Censored'
-                     1='Relapse'
-                     2='Death';
+    value DiseaseGroup 1='ALL'
+                      2='AML-Low Risk'
+                      3='AML-High Risk';
+    value EventStatus  0='Censored'
+                      1='Relapse'
+                      2='Death';
 run;
+
 libname datalib "..\data";
 data bmt;
-  set datalib.bmt;
-  TYears = T / 365.25;
-  ID = _n_;
-  format Group DiseaseGroup.;
-  format Status EventStatus.;
+    set datalib.bmt;
+    TYears = T / 365.25;
+    ID = _n_;
+    format Group DiseaseGroup.;
+    format Status EventStatus.;
 run;
 ```
 
 ## Estimating CIFs in SAS
 
 PROC LIFETEST is used to estimate the CIFs in SAS. For illustration, we model the time to relapse.  
-```{r eval=FALSE}
+
+```{sas}
+#| eval: false
 ods graphics on;
 proc lifetest data=bmt 
               plots=cif(test) 
@@ -56,9 +63,9 @@ proc lifetest data=bmt
               conftype=loglog
               outcif=cif1 
               timelist=0.5 1 1.5 2 3; 
-  time Tyears * Status(0) / eventcode=1; 
-  strata Group / order=internal; 
-  format Group DiseaseGroup.;
+    time Tyears * Status(0) / eventcode=1; 
+    strata Group / order=internal; 
+    format Group DiseaseGroup.;
 run; 
 ods graphics off;
 ```
@@ -67,13 +74,19 @@ Below are selected outputs for comparison with the R outputs in the companion do
 
 CIF estimates for time to relapse at selected timepoints for 'AML-Low Risk' patients:
 
-```{r, echo=FALSE, fig.align='center', out.width="75%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 75%
 knitr::include_graphics("../images/survival_competing_risks/cifSAS.jpg")
 ```
 
 CIF estimates for time to relapses:
 
-```{r, echo=FALSE, fig.align='center', out.width="75%"}
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 75%
 knitr::include_graphics("../images/survival_competing_risks/cifPlot.png")
 ```
 
