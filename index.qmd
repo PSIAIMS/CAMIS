@@ -21,33 +21,66 @@ The repository below provides examples of statistical methodology in different s
 ```{r}
 #| echo: false
 #| message: false
+#| html-table-processing: none
 library(gt)
 library(tidyverse)
-method_tbl <- read_csv("data/stat_method_tbl.csv", show_col_types = FALSE) |> 
-  pivot_longer(cols = ends_with("links")) %>% 
-  mutate(link_name = str_extract(value, "(?<=^\\[).*(?=\\])"),
-         link_loc = str_extract(value, "(?<=\\().*(?=\\)$)"),
-         link = if_else(!is.na(value), 
-                        paste0('<a href=\"',
-                       link_loc,
-                       '.html">',
-                       link_name, 
-                       '</a>'), 
-                       "")) |> 
+
+method_tbl <- read_csv("data/stat_method_tbl.csv", show_col_types = FALSE) |>
+  filter(!is.na(method_grp)) |>
+  pivot_longer(cols = ends_with("links")) |>
+  mutate(
+    link_name = str_extract(value, "(?<=^\\[).*(?=\\])"),
+    link_loc = str_extract(value, "(?<=\\().*(?=\\)$)"),
+    link = if_else(
+      !is.na(value),
+      paste0('<a href=\"', link_loc, '.html">', link_name, '</a>'),
+      ""
+    )
+  ) |>
   select(-value, -link_name, -link_loc) |>
   pivot_wider(names_from = name, values_from = link) |>
-  mutate(across(ends_with("links"), ~map(., html)))
+  mutate(across(ends_with("links"), ~ map(., html)))
 
-
-gt(method_tbl, groupname_col = "method_grp",
-   rowname_col = "method_subgrp") |> 
-      tab_options(row_group.as_column = TRUE) |>
-    cols_label(method_subgrp = "Methods", 
-               r_links = "R", 
-               sas_links = "SAS", 
-               python_links = "Python",
-               comparison_links = "Comparison") |>
-  tab_stubhead("Methods") 
-  
+gt(
+  method_tbl,
+  groupname_col = "method_grp",
+  rowname_col = "method_subgrp"
+) |>
+  cols_label(
+    r_links = "R",
+    sas_links = "SAS",
+    python_links = "Python",
+    comparison_links = "Comparison"
+  ) |>
+  tab_stubhead("Statistical Methodology") |>
+  tab_stub_indent(rows = method_subgrp, indent = 5) |>
+  cols_hide(method_grp) |>
+  cols_width(3:6 ~ px(100)) |>
+  tab_style(
+    style = list(
+      cell_text(weight = "bold"),
+      cell_borders(
+        sides = c("top", "bottom"),
+        color = "#000000",
+        weight = px(2.5)
+      )
+    ),
+    locations = list(
+      cells_row_groups(),
+      cells_column_labels(),
+      cells_stubhead()
+    )
+  ) |>
+  tab_style(
+    style = list(
+      cell_fill(color = "transparent")
+    ),
+    locations = cells_body(columns = everything(), rows = everything())
+  ) |>
+  tab_options(
+    table_body.border.bottom.style = "solid",
+    table_body.border.bottom.width = px(2.5),
+    table_body.border.bottom.color = "#000000"
+  )
 
 ```
