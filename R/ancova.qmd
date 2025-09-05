@@ -96,7 +96,18 @@ model_table |>
   gt()
 ```
 
-### Type 1
+### Sums of Squares Tables {.unnumbered}
+
+#### Type I
+This can be calculated using, the base R {stats} package or the {rstatix} package. Both give the same result.
+
+##### stats
+
+```{r}
+stats::anova(model_ancova)
+```
+
+##### rstatix
 
 ```{r}
 df_sas |>
@@ -105,7 +116,17 @@ df_sas |>
   gt()
 ```
 
-### Type 2
+#### Type II
+
+This can be calculated using the {car} package or the {rstatix} package. Both give the same result.
+
+##### car
+
+```{r}
+car::Anova(model_ancova, type = "II")
+```
+
+##### rstatix
 
 ```{r}
 df_sas |>
@@ -114,7 +135,47 @@ df_sas |>
   gt()
 ```
 
-### Type 3
+#### Type III
+
+This can be calculated using the base R {stats} package, the {car} package or the {rstatix} package. All give the same result.
+
+Note: Calculating type III sums of squares in R is a bit tricky, because the multi-way ANOVA model is over-paramerterised. So when running the linear model we need to select a design matrix that sums to zero. In R those options will be either `"contr.sum"` or `"contr.poly"`
+
+```{r}
+# Drug design matrix
+contr.sum(4) # Using 4 here as we have 4 levels of drug
+
+# Disease design matrix
+contr.sum(3)
+```
+
+While not relevant for this example as the disease variable isn't ordinal the polynomial design matrix would look like
+
+```{r}
+contr.poly(3)
+```
+
+```{r}
+model_ancova <- lm(
+  post ~ drug + pre, data = df_sas,
+  contrasts = list(drug = "contr.sum")
+)
+```
+
+##### stats
+
+Using the base stats package, you can use the `drop1()` function which drops all possible single terms in a model. The scope term specifies how things can be dropped.
+
+```{r}
+stats::drop1(model_ancova, scope = . ~ ., test = "F")
+```
+
+##### car
+
+```{r}
+car::Anova(model_ancova, type = "III")
+```
+
 
 ```{r}
 df_sas |>
