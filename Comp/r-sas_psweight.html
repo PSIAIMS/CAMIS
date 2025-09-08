@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>CAMIS Blog</title>
+<title>Propensity Score Weighting</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,6 +20,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -31,8 +66,6 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
 <link href="../images/logo.png" rel="icon" type="image/png">
-<script src="../site_libs/quarto-listing/list.min.js"></script>
-<script src="../site_libs/quarto-listing/quarto-listing.js"></script>
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -70,65 +103,7 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
-<script>
 
-  window.document.addEventListener("DOMContentLoaded", function (_event) {
-    const listingTargetEl = window.document.querySelector('#listing-listing .list');
-    if (!listingTargetEl) {
-      // No listing discovered, do not attach.
-      return; 
-    }
-
-    const options = {
-      valueNames: ['listing-date','listing-title','listing-author','listing-subtitle','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
-      
-      searchColumns: ["listing-date","listing-title","listing-author","listing-subtitle","listing-image","listing-description"],
-    };
-
-    window['quarto-listings'] = window['quarto-listings'] || {};
-    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
-
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  });
-
-  window.addEventListener('hashchange',() => {
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  })
-  </script>
-
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
-
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN") {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -181,7 +156,7 @@ window.Quarto = {
 <span class="menu-text">Meeting Minutes</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="../blogs/index.html" aria-current="page"> 
+    <a class="nav-link" href="../blogs/index.html"> 
 <span class="menu-text">Blog</span></a>
   </li>  
   <li class="nav-item dropdown ">
@@ -220,24 +195,57 @@ window.Quarto = {
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#differences" id="toc-differences" class="nav-link" data-scroll-target="#differences">Differences</a>
+  <ul class="collapse">
+  <li><a href="#options" id="toc-options" class="nav-link" data-scroll-target="#options">Options</a></li>
+  <li><a href="#output" id="toc-output" class="nav-link" data-scroll-target="#output">Output</a>
+  <ul class="collapse">
+  <li><a href="#statistics" id="toc-statistics" class="nav-link" data-scroll-target="#statistics">Statistics</a></li>
+  <li><a href="#figures" id="toc-figures" class="nav-link" data-scroll-target="#figures">Figures</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#dataset" id="toc-dataset" class="nav-link" data-scroll-target="#dataset">Dataset</a></li>
+  <li><a href="#matching-examples" id="toc-matching-examples" class="nav-link" data-scroll-target="#matching-examples">Matching Examples</a>
+  <ul class="collapse">
+  <li><a href="#average-treatment-effect-in-treated-att" id="toc-average-treatment-effect-in-treated-att" class="nav-link" data-scroll-target="#average-treatment-effect-in-treated-att">Average Treatment Effect in Treated (ATT)</a>
+  <ul class="collapse">
+  <li><a href="#sas" id="toc-sas" class="nav-link" data-scroll-target="#sas">SAS</a></li>
+  <li><a href="#r" id="toc-r" class="nav-link" data-scroll-target="#r">R</a></li>
+  </ul></li>
+  <li><a href="#average-treatment-effect-ate" id="toc-average-treatment-effect-ate" class="nav-link" data-scroll-target="#average-treatment-effect-ate">Average Treatment Effect (ATE)</a>
+  <ul class="collapse">
+  <li><a href="#sas-1" id="toc-sas-1" class="nav-link" data-scroll-target="#sas-1">SAS</a></li>
+  <li><a href="#r-1" id="toc-r-1" class="nav-link" data-scroll-target="#r-1">R</a></li>
+  </ul></li>
+  <li><a href="#average-treatment-effect-ate-stabilized-weights" id="toc-average-treatment-effect-ate-stabilized-weights" class="nav-link" data-scroll-target="#average-treatment-effect-ate-stabilized-weights">Average Treatment Effect (ATE), stabilized weights</a>
+  <ul class="collapse">
+  <li><a href="#sas-2" id="toc-sas-2" class="nav-link" data-scroll-target="#sas-2">SAS</a></li>
+  <li><a href="#r-2" id="toc-r-2" class="nav-link" data-scroll-target="#r-2">R</a></li>
+  </ul></li>
+  </ul></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
-<main class="content column-page" id="quarto-document-content">
+<main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">CAMIS Blog</h1>
-<p class="subtitle lead">News, updates, and commentary on the CAMIS working group</p>
+<h1 class="title">Propensity Score Weighting</h1>
 </div>
 
 
 
-<div class="quarto-title-meta column-page">
+<div class="quarto-title-meta">
 
     
   
@@ -249,140 +257,273 @@ window.Quarto = {
 </header>
 
 
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Propensity score (PS) weighting is a statistical technique widely employed in Real World Evidence (RWE) studies to address confounding bias and facilitate the estimation of causal treatment effects. By using the estimated probability of treatment assignment to create weights, PS weighting aims to balance the observed covariates across treatment groups. While both SAS and R provide methods to do PS weighting, the syntax and available options differ considerably. The PS weighting process generally involves several key stages: first, the estimation of propensity scores using a regression model; second, the calculation of weights for each subject based on their propensity score; and third, the use of these weights in the analysis of choice.</p>
+</section>
+<section id="differences" class="level1">
+<h1>Differences</h1>
+<p>Given the extensive number of parameters and arguments available in both <code>PROC PSMATCH</code> and <code>weightit()</code>, we will focus only on the observed differences.</p>
+<section id="options" class="level2">
+<h2 class="anchored" data-anchor-id="options">Options</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 23%">
+<col style="width: 71%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Option</th>
+<th>PROC PSMATCH</th>
+<th>weightit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PS methods</td>
+<td>logistic regression</td>
+<td>glm, gbm, covariate balancing propensity score (CBPS) algorithm, non-parametric CBPS, entropy balancing, inverse probability tilting, optimization-based weighting, PS weighting using SuperLearner, bayesian additive regression trees (BART), energy balancing</td>
+</tr>
+<tr class="even">
+<td>Estimands</td>
+<td>ATT, ATE</td>
+<td>ATT, ATE, ATC, for some methods ATO, ATM, ATOS</td>
+</tr>
+<tr class="odd">
+<td>Region</td>
+<td>Always used; <em>allobs</em>, <em>treated</em> or <em>cs</em> (common support), with allowed extension</td>
+<td>Not available</td>
+</tr>
+<tr class="even">
+<td>Stabilize weights</td>
+<td>Available as logical, only for ATE</td>
+<td>Available as logical or formula when used with continuous treatments or when estimand is ATE</td>
+</tr>
+<tr class="odd">
+<td>Moments</td>
+<td>Not available</td>
+<td>Some methods allows to set the greatest power of each covariate to be balanced</td>
+</tr>
+<tr class="even">
+<td>Interactions</td>
+<td>Not available</td>
+<td>Some methods allows to set the first-order interactions of the covariates to be balanced</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="output" class="level2">
+<h2 class="anchored" data-anchor-id="output">Output</h2>
+<p>The way SAS and R output the weights is similar - they are given as a column (SAS) / vector in the output list (R) with a computed weight for each observation. However, seems to be due to the different rounding rules, the PS weights may differ on the last digit.</p>
+<section id="statistics" class="level3">
+<h3 class="anchored" data-anchor-id="statistics">Statistics</h3>
+<p>In SAS, descriptive statistics for assessing balance are primarily generated through the <code>ASSESS</code> statement within <code>PROC PSMATCH</code>. Conversely, in R, descriptive statistics for weights could be obtained by applying the <code>summary()</code> function to the output object returned by the <code>weightit()</code>. The balance assessment after weighting could be performed using the <code>cobalt</code> package. The following table summarizes the statistics available in SAS and R:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Stat or info</th>
+<th style="text-align: center;">SAS</th>
+<th style="text-align: center;">R</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">N</td>
+<td style="text-align: center;">+</td>
+<td style="text-align: center;">+</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Weights range</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">+</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Extreme weights</td>
+<td style="text-align: center;">+</td>
+<td style="text-align: center;">+</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ESS</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">+</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Coefficient of Variation</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">+</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mean absolute deviation</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">+</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Negative Entropy</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">+</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Number of zero weights</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">+</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Weighted covariates stats</td>
+<td style="text-align: center;">+</td>
+<td style="text-align: center;">-*</td>
+</tr>
+</tbody>
+</table>
+<p><em>*available from cobalt package</em></p>
+</section>
+<section id="figures" class="level3">
+<h3 class="anchored" data-anchor-id="figures">Figures</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 45%">
+<col style="width: 38%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Plot type</th>
+<th>R</th>
+<th>SAS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Love plot</td>
+<td><ul>
+<li><p><u>plot()</u>: -</p></li>
+<li><p><u>cobalt:</u> many different settings.</p></li>
+</ul></td>
+<td><p><strong>Displayed for:</strong> all/region/matched/weighted matched, trt/control.</p>
+<p><strong>Includes</strong> PS, all numeric and binary variables.</p></td>
+</tr>
+<tr class="even">
+<td>General distribution plots</td>
+<td><ul>
+<li><p><u>plot():</u> -</p></li>
+<li><p><u>cobalt</u> : Highly customizable plots.</p></li>
+</ul></td>
+<td><p><strong>Displayed for:</strong> all/region/weighted, trt/control.</p>
+<p><strong>Includes</strong> PS and all variables.</p>
+<p>For PS and numeric - boxplots, character - barplots.</p></td>
+</tr>
+<tr class="odd">
+<td>eCDF plots</td>
+<td><u>plot():</u> -</td>
+<td><p><strong>Displayed for:</strong> all/region/weighted, trt/control.</p>
+<p><strong>Includes</strong> PS and all numeric variables.</p></td>
+</tr>
+<tr class="even">
+<td>Cloud plots</td>
+<td><u>plot():</u> -</td>
+<td><p><strong>Displayed for:</strong> all/region, trt/control.</p>
+<p><strong>Includes</strong> PS, weights and all numeric variables.</p>
+<p>Presented as 2 separate clouds per variable.</p></td>
+</tr>
+<tr class="odd">
+<td>PS weights histogram</td>
+<td><ul>
+<li><p><u>plot()</u>: <strong>Displayed for:</strong> trt/control. <strong>Includes</strong> PS weigths.</p></li>
+<li><p><u>cobalt</u>: Highly customizable plots.</p></li>
+</ul></td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+<section id="dataset" class="level1">
+<h1>Dataset</h1>
+<p>The dataset used in the example below can be found here: [ps_data.csv](<a href="https://github.com/PSIAIMS/CAMIS/blob/main/data/ps_data.csv" class="uri">https://github.com/PSIAIMS/CAMIS/blob/main/data/ps_data.csv</a>)</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode default code-with-copy"><code class="sourceCode default"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>                           trt              control       Standardized</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>Characteristic          (N = 120)          (N = 180)       Mean Diff.</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  sex                                                        0.1690</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    F                  70 (58.3 %)        90 (50.0 %)        </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    M                  50 (41.7 %)        90 (50.0 %)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  age                 61.5 (17.12)       49.4 (10.55)        0.7057</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  weight              67.3 ( 7.33)       63.8 ( 9.64)        0.4741</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  bmi_cat   </span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    underweight        34 (28.3 %)        63 (35.0 %)       -0.1479  </span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    normal             57 (47.5 %)        61 (33.9 %)        0.2726</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    overweight         29 (24.2 %)        56 (31.1 %)       -0.1622</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="matching-examples" class="level1">
+<h1>Matching Examples</h1>
+<section id="average-treatment-effect-in-treated-att" class="level2">
+<h2 class="anchored" data-anchor-id="average-treatment-effect-in-treated-att">Average Treatment Effect in Treated (ATT)</h2>
+<section id="sas" class="level3">
+<h3 class="anchored" data-anchor-id="sas">SAS</h3>
+<pre><code>proc psmatch data=data;
+    class trtp sex bmi_cat;
+    psmodel trtp(Treated="trt")= sex weight age bmi_cat;
+    psweight weight=ATTWGT;
+    output out(obs=all)=ps_res ps=_PScore weight=_PSweight;
+run;</code></pre>
+</section>
+<section id="r" class="level3">
+<h3 class="anchored" data-anchor-id="r">R</h3>
+<pre><code>ps_res &lt;- weightit(trtp ~ sex + weight + age + bmi_cat,
+                    data=data_gen,
+                    method="glm",
+                    estimand="ATT",
+                    focal="trt")</code></pre>
+</section>
+</section>
+<section id="average-treatment-effect-ate" class="level2">
+<h2 class="anchored" data-anchor-id="average-treatment-effect-ate">Average Treatment Effect (ATE)</h2>
+<section id="sas-1" class="level3">
+<h3 class="anchored" data-anchor-id="sas-1">SAS</h3>
+<pre><code>proc psmatch data=data;
+    class trtp sex bmi_cat;
+    psmodel trtp(Treated="trt")= sex weight age bmi_cat;
+    psweight weight=ATEWGT;
+    output out(obs=all)=ps_res ps=_PScore weight=_PSweight;
+run;</code></pre>
+</section>
+<section id="r-1" class="level3">
+<h3 class="anchored" data-anchor-id="r-1">R</h3>
+<pre><code>ps_res &lt;- weightit(trtp ~ sex + weight + age + bmi_cat,
+                    data=data_gen,
+                    method="glm",
+                    estimand="ATE")</code></pre>
+</section>
+</section>
+<section id="average-treatment-effect-ate-stabilized-weights" class="level2">
+<h2 class="anchored" data-anchor-id="average-treatment-effect-ate-stabilized-weights">Average Treatment Effect (ATE), stabilized weights</h2>
+<section id="sas-2" class="level3">
+<h3 class="anchored" data-anchor-id="sas-2">SAS</h3>
+<pre><code>proc psmatch data=data;
+    class trtp sex bmi_cat;
+    psmodel trtp(Treated="trt")= sex weight age bmi_cat;
+    psweight weight=ATEWGT(stabilize=YES);
+    output out(obs=all)=ps_res ps=_PScore weight=_PSweight;
+run;</code></pre>
+</section>
+<section id="r-2" class="level3">
+<h3 class="anchored" data-anchor-id="r-2">R</h3>
+<pre><code>ps_res &lt;- weightit(trtp ~ sex + weight + age + bmi_cat,
+                    data=data_gen,
+                    method="glm",
+                    estimand="ATE",
+                    stabilize=TRUE)</code></pre>
 
 
+</section>
+</section>
+</section>
 
-
-<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
-<div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-categories="Q29uZmVyZW5jZQ==" data-listing-date-sort="1750118400000" data-listing-file-modified-sort="1757352476046" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="2" data-listing-word-count-sort="206">
-<div class="thumbnail"><a href="../blogs/posts/2025-06-17_psi-conference/index.html" class="no-external">
-
-<img loading="lazy" src="../blogs/posts/2025-06-17_psi-conference/2025-06_PSI.jpg" class="thumbnail-image">
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/2025-06-17_psi-conference/index.html" class="no-external">PSI Conference 2025</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/2025-06-17_psi-conference/index.html" class="no-external">The CAMIS group presentations at the 2025 PSI Conference in London</a>
-</div>
-<div class="delink listing-description"><a href="../blogs/posts/2025-06-17_psi-conference/index.html" class="no-external">
-The PSI Conference 2025 took place 8th-11th June 2025 in Wembley, London.
-</a></div>
-</div>
-<div class="metadata">
-<a href="../blogs/posts/2025-06-17_psi-conference/index.html" class="no-external">
-<div class="listing-date">
-Jun 17, 2025
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="1" data-categories="UmVncmVzc2lvbiUyQ1IlMkNTQVM=" data-listing-date-sort="1741824000000" data-listing-file-modified-sort="1757352476044" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="2" data-listing-word-count-sort="270">
-<div class="thumbnail"><a href="../blogs/posts/2025-03-13_tobit-regression/index.html" class="no-external">
-
-<img loading="lazy" src="../blogs/posts/2025-03-13_tobit-regression/tobit-comparison.jpg" class="thumbnail-image">
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/2025-03-13_tobit-regression/index.html" class="no-external">Tobit Regression Comparison</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/2025-03-13_tobit-regression/index.html" class="no-external">A Comparison of Tobit Regression between R and SAS</a>
-</div>
-<div class="delink listing-description"><a href="../blogs/posts/2025-03-13_tobit-regression/index.html" class="no-external">
-A recent CAMIS contribution explored the standard Tobit model for a virology endpoint (viral load) with a lower detection limit.
-</a></div>
-</div>
-<div class="metadata">
-<a href="../blogs/posts/2025-03-13_tobit-regression/index.html" class="no-external">
-<div class="listing-date">
-Mar 13, 2025
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="2" data-categories="Q29uZmVyZW5jZXM=" data-listing-date-sort="1711670400000" data-listing-file-modified-sort="1757352476044" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="101">
-<div class="thumbnail"><a href="../blogs/posts/2024-03-29_phuse-conference/index.html" class="no-external">
-
-<img loading="lazy" src="../blogs/posts/2024-03-29_phuse-conference/2024-03_phuse-conference.jpeg" class="thumbnail-image">
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/2024-03-29_phuse-conference/index.html" class="no-external">2024 PHUSE US Connect Conference</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/2024-03-29_phuse-conference/index.html" class="no-external">PHUSE Poster Presentation by Soma &amp; Vikash</a>
-</div>
-<div class="delink listing-description"><a href="../blogs/posts/2024-03-29_phuse-conference/index.html" class="no-external">
-Congratulations, Soma Sekhar Sriadibhatla, on your poster presentation “CAMIS-An open source repository to document differences in statistical methodology software” at PHUSE…
-</a></div>
-</div>
-<div class="metadata">
-<a href="../blogs/posts/2024-03-29_phuse-conference/index.html" class="no-external">
-<div class="listing-date">
-Mar 29, 2024
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="3" data-listing-date-sort="1701388800000" data-listing-file-modified-sort="1757352476029" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="2" data-listing-word-count-sort="309">
-<div class="thumbnail"><a href="../blogs/posts/2023-12-01_highlights/index.html" class="no-external">
-
-<img loading="lazy" src="../blogs/posts/2023-12-01_highlights/2023-12_highlights.jpg" class="thumbnail-image">
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/2023-12-01_highlights/index.html" class="no-external">2023 Highlights</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/2023-12-01_highlights/index.html" class="no-external">A Year of Progress for the PHUSE CAMIS Working Group Project</a>
-</div>
-<div class="delink listing-description"><a href="../blogs/posts/2023-12-01_highlights/index.html" class="no-external">
-As we draw towards the end of 2023, the PHUSE DVOST CAMIS Working Group Project reflect on their key progress and successes this year.
-</a></div>
-</div>
-<div class="metadata">
-<a href="../blogs/posts/2023-12-01_highlights/index.html" class="no-external">
-<div class="listing-date">
-Dec 1, 2023
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="4" data-listing-date-sort="1683244800000" data-listing-file-modified-sort="1757352476028" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="2" data-listing-word-count-sort="209">
-<div class="thumbnail"><a href="../blogs/posts/2023-05-05_introduction-to-CAMIS/index.html" class="no-external">
-
-<img loading="lazy" src="../blogs/posts/2023-05-05_introduction-to-CAMIS/logo.png" class="thumbnail-image">
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/2023-05-05_introduction-to-CAMIS/index.html" class="no-external">Introduction to CAMIS</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/2023-05-05_introduction-to-CAMIS/index.html" class="no-external">An Introduction to the Comparing Analysis Method Implementations in Software (CAMIS) Working Group</a>
-</div>
-<div class="delink listing-description"><a href="../blogs/posts/2023-05-05_introduction-to-CAMIS/index.html" class="no-external">
-Are you trying to replicate results using different software/languages and struggling to find out why you can’t match the results? Check out the CAMIS repository!
-</a></div>
-</div>
-<div class="metadata">
-<a href="../blogs/posts/2023-05-05_introduction-to-CAMIS/index.html" class="no-external">
-<div class="listing-date">
-May 5, 2023
-</div>
-</a>
-</div>
-</div>
-</div>
-<div class="listing-no-matching d-none">No matching items</div>
-</div></main> <!-- /main -->
+</main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";
