@@ -1,0 +1,402 @@
+---
+title: "R vs SAS Satterthwaite Degrees of Freedom Method"
+execute:
+  eval: false
+---
+
+# R vs SAS Satterthwaite Degrees of Freedom Method
+
+```{r}
+library("Matrix")
+library("lme4") 
+library("lmerTest") 
+library("knitr")
+library("rmarkdown")
+```
+
+## Introduction of data and notation
+
+The dataset is supposed to mimic a stage 3 clinical trial on Alzheimer's disease, with 6 observations per patient each taken during visits at 0, 6, 12, 18, 24 and 36 months. The measurement taken during each visit is the result from an ADAS-Cog (Alzheimer's Disease Assessment Scale - Cognitive Section) test, which is a scale ranging from 0 to 85 testing the memory and mental capabilities of the patient. Half of the patients are in an active treatment group ($act$) while the rest are in a placebo treatment group ($pbo$). A drop out factor is also employed, to resemble patients leaving the study. The data is simulated from a normal distribution with a given mean vector and variance-covariance matrix. The code used to generate the dataset is seen below:
+
+```{r}
+simulate_trial <- function(n_arm = 500, # Number of patients per group
+                           M = c(0, 6, 12, 18, 24, 36), # Months in which an observation is to be taken
+                           drop_out = 0, # Drop out factor
+                           mean_pbo, # Mean values for visits in the placebo group
+                           mean_act, # Mean values for visits in the active group
+                           cov_sqrt) { #Cholesky Decomposition of Variance-Covariance matrix
+  
+  # Simulate data
+  m <- length(M) # Number of measurements per patient
+  y_pbo <- cov_sqrt %*% matrix(rnorm(m * n_arm), nrow = m) + mean_pbo # Create the measurements for the placebo group
+  y_act <- cov_sqrt %*% matrix(rnorm(m * n_arm), nrow = m) + mean_act # Create the measurements for the active group
+  
+  # Create dataset
+  dat <- data.frame(id = rep(1:(2 * n_arm), each = m), # Patient IDs
+                    visit = factor(rep(1:m, 2 * n_arm)), # Visits
+                    M = rep(M, n_arm), # Months since baseline
+                    y = c(as.numeric(y_pbo), as.numeric(y_act)), # Outcome measure
+                    trt = factor(rep(c('pbo', 'act'), each = n_arm * m)), # Treatment arm
+                    act = rep(c(0, 1), each = n_arm * m)) # Dummy treatment arm
+  
+  dat$mod_trt <- dat$trt
+  dat$mod_trt[dat$M == 0] <- 'pbo' # Cast 
+  dat$act <- as.numeric(dat$trt == 'act')
+  dat$act_vis <- with(dat, interaction(mod_trt, M))
+  
+  # Implement per-visit drop out
+  for (v in M) {
+    ids <- unique(subset(dat, M >= v)$id) # Find number of patients left in study
+    # Sample 
+    id_rm <- sample(ids, 
+                    size = floor(length(ids) * drop_out)) # Sample drop_out percentage of patients still in the study
+    dat <- subset(dat, !(M >= v & (id %in% id_rm))) # Remove sampled patients from study
+  }
+  
+  return(dat) 
+}
+
+```
+
+Running below creates an example of a simulated dataset seen below the code:
+
+```{r}
+mean_pbo <- c(19.6, 20.5, 20.9, 22.7, 23.8, 27.4) #Mean values of placebo group
+mean_act <- approx(x = c(0, 6, 12, 18, 24, 36), 
+                   y = mean_pbo,
+                   xout = 0.8 * c(0, 6, 12, 18, 24, 36))$y #Mean values of active group
+cov_adni2 <- matrix(1,6,6) * 67 + diag(6) * 30 # Variance-Covariance matrix
+cov_sqrt2 <- t(chol(cov_adni2)) #Cholesky decomposition of Variance-Covaraince matrix
+set.seed(131)
+dat <- simulate_trial(n_arm = 500, drop_out = 0.1,
+                      mean_pbo = mean_pbo,
+                      mean_act = mean_act,
+                      cov_sqrt = cov_sqrt2)
+```
+
+| id         | visit      | M          | y          | act_vis    |
+|------------|------------|------------|------------|------------|
+| 1          | 1          | 0          | 11.5353    | pbo.0      |
+| 1          | 2          | 6          | 11.0563    | pbo.6      |
+| 2          | 1          | 0          | 30.4709    | pbo.0      |
+| 2          | 2          | 6          | 28.4217    | pbo.6      |
+| 2          | 3          | 12         | 17.0752    | pbo.12     |
+| 2          | 4          | 18         | 31.7247    | pbo.18     |
+| 2          | 5          | 24         | 24.3923    | pbo.24     |
+| 2          | 6          | 36         | 33.818     | pbo.36     |
+| 3          | 1          | 0          | 21.6565    | pbo.0      |
+| 3          | 2          | 6          | 31.918     | pbo.6      |
+| $$\vdots$$ | $$\vdots$$ | $$\vdots$$ | $$\vdots$$ | $$\vdots$$ |
+| 1000       | 1          | 0          | 28.9886    | pbo.0      |
+
+The datasets will be simulated in R and then used by both LMER in R (more precisely LMERtest for contrast tests) and PROC MIXED in SAS. The mean vectors for the groups are given by $$\mu_{\text{pbo}} = \begin{bmatrix} 19.6 \\ 20.5 \\ 20.6 \\ 22.7 \\ 23.8 \\ 27.4 \end{bmatrix} \text{ and } \mu_{\text{act}} = \begin{bmatrix} 19.6 \\ 20.32 \\ 20.74 \\ 21.62 \\ 22.92 \\ 25.24\end{bmatrix}.$$
+
+## Basic Model, Estimates, and Hypothesis Test of Contrast
+
+First a simulated dataset constructed from a simple Variance-Covariance matrix given by $$\Sigma = 67 \cdot J_6 + 30 \cdot I_6,$$ where $J_6$ is the 6 times 6 matrix with 1 in every entry, and $I_6$ is the 6 times 6 identity matrix. The model used for this dataset will consist of a parameter for each mean value and a random intercept:
+
+$$
+Y_i = \begin{bmatrix} I_{n_i} \left(i \text{ in } act \right)& 0_{n_i, 6-n_i} \end{bmatrix} \beta_{act} + \begin{bmatrix} I_{n_i}\left(i \text{ in } pbo \right) & 0_{n_i, 6-n_i} \end{bmatrix} \beta_{pbo} + 1_{n_i}U_i + \epsilon_i,
+$$
+
+where
+
+$$
+\beta_{act} = \begin{bmatrix}        \beta_{pbo,0} & \beta_{act,6} & \beta_{act,12} & \beta_{act,18} & \beta_{act,24} & \beta_{act,36}    \end{bmatrix}^T,
+$$
+
+$$
+\beta_{pbo} = \begin{bmatrix}        \beta_{pbo,0} & \beta_{pbo,6} & \beta_{pbo,12} & \beta_{pbo,18} & \beta_{pbo,24} & \beta_{pbo,36}    \end{bmatrix}^T, 
+$$
+
+$n_i$ is the number of observations for patient $i$, $N_T$ is the total number of observations, and $0_{r,c}$ is the $r$ times $c$ matrix consisting of zeros with $U \sim \mathcal{N}_N(0, \tau^2 I_N)$ and $\epsilon \sim \mathcal{N}_{N_T}(0, I_{N_T})$.
+
+Code used to estimate the parameters are given below
+
+```{r}
+set.seed(129)
+dat <- simulate_trial(n_arm = 500, drop_out = 0.2,
+                      mean_pbo = mean_pbo,
+                      mean_act = mean_act,
+                      cov_sqrt = cov_sqrt2)
+lmertest_model <- lmerTest::lmer(y ~ 0 + act_vis + (1|id), data = dat, REML = TRUE)
+summary(lmertest_model)
+```
+
+```{sas}
+proc mixed data=sim_data method=reml;
+   class id act_vis;
+   model y = act_vis / NOINT solution;
+   random intercept / G type=un subject=id;
+   ods output FitStatistics = fit;
+run;
+```
+
+and the parameter estimates are given in the following table:
+
+| Parameter | PROC MIXED |
+|-----------|------------|
+| pbo,0     | 19.847     |
+| pbo,6     | 20.082     |
+| pbo,12    | 20.287     |
+| pbo,18    | 22.180     |
+| pbo,24    | 24.052     |
+| pbo,36    | 26.809     |
+| act,6     | 21.020     |
+| act,12    | 21.751     |
+| act,18    | 21.836     |
+| act,24    | 23.699     |
+| act,36    | 25.990     |
+| sigma\^2  | 68.720     |
+| tau\^2    | 30.093     |
+
+The columns for absolute bias and relative bias are calculated using the output for PROC MIXED and the true values of the parameters.
+
+The main hypothesis of interest in a clinical trial is to determine if there is an effect of the treatment. Namely, the wish is to test if the true parameters for pbo.36 and act.36 are different from one another:
+
+$$
+\mathcal{H}_0 \, : \, \beta_{act,36} = \beta_{pbo,36}.
+$$
+
+This is a contrast test using the Satterthwaite degrees of freedom method, which can be performed using Contest in R:
+
+```{r}
+kable(contest(lmertest_model, L = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 1, -1), 
+              ddf = "Satterthwaite"))
+```
+
+and the Contrast statement in PROC MIXED in SAS:
+
+```{sas}
+proc mixed data=sim_data method=reml;
+   class id act_vis;
+   model y = act_vis / NOINT solution ddfm=satterthwaite;
+   random intercept / G type=un subject=id;
+   contrast 'Contrast'
+   act_vis 0 0 0 1 0 0 0 0 0 -1 0;
+   ods output FitStatistics = fit;
+run;
+```
+
+| Label    | Num DF | Den DF | F Value | Pr \> F |
+|----------|--------|--------|---------|---------|
+| Contrast | 1      | 2516   | 1.02    | 0.3130  |
+
+The $p$-value for both procedures are very close to each other as a result from the estimated denominator degrees of freedom being almost equal to each other.
+
+## Same as above, but now with tau\^2 = 80 and sigma\^2 = 0.001
+
+Simulating a dataset with the Variance-Covariance matrix given by
+
+$$\Sigma = 80 \cdot J_6 + 0.001 \cdot I_6$$ and the code given below:
+
+```{r}
+cov_adni2 <- matrix(1,6,6) * 80 + diag(6) * 0.001 # Variance-Covariance matrix
+cov_sqrt2 <- t(chol(cov_adni2)) #Cholesky decomposition of Variance-Covariance matrix
+set.seed(432)
+dat <- simulate_trial(n_arm = 10, drop_out = 0.15,
+                      mean_pbo = mean_pbo,
+                      mean_act = mean_act,
+                      cov_sqrt = cov_sqrt2)
+```
+
+Doing the same procedure for parameter estimates and the contrast test, but with Fisher Scoring enabled for PROC MIXED, the following is obtained:
+
+|          | LMER       | PROC MIXED (Fisher) | Difference |
+|----------|------------|---------------------|------------|
+| pbo.36   | 36.432     | 30.256              | 6.176      |
+| act.36   | 34.241     | 28.086              | 6.155      |
+| tau\^2   | 66.540     | 32.339              | 34.201     |
+| sigma\^2 | 0.000953   | 0.00143             | 0.00133    |
+| DF       | 51.001     | 67                  | 15.999     |
+| F-Value  | 5912.852   | 3950.55             | 1962.302   |
+| p-value  | 2.0628e-54 | \<.0001             |            |
+
+The model in LMER failed to converge, as the Hessian matrix has a negative eigenvalue and is singular as well as being "unable to evaluate scaled gradient", which possibly is a consequence of the singular Hessian.
+
+It is evident that the two procedures get different parameter fits and in turn this leads to differences in the estimated denominator degrees of freedom, even though both of the programs use the Satterthwaite method. In this case the conclusion of the hypothesis test is still the same, as the the $p$-value are both practically equal to 0.
+
+## Unstructured Variance-Covariance Matrix for Data Simulation
+
+Instead of considering a Variance-Covariance Matrix of the form $\Sigma = \tau^2 J_6 + \sigma^2 I_6$ we instead turn our attention to a matrix of the form
+
+$$
+\Sigma = \begin{bmatrix}    \sigma_1^2 & \sigma_{1,2} & \sigma_{1,3} & \sigma_{1,4}  & \sigma_{1,5}  & \sigma_{1,6}  \\     \sigma_{1,2} & \sigma_2^2 & \sigma_{2,3} & \sigma_{2,4} & \sigma_{2,5} & \sigma_{2,6} \\    \sigma_{1,3} & \sigma_{2,3} & \sigma_3^2 & \sigma_{3,4} & \sigma_{3,5} & \sigma_{3,6} \\    \sigma_{1,4} & \sigma_{2,4} & \sigma_{3,4} & \sigma_4^2 & \sigma_{4,5} & \sigma_{4,6} \\     \sigma_{1,5} & \sigma_{2,5} & \sigma_{3,5} & \sigma_{4,5} & \sigma_5^2 & \sigma_{5,6} \\    \sigma_{1,6}  & \sigma_{2,6} & \sigma_{3,6}  & \sigma_{4,6}  & \sigma_{5,6}  & \sigma_6^2    \end{bmatrix}.
+$$
+
+The matrix we will use to simulate the data is given by
+
+$$
+\Sigma = \begin{bmatrix} 45.15 & 39.99 & 45.1 & 54.95 & 53.58 & 60.82 \\     39.99 & 57.78 & 54.38 & 66.33 & 64.1 & 74.67 \\    45.1 & 54.38 & 72.01 & 79.97 & 77.64 & 93.11 \\    54.95 & 66.33 & 79.97 & 109.77 & 99.29 & 121.66 \\     53.58 & 64.1 & 77.64 & 99.29 & 111.41 & 127.83 \\    60.82 & 74.67 & 93.11 & 121.66 & 127.83 & 191.41\end{bmatrix},
+$$
+
+which is a variance-covariance matrix estimated from real data (See [Article](https://onlinelibrary.wiley.com/doi/full/10.1002/sim.9581)).
+
+## Model with Random Slope and Estimates
+
+In this model each patient will have a random intercept as well as a random slope. Defining
+
+$$
+U = \begin{bmatrix} U_1 & \cdots & U_N \end{bmatrix}^T \sim \mathcal{N}_{2N} \left( 0 , \begin{bmatrix} \Psi & 0 & \cdots & 0 \\    0 & \Psi & \cdots & 0 \\     \vdots & \vdots & \ddots & \vdots \\    0 & 0 & \cdots & \Psi \end{bmatrix} \right), \quad \Psi = \begin{bmatrix} \tau_1^2 & \tau_{1,2} \\ \tau_{1,2} & \tau_2^2 \end{bmatrix}.
+$$
+
+and
+
+$$
+Z_i = \begin{bmatrix}        1 & M_1 \\        1 & M_2 \\        \vdots & \vdots \\        1 & M_{n_i}    \end{bmatrix}, \text{ with } \begin{bmatrix} M_1 \\ M_2 \\ M_3 \\ M_4 \\ M_5 \\ M_6 \end{bmatrix} = \begin{bmatrix} 0 \\ 6 \\ 12 \\ 18 \\ 24 \\ 36 \end{bmatrix},
+$$
+
+the model can be written as
+
+$$
+Y_i = \begin{bmatrix}I_{n_i} \left(i \text{ in } act \right)& 0_{n_i, 6-n_i} \end{bmatrix} \beta_{act} + \begin{bmatrix}I_{n_i}\left(i \text{ in } pbo \right) & 0_{n_i, 6-n_i} \end{bmatrix} \beta_{pbo}  + Z_i U_i + \epsilon_i.
+$$
+
+There are some instances where this model has trouble converging in LMER due to the largest entry in the gradient not being below a certain tolerance. This can be remedied by changing the convergence criteria to
+
+```{r}
+lmer_control <- lmerControl(optCtrl=list(xtol_abs = 1e-10, 
+                    ftol_abs=1e-10, ftol_rel = 1e-10, xtol_rel=1e-10))
+```
+
+Parameter estimates can once again be acquired with the following code.
+
+```{r}
+cov_adni <- structure(c(45.15, 39.99, 45.1, 54.95, 53.58, 60.82, 
+                        39.99, 57.78, 54.38, 66.33, 64.1, 74.67, 
+                        45.1, 54.38, 72.01, 79.97, 77.64, 93.11, 
+                        54.95, 66.33, 79.97, 109.77, 99.29, 121.66, 
+                        53.58, 64.1, 77.64, 99.29, 111.41, 127.83, 
+                        60.82, 74.67, 93.11, 121.66, 127.83, 191.41), .Dim = c(6L, 6L))
+cov_sqrt <- t(chol(cov_adni))
+set.seed(98)
+dat <- simulate_trial(n_arm = 500, drop_out = 0.2,
+                      mean_pbo = mean_pbo,
+                      mean_act = mean_act,
+                      cov_sqrt = cov_sqrt)
+lmertest_model <- lmerTest::lmer(y ~ 0 + act_vis + (M|id), data = dat, REML = TRUE)
+summary(lmertest_model)
+```
+
+and the code with SAS is
+
+```{sas}
+proc mixed data=sim_data method=reml;
+   class id act_vis;
+   model y = act_vis / NOINT solution;
+   random intercept M / G type=un subject=id;
+   ods output FitStatistics = fit;
+run;
+```
+
+| Parameter  | PROC MIXED |
+|------------|------------|
+| pbo,0      | 19.755     |
+| pbo,6      | 20.486     |
+| pbo,12     | 21.0167    |
+| pbo,18     | 23.0231    |
+| pbo,24     | 24.0771    |
+| pbo,36     | 28.853     |
+| act,6      | 20.112     |
+| act,12     | 20.678     |
+| act,18     | 22.332     |
+| act,24     | 22.972     |
+| act,36     | 26.293     |
+| tau\^2_1   | 40.237     |
+| tau\_{1,2} | 0.696      |
+| tau\^2_2   | 0.0641     |
+| sigma\^2   | 11.154     |
+
+By executing the same contrast test as above, the following results is given
+
+```{r}
+kable(contest(lmertest_model, L = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 1, -1), 
+              ddf = "Satterthwaite"))
+```
+
+and for SAS:
+
+```{sas}
+proc mixed data=sim_data method=reml;
+   class id act_vis;
+   model y = act_vis / NOINT solution ddfm=satterthwaite;
+   random intercept M / G type=un subject=id;
+   contrast 'Contrast'
+   act_vis 0 0 0 1 0 0 0 0 0 -1 0;
+   ods output FitStatistics = fit;
+run;
+```
+
+| Label    | Num DF | Den DF | F Value | Pr \> F |
+|----------|--------|--------|---------|---------|
+| Contrast | 1      | 545    | 6.61    | 0.0104  |
+
+Both procedures agree on the $p$-value, and we decide to reject the hypothesis.
+
+## Degrees of Freedom Plot and Differences between the Two Procedures
+
+Sometimes LMER and PROC MIXED disagree on the estimates of the parameters, which in turn creates different approximations of the degrees of freedom. This often happens if the number of patients is very low or a high dropout factor is used. As an example with the data set simulated in the code below:
+
+```{r}
+set.seed(135)
+dat <- simulate_trial(n_arm = 5, drop_out = 0.15,
+                      mean_pbo = mean_pbo,
+                      mean_act = mean_act,
+                      cov_sqrt = cov_sqrt)
+```
+
+Estimates for both procedures, as well as Fisher and NoBounds option for PROC MIXED is given in the following table:
+
+| Parameter    | LMER      | PROC MIXED | PROC MIXED (Fisher) | PROC MIXED (NoBounds) |
+|--------------|--------------|--------------|---------------|----------------|
+| pbo,0        | 19.881    |            |                     |                       |
+| pbo,6        | 19.619    |            |                     |                       |
+| pbo,12       | 22.422    |            |                     |                       |
+| pbo,18       | 19.887    |            |                     |                       |
+| pbo,24       | 19.012    |            |                     |                       |
+| pbo,36       | 21.926    |            |                     |                       |
+| act,6        | 22.448    |            |                     |                       |
+| act,12       | 21.264    |            |                     |                       |
+| act,18       | 21.642    |            |                     |                       |
+| act,24       | 24.430    |            |                     |                       |
+| act,36       | 26.914    |            |                     |                       |
+| $\tau^2_1$   | 19.889823 |            |                     |                       |
+| $\tau_{1,2}$ | -0.12639  |            |                     |                       |
+| $\tau^2_2$   | 0.000803  |            |                     |                       |
+| $\sigma^2$   | 6.200584  |            |                     |                       |
+
+Notice that for the NoBounds option, the \$\\hat{\\tau}\^2_2 is estimated as negative, which would be of no use in practice, given that it is supposedly an estimate of a nonnegative variance. Where problems occur further are for the contrast tests:
+
+|                | LMER         | PROC MIXED | PROC MIXED (Fisher) |
+|----------------|--------------|------------|---------------------|
+| Denominator DF | $16.29617$   | $7.09$     | $8.7$               |
+| $F$-value      | $4.307411$   | $5.51$     | $5.51$              |
+| $p$-value      | $0.05412343$ | $0.0508$   | $0.0444$            |
+
+These $p$-values show that the decision to reject or to not reject depends on the procedure and the estimation method used therein. While LMER and PROC MIXED gives a $p$-value above the usual significance value $0.05$, PROC MIXED with Fisher Scoring enabled gives a $p$-value below $0.05$.
+
+Another example is given with the data set
+
+```{r}
+set.seed(180)
+dat <- simulate_trial(n_arm = 5, drop_out = 0.15,
+                      mean_pbo = mean_pbo,
+                      mean_act = mean_act,
+                      cov_sqrt = cov_sqrt)
+```
+
+and the contrast tests outputs the values in the table below:
+
+|                | LMER     | PROC MIXED | PROC MIXED (Fisher) |
+|----------------|----------|------------|---------------------|
+| Denominator DF | $9.017$  | $11$       | $20.9$              |
+| $F$-value      | $3.656$  | $9.15$     | $9.15$              |
+| $p$-value      | $0.0881$ | $0.0116$   | $0.0065$            |
+
+Now the conclusion even depends on the procedure used to do the estimation, and this is of course not a desired property, as the conclusions from clinical trials should be agreed upon and not be procedure-dependent.
+
+By simulating 1000 different data sets as above and approximating the degrees of freedom for the contrast of interest using LMER, the different approximations can be plotted to get an idea of where the true number of degrees of freedom lie:
+
+```{r, echo=FALSE, fig.align='center', out.width="75%"}
+knitr::include_graphics("../images/mmrm_df/sim_df.png")
+```
