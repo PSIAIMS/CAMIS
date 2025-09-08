@@ -104,6 +104,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -423,9 +452,9 @@ Z = -2.5974, p-value = 0.009392
 alternative hypothesis: true mu is not equal to 0</code></pre>
 </div>
 </div>
-<p>We do note that a normal approximation approach with continuity correction cannot be obtained with this function. One can add <code>correct=FALSE</code>, but note that no error is given and the results of a normal approximation approach without continuity correction is provided.</p>
+<p>We do note that a normal approximation approach with continuity correction cannot be obtained with this function. One can add <code>correct=TRUE</code>, but note that no error is given and the results of a normal approximation approach without continuity correction is provided.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>coin<span class="sc">::</span><span class="fu">wilcox_test</span>(value <span class="sc">~</span> smoke, <span class="at">data =</span> smk_data, <span class="at">correct =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>coin<span class="sc">::</span><span class="fu">wilcox_test</span>(value <span class="sc">~</span> smoke, <span class="at">data =</span> smk_data, <span class="at">correct =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Asymptotic Wilcoxon-Mann-Whitney Test
@@ -452,7 +481,7 @@ difference in location
             -0.4261403 </code></pre>
 </div>
 </div>
-<p>Using <code>coin</code> one can calculate exact and Monte Carlo conditional p-values using the <code>distribtuion</code> argument. The exact p-value is best used in small sample sizes.</p>
+<p>Using <code>coin</code> one can calculate exact and Monte Carlo conditional p-values using the <code>distribution</code> argument. The exact p-value is best used in small sample sizes.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>coin<span class="sc">::</span><span class="fu">wilcox_test</span>(</span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  value <span class="sc">~</span> smoke,</span>
@@ -487,10 +516,10 @@ difference in location
     Approximative Wilcoxon-Mann-Whitney Test
 
 data:  value by smoke (smoke, non)
-Z = -2.5974, p-value = 0.008
+Z = -2.5974, p-value = 0.002
 alternative hypothesis: true mu is not equal to 0
 95 percent confidence interval:
- -0.71 -0.08
+ -0.74 -0.14
 sample estimates:
 difference in location 
                 -0.425 </code></pre>
@@ -506,7 +535,7 @@ difference in location
     Approximative Wilcoxon-Mann-Whitney Test
 
 data:  value by smoke (smoke, non)
-Z = -2.5974, p-value = 0.00813
+Z = -2.5974, p-value = 0.008048
 alternative hypothesis: true mu is not equal to 0
 95 percent confidence interval:
  -0.76 -0.10
@@ -520,7 +549,7 @@ difference in location
 <section id="ashtwmwtest" class="level2">
 <h2 class="anchored" data-anchor-id="ashtwmwtest">asht::wmwTest()</h2>
 <p>The <code>asht::wmwTest()</code> function calculates the Wilcoxon-Mann-Whitney test (normal approximation, exact complete enumeration, and exact Monte Carlo implementation) together with confidence intervals on the Mann-Whitney parameter, Pr[X&lt;Y] + 0.5 Pr[X=Y].</p>
-<p>By default, the function returns the normal approximation using a continuity correction. The <code>correct</code> argument is available to turn-off the continuity correction. The <code>alternative</code> argument is available for one-sided testing. By default, the 95% confidence interval is calculated for the Mann-Whitney parameter (use argument <code>conf.int</code> and <code>conf.level</code> to change these defaults.). Details on the calculation of the confidence interval are provided in Newcombe (2006) [Newcombe, Robert G. (2006). Confidence intervals for an effect size measure based on the Mann-Whitney statistic. Part 2: asymptotic methods and evaluation. Statistics in medicine 25(4): 559-573].</p>
+<p>By default, the function returns the normal approximation using a continuity correction when <span class="math inline">\(combination(m+n, m)&gt;5000\)</span>, where <span class="math inline">\(m\)</span> and <span class="math inline">\(n\)</span> are the sample sizes in the two groups, respectively. Otherwise by default (thus for small sample sizes), the exact Wilcoxon rank sum test is performed. The <code>correct</code> argument is available to turn-off the continuity correction. The <code>alternative</code> argument is available for one-sided testing. By default, the 95% confidence interval is calculated for the Mann-Whitney parameter (use argument <code>conf.int</code> and <code>conf.level</code> to change these defaults.). Details on the calculation of the confidence interval are provided in Newcombe (2006) [Newcombe, Robert G. (2006). Confidence intervals for an effect size measure based on the Mann-Whitney statistic. Part 2: asymptotic methods and evaluation. Statistics in medicine 25(4): 559-573].</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>asht<span class="sc">::</span><span class="fu">wmwTest</span>(bw_s, bw_ns)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -554,10 +583,10 @@ Mann-Whitney estimate
     does not)
 
 data:  bw_s and bw_ns
-Mann-Whitney estimate = 0.78333, p-value = 0.008
+Mann-Whitney estimate = 0.78333, p-value = 0.00774
 alternative hypothesis: two distributions are not equal
 95 percent confidence interval:
- 0.579700 0.887421
+ 0.5804191 0.9561917
 sample estimates:
 Mann-Whitney estimate 
             0.7833333 </code></pre>

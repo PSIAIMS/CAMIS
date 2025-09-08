@@ -104,6 +104,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -203,11 +232,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
-  <li><a href="#wilcoxon-rank-sum" id="toc-wilcoxon-rank-sum" class="nav-link" data-scroll-target="#wilcoxon-rank-sum">Wilcoxon-Rank Sum</a></li>
-  <li><a href="#prerequisites-r-packages" id="toc-prerequisites-r-packages" class="nav-link" data-scroll-target="#prerequisites-r-packages">Prerequisites: R Packages</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a>
+  <ul class="collapse">
   <li><a href="#example-data" id="toc-example-data" class="nav-link" data-scroll-target="#example-data">Example Data</a></li>
-  <li><a href="#special-considerations" id="toc-special-considerations" class="nav-link" data-scroll-target="#special-considerations">Special Considerations</a></li>
+  </ul></li>
+  <li><a href="#comparison" id="toc-comparison" class="nav-link" data-scroll-target="#comparison">Comparison</a>
+  <ul class="collapse">
+  <li><a href="#software-capabilities" id="toc-software-capabilities" class="nav-link" data-scroll-target="#software-capabilities">Software Capabilities</a></li>
+  <li><a href="#wilcoxon-rank-sum-test" id="toc-wilcoxon-rank-sum-test" class="nav-link" data-scroll-target="#wilcoxon-rank-sum-test">Wilcoxon Rank Sum test</a></li>
+  <li><a href="#hodges-lehmann-estimator" id="toc-hodges-lehmann-estimator" class="nav-link" data-scroll-target="#hodges-lehmann-estimator">Hodges-Lehmann estimator</a></li>
+  <li><a href="#mann-whitney-parameter" id="toc-mann-whitney-parameter" class="nav-link" data-scroll-target="#mann-whitney-parameter">Mann-Whitney Parameter</a></li>
+  </ul></li>
+  <li><a href="#special-considerations-for-one-sided-p-values" id="toc-special-considerations-for-one-sided-p-values" class="nav-link" data-scroll-target="#special-considerations-for-one-sided-p-values">Special considerations for one-sided p-values</a>
+  <ul class="collapse">
+  <li><a href="#asymptotic-results-without-continuity-correction" id="toc-asymptotic-results-without-continuity-correction" class="nav-link" data-scroll-target="#asymptotic-results-without-continuity-correction">Asymptotic results without continuity correction</a></li>
+  <li><a href="#exact-results" id="toc-exact-results" class="nav-link" data-scroll-target="#exact-results">Exact results</a></li>
+  </ul></li>
   <li><a href="#summary-and-recommendation" id="toc-summary-and-recommendation" class="nav-link" data-scroll-target="#summary-and-recommendation">Summary and Recommendation</a></li>
   <li><a href="#ties" id="toc-ties" class="nav-link" data-scroll-target="#ties">Ties</a></li>
   <li><a href="#additional-references" id="toc-additional-references" class="nav-link" data-scroll-target="#additional-references">Additional References</a></li>
@@ -238,99 +278,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>This section compares the wilcoxon rank-sum test.</p>
-</section>
-<section id="wilcoxon-rank-sum" class="level2">
-<h2 class="anchored" data-anchor-id="wilcoxon-rank-sum">Wilcoxon-Rank Sum</h2>
-<p>The following table provides an overview of the support and results comparability between R and SAS for the new analysis point.</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 21%">
-<col style="width: 9%">
-<col style="width: 8%">
-<col style="width: 7%">
-<col style="width: 51%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Analysis</th>
-<th>Supported in {stats}</th>
-<th>Supported in {coin}</th>
-<th>Supported in SAS</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><p>Wilcoxon Rank-Sum</p>
-<p>Normal Approximation with continuity correction</p></td>
-<td><p>✅</p>
-<p><br>
-</p></td>
-<td>❌</td>
-<td>✅</td>
-<td>If there are ties in the dataset there will be a warning in {stats}, but the warning only refers to doing the exact method</td>
-</tr>
-<tr class="even">
-<td><p>Wilcoxon Rank-Sum</p>
-<p>Normal Approximation without continuity correction</p></td>
-<td>✅</td>
-<td>✅</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr class="odd">
-<td>Wilcoxon Rank-Sum Exact</td>
-<td colspan="4">✔️ | ✅ | ✅ | {stats} can only do the exact method when no ties are present |</td>
-</tr>
-<tr class="even">
-<td><p>Hodges-Lehmann CI</p>
-<p>Asymptotic</p></td>
-<td>✅</td>
-<td>❌</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr class="odd">
-<td><p>Hodges-Lehmann CI</p>
-<p>Exact</p></td>
-<td colspan="4">✔️ | ✅ | ✅ | {stats} can only do the exact method when no ties are present | | | | | | |</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="prerequisites-r-packages" class="level2">
-<h2 class="anchored" data-anchor-id="prerequisites-r-packages">Prerequisites: R Packages</h2>
-<p>This test can be run using the {stats} package, but in order to handle ties the {coin} package is recommended.</p>
+<p>This page compares the Wilcoxon rank-sum test, Hodges-Lehmann estimator, and estimation of the Mann-Whitney parameter in R and SAS.</p>
+<section id="example-data" class="level3">
+<h3 class="anchored" data-anchor-id="example-data">Example Data</h3>
+<p>For this example we are using a dataset of birth weights for smoking and non-smoking mothers (<em>Data source: Table 30.4, Kirkwood BR. and Sterne JAC. Essentials of medical statistics. Second Edition. ISBN 978-0-86542-871-3</em>). This dataset is both small (so an exact test is recommended) and has ties in it.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(coin)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: survival</code></pre>
-</div>
-</div>
-</section>
-<section id="example-data" class="level2">
-<h2 class="anchored" data-anchor-id="example-data">Example Data</h2>
-<p>For this example we are using a dataset of birth weights for smoking and non-smoking mothers.</p>
-<p><em>Data source: Table 30.4, Kirkwood BR. and Sterne JAC. Essentials of medical statistics. Second Edition. ISBN 978-0-86542-871-3</em></p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># fmt: skip</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>bw_ns <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">3.99</span>, <span class="fl">3.89</span>, <span class="fl">3.6</span>, <span class="fl">3.73</span>, <span class="fl">3.31</span>, </span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>          <span class="fl">3.7</span>, <span class="fl">4.08</span>, <span class="fl">3.61</span>, <span class="fl">3.83</span>, <span class="fl">3.41</span>, </span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>          <span class="fl">4.13</span>, <span class="fl">3.36</span>, <span class="fl">3.54</span>, <span class="fl">3.51</span>, <span class="fl">2.71</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co"># fmt: skip</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>bw_s <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">3.18</span>, <span class="fl">2.74</span>, <span class="fl">2.9</span>, <span class="fl">3.27</span>, <span class="fl">3.65</span>, </span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>          <span class="fl">3.42</span>, <span class="fl">3.23</span>, <span class="fl">2.86</span>, <span class="fl">3.6</span>, <span class="fl">3.65</span>, </span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>          <span class="fl">3.69</span>, <span class="fl">3.53</span>, <span class="fl">2.38</span>, <span class="fl">2.34</span>)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>smk_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">value =</span> <span class="fu">c</span>(bw_ns, bw_s),</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">smoke =</span> <span class="fu">as.factor</span>(<span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">"non"</span>, <span class="st">"smoke"</span>), <span class="fu">c</span>(<span class="fu">length</span>(bw_ns), <span class="fu">length</span>(bw_s))))</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Relevel the factors to make it smoker - non-smokers</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>smk_data<span class="sc">$</span>smoke <span class="ot">&lt;-</span> forcats<span class="sc">::</span><span class="fu">fct_relevel</span>(smk_data<span class="sc">$</span>smoke, <span class="st">"smoke"</span>)</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(smk_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>bw_ns <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">3.99</span>, <span class="fl">3.89</span>, <span class="fl">3.6</span>, <span class="fl">3.73</span>, <span class="fl">3.31</span>, </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>            <span class="fl">3.7</span>, <span class="fl">4.08</span>, <span class="fl">3.61</span>, <span class="fl">3.83</span>, <span class="fl">3.41</span>, </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>            <span class="fl">4.13</span>, <span class="fl">3.36</span>, <span class="fl">3.54</span>, <span class="fl">3.51</span>, <span class="fl">2.71</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>bw_s <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">3.18</span>, <span class="fl">2.74</span>, <span class="fl">2.9</span>, <span class="fl">3.27</span>, <span class="fl">3.65</span>, </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>           <span class="fl">3.42</span>, <span class="fl">3.23</span>, <span class="fl">2.86</span>, <span class="fl">3.6</span>, <span class="fl">3.65</span>, </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>           <span class="fl">3.69</span>, <span class="fl">3.53</span>, <span class="fl">2.38</span>, <span class="fl">2.34</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>smk_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">value =</span> <span class="fu">c</span>(bw_ns, bw_s), </span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">smoke =</span> <span class="fu">as.factor</span>(<span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">"non"</span>, <span class="st">"smoke"</span>), <span class="fu">c</span>(<span class="fu">length</span>(bw_ns), <span class="fu">length</span>(bw_s))))</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>) </span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Relevel the factors to make it smoker - non-smokers </span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>smk_data<span class="sc">$</span>smoke <span class="ot">&lt;-</span> forcats<span class="sc">::</span><span class="fu">fct_relevel</span>(smk_data<span class="sc">$</span>smoke, <span class="st">"smoke"</span>)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(smk_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>  value smoke
 1  3.99   non
@@ -341,115 +307,406 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 6  3.70   non</code></pre>
 </div>
 </div>
-<p>This dataset is both small (so an exact test is recommended) and has ties in it.</p>
-<p>To view the code for this see the <a href="../SAS/ranksum.html">SAS</a> and <a href="../R/nonpara_wilcoxon_ranksum.html">R</a> pages respectively.</p>
-<section id="wilcoxon-rank-sum-tests" class="level4">
-<h4 class="anchored" data-anchor-id="wilcoxon-rank-sum-tests">Wilcoxon Rank Sum tests</h4>
-<p>Below is a table to the p-values from the Wilcoxon Rank Sum Test with different options</p>
+<p>To view the code implementations, see the <a href="../SAS/ranksum.html">SAS</a> and <a href="../R/nonpara_wilcoxon_ranksum.html">R</a> pages, respectively.</p>
+</section>
+</section>
+<section id="comparison" class="level2">
+<h2 class="anchored" data-anchor-id="comparison">Comparison</h2>
+<section id="software-capabilities" class="level3">
+<h3 class="anchored" data-anchor-id="software-capabilities">Software Capabilities</h3>
+<p>The following table provides an overview of the supported analyses between R and SAS. A specific comparison of the results and whether they match are provided below.</p>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 26%">
-<col style="width: 7%">
-<col style="width: 11%">
 <col style="width: 9%">
+<col style="width: 22%">
+<col style="width: 21%">
+<col style="width: 21%">
+<col style="width: 17%">
 <col style="width: 6%">
-<col style="width: 36%">
 </colgroup>
 <thead>
 <tr class="header">
-<th>Statistic</th>
-<th>SAS Result</th>
-<th>{stats} Results</th>
-<th>{coin} Result</th>
-<th>Match</th>
+<th>Analysis</th>
+<th>Supported in R {stats}</th>
+<th>Supported in R {coin}</th>
+<th>Supported in R {asht}</th>
+<th>Supported in SAS</th>
 <th>Notes</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>Normal Approx with continuity correct</td>
-<td>0.01</td>
-<td>0.01001</td>
-<td>❌</td>
+<td>Wilcoxon Rank-Sum – Normal approximation <strong>with</strong> continuity correction</td>
 <td>Yes</td>
-<td>{coin} doesn’t have an option for continuity corrections</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>In {coin}, one can add <code>correct=TRUE</code>, but note that no error is given and the results of a normal approximation approach <strong>without</strong> continuity correction are provided.</td>
 </tr>
 <tr class="even">
-<td>Normal Approx without continuity correct</td>
-<td>0.0094</td>
-<td>0.009392</td>
-<td>0.009392</td>
+<td>Wilcoxon Rank-Sum – Normal approximation <strong>without</strong> continuity correction</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
 <td>Yes</td>
 <td></td>
 </tr>
 <tr class="odd">
-<td>Exact (no correction)</td>
-<td>0.0082</td>
-<td>❌</td>
-<td>0.008181</td>
+<td>Wilcoxon Rank-Sum – Exact</td>
+<td>Partly</td>
 <td>Yes</td>
-<td>{stats} can’t do an exact method when there are ties</td>
+<td>Partly</td>
+<td>Yes</td>
+<td>In {stats}, one can only do the exact method when no ties are present.; In {asht}, exact test is possible but the run time is long for larger sample size.</td>
+</tr>
+<tr class="even">
+<td>Wilcoxon Rank-Sum – Approximative (Monte Carlo simulation)</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Hodges-Lehmann estimator – Asymptotic</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Hodges-Lehmann estimator – Exact</td>
+<td>Partly</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>In {stats}, one can only do the exact method when no ties are present.</td>
+</tr>
+<tr class="odd">
+<td>Hodges-Lehmann estimator – Approximative (Monte Carlo simulation)</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Mann-Whitney parameter</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+<td>In {asht}, confidence intervals can be obtained using asymptotic approximation, Monte Carlo simulations, or exact methods (for small sample size)</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="hodges-lehmann-ci" class="level4">
-<h4 class="anchored" data-anchor-id="hodges-lehmann-ci">Hodges-Lehmann CI</h4>
+<section id="wilcoxon-rank-sum-test" class="level3">
+<h3 class="anchored" data-anchor-id="wilcoxon-rank-sum-test">Wilcoxon Rank Sum test</h3>
+<p>In the below table the p-values of the Wilcoxon Rank Sum Test with different options are compared.</p>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 12%">
-<col style="width: 10%">
-<col style="width: 10%">
-<col style="width: 10%">
-<col style="width: 14%">
-<col style="width: 39%">
+<col style="width: 16%">
+<col style="width: 18%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 8%">
+<col style="width: 11%">
+<col style="width: 11%">
 </colgroup>
 <thead>
 <tr class="header">
-<th>Statistic</th>
-<th>SAS Result</th>
-<th>{stats} Results</th>
-<th>{coin} Result</th>
+<th>Analysis</th>
+<th>R {stats}</th>
+<th>R {coin}</th>
+<th>R {asht}</th>
+<th>SAS</th>
 <th>Match</th>
 <th>Notes</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>Asymptotic (Moses)</td>
-<td>(-0.77, -0.09)</td>
-<td>(-0.77, -0.090)</td>
-<td>❌</td>
-<td>Yes - only in {stats}</td>
-<td>the exact argument in {coin} only applies to the rank-sum test</td>
+<td>Wilcoxon Rank-Sum – Normal approximation <strong>with</strong> continuity correction</td>
+<td>0.0100</td>
+<td>/</td>
+<td>0.0100</td>
+<td>0.0100</td>
+<td>Yes</td>
+<td>Not possible with {coin}</td>
 </tr>
 <tr class="even">
-<td>Exact</td>
-<td>(-0.76, -0.1)</td>
-<td>❌</td>
-<td>(-0.76, -0.10)</td>
+<td>Wilcoxon Rank-Sum – Normal approximation <strong>without</strong> continuity correction</td>
+<td>0.0094</td>
+<td>0.0094</td>
+<td>0.0094</td>
+<td>0.0094</td>
 <td>Yes</td>
-<td>{stats} can’t do an exact method when there are ties</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Wilcoxon Rank-Sum – Exact</td>
+<td>/</td>
+<td>0.0082</td>
+<td>/</td>
+<td>0.0082</td>
+<td>Yes</td>
+<td>Not possible with {stats} since there are ties.; In {asht} run-time very long.</td>
+</tr>
+<tr class="even">
+<td>Wilcoxon Rank-Sum – Approximative (Monte Carlo simulation)</td>
+<td>/</td>
+<td>0.0083</td>
+<td>0.0083</td>
+<td>/</td>
+<td>Yes</td>
+<td>With 100,000 simulations</td>
 </tr>
 </tbody>
 </table>
 </section>
+<section id="hodges-lehmann-estimator" class="level3">
+<h3 class="anchored" data-anchor-id="hodges-lehmann-estimator">Hodges-Lehmann estimator</h3>
+<p>In the below table the Hodges-Lehmann estimate and 95% confidence intervals are compared.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 18%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 8%">
+<col style="width: 11%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Analysis</th>
+<th>R {stats}</th>
+<th>R {coin}</th>
+<th>R {asht}</th>
+<th>SAS</th>
+<th>Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Hodges-Lehmann estimator – Asymptotic</td>
+<td>-0.426 (-0.770 to -0.090)</td>
+<td>-0.426 (-0.760 to -0.100)</td>
+<td>/</td>
+<td>-0.425 (-0.770 to -0.090)</td>
+<td>No</td>
+<td>In {coin}, the CI is the exact CI. The CIs match between {stats} and SAS.</td>
+</tr>
+<tr class="even">
+<td>Hodges-Lehmann estimator – Exact</td>
+<td>/</td>
+<td>-0.425 (-0.760 to -0.100)</td>
+<td>/</td>
+<td>-0.425 (-0.760 to -0.100)</td>
+<td>Yes</td>
+<td>Not possible with {stats} since there are ties; In {asht} run-time very long.</td>
+</tr>
+<tr class="odd">
+<td>Hodges-Lehmann estimator – Approximative (Monte Carlo simulation)</td>
+<td>/</td>
+<td>-0.425 (-0.760 to -0.100)</td>
+<td>/</td>
+<td>/</td>
+<td>/</td>
+<td>With 500,000 simulations</td>
+</tr>
+</tbody>
+</table>
 </section>
-<section id="special-considerations" class="level2">
-<h2 class="anchored" data-anchor-id="special-considerations">Special Considerations</h2>
-<p>If you have a study where you would like to use the exact wilcoxon test and there is the risk of ties, {coin} would be recommended.</p>
+<section id="mann-whitney-parameter" class="level3">
+<h3 class="anchored" data-anchor-id="mann-whitney-parameter">Mann-Whitney Parameter</h3>
+<p>The estimation of the Mann-Whitney parameter is only possible in R <code>asht</code> package.</p>
+</section>
+</section>
+<section id="special-considerations-for-one-sided-p-values" class="level2">
+<h2 class="anchored" data-anchor-id="special-considerations-for-one-sided-p-values">Special considerations for one-sided p-values</h2>
+<p>It is important to note that in SAS you can get an <em>unexpected</em> one-sided p-value. In the SAS documentation for <a href="https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_npar1way_details04.htm">PROC NPAR1WAY</a> it is stated that:</p>
+<p><em>“PROC NPAR1WAY computes one-sided and two-sided asymptotic p-values for each two-sample linear rank test. When the test statistic z is greater than its null hypothesis expected value of 0, PROC NPAR1WAY computes the right-sided p-value, which is the probability of a larger value of the statistic occurring under the null hypothesis. When the test statistic is less than or equal to 0, PROC NPAR1WAY computes the left-sided p-value, which is the probability of a smaller value of the statistic occurring under the null hypothesis”</em> (similar for the exact p-value).</p>
+<p>Thus SAS reports the one-sided p-value in the direction of the test statistic. This can cause an <em>unexpected</em> one-sided p-value, if your data provides a test statistic in the other direction of the pre-specified one-sided hypothesis.</p>
+<p>Consider the following data example to showcase this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>dat_used <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">ID =</span> <span class="fu">c</span>(<span class="st">"001"</span>, <span class="st">"002"</span>, <span class="st">"003"</span>, <span class="st">"004"</span>, <span class="st">"005"</span>, <span class="st">"006"</span>, <span class="st">"007"</span>, <span class="st">"008"</span>, <span class="st">"009"</span>, <span class="st">"010"</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>         <span class="st">"011"</span>, <span class="st">"012"</span>, <span class="st">"013"</span>, <span class="st">"014"</span>, <span class="st">"015"</span>, <span class="st">"016"</span>, <span class="st">"017"</span>, <span class="st">"018"</span>, <span class="st">"019"</span>, <span class="st">"020"</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>         <span class="st">"021"</span>, <span class="st">"022"</span>, <span class="st">"023"</span>, <span class="st">"024"</span>, <span class="st">"025"</span>, <span class="st">"026"</span>, <span class="st">"027"</span>, <span class="st">"028"</span>, <span class="st">"029"</span>, <span class="st">"030"</span>),</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">ARM =</span> <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"Placebo"</span>, <span class="st">"Placebo"</span>, <span class="st">"Placebo"</span>, <span class="st">"Placebo"</span>, <span class="st">"Placebo"</span>, <span class="st">"Placebo"</span>, <span class="st">"Placebo"</span>, <span class="st">"Placebo"</span>, <span class="st">"Placebo"</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>          <span class="st">"Low"</span>, <span class="st">"Low"</span>, <span class="st">"Low"</span>, <span class="st">"Low"</span>, <span class="st">"Low"</span>, <span class="st">"Low"</span>, <span class="st">"Low"</span>, <span class="st">"Low"</span>, <span class="st">"Low"</span>, <span class="st">"Low"</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>          <span class="st">"High"</span>, <span class="st">"High"</span>, <span class="st">"High"</span>, <span class="st">"High"</span>, <span class="st">"High"</span>, <span class="st">"High"</span>, <span class="st">"High"</span>, <span class="st">"High"</span>, <span class="st">"High"</span>, <span class="st">"High"</span>),</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">Y =</span> <span class="fu">c</span>(<span class="fl">8.5</span>, <span class="fl">8.9</span>, <span class="fl">8.2</span>, <span class="fl">8.1</span>, <span class="fl">7.1</span>, <span class="fl">7.4</span>, <span class="fl">6.0</span>, <span class="fl">6.5</span>, <span class="fl">7.0</span>, <span class="fl">7.0</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="fl">6.5</span>, <span class="fl">9.4</span>, <span class="fl">8.9</span>, <span class="fl">8.8</span>, <span class="fl">9.6</span>, <span class="fl">8.3</span>, <span class="fl">8.9</span>, <span class="fl">7.0</span>, <span class="fl">9.1</span>, <span class="fl">6.9</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="fl">8.0</span>, <span class="fl">7.3</span>, <span class="fl">7.1</span>, <span class="fl">6.2</span>, <span class="fl">4.7</span>, <span class="fl">4.7</span>, <span class="fl">4.2</span>, <span class="fl">4.1</span>, <span class="fl">3.4</span>, <span class="fl">3.9</span>)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>dat_used</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    ID     ARM   Y
+1  001 Placebo 8.5
+2  002 Placebo 8.9
+3  003 Placebo 8.2
+4  004 Placebo 8.1
+5  005 Placebo 7.1
+6  006 Placebo 7.4
+7  007 Placebo 6.0
+8  008 Placebo 6.5
+9  009 Placebo 7.0
+10 010 Placebo 7.0
+11 011     Low 6.5
+12 012     Low 9.4
+13 013     Low 8.9
+14 014     Low 8.8
+15 015     Low 9.6
+16 016     Low 8.3
+17 017     Low 8.9
+18 018     Low 7.0
+19 019     Low 9.1
+20 020     Low 6.9
+21 021    High 8.0
+22 022    High 7.3
+23 023    High 7.1
+24 024    High 6.2
+25 025    High 4.7
+26 026    High 4.7
+27 027    High 4.2
+28 028    High 4.1
+29 029    High 3.4
+30 030    High 3.9</code></pre>
+</div>
+</div>
+<p>Suppose we would have the following two hypothesis, where for both Low Dose and High Dose we expect smaller values (Y) than Placebo:</p>
+<ul>
+<li><p><span class="math inline">\(H_{0}\)</span>: No difference between Placebo and Low Dose, vs <span class="math inline">\(H_{1}\)</span>: Placebo has higher values (Y) than Low Dose</p></li>
+<li><p><span class="math inline">\(H_{0}\)</span>: No difference between Placebo and High Dose, vs <span class="math inline">\(H_{1}\)</span>: Placebo has higher values (Y) than High Dose</p></li>
+</ul>
+<section id="asymptotic-results-without-continuity-correction" class="level3">
+<h3 class="anchored" data-anchor-id="asymptotic-results-without-continuity-correction">Asymptotic results without continuity correction</h3>
+<p><strong>Placebo and High Dose group</strong></p>
+<p>Let us the {coin} package in R to compare the Placebo and High Dose group:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: greater implies that H1 is Y1 - Y2 = Placebo - High &gt; 0</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>coin<span class="sc">::</span><span class="fu">wilcox_test</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  Y <span class="sc">~</span> <span class="fu">factor</span>(ARM, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"High"</span>)),</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">distribution =</span> <span class="st">"asymptotic"</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">alternative =</span> <span class="st">"greater"</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dat_used <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(ARM <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"High"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic Wilcoxon-Mann-Whitney Test
+
+data:  Y by
+     factor(ARM, levels = c("Placebo", "High")) (Placebo, High)
+Z = 2.5352, p-value = 0.005619
+alternative hypothesis: true mu is greater than 0</code></pre>
+</div>
+</div>
+<p>In SAS, the following results is obtained. As can be seen in both R and SAS the one-sided p-value is 0.0056.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/ranksum/SAS_one_sided_pvalue.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:90.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Placebo and Low Dose group</strong></p>
+<p>Let us the {coin} package in R to compare the Placebo and Low Dose group:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: greater implies that H1 is Y1 - Y2 = Placebo - High &gt; 0</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>coin<span class="sc">::</span><span class="fu">wilcox_test</span>(</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  Y <span class="sc">~</span> <span class="fu">factor</span>(ARM, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"Low"</span>)),</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">distribution =</span> <span class="st">"asymptotic"</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">alternative =</span> <span class="st">"greater"</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dat_used <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(ARM <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"Low"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic Wilcoxon-Mann-Whitney Test
+
+data:  Y by
+     factor(ARM, levels = c("Placebo", "Low")) (Placebo, Low)
+Z = -1.7066, p-value = 0.9561
+alternative hypothesis: true mu is greater than 0</code></pre>
+</div>
+</div>
+<p>In SAS, the following results is obtained. The one-sided p-values clearly do not match ({coin} p-value = 0.9561; SAS p-value = 0.0439). As mentioned above, SAS reports the p-value in the direction of the test statistic. This can cause an <em>unexpected</em> one-sided p-value, if your data provides a test statistic in the other directiont than the pre-specified one-sided hypothesis. Do note that <span class="math inline">\(1 - 0.9561 = 0.0439\)</span>.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/ranksum/SAS_one_sided_pvalue2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:90.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="exact-results" class="level3">
+<h3 class="anchored" data-anchor-id="exact-results">Exact results</h3>
+<p><strong>Placebo and High Dose group</strong></p>
+<p>Let us the {coin} package in R to compare the Placebo and High Dose group:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: greater implies that H1 is Y1 - Y2 = Placebo - High &gt; 0</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>coin<span class="sc">::</span><span class="fu">wilcox_test</span>(</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  Y <span class="sc">~</span> <span class="fu">factor</span>(ARM, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"High"</span>)),</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">distribution =</span> <span class="st">"exact"</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">alternative =</span> <span class="st">"greater"</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dat_used <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(ARM <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"High"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Exact Wilcoxon-Mann-Whitney Test
+
+data:  Y by
+     factor(ARM, levels = c("Placebo", "High")) (Placebo, High)
+Z = 2.5352, p-value = 0.004682
+alternative hypothesis: true mu is greater than 0</code></pre>
+</div>
+</div>
+<p>In SAS (see above), the same one-sided p-value of 0.0047 is obtained.</p>
+<p><strong>Placebo and Low Dose group</strong></p>
+<p>Let us the {coin} package in R to compare the Placebo and Low Dose group:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: greater implies that H1 is Y1 - Y2 = Placebo - High &gt; 0</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>coin<span class="sc">::</span><span class="fu">wilcox_test</span>(</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  Y <span class="sc">~</span> <span class="fu">factor</span>(ARM, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"Low"</span>)),</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">distribution =</span> <span class="st">"exact"</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">alternative =</span> <span class="st">"greater"</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dat_used <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(ARM <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"Low"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Exact Wilcoxon-Mann-Whitney Test
+
+data:  Y by
+     factor(ARM, levels = c("Placebo", "Low")) (Placebo, Low)
+Z = -1.7066, p-value = 0.9574
+alternative hypothesis: true mu is greater than 0</code></pre>
+</div>
+</div>
+<p>Please see above for the SAS result. The one-sided p-values clearly do not match ({coin} p-value = 0.9574; SAS p-value = 0.0455).</p>
+</section>
 </section>
 <section id="summary-and-recommendation" class="level2">
 <h2 class="anchored" data-anchor-id="summary-and-recommendation">Summary and Recommendation</h2>
-<p>Wilcoxon Rank Sum and the associated Hodges-Lehmann CI are able to be consistenly created in both SAS and R. But, it is worth noting that the test statstic of Wilcoxon Rank Sum does not directly translate into the Hodges-Lehmann CI. Because of this, the exact option in SAS and R can be slightly confusing. In SAS the <code>exact wilcoxon hl;</code> statement is need to get both the exact p-value and CI. In {stats} exact values are only possible when there are no ties and the exact parameter is set to true (<code>exact = TRUE</code>). This will give the exact p-value and CI. In {coin} the exact option only effects the p-values, there is no option for exact CI.</p>
+<p>Wilcoxon Rank Sum test and the associated Hodges-Lehmann CI are able to be consistently computed in both SAS and R. The user needs to be aware of some small differences:</p>
+<ul>
+<li><p>In SAS the <code>exact wilcoxon hl</code> statement is needed to get both the exact p-value and CI.</p></li>
+<li><p>In {stats} exact values are only possible when there are no ties and the exact parameter is set to true (<code>exact = TRUE</code>). This will give the exact p-value and CI.</p></li>
+<li><p>In {coin} it is not possible to do a normal approximation <strong>with</strong> continuity correction.</p></li>
+<li><p>For the asymptotic Hodges-Lehmann estimator, {stats} and {coin} use an algorithm to define the estimate, whereas SAS provides the <em>traditional</em> Hodges-Lehmann estimator.</p></li>
+</ul>
+<p>If you have a study where you would like to use R for the exact Wilcoxon Rank Sum test and there is the risk of ties, {coin} would be recommended.</p>
 </section>
 <section id="ties" class="level2">
 <h2 class="anchored" data-anchor-id="ties">Ties</h2>
-<p>In addition to the options discussed here, there are also different method to handle ties. SAS only has one option for handling ties, the <a href="https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_npar1way_details02.htm">average score method</a>. In {coin} by default ties are handled with the “mid-ranks” method.</p>
+<p>In all presented R packages and SAS, when there are tied values, the average score method (mid-ranks) is used. This is done by first sorting the observations in ascending order and assigning ranks as if there were no ties. The procedure averages the scores for tied observations and assigns this average score to each of the tied observations. Thus, all tied data values have the same score value.</p>
 </section>
 <section id="additional-references" class="level2">
 <h2 class="anchored" data-anchor-id="additional-references">Additional References</h2>
-<p>Provide references and additional reading materials for both R and SAS documentation related to the analysis.</p>
+<p>Provided are references and additional reading materials for both R and SAS documentation related to the analysis.</p>
 <p><strong>R Documentation:</strong></p>
 <ul>
 <li><p><code>wilcox.test</code> function: <a href="https://rdrr.io/r/stats/wilcox.test.html" class="uri">https://rdrr.io/r/stats/wilcox.test.html</a></p></li>
@@ -476,22 +733,22 @@ Session Info
 <pre><code>─ Session info ───────────────────────────────────────────────────────────────
  setting  value
  version  R version 4.4.2 (2024-10-31)
- os       macOS Sequoia 15.6.1
- system   aarch64, darwin20
+ os       Ubuntu 24.04.3 LTS
+ system   x86_64, linux-gnu
  ui       X11
  language (EN)
- collate  en_US.UTF-8
- ctype    en_US.UTF-8
- tz       Europe/London
- date     2025-08-29
- pandoc   3.4 @ /Applications/RStudio.app/Contents/Resources/app/quarto/bin/tools/aarch64/ (via rmarkdown)
+ collate  C.UTF-8
+ ctype    C.UTF-8
+ tz       UTC
+ date     2025-09-08
+ pandoc   3.6.3 @ /opt/quarto/bin/tools/ (via rmarkdown)
 
 ─ Packages ───────────────────────────────────────────────────────────────────
  ! package * version date (UTC) lib source
- P coin    * 1.4-3   2023-09-27 [?] CRAN (R 4.4.0)
+ P coin    * 1.4-3   2023-09-27 [?] RSPM (R 4.4.0)
 
- [1] /Users/christinafillmore/Documents/GitHub/CAMIS/renv/library/macos/R-4.4/aarch64-apple-darwin20
- [2] /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library
+ [1] /home/runner/work/CAMIS/CAMIS/renv/library/linux-ubuntu-noble/R-4.4/x86_64-pc-linux-gnu
+ [2] /opt/R/4.4.2/lib/R/library
 
  P ── Loaded and on-disk path mismatch.
 
