@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Linear Regression</title>
+<title>Propensity Score Weighting</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -203,8 +203,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#descriptive-statistics" id="toc-descriptive-statistics" class="nav-link active" data-scroll-target="#descriptive-statistics">Descriptive Statistics</a></li>
-  <li><a href="#regression-analysis" id="toc-regression-analysis" class="nav-link" data-scroll-target="#regression-analysis">Regression Analysis</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#differences" id="toc-differences" class="nav-link" data-scroll-target="#differences">Differences</a>
+  <ul class="collapse">
+  <li><a href="#options" id="toc-options" class="nav-link" data-scroll-target="#options">Options</a></li>
+  <li><a href="#output" id="toc-output" class="nav-link" data-scroll-target="#output">Output</a>
+  <ul class="collapse">
+  <li><a href="#statistics" id="toc-statistics" class="nav-link" data-scroll-target="#statistics">Statistics</a></li>
+  <li><a href="#figures" id="toc-figures" class="nav-link" data-scroll-target="#figures">Figures</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#dataset" id="toc-dataset" class="nav-link" data-scroll-target="#dataset">Dataset</a></li>
+  <li><a href="#matching-examples" id="toc-matching-examples" class="nav-link" data-scroll-target="#matching-examples">Matching Examples</a>
+  <ul class="collapse">
+  <li><a href="#average-treatment-effect-in-treated-att" id="toc-average-treatment-effect-in-treated-att" class="nav-link" data-scroll-target="#average-treatment-effect-in-treated-att">Average Treatment Effect in Treated (ATT)</a>
+  <ul class="collapse">
+  <li><a href="#sas" id="toc-sas" class="nav-link" data-scroll-target="#sas">SAS</a></li>
+  <li><a href="#r" id="toc-r" class="nav-link" data-scroll-target="#r">R</a></li>
+  </ul></li>
+  <li><a href="#average-treatment-effect-ate" id="toc-average-treatment-effect-ate" class="nav-link" data-scroll-target="#average-treatment-effect-ate">Average Treatment Effect (ATE)</a>
+  <ul class="collapse">
+  <li><a href="#sas-1" id="toc-sas-1" class="nav-link" data-scroll-target="#sas-1">SAS</a></li>
+  <li><a href="#r-1" id="toc-r-1" class="nav-link" data-scroll-target="#r-1">R</a></li>
+  </ul></li>
+  <li><a href="#average-treatment-effect-ate-stabilized-weights" id="toc-average-treatment-effect-ate-stabilized-weights" class="nav-link" data-scroll-target="#average-treatment-effect-ate-stabilized-weights">Average Treatment Effect (ATE), stabilized weights</a>
+  <ul class="collapse">
+  <li><a href="#sas-2" id="toc-sas-2" class="nav-link" data-scroll-target="#sas-2">SAS</a></li>
+  <li><a href="#r-2" id="toc-r-2" class="nav-link" data-scroll-target="#r-2">R</a></li>
+  </ul></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -213,7 +240,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Linear Regression</h1>
+<h1 class="title">Propensity Score Weighting</h1>
 </div>
 
 
@@ -221,12 +248,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="quarto-title-meta">
 
     
-    <div>
-    <div class="quarto-title-meta-heading">Published</div>
-    <div class="quarto-title-meta-contents">
-      <p class="date">8 September, 2025</p>
-    </div>
-  </div>
   
     
   </div>
@@ -236,81 +257,270 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>To demonstrate the use of linear regression we examine a dataset that illustrates the relationship between Height and Weight in a group of 237 teen-aged boys and girls. The dataset is available at (../data/htwt.csv) and is imported to sas using proc import procedure.</p>
-<section id="descriptive-statistics" class="level3">
-<h3 class="anchored" data-anchor-id="descriptive-statistics">Descriptive Statistics</h3>
-<p>The first step is to obtain the simple descriptive statistics for the numeric variables of htwt data, and one-way frequencies for categorical variables. This is accomplished by employing proc means and proc freq procedures There are 237 participants who are from 13.9 to 25 years old. It is a cross-sectional study, with each participant having one observation. We can use this data set to examine the relationship of participants’ height to their age and sex.</p>
-<pre class="{sas}"><code>#| eval: false
-proc means data=htwt;
-run;</code></pre>
-<div class="sourceCode" id="cb2"><pre class="sourceCode default code-with-copy"><code class="sourceCode default"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>                    Descriptive Statistics for HTWT Data Set                  </span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>                             The MEANS Procedure</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>Variable  Label     N          Mean       Std Dev       Minimum       Maximum</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>-----------------------------------------------------------------------------</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>AGE       AGE     237    16.4430380     1.8425767    13.9000000    25.0000000</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>HEIGHT    HEIGHT  237    61.3645570     3.9454019    50.5000000    72.0000000</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>WEIGHT    WEIGHT  237   101.3080169    19.4406980    50.5000000   171.5000000</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>----------------------------------------------------------------------------</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<pre class="{sas}"><code>#| eval: false
-proc freq data=htwt;
-    tables sex;
-run;</code></pre>
-<div class="sourceCode" id="cb4"><pre class="sourceCode default code-with-copy"><code class="sourceCode default"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>    Oneway Frequency Tabulation for Sex for HTWT Data Set                    </span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>                    The FREQ Procedure</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                                      Cumulative    Cumulative</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>SEX         Frequency     Percent     Frequency      Percent</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>-------------------------------------------------------------</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>f           111           46.84           111        46.84</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>m           126           53.16           237       100.00</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>In order to create a regression model to demonstrate the relationship between age and height for females, we first need to create a flag variable identifying females and an interaction variable between age and female gender flag.</p>
-<pre class="{sas}"><code>#| eval: false
-data htwt2;
-  set htwt;
-  if sex="f" then female=1;
-  if sex="m" then female=0; 
-
-  *model to demonstrate interaction between female gender and age;
-  fem_age = female * age;  
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Propensity score (PS) weighting is a statistical technique widely employed in Real World Evidence (RWE) studies to address confounding bias and facilitate the estimation of causal treatment effects. By using the estimated probability of treatment assignment to create weights, PS weighting aims to balance the observed covariates across treatment groups. While both SAS and R provide methods to do PS weighting, the syntax and available options differ considerably. The PS weighting process generally involves several key stages: first, the estimation of propensity scores using a regression model; second, the calculation of weights for each subject based on their propensity score; and third, the use of these weights in the analysis of choice.</p>
+</section>
+<section id="differences" class="level1">
+<h1>Differences</h1>
+<p>Given the extensive number of parameters and arguments available in both <code>PROC PSMATCH</code> and <code>weightit()</code>, we will focus only on the observed differences.</p>
+<section id="options" class="level2">
+<h2 class="anchored" data-anchor-id="options">Options</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 23%">
+<col style="width: 71%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Option</th>
+<th>PROC PSMATCH</th>
+<th>weightit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PS methods</td>
+<td>logistic regression</td>
+<td>glm, gbm, covariate balancing propensity score (CBPS) algorithm, non-parametric CBPS, entropy balancing, inverse probability tilting, optimization-based weighting, PS weighting using SuperLearner, bayesian additive regression trees (BART), energy balancing</td>
+</tr>
+<tr class="even">
+<td>Estimands</td>
+<td>ATT, ATE</td>
+<td>ATT, ATE, ATC, for some methods ATO, ATM, ATOS</td>
+</tr>
+<tr class="odd">
+<td>Region</td>
+<td>Always used; <em>allobs</em>, <em>treated</em> or <em>cs</em> (common support), with allowed extension</td>
+<td>Not available</td>
+</tr>
+<tr class="even">
+<td>Stabilize weights</td>
+<td>Available as logical, only for ATE</td>
+<td>Available as logical or formula when used with continuous treatments or when estimand is ATE</td>
+</tr>
+<tr class="odd">
+<td>Moments</td>
+<td>Not available</td>
+<td>Some methods allows to set the greatest power of each covariate to be balanced</td>
+</tr>
+<tr class="even">
+<td>Interactions</td>
+<td>Not available</td>
+<td>Some methods allows to set the first-order interactions of the covariates to be balanced</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="output" class="level2">
+<h2 class="anchored" data-anchor-id="output">Output</h2>
+<p>The way SAS and R output the weights is similar - they are given as a column (SAS) / vector in the output list (R) with a computed weight for each observation. However, seems to be due to the different rounding rules, the PS weights may differ on the last digit.</p>
+<section id="statistics" class="level3">
+<h3 class="anchored" data-anchor-id="statistics">Statistics</h3>
+<p>In SAS, descriptive statistics for assessing balance are primarily generated through the <code>ASSESS</code> statement within <code>PROC PSMATCH</code>. Conversely, in R, descriptive statistics for weights could be obtained by applying the <code>summary()</code> function to the output object returned by the <code>weightit()</code>. The balance assessment after weighting could be performed using the <code>cobalt</code> package. The following table summarizes the statistics available in SAS and R:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Stat or info</th>
+<th style="text-align: center;">SAS</th>
+<th style="text-align: center;">R</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">N</td>
+<td style="text-align: center;">+</td>
+<td style="text-align: center;">+</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Weights range</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">+</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Extreme weights</td>
+<td style="text-align: center;">+</td>
+<td style="text-align: center;">+</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ESS</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">+</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Coefficient of Variation</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">+</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mean absolute deviation</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">+</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Negative Entropy</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">+</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Number of zero weights</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">+</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Weighted covariates stats</td>
+<td style="text-align: center;">+</td>
+<td style="text-align: center;">-*</td>
+</tr>
+</tbody>
+</table>
+<p><em>*available from cobalt package</em></p>
+</section>
+<section id="figures" class="level3">
+<h3 class="anchored" data-anchor-id="figures">Figures</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 45%">
+<col style="width: 38%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Plot type</th>
+<th>R</th>
+<th>SAS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Love plot</td>
+<td><ul>
+<li><p><u>plot()</u>: -</p></li>
+<li><p><u>cobalt:</u> many different settings.</p></li>
+</ul></td>
+<td><p><strong>Displayed for:</strong> all/region/matched/weighted matched, trt/control.</p>
+<p><strong>Includes</strong> PS, all numeric and binary variables.</p></td>
+</tr>
+<tr class="even">
+<td>General distribution plots</td>
+<td><ul>
+<li><p><u>plot():</u> -</p></li>
+<li><p><u>cobalt</u> : Highly customizable plots.</p></li>
+</ul></td>
+<td><p><strong>Displayed for:</strong> all/region/weighted, trt/control.</p>
+<p><strong>Includes</strong> PS and all variables.</p>
+<p>For PS and numeric - boxplots, character - barplots.</p></td>
+</tr>
+<tr class="odd">
+<td>eCDF plots</td>
+<td><u>plot():</u> -</td>
+<td><p><strong>Displayed for:</strong> all/region/weighted, trt/control.</p>
+<p><strong>Includes</strong> PS and all numeric variables.</p></td>
+</tr>
+<tr class="even">
+<td>Cloud plots</td>
+<td><u>plot():</u> -</td>
+<td><p><strong>Displayed for:</strong> all/region, trt/control.</p>
+<p><strong>Includes</strong> PS, weights and all numeric variables.</p>
+<p>Presented as 2 separate clouds per variable.</p></td>
+</tr>
+<tr class="odd">
+<td>PS weights histogram</td>
+<td><ul>
+<li><p><u>plot()</u>: <strong>Displayed for:</strong> trt/control. <strong>Includes</strong> PS weigths.</p></li>
+<li><p><u>cobalt</u>: Highly customizable plots.</p></li>
+</ul></td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+<section id="dataset" class="level1">
+<h1>Dataset</h1>
+<p>The dataset used in the example below can be found here: [ps_data.csv](<a href="https://github.com/PSIAIMS/CAMIS/blob/main/data/ps_data.csv" class="uri">https://github.com/PSIAIMS/CAMIS/blob/main/data/ps_data.csv</a>)</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode default code-with-copy"><code class="sourceCode default"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>                           trt              control       Standardized</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>Characteristic          (N = 120)          (N = 180)       Mean Diff.</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  sex                                                        0.1690</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    F                  70 (58.3 %)        90 (50.0 %)        </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    M                  50 (41.7 %)        90 (50.0 %)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  age                 61.5 (17.12)       49.4 (10.55)        0.7057</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  weight              67.3 ( 7.33)       63.8 ( 9.64)        0.4741</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  bmi_cat   </span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    underweight        34 (28.3 %)        63 (35.0 %)       -0.1479  </span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    normal             57 (47.5 %)        61 (33.9 %)        0.2726</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    overweight         29 (24.2 %)        56 (31.1 %)       -0.1622</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="matching-examples" class="level1">
+<h1>Matching Examples</h1>
+<section id="average-treatment-effect-in-treated-att" class="level2">
+<h2 class="anchored" data-anchor-id="average-treatment-effect-in-treated-att">Average Treatment Effect in Treated (ATT)</h2>
+<section id="sas" class="level3">
+<h3 class="anchored" data-anchor-id="sas">SAS</h3>
+<pre><code>proc psmatch data=data;
+    class trtp sex bmi_cat;
+    psmodel trtp(Treated="trt")= sex weight age bmi_cat;
+    psweight weight=ATTWGT;
+    output out(obs=all)=ps_res ps=_PScore weight=_PSweight;
 run;</code></pre>
 </section>
-<section id="regression-analysis" class="level3">
-<h3 class="anchored" data-anchor-id="regression-analysis">Regression Analysis</h3>
-<p>Next, we fit a regression model, representing the relationships between gender, age, height and the interaction variable created in the datastep above. We again use a where statement to restrict the analysis to those who are less than or equal to 19 years old. We use the clb option to get a 95% confidence interval for each of the parameters in the model. The model that we are fitting is <strong><em>height = b0 + b1 x female + b2 x age + b3 x fem_age + e</em></strong></p>
-<pre class="{sas}"><code>#| eval: false
-proc reg data=htwt2;
-    where age &lt;=19;
-    model height = female age fem_age / clb;
-run; 
-quit;</code></pre>
-<div class="sourceCode" id="cb7"><pre class="sourceCode default code-with-copy"><code class="sourceCode default"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>                        Number of Observations Read         219</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                        Number of Observations Used         219</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                                 Analysis of Variance</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>                                        Sum of           Mean</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    Source                   DF        Squares         Square    F Value    Pr &gt; F</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    Model                     3     1432.63813      477.54604      60.93    &lt;.0001</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    Error                   215     1684.95730        7.83701</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    Corrected Total         218     3117.59543</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>                 Root MSE              2.79947    R-Square     0.4595</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>                 Dependent Mean       61.00457    Adj R-Sq     0.4520</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>                 Coeff Var             4.58895</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>We examine the parameter estimates in the output below.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode default code-with-copy"><code class="sourceCode default"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>                            Parameter Estimates</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                            Parameter       Standard</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>       Variable     DF       Estimate          Error    t Value    Pr &gt; |t|       95% Confidence Limits</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>       Intercept     1       28.88281        2.87343      10.05      &lt;.0001       23.21911       34.54650</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>       female        1       13.61231        4.01916       3.39      0.0008        5.69031       21.53432</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>       AGE           1        2.03130        0.17764      11.44      &lt;.0001        1.68117        2.38144</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>       fem_age       1       -0.92943        0.24782      -3.75      0.0002       -1.41791       -0.44096</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>From the parameter estimates table the coefficients b0,b1,b2,b3 are estimated as b0=28.88 b1=13.61 b2=2.03 b3=-0.92942</p>
-<p>The resulting regression model for height, age and gender based on the available data is <strong><em>height=28.88281 + 13.61231 x female + 2.03130 x age -0.92943 x fem_age</em></strong></p>
+<section id="r" class="level3">
+<h3 class="anchored" data-anchor-id="r">R</h3>
+<pre><code>ps_res &lt;- weightit(trtp ~ sex + weight + age + bmi_cat,
+                    data=data_gen,
+                    method="glm",
+                    estimand="ATT",
+                    focal="trt")</code></pre>
+</section>
+</section>
+<section id="average-treatment-effect-ate" class="level2">
+<h2 class="anchored" data-anchor-id="average-treatment-effect-ate">Average Treatment Effect (ATE)</h2>
+<section id="sas-1" class="level3">
+<h3 class="anchored" data-anchor-id="sas-1">SAS</h3>
+<pre><code>proc psmatch data=data;
+    class trtp sex bmi_cat;
+    psmodel trtp(Treated="trt")= sex weight age bmi_cat;
+    psweight weight=ATEWGT;
+    output out(obs=all)=ps_res ps=_PScore weight=_PSweight;
+run;</code></pre>
+</section>
+<section id="r-1" class="level3">
+<h3 class="anchored" data-anchor-id="r-1">R</h3>
+<pre><code>ps_res &lt;- weightit(trtp ~ sex + weight + age + bmi_cat,
+                    data=data_gen,
+                    method="glm",
+                    estimand="ATE")</code></pre>
+</section>
+</section>
+<section id="average-treatment-effect-ate-stabilized-weights" class="level2">
+<h2 class="anchored" data-anchor-id="average-treatment-effect-ate-stabilized-weights">Average Treatment Effect (ATE), stabilized weights</h2>
+<section id="sas-2" class="level3">
+<h3 class="anchored" data-anchor-id="sas-2">SAS</h3>
+<pre><code>proc psmatch data=data;
+    class trtp sex bmi_cat;
+    psmodel trtp(Treated="trt")= sex weight age bmi_cat;
+    psweight weight=ATEWGT(stabilize=YES);
+    output out(obs=all)=ps_res ps=_PScore weight=_PSweight;
+run;</code></pre>
+</section>
+<section id="r-2" class="level3">
+<h3 class="anchored" data-anchor-id="r-2">R</h3>
+<pre><code>ps_res &lt;- weightit(trtp ~ sex + weight + age + bmi_cat,
+                    data=data_gen,
+                    method="glm",
+                    estimand="ATE",
+                    stabilize=TRUE)</code></pre>
 
 
+</section>
+</section>
 </section>
 
 </main> <!-- /main -->
