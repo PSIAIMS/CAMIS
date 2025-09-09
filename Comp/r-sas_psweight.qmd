@@ -1,0 +1,174 @@
+---
+title: "Propensity Score Weighting"
+---
+
+# Introduction
+
+Propensity score (PS) weighting is a statistical technique widely employed in Real World Evidence (RWE) studies to address confounding bias and facilitate the estimation of causal treatment effects. By using the estimated probability of treatment assignment to create weights, PS weighting aims to balance the observed covariates across treatment groups. While both SAS and R provide methods to do PS weighting, the syntax and available options differ considerably. The PS weighting process generally involves several key stages: first, the estimation of propensity scores using a regression model; second, the calculation of weights for each subject based on their propensity score; and third, the use of these weights in the analysis of choice.
+
+# Differences
+
+Given the extensive number of parameters and arguments available in both `PROC PSMATCH` and `weightit()`, we will focus only on the observed differences.
+
+## Options
+
++-------------------+-----------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Option            | PROC PSMATCH                                                                      | weightit                                                                                                                                                                                                                                                         |
++===================+===================================================================================+==================================================================================================================================================================================================================================================================+
+| PS methods        | logistic regression                                                               | glm, gbm, covariate balancing propensity score (CBPS) algorithm, non-parametric CBPS, entropy balancing, inverse probability tilting, optimization-based weighting, PS weighting using SuperLearner, bayesian additive regression trees (BART), energy balancing |
++-------------------+-----------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Estimands         | ATT, ATE                                                                          | ATT, ATE, ATC, for some methods ATO, ATM, ATOS                                                                                                                                                                                                                   |
++-------------------+-----------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Region            | Always used; *allobs*, *treated* or *cs* (common support), with allowed extension | Not available                                                                                                                                                                                                                                                    |
++-------------------+-----------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Stabilize weights | Available as logical, only for ATE                                                | Available as logical or formula when used with continuous treatments or when estimand is ATE                                                                                                                                                                     |
++-------------------+-----------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Moments           | Not available                                                                     | Some methods allows to set the greatest power of each covariate to be balanced                                                                                                                                                                                   |
++-------------------+-----------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Interactions      | Not available                                                                     | Some methods allows to set the first-order interactions of the covariates to be balanced                                                                                                                                                                         |
++-------------------+-----------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+## Output
+
+The way SAS and R output the weights is similar - they are given as a column (SAS) / vector in the output list (R) with a computed weight for each observation. However, seems to be due to the different rounding rules, the PS weights may differ on the last digit.
+
+### Statistics
+
+In SAS, descriptive statistics for assessing balance are primarily generated through the `ASSESS` statement within `PROC PSMATCH`. Conversely, in R, descriptive statistics for weights could be obtained by applying the `summary()` function to the output object returned by the `weightit()`. The balance assessment after weighting could be performed using the `cobalt` package. The following table summarizes the statistics available in SAS and R:
+
+| Stat or info              | SAS |  R  |
+|:--------------------------|:---:|:---:|
+| N                         | \+  | \+  |
+| Weights range             | \-  | \+  |
+| Extreme weights           | \+  | \+  |
+| ESS                       | \-  | \+  |
+| Coefficient of Variation  | \-  | \+  |
+| Mean absolute deviation   | \-  | \+  |
+| Negative Entropy          | \-  | \+  |
+| Number of zero weights    | \-  | \+  |
+| Weighted covariates stats | \+  | -\* |
+
+*\*available from cobalt package*
+
+### Figures
+
++----------------------------+------------------------------------------------------------------------------------+----------------------------------------------------------------------+
+| Plot type                  | R                                                                                  | SAS                                                                  |
++============================+====================================================================================+======================================================================+
+| Love plot                  | -   [plot()]{.underline}: -                                                        | **Displayed for:** all/region/matched/weighted matched, trt/control. |
+|                            |                                                                                    |                                                                      |
+|                            | -   [cobalt:]{.underline} many different settings.                                 | **Includes** PS, all numeric and binary variables.                   |
++----------------------------+------------------------------------------------------------------------------------+----------------------------------------------------------------------+
+| General distribution plots | -   [plot():]{.underline} -                                                        | **Displayed for:** all/region/weighted, trt/control.                 |
+|                            |                                                                                    |                                                                      |
+|                            | -   [cobalt]{.underline} : Highly customizable plots.                              | **Includes** PS and all variables.                                   |
+|                            |                                                                                    |                                                                      |
+|                            |                                                                                    | For PS and numeric - boxplots, character - barplots.                 |
++----------------------------+------------------------------------------------------------------------------------+----------------------------------------------------------------------+
+| eCDF plots                 | [plot():]{.underline} -                                                            | **Displayed for:** all/region/weighted, trt/control.                 |
+|                            |                                                                                    |                                                                      |
+|                            |                                                                                    | **Includes** PS and all numeric variables.                           |
++----------------------------+------------------------------------------------------------------------------------+----------------------------------------------------------------------+
+| Cloud plots                | [plot():]{.underline} -                                                            | **Displayed for:** all/region, trt/control.                          |
+|                            |                                                                                    |                                                                      |
+|                            |                                                                                    | **Includes** PS, weights and all numeric variables.                  |
+|                            |                                                                                    |                                                                      |
+|                            |                                                                                    | Presented as 2 separate clouds per variable.                         |
++----------------------------+------------------------------------------------------------------------------------+----------------------------------------------------------------------+
+| PS weights histogram       | -   [plot()]{.underline}: **Displayed for:** trt/control. **Includes** PS weigths. | \-                                                                   |
+|                            |                                                                                    |                                                                      |
+|                            | -   [cobalt]{.underline}: Highly customizable plots.                               |                                                                      |
++----------------------------+------------------------------------------------------------------------------------+----------------------------------------------------------------------+
+
+# Dataset
+
+The dataset used in the example below can be found here: \[ps_data.csv\](<https://github.com/PSIAIMS/CAMIS/blob/main/data/ps_data.csv>)
+
+``` default
+                           trt              control       Standardized
+Characteristic          (N = 120)          (N = 180)       Mean Diff.
+
+  sex                                                        0.1690
+    F                  70 (58.3 %)        90 (50.0 %)        
+    M                  50 (41.7 %)        90 (50.0 %)
+    
+  age                 61.5 (17.12)       49.4 (10.55)        0.7057
+  
+  weight              67.3 ( 7.33)       63.8 ( 9.64)        0.4741
+  
+  bmi_cat   
+    underweight        34 (28.3 %)        63 (35.0 %)       -0.1479  
+    normal             57 (47.5 %)        61 (33.9 %)        0.2726
+    overweight         29 (24.2 %)        56 (31.1 %)       -0.1622
+    
+```
+
+# Matching Examples
+
+## Average Treatment Effect in Treated (ATT)
+
+### SAS
+
+```         
+proc psmatch data=data;
+    class trtp sex bmi_cat;
+    psmodel trtp(Treated="trt")= sex weight age bmi_cat;
+    psweight weight=ATTWGT;
+    output out(obs=all)=ps_res ps=_PScore weight=_PSweight;
+run;
+```
+
+### R
+
+```         
+ps_res <- weightit(trtp ~ sex + weight + age + bmi_cat,
+                    data=data_gen,
+                    method="glm",
+                    estimand="ATT",
+                    focal="trt")
+```
+
+## Average Treatment Effect (ATE)
+
+### SAS
+
+```         
+proc psmatch data=data;
+    class trtp sex bmi_cat;
+    psmodel trtp(Treated="trt")= sex weight age bmi_cat;
+    psweight weight=ATEWGT;
+    output out(obs=all)=ps_res ps=_PScore weight=_PSweight;
+run;
+```
+
+### R
+
+```         
+ps_res <- weightit(trtp ~ sex + weight + age + bmi_cat,
+                    data=data_gen,
+                    method="glm",
+                    estimand="ATE")
+```
+
+## Average Treatment Effect (ATE), stabilized weights
+
+### SAS
+
+```         
+proc psmatch data=data;
+    class trtp sex bmi_cat;
+    psmodel trtp(Treated="trt")= sex weight age bmi_cat;
+    psweight weight=ATEWGT(stabilize=YES);
+    output out(obs=all)=ps_res ps=_PScore weight=_PSweight;
+run;
+```
+
+### R
+
+```         
+ps_res <- weightit(trtp ~ sex + weight + age + bmi_cat,
+                    data=data_gen,
+                    method="glm",
+                    estimand="ATE",
+                    stabilize=TRUE)
+```
