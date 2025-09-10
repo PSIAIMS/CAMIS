@@ -9,7 +9,8 @@ The following instructions provide a step-by-step workflow to set up your work s
 -   [A GitHub Account](https://docs.github.com/en/get-started/start-your-journey/creating-an-account-on-github)
 -   [Git](https://git-scm.com/downloads)
 -   [`{r} R.Version()$version.string`](https://www.r-project.org/)
-    -   The specific R version is standardized in this repository so all contributors have the same version.
+    -   If possible, utilize `{r} glue::glue("R ", R.Version()$major,".", R.Version()$minor)`, as this is the version utilized in the repository.
+    -   Otherwise, R ≥ 4.1 should be compatible, so long as your version of R is compatible with the R package versions in the [environment](#camis-renv). 
 -   [RStudio](https://posit.co/download/rstudio-desktop/) (recommended) or [Positron](https://posit.co/products/ide/positron/)
     -   These are suggested IDEs for writing and running code. We recommend RStudio.
     -   Both come bundled with [Quarto](https://quarto.org/docs/get-started/), which is used for writing the reports and comparisons, so no additional setup is needed on your part.
@@ -64,7 +65,9 @@ In RStudio, you will need to create a new project and select "Version Control" i
 
 ### Setting up CAMIS with `renv` {#camis-renv}
 
-The CAMIS repository utilizes [`renv`](https://rstudio.github.io/renv/articles/renv.html), which is an R package that helps create reproducible environments. Assuming you downloaded [`{r} R.Version()$version.string`](https://www.r-project.org/), which is the version of R associated with this `renv` project, everything should be relatively straightforward.
+The CAMIS repository utilizes [`renv`](https://rstudio.github.io/renv/articles/renv.html), which is an R package that helps create reproducible environments. Assuming you downloaded [`{r} glue::glue("R ", R.Version()$major,".", R.Version()$minor)`](https://www.r-project.org/), which is the version of R associated with this `renv` project, everything should be relatively straightforward.
+
+If you have R ≥ 4.1, you generally shouldn't have issues, but `renv` will alert you that `{r} glue::glue("R ", R.Version()$major,".", R.Version()$minor)` was used to install the packages and that `{r} glue::glue("R ", R.Version()$major,".", R.Version()$minor)` is different than the R version you are using. As more R packages are added/updated in CAMIS `renv`, there may arise issues if your R version differs greatly from `{r} glue::glue("R ", R.Version()$major,".", R.Version()$minor)`. This may require you to install a version of R closer to `{r} glue::glue("R ", R.Version()$major,".", R.Version()$minor)`, so please work with your appropriate technology professional to upgrade R.
 
 If you do not have the `renv` package, you can install it using:
 
@@ -105,8 +108,18 @@ These function calls help to record and update the `renv.lock` file with the pac
 
 At this point, it is assumed that your system in RStudio is connected to Git and GitHub, and that the `renv` environment is successfully activated. Now every time you close RStudio and reopen the CAMIS project on your computer, you should see the option:
 
-```         
-- Project '(path/to/CAMIS/project)' loaded. [renv 1.0.10]
+```{r}
+#| echo: false
+#| results: asis
+renv_version <- packageDescription("renv")$Version
+cat("```default\n")
+cat(
+  glue::glue(
+    "- Project '(path/to/CAMIS/project)' loaded. [renv {renv_version}]"
+  ),
+  "\n"
+)
+cat("```")
 ```
 
 ### Create a Branch in RStudio {#create-branch}
