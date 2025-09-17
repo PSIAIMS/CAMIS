@@ -1,0 +1,237 @@
+---
+title: "(Language) vs (Language): (Method Name)"
+---
+
+<!-- This template is designed to be comprehensive and flexible, able to accommodate multiple scenarios and diverse datasets. It ensures that each section clearly communicates the necessary information and comparisons, making it easier for users to understand and apply the analyses appropriately across R, SAS, and Python languages. -->
+
+# Introduction
+
+This first section should provide a brief background on the methodology with links to associated journal articles, or relevant sources. This should give the reader a high level overview of the method and its implementation. This will be helpful in setting the stage for the examples and discussion that follow.
+
+## Comparisons of Languages
+
+When comparing between languages, it is helpful to have a table with links to the pages with deeper dive of each language for a given method method. For example, this table shows summaries for ANCOVA between R and SAS:
+
++-----------------------------------------------+-------------------------+---------------------------+---------------+------------------------------------------------------------------------------------------+
+| Analysis                                      | Supported in R          | Supported in SAS          | Results Match | Notes                                                                                    |
++===============================================+=========================+===========================+===============+==========================================================================================+
+| ANCOVA using general linear model and lsmeans | [Yes](../R/ancova.html) | [Yes](../SAS/ancova.html) | [Yes](#comp)  | `GLM()` function from **sasLM** with `EMEANS=TRUE` is the easiest to use and matches SAS |
++-----------------------------------------------+-------------------------+---------------------------+---------------+------------------------------------------------------------------------------------------+
+
+Further, this table provides a summary of the examples that will be showcased further down in the document related to Poisson regression in R and SAS:
+
++-----------------------------------+-----------------------------------+-------------------------------------+--------------------+----------------------------------------------------------+
+| Analysis                          | Supported in R                    | Supported in SAS                    | Results Match      | Notes                                                    |
++===================================+===================================+=====================================+====================+==========================================================+
+| [Scenario 1: Basic Functionality] | Example: [Yes](../R/example_link) | Example: [Yes](../SAS/example_link) | Example 1: Yes     | Specific settings or packages required for exact match   |
+|                                   |                                   |                                     |                    |                                                          |
+|                                   |                                   |                                     | Example 2: No      |                                                          |
++-----------------------------------+-----------------------------------+-------------------------------------+--------------------+----------------------------------------------------------+
+| [Scenario 2: Advanced Feature]    | Example: [Yes](../R/example_link) | Example: [Yes](../SAS/example_link) | Example 3: Partial | Special considerations for data structure or assumptions |
++-----------------------------------+-----------------------------------+-------------------------------------+--------------------+----------------------------------------------------------+
+
+## Libraries or Extensions Needed
+
+This section should describe what libraries, packages, or additional materials needed for the analysis described.
+
+```{r}
+#| eval: false
+#| label: libraries
+library(lme4)
+```
+
+# Data Sources for the Analysis
+
+For real data, please provide a means of accessing these data and describe the data source used in the example, especially if it is a new dataset not already in the `CAMIS/data/` folder.
+
+For simulated/dummy datasets, please provide reproducible code to generate these data. This includes setting a random seed for reproducible random number generation.
+
+::: {.panel-tabset}
+
+## R
+
+```{r}
+#| label: R dataset
+# Simulated dataset for Poisson Regression
+set.seed(123)
+example_data <- data.frame(
+  count = rpois(100, lambda = 2),
+  predictor = rnorm(100)
+)
+```
+
+## SAS
+
+```{sas}
+#| eval: false
+#| label: SAS dataset
+/* Set random seed for reproducibility */
+data example_data;
+    call streaminit(123);
+    do id = 1 to 100;
+        count = ranpoi(0, 2); /* Generate random Poisson variable */
+        predictor = rannor(0);/* Generate random normal variable */
+        output;
+    end;
+run;
+```
+
+:::
+
+*Again, it is important to give credit to the original source of the data used in your example*
+
+# Statistical Method
+
+Provide any further details or clarifying comments about the methods comparison between the languages here.
+
+Now you can start adding specific examples of how to use these packages or methods to conduct the analysis. It is helpful to include some notes and comments throughout.
+
+## Scenario 1: Basic Functionality
+
+**Example:** This section compares the implementation of Poisson Regression in R and SAS. Poisson regression is used to model count data and contingency tables. It's particularly useful for modeling the number of events occurring within a fixed period of time or space.
+
+::: {.panel-tabset}
+
+### R
+
+For R packages, it is helpful to prepend package names to functions so new readers can understand where specific functions originate, especially with new packages.
+
+```{r}
+#| eval: false
+#| label: R scenario 1
+# R code for basic Poisson Regression
+example_model <- stats::glm(
+  count ~ predictor,
+  family = stpoisson(link = "log"),
+  data = example_data
+)
+
+# Summary of the model
+summary(example_model)
+```
+
+### SAS
+
+```{sas}
+#| eval: false
+#| label: SAS scenario 1
+/* SAS code for basic Poisson Regression */
+proc genmod data=example_data;
+    class predictor;
+    model count = predictor / dist=poisson link=log;
+run;
+```
+
+:::
+
+Describe key options utilized in the code, along with a screenshot showcasing the output.
+
+## Scenario 2: Advanced Feature
+
+Provide a detailed description of the scenario. **Example:** Address specific advanced features or configurations that may be necessary for more complex analyses.
+
+::: {.panel-tabset}
+
+### R Code
+
+```{r}
+#| eval: false
+#| label: R scenario 2
+# R code for handling overdispersion
+alternative_model <- stats::glm(
+  count ~ predictor,
+  family = quasipoisson(link = "log"),
+  data = example_data
+)
+
+# Summary of the alternative model
+summary(alternative_model)
+```
+
+### SAS
+
+```{sas}
+#| eval: false
+#| label: SAS scenario 2
+/* SAS code for handling overdispersion */
+proc genmod data=example_data;
+    class predictor;
+    model count = predictor / dist=poisson link=log scale=pearson;
+run;
+```
+
+:::
+
+Describe key options utilized in the code, along with a screenshot showcasing the output.
+
+## Comparison of Languages
+
+Provide a detailed comparison of the results obtained from the comparison of the langauges and methods. Highlight any differences/similarities and provide explanations if possible.
+
++------------------------------------+----------+------------+---------+---------+
+| Statistic                          | R Result | SAS Result | Match   | Notes   |
++====================================+==========+============+=========+=========+
+| Degrees of Freedom                 | 98       | 98         | Yes     |         |
++------------------------------------+----------+------------+---------+---------+
+| Coefficient Estimate for Predictor | 0.1      | 0.1        | Yes     |         |
++------------------------------------+----------+------------+---------+---------+
+| p-value                            | 0.05     | 0.05       | Yes     |         |
++------------------------------------+----------+------------+---------+---------+
+
+## Special Considerations
+
+Address any additional features or settings that need to be considered. This might include specific configuration settings, handling of special cases, or performance considerations.
+
+**Example:** For handling overdispersion in Poisson Regression, SAS provides the `scale` option in PROC GENMOD, while in R, one may have to switch to a quasi-Poisson family or use negative binomial regression.
+
+### Troubleshooting and Edge Cases
+
+List potential issues that users may encounter and propose solutions or troubleshooting steps.
+
+**Example:**
+
+- **Issue:** Non-convergence in Poisson Regression.
+
+- **Solution:** Check for multicollinearity among predictors, scale the predictors, or switch to a more appropriate model family.
+
+## Conclusion
+
+Finally, add a conclusion section to the page. This may take on different forms but should broadly summarize the findings in the comparison of languages, packages, or approaches. In summarizing, be sure to include the advantages/limitations of the packages and approaches so the reader can understand the capabilities of the approaches to the statstical methodology.
+
+There may be instances where you recommend specific languages, packages, or functions. Be sure to provide your rationale for these recommendations.
+
+## References
+
+Be sure to include any references or sources used for the analysis here. These could be external links to pages or in-text citations. This will all help the reader find material needed for further evaluation.
+
+**R Documentation:**
+
+- [`glm` function](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/glm)
+
+**SAS Documentation:**
+
+- [`PROC GENMOD`](https://documentation.sas.com/doc/en/statcdc/14.2/statug/statug_genmod_overview.htm)
+
+Also, include this `Session Info` section. Manually add the packages used in your analysis in a vector, like shown below. This captures the environment used, which is important for reproducibility.
+
+
+::: {.callout-note collapse="true" title="Session Info"}
+
+```{r}
+#| echo: false
+#| label: session info
+
+# A vector of the R packages used in this file
+si <- sessioninfo::session_info(
+  # A vector of the R packages used in this file
+  pkgs = c("readr", "janitor", "survival"),
+  dependencies = FALSE
+)
+si$external <- structure(
+  list("SAS" = "9.04.01M7P080520"),
+  class = c("external_info", "list")
+)
+si
+```
+
+:::

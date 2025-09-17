@@ -2,113 +2,220 @@
 title: "R vs SAS Wilcoxon Rank-Sum Test"
 ---
 
-## Introduction
-
-This section compares the wilcoxon rank-sum test.
-
-## Wilcoxon-Rank Sum
-
-The following table provides an overview of the support and results comparability between R and SAS for the new analysis point.
-
-+----------------------------------------------------+----------------------+---------------------+------------------+----------------------------------------------------------------------------------------------------------------------------+
-| Analysis                                           | Supported in {stats} | Supported in {coin} | Supported in SAS | Notes                                                                                                                      |
-+====================================================+======================+=====================+==================+============================================================================================================================+
-| Wilcoxon Rank-Sum                                  | ✅                   | ❌                  | ✅               | If there are ties in the dataset there will be a warning in {stats}, but the warning only refers to doing the exact method |
-|                                                    |                      |                     |                  |                                                                                                                            |
-| Normal Approximation with continuity correction    | \                    |                     |                  |                                                                                                                            |
-+----------------------------------------------------+----------------------+---------------------+------------------+----------------------------------------------------------------------------------------------------------------------------+
-| Wilcoxon Rank-Sum                                  | ✅                   | ✅                  | ✅               |                                                                                                                            |
-|                                                    |                      |                     |                  |                                                                                                                            |
-| Normal Approximation without continuity correction |                      |                     |                  |                                                                                                                            |
-+----------------------------------------------------+----------------------+---------------------+------------------+----------------------------------------------------------------------------------------------------------------------------+
-| Wilcoxon Rank-Sum Exact                            | ✔️                   | ✅                  | ✅               | {stats} can only do the exact method when no ties are present                                                              |
-+----------------------------------------------------+----------------------+---------------------+------------------+----------------------------------------------------------------------------------------------------------------------------+
-| Hodges-Lehmann CI                                  | ✅                   | ❌                  | ✅               |                                                                                                                            |
-|                                                    |                      |                     |                  |                                                                                                                            |
-| Asymptotic                                         |                      |                     |                  |                                                                                                                            |
-+----------------------------------------------------+----------------------+---------------------+------------------+----------------------------------------------------------------------------------------------------------------------------+
-| Hodges-Lehmann CI                                  | ✔️                   | ✅                  | ✅               | {stats} can only do the exact method when no ties are present                                                              |
-|                                                    |                      |                     |                  |                                                                                                                            |
-| Exact                                              |                      |                     |                  |                                                                                                                            |
-+----------------------------------------------------+----------------------+---------------------+------------------+----------------------------------------------------------------------------------------------------------------------------+
-
-## Prerequisites: R Packages
-
-This test can be run using the {stats} package, but in order to handle ties the {coin} package is recommended.
-
 ```{r}
+#| label: libraries
+#| include: FALSE
+library(dplyr)
 library(coin)
 ```
 
-## Example Data
+## Introduction
 
-For this example we are using a dataset of birth weights for smoking and non-smoking mothers.
+This page compares the Wilcoxon rank-sum test, Hodges-Lehmann estimator, and estimation of the Mann-Whitney parameter in R and SAS.
 
-*Data source: Table 30.4, Kirkwood BR. and Sterne JAC. Essentials of medical statistics. Second Edition. ISBN 978-0-86542-871-3*
+
+### Example Data
+
+For this example we are using a dataset of birth weights for smoking and non-smoking mothers (*Data source: Table 30.4, Kirkwood BR. and Sterne JAC. Essentials of medical statistics. Second Edition. ISBN 978-0-86542-871-3*). This dataset is both small (so an exact test is recommended) and has ties in it.
 
 ```{r}
-# fmt: skip
 bw_ns <- c(3.99, 3.89, 3.6, 3.73, 3.31, 
-          3.7, 4.08, 3.61, 3.83, 3.41, 
-          4.13, 3.36, 3.54, 3.51, 2.71)
-
-# fmt: skip
+            3.7, 4.08, 3.61, 3.83, 3.41, 
+            4.13, 3.36, 3.54, 3.51, 2.71)
 bw_s <- c(3.18, 2.74, 2.9, 3.27, 3.65, 
-          3.42, 3.23, 2.86, 3.6, 3.65, 
-          3.69, 3.53, 2.38, 2.34)
+           3.42, 3.23, 2.86, 3.6, 3.65, 
+           3.69, 3.53, 2.38, 2.34)
 
 smk_data <- data.frame(
-  value = c(bw_ns, bw_s),
+  value = c(bw_ns, bw_s), 
   smoke = as.factor(rep(c("non", "smoke"), c(length(bw_ns), length(bw_s))))
-)
-# Relevel the factors to make it smoker - non-smokers
+) 
+# Relevel the factors to make it smoker - non-smokers 
 smk_data$smoke <- forcats::fct_relevel(smk_data$smoke, "smoke")
 head(smk_data)
 ```
 
-This dataset is both small (so an exact test is recommended) and has ties in it.
+To view the code implementations, see the [SAS](../SAS/ranksum.qmd) and [R](../R/nonpara_wilcoxon_ranksum.qmd) pages, respectively.
 
-To view the code for this see the [SAS](../SAS/ranksum.qmd) and [R](../R/nonpara_wilcoxon_ranksum.qmd) pages respectively.
 
-#### Wilcoxon Rank Sum tests
+## Comparison
 
-Below is a table to the p-values from the Wilcoxon Rank Sum Test with different options
+### Software Capabilities
 
-+------------------------------------------+------------+-----------------+---------------+---------+----------------------------------------------------------+
-| Statistic                                | SAS Result | {stats} Results | {coin} Result | Match   | Notes                                                    |
-+==========================================+============+=================+===============+=========+==========================================================+
-| Normal Approx with continuity correct    | 0.01       | 0.01001         | ❌            | Yes     | {coin} doesn't have an option for continuity corrections |
-+------------------------------------------+------------+-----------------+---------------+---------+----------------------------------------------------------+
-| Normal Approx without continuity correct | 0.0094     | 0.009392        | 0.009392      | Yes     |                                                          |
-+------------------------------------------+------------+-----------------+---------------+---------+----------------------------------------------------------+
-| Exact (no correction)                    | 0.0082     | ❌              | 0.008181      | Yes     | {stats} can't do an exact method when there are ties     |
-+------------------------------------------+------------+-----------------+---------------+---------+----------------------------------------------------------+
+The following table provides an overview of the supported analyses between R and SAS. A specific comparison of the results and whether they match are provided below.
 
-#### Hodges-Lehmann CI
+| Analysis | Supported in R {stats} | Supported in R {coin} | Supported in R {asht} | Supported in SAS | Notes |
+|----------|------------------------|-----------------------|-----------------------|------------------|-------|
+| Wilcoxon Rank-Sum -- Normal approximation **with** continuity correction | Yes | No | Yes | Yes | In {coin}, one can add `correct=TRUE`, but note that no error is given and the results of a normal approximation approach **without** continuity correction are provided.
+| Wilcoxon Rank-Sum -- Normal approximation **without** continuity correction | Yes | Yes | Yes | Yes |
+| Wilcoxon Rank-Sum -- Exact | Partly | Yes | Partly | Yes | In {stats}, one can only do the exact method when no ties are present.; In {asht}, exact test is possible but the run time is long for larger sample size.
+| Wilcoxon Rank-Sum -- Approximative (Monte Carlo simulation) | No | Yes | Yes | No |
+| Hodges-Lehmann estimator -- Asymptotic | Yes | No | No | Yes |
+| Hodges-Lehmann estimator -- Exact | Partly | Yes | No | Yes | In {stats}, one can only do the exact method when no ties are present.
+| Hodges-Lehmann estimator -- Approximative (Monte Carlo simulation) | No | Yes | No | No |
+| Mann-Whitney parameter | No | No | Yes | No | In {asht}, confidence intervals can be obtained using asymptotic approximation, Monte Carlo simulations, or exact methods (for small sample size)
 
-+--------------------+----------------+-----------------+----------------+-----------------------+----------------------------------------------------------------+
-| Statistic          | SAS Result     | {stats} Results | {coin} Result  | Match                 | Notes                                                          |
-+====================+================+=================+================+=======================+================================================================+
-| Asymptotic (Moses) | (-0.77, -0.09) | (-0.77, -0.090) | ❌             | Yes - only in {stats} | the exact argument in {coin} only applies to the rank-sum test |
-+--------------------+----------------+-----------------+----------------+-----------------------+----------------------------------------------------------------+
-| Exact              | (-0.76, -0.1)  | ❌              | (-0.76, -0.10) | Yes                   | {stats} can't do an exact method when there are ties           |
-+--------------------+----------------+-----------------+----------------+-----------------------+----------------------------------------------------------------+
 
-## Special Considerations
+### Wilcoxon Rank Sum test
 
-If you have a study where you would like to use the exact wilcoxon test and there is the risk of ties, {coin} would be recommended.
+In the below table the p-values of the Wilcoxon Rank Sum Test with different options are compared.
+
+| Analysis | R {stats} | R {coin} | R {asht} | SAS | Match | Notes |
+|----------|-----------|----------|----------|-----|-------|-------|
+| Wilcoxon Rank-Sum -- Normal approximation **with** continuity correction | 0.0100 | / | 0.0100 | 0.0100 | Yes | Not possible with {coin}
+| Wilcoxon Rank-Sum -- Normal approximation **without** continuity correction | 0.0094 | 0.0094 | 0.0094 | 0.0094 | Yes | 
+| Wilcoxon Rank-Sum -- Exact | / | 0.0082 | / | 0.0082 | Yes | Not possible with {stats} since there are ties.; In {asht} run-time very long. 
+| Wilcoxon Rank-Sum -- Approximative (Monte Carlo simulation) | / | 0.0083 | 0.0083 | / | Yes | With 100,000 simulations
+
+
+### Hodges-Lehmann estimator
+
+In the below table the Hodges-Lehmann estimate and 95% confidence intervals are compared.
+
+| Analysis | R {stats} | R {coin} | R {asht} | SAS | Match | Notes |
+|----------|-----------|----------|----------|-----|-------|-------|
+| Hodges-Lehmann estimator -- Asymptotic | -0.426 (-0.770 to -0.090) | -0.426 (-0.760 to -0.100) | / | -0.425 (-0.770 to -0.090) | No | In {coin}, the CI is the exact CI. The CIs match between {stats} and SAS.
+| Hodges-Lehmann estimator -- Exact | / | -0.425 (-0.760 to -0.100) | / | -0.425 (-0.760 to -0.100) | Yes | Not possible with {stats} since there are ties; In {asht} run-time very long.
+| Hodges-Lehmann estimator -- Approximative (Monte Carlo simulation) | / | -0.425 (-0.760 to -0.100) | / | /| / | With 500,000 simulations
+
+
+### Mann-Whitney Parameter
+The estimation of the Mann-Whitney parameter is only possible in R `asht` package.
+
+
+
+## Special considerations for one-sided p-values
+
+It is important to note that in SAS you can get an *unexpected* one-sided p-value. In the SAS documentation for [PROC NPAR1WAY](https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_npar1way_details04.htm) it is stated that: 
+
+*"PROC NPAR1WAY computes one-sided and two-sided asymptotic p-values for each two-sample linear rank test. When the test statistic z is greater than its null hypothesis expected value of 0, PROC NPAR1WAY computes the right-sided p-value, which is the probability of a larger value of the statistic occurring under the null hypothesis. When the test statistic is less than or equal to 0, PROC NPAR1WAY computes the left-sided p-value, which is the probability of a smaller value of the statistic occurring under the null hypothesis"* (similar for the exact p-value). 
+
+Thus SAS reports the one-sided p-value in the direction of the test statistic. This can cause an *unexpected* one-sided p-value, if your data provides a test statistic in the other direction of the pre-specified one-sided hypothesis.
+
+Consider the following data example to showcase this:
+```{r}
+dat_used <- data.frame(
+  ID = c("001", "002", "003", "004", "005", "006", "007", "008", "009", "010",
+         "011", "012", "013", "014", "015", "016", "017", "018", "019", "020",
+         "021", "022", "023", "024", "025", "026", "027", "028", "029", "030"),
+  ARM = c("Placebo", "Placebo", "Placebo", "Placebo", "Placebo", "Placebo", "Placebo", "Placebo", "Placebo", "Placebo",
+          "Low", "Low", "Low", "Low", "Low", "Low", "Low", "Low", "Low", "Low",
+          "High", "High", "High", "High", "High", "High", "High", "High", "High", "High"),
+  Y = c(8.5, 8.9, 8.2, 8.1, 7.1, 7.4, 6.0, 6.5, 7.0, 7.0,
+        6.5, 9.4, 8.9, 8.8, 9.6, 8.3, 8.9, 7.0, 9.1, 6.9,
+        8.0, 7.3, 7.1, 6.2, 4.7, 4.7, 4.2, 4.1, 3.4, 3.9)
+)
+dat_used
+```
+
+Suppose we would have the following two hypothesis, where for both Low Dose and High Dose we expect smaller values (Y) than Placebo:
+
+- $H_{0}$: No difference between Placebo and Low Dose, vs $H_{1}$: Placebo has higher values (Y) than Low Dose
+
+- $H_{0}$: No difference between Placebo and High Dose, vs $H_{1}$: Placebo has higher values (Y) than High Dose
+
+
+### Asymptotic results without continuity correction
+
+**Placebo and High Dose group**
+
+Let us the {coin} package in R to compare the Placebo and High Dose group:
+```{r}
+# Note: greater implies that H1 is Y1 - Y2 = Placebo - High > 0
+coin::wilcox_test(
+  Y ~ factor(ARM, levels = c("Placebo", "High")),
+  distribution = "asymptotic",
+  alternative = "greater",
+  data = dat_used %>% dplyr::filter(ARM %in% c("Placebo", "High")))
+```
+
+In SAS, the following results is obtained. As can be seen in both R and SAS the one-sided p-value is 0.0056.
+```{r}
+#| echo: FALSE
+#| fig-align: 'center'
+#| out-width: '90%'
+knitr::include_graphics("../images/ranksum/SAS_one_sided_pvalue.png")
+```
+
+
+**Placebo and Low Dose group**
+
+Let us the {coin} package in R to compare the Placebo and Low Dose group:
+```{r}
+# Note: greater implies that H1 is Y1 - Y2 = Placebo - High > 0
+coin::wilcox_test(
+  Y ~ factor(ARM, levels = c("Placebo", "Low")),
+  distribution = "asymptotic",
+  alternative = "greater",
+  data = dat_used %>% dplyr::filter(ARM %in% c("Placebo", "Low")))
+```
+
+In SAS, the following results is obtained. The one-sided p-values clearly do not match ({coin} p-value = 0.9561; SAS p-value = 0.0439). As mentioned above, SAS reports the p-value in the direction of the test statistic. This can cause an *unexpected* one-sided p-value, if your data provides a test statistic in the other directiont than the pre-specified one-sided hypothesis. Do note that $1 - 0.9561 = 0.0439$.
+```{r}
+#| echo: FALSE
+#| fig-align: 'center'
+#| out-width: '90%'
+knitr::include_graphics("../images/ranksum/SAS_one_sided_pvalue2.png")
+```
+
+
+### Exact results
+
+**Placebo and High Dose group**
+
+Let us the {coin} package in R to compare the Placebo and High Dose group:
+```{r}
+# Note: greater implies that H1 is Y1 - Y2 = Placebo - High > 0
+coin::wilcox_test(
+  Y ~ factor(ARM, levels = c("Placebo", "High")),
+  distribution = "exact",
+  alternative = "greater",
+  data = dat_used %>% dplyr::filter(ARM %in% c("Placebo", "High")))
+```
+
+In SAS (see above), the same one-sided p-value of 0.0047 is obtained.
+
+
+**Placebo and Low Dose group**
+
+Let us the {coin} package in R to compare the Placebo and Low Dose group:
+```{r}
+# Note: greater implies that H1 is Y1 - Y2 = Placebo - High > 0
+coin::wilcox_test(
+  Y ~ factor(ARM, levels = c("Placebo", "Low")),
+  distribution = "exact",
+  alternative = "greater",
+  data = dat_used %>% dplyr::filter(ARM %in% c("Placebo", "Low")))
+```
+
+Please see above for the SAS result. The one-sided p-values clearly do not match ({coin} p-value = 0.9574; SAS p-value = 0.0455).
+
+
 
 ## Summary and Recommendation
 
-Wilcoxon Rank Sum and the associated Hodges-Lehmann CI are able to be consistenly created in both SAS and R. But, it is worth noting that the test statstic of Wilcoxon Rank Sum does not directly translate into the Hodges-Lehmann CI. Because of this, the exact option in SAS and R can be slightly confusing. In SAS the `exact wilcoxon hl;` statement is need to get both the exact p-value and CI. In {stats} exact values are only possible when there are no ties and the exact parameter is set to true (`exact = TRUE`). This will give the exact p-value and CI. In {coin} the exact option only effects the p-values, there is no option for exact CI.
+Wilcoxon Rank Sum test and the associated Hodges-Lehmann CI are able to be consistently computed in both SAS and R. The user needs to be aware of some small differences:
+
+- In SAS the `exact wilcoxon hl` statement is needed to get both the exact p-value and CI.
+
+- In {stats} exact values are only possible when there are no ties and the exact parameter is set to true (`exact = TRUE`). This will give the exact p-value and CI.
+
+- In {coin} it is not possible to do a normal approximation **with** continuity correction.
+
+- For the asymptotic Hodges-Lehmann estimator, {stats} and {coin} use an algorithm to define the estimate, whereas SAS provides the *traditional* Hodges-Lehmann estimator. 
+
+If you have a study where you would like to use R for the exact Wilcoxon Rank Sum test and there is the risk of ties, {coin} would be recommended.
+
+
 
 ## Ties
 
-In addition to the options discussed here, there are also different method to handle ties. SAS only has one option for handling ties, the [average score method](https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_npar1way_details02.htm). In {coin} by default ties are handled with the "mid-ranks" method.
+In all presented R packages and SAS, when there are tied values, the average score method (mid-ranks) is used. This is done by first sorting the observations in ascending order and assigning ranks as if there were no ties. The procedure averages the scores for tied observations and assigns this average score to each of the tied observations. Thus, all tied data values have the same score value.
+
 
 ## Additional References
 
-Provide references and additional reading materials for both R and SAS documentation related to the analysis.
+Provided are references and additional reading materials for both R and SAS documentation related to the analysis.
 
 **R Documentation:**
 
@@ -124,15 +231,10 @@ Provide references and additional reading materials for both R and SAS documenta
 ```{r}
 #| echo: false
 si <- sessioninfo::session_info(
-  c("stats", "coin"), #Vector of packages used
-  dependencies = FALSE
-)
-si$external <- structure(
-  list("SAS" = "9.04.01M7P080520"),
-  class = c("external_info", "list")
-)
+  c("stats", "coin"), #Vector of packages used 
+  dependencies = FALSE)
+si$external <- structure(list("SAS" = "9.04.01M7P080520"), class = c("external_info", "list"))
 si
 
 ```
-
 :::
