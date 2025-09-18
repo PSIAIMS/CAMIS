@@ -4,75 +4,120 @@ title: "Rounding in SAS"
 
 There are two rounding functions in SAS.
 
-The **round()** function in SAS will round to the nearest whole number and 'away from zero' or 'rounding up' when equidistant meaning that exactly 12.5 rounds to the integer 13.
+The `**round()**` function in SAS will round to the nearest whole number and 'away from zero' or 'rounding up' when equidistant meaning that exactly 12.5 rounds to the integer 13.
 
-The **rounde()** function in SAS will round to the nearest whole number and 'rounding to the even number' when equidistant, meaning that exactly 12.5 rounds to the integer 12.
+The `**rounde()*`* function in SAS will round to the nearest whole number and 'rounding to the even number' when equidistant, meaning that exactly 12.5 rounds to the integer 12.
 
 Both functions allow you to specify the number of decimal places you want to round to.
 
 For example (See references for source of the example)
 
-```{sas}
+```{r}
 #| eval: false
+#| include: false
+
+library(sasquatch)
+sasquatch::sas_connect()
+
+widget_01 <- sasquatch::sas_run_string(capture = "listing", "
 data XXX;
-  my_number=2.2;   decimal_paces=1; output;
-  my_number=2.2;   decimal_paces=2;  output;
-  my_number=2.2;;  decimal_paces=3 output;
-  my_number=3.99;  decimal_paces=1;  output;
-  my_number=3.99;  decimal_paces=2; output;
-  my_number=3.99;  decimal_paces=3; output;
-  my_number=1.2345; decimal_paces=1;  output;
-  my_number=1.2345; decimal_paces=2; output;
-  my_number=1.2345; decimal_paces=3; output;
-  my_number=7.876; decimal_paces=1;  output;
-  my_number=7.876; decimal_paces=2; output;
-  my_number=7.876; decimal_paces=3; output;
-  my_number=13.8739; decimal_paces=1;   output;
-  my_number=13.8739; decimal_paces=2;  output;
-  my_number=13.8739; decimal_paces=3;  output;
-run;
+    input my_number;
+    datalines;
+    2.2
+    3.99
+    1.2345
+    7.876
+    13.8739
+    ;
 
 data xxx2;
-  set xxx;
-	round = round(my_number, decimal_places);
-  rounde = rounde(my_number, decimal_places);
+    set xxx;
+    do decimal_places = 1, 2, 3;
+        round_result = round(my_number, 10**(-decimal_places));
+        rounde_result = rounde(my_number, decimal_places);
+        output;
+    end;
+run;
+
+proc print data=xxx2;
+run;
+")
+
+saveRDS(widget_01, "rds/rounding/widget_01.rds")
+```
+
+```txt
+data XXX;
+    input my_number;
+    datalines;
+    2.2
+    3.99
+    1.2345
+    7.876
+    13.8739
+    ;
+
+data xxx2;
+    set xxx;
+    do decimal_places = 1, 2, 3;
+        round_result = round(my_number, 10**(-decimal_places));
+        rounde_result = rounde(my_number, decimal_places);
+        output;
+    end;
+run;
+
+proc print data=xxx2;
 run;
 ```
 
-| my_number  | decimal_places | round     | rounde    |
-|------------|----------------|-----------|-----------|
-| 2.2        | 0.1            | 2.2       | 2.2       |
-| 2.2        | 0.01           | 2.2       | 2.2       |
-| 2.2        | 0.001          | 2.2       | 2.2       |
-| 3.99       | 0.1            | 4         | 4         |
-| 3.99       | 0.01           | 3.99      | 3.99      |
-| 3.99       | 0.001          | 3.99      | 3.99      |
-| **1.2345** | 0.1            | 1.2       | 1.2       |
-| **1.2345** | 0.01           | 1.23      | 1.23      |
-| **1.2345** | 0.001          | **1.235** | **1.234** |
-| 7.876      | 0.1            | 7.9       | 7.9       |
-| 7.876      | 0.01           | 7.88      | 7.89      |
-| 7.876      | 0.001          | 7.876     | 7.876     |
-| 13.8739    | 0.1            | 13.9      | 13.9      |
-| 13.8739    | 0.01           | 13.87     | 13.87     |
-| 13.8739    | 0.001          | 13.874    | 13.874    |
+
+```{r}
+#| echo: false
+readRDS(file = "rds/rounding/widget_01.rds")
+```
+
 
 In some rare cases, `round()` does not return result as expected. For example below.
 
-```{sas}
+```{r}
 #| eval: false
+#| include: false
+
+widget_02 <- sasquatch::sas_run_string(capture = "listing", "
 data incorrect_round;
     *rounded=32768.015625, but it should be 32768.015626;
-    rounded=round(32768.0156255,1e-6); output;
+    rounded = round(32768.0156255, 1e-6); output;
     *rounded=0.137, but it should be 0.138;
     rounded=round(2048.1375-2048,1e-3); output;
+proc print;
 run;
+")
+saveRDS(widget_02, file = "rds/rounding/widget_02.rds")
+```
+
+```txt
+data incorrect_round;
+    *rounded=32768.015625, but it should be 32768.015626;
+    rounded = round(32768.0156255, 1e-6); output;
+    *rounded=0.137, but it should be 0.138;
+    rounded=round(2048.1375-2048,1e-3); output;
+proc print;
+run;
+```
+
+
+```{r}
+#| echo: false
+readRDS(file = "rds/rounding/widget_02.rds")
 ```
 
 You can find a little more by the code below. It creates dummy numbers with different numbers of decimal digits, and filter incorrect results. Note, the incorrect results are expected when the input number is near or beyond the precision level, i.e. the last decimal of the input number is near or less than the number multiplied by `constant('maceps')`.
 
-```{sas}
+```{r}
 #| eval: false
+#| include: false
+
+widget_03 <- sasquatch::sas_run_string(capture = "listing", "
 data dum1;
     int1=0; output;
     do i=1 to 25;
@@ -94,43 +139,128 @@ proc sql;
     create table incorrect_round2(where=(rounded<num1)) as
     select dum1.*,dum2.*,int1+dec1 as num1,round(calculated num1,10**(-round_digits)) as rounded
     from dum1, dum2;
+proc print;
 quit;
+")
+saveRDS(widget_03, file = "rds/rounding/widget_03.rds")
 ```
 
-Or more by the code below and comparing with results from another language, e.g. R.
-
-```{sas}
-#| eval: false
+```txt
 data dum1;
-    dec1=0; int1=0; output;
-    do i=0 to 12;
-      dec1=2**(-i);
-      dec1=dec1*1.1;
-      int1=2**i;
+    int1=0; output;
+    do i=1 to 25;
+      int1=2**i; output;
+    end;
+    keep int1;
+run;
+
+data dum2;
+    do round_digits=1 to 7;
+      *x.xxx5 should be rounded up, or replace 5 to 4.99 which should be rounded down;
+      dec1=2**(-round_digits)+10**(-round_digits-1)*5;
       output;
     end;
+    keep dec1 round_digits;
 run;
 
 proc sql;
-    create table dum3 as select dec1+int1 as num1 from dum1(keep=dec1) a, dum1(keep=int1) b;
-    create table dat1 as select a.num1,b.num1 as num2 from dum3 a, dum3 b;
+    create table incorrect_round2(where=(rounded<num1)) as
+    select dum1.*,dum2.*,int1+dec1 as num1,round(calculated num1,10**(-round_digits)) as rounded
+    from dum1, dum2;
+proc print;
 quit;
+```
 
-data dat2;
-    set dat1;
+
+```{r}
+#| echo: false
+readRDS("rds/rounding/widget_03.rds")
+```
+
+
+Or more by the code below and comparing with results from another language, e.g. R.
+
+```{r}
+#| eval: false
+#| include: false
+
+widget_04 <- sasquatch::sas_run_string(capture = "listing", "
+
+data simple;
+    input num1 num2;
+    datalines;
+    3.14159 2.71828
+    1.99999 0.33333
+    5.55555 4.44444
+    7.87654 1.23456
+    0.12345 9.87654
+    6.66666 3.33333
+    ;
+run;
+
+data results;
+    set simple;
     operator='+'; num3=num1+num2; output;
     operator='-'; num3=num1-num2; output;
-    if num1^=0 and num2^=0 then do;
-      operator='*'; num3=num1*num2; output;
-      operator='/'; num3=num1/num2; output;
-    end;
+    operator='*'; num3=num1*num2; output;
+    operator='/'; num3=num1/num2; output;
 run;
 
-data dat3;
-    set dat2;
-    rounded=round(num3,1e-3);
+data final;
+    set results;
+    rounded_001 = round(num3, 0.001);  /* Round to nearest 0.001 */
+    rounded_01  = round(num3, 0.01);   /* Round to nearest 0.01 */
+    rounded_1   = round(num3, 0.1);    /* Round to nearest 0.1 */
+    rounded_int = round(num3, 1);      /* Round to nearest integer */
+run;
+
+proc print data=final;
+    format num1 num2 num3 rounded_001 rounded_01 rounded_1 rounded_int 12.6;
+run;
+")
+saveRDS(widget_04, file = "rds/rounding/widget_04.rds")
+```
+
+```txt
+data simple;
+    input num1 num2;
+    datalines;
+    3.14159 2.71828
+    1.99999 0.33333
+    5.55555 4.44444
+    7.87654 1.23456
+    0.12345 9.87654
+    6.66666 3.33333
+    ;
+run;
+
+data results;
+    set simple;
+    operator='+'; num3=num1+num2; output;
+    operator='-'; num3=num1-num2; output;
+    operator='*'; num3=num1*num2; output;
+    operator='/'; num3=num1/num2; output;
+run;
+
+data final;
+    set results;
+    rounded_001 = round(num3, 0.001);  /* Round to nearest 0.001 */
+    rounded_01  = round(num3, 0.01);   /* Round to nearest 0.01 */
+    rounded_1   = round(num3, 0.1);    /* Round to nearest 0.1 */
+    rounded_int = round(num3, 1);      /* Round to nearest integer */
+run;
+
+proc print data=final;
+    format num1 num2 num3 rounded_001 rounded_01 rounded_1 rounded_int 12.6;
 run;
 ```
+
+
+```{r}
+#| echo: false
+readRDS(file = "rds/rounding/widget_04.rds")
+```
+
 
 As the incorrect rounding all occur on large number, `round()` is still reliable in most of cases.
 
