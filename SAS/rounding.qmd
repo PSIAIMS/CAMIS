@@ -1,5 +1,7 @@
 ---
 title: "Rounding in SAS"
+execute: 
+  eval: false
 ---
 
 There are two rounding functions in SAS.
@@ -14,18 +16,15 @@ For example (See references for source of the example)
 
 
 ```{r}
-#| eval: true
 #| include: false
 
 library(sasquatch)
 sasquatch::sas_connect()
 
-knitr::opts_chunk$set(capture = "listing")
 ```
 
 
 ```{r}
-#| eval: false
 #| include: false
 
 widget_01 <- sasquatch::sas_run_string("
@@ -50,7 +49,8 @@ run;
 
 proc print data=xxx2;
 run;
-")
+",
+capture = "listing")
 
 saveRDS(widget_01, "rds/rounding/widget_01.rds")
 ```
@@ -82,6 +82,7 @@ run;
 
 ```{r}
 #| echo: false
+#| eval: true
 readRDS(file = "rds/rounding/widget_01.rds")
 ```
 
@@ -89,41 +90,71 @@ readRDS(file = "rds/rounding/widget_01.rds")
 In some rare cases, `round()` does not return result as expected. For example below.
 
 ```{r}
-#| eval: false
 #| include: false
 
 widget_02 <- sasquatch::sas_run_string("
-data incorrect_round;
-    *rounded=32768.015625, but it should be 32768.015626;
-    rounded = round(32768.0156255, 1e-6); output;
-    *rounded=0.137, but it should be 0.138;
-    rounded=round(2048.1375-2048,1e-3); output;
-proc print;
+data floating_point_precision;
+    /* Example 1: Large number precision loss */
+    input_val = 32768.0156255;
+    expected =  32768.015626;
+    actual = round(input_val, 1e-6);
+    difference = actual - expected;
+    example = 'Large number';
+    output;
+    
+    /* Example 2: Subtraction then rounding */
+    input_val = 2048.1375 - 2048;  /* = 0.1375 */
+    expected = 0.138;
+    actual = round(input_val, 1e-3);
+    difference = actual - expected;
+    example = 'After subtraction';
+    output;
 run;
-")
+
+proc print data=floating_point_precision;
+    format input_val expected actual difference 13.8;
+    var example input_val expected actual difference;
+run;
+", 
+capture = "listing")
 saveRDS(widget_02, file = "rds/rounding/widget_02.rds")
 ```
 
 ```txt
-data incorrect_round;
-    *rounded=32768.015625, but it should be 32768.015626;
-    rounded = round(32768.0156255, 1e-6); output;
-    *rounded=0.137, but it should be 0.138;
-    rounded=round(2048.1375-2048,1e-3); output;
-proc print;
+data floating_point_precision;
+    /* Example 1: Large number precision loss */
+    input_val = 32768.0156255;
+    expected =  32768.015626;
+    actual = round(input_val, 1e-6);
+    difference = actual - expected;
+    example = 'Large number';
+    output;
+    
+    /* Example 2: Subtraction then rounding */
+    input_val = 2048.1375 - 2048;  /* = 0.1375 */
+    expected = 0.138;
+    actual = round(input_val, 1e-3);
+    difference = actual - expected;
+    example = 'After subtraction';
+    output;
+run;
+
+proc print data=floating_point_precision;
+    format input_val expected actual difference 13.8;
+    var example input_val expected actual difference;
 run;
 ```
 
 
 ```{r}
 #| echo: false
+#| eval: true
 readRDS(file = "rds/rounding/widget_02.rds")
 ```
 
 You can find a little more by the code below. It creates dummy numbers with different numbers of decimal digits, and filter incorrect results. Note, the incorrect results are expected when the input number is near or beyond the precision level, i.e. the last decimal of the input number is near or less than the number multiplied by `constant('maceps')`.
 
 ```{r}
-#| eval: false
 #| include: false
 
 widget_03 <- sasquatch::sas_run_string("
@@ -150,7 +181,8 @@ proc sql;
     from dum1, dum2;
 proc print;
 quit;
-")
+",
+capture = "listing")
 saveRDS(widget_03, file = "rds/rounding/widget_03.rds")
 ```
 
@@ -183,6 +215,7 @@ quit;
 
 ```{r}
 #| echo: false
+#| eval: true
 readRDS("rds/rounding/widget_03.rds")
 ```
 
@@ -190,7 +223,6 @@ readRDS("rds/rounding/widget_03.rds")
 Or more by the code below and comparing with results from another language, e.g. R.
 
 ```{r}
-#| eval: false
 #| include: false
 
 widget_04 <- sasquatch::sas_run_string("
@@ -226,7 +258,8 @@ run;
 proc print data=final;
     format num1 num2 num3 rounded_001 rounded_01 rounded_1 rounded_int 12.6;
 run;
-")
+",
+capture = "listing")
 saveRDS(widget_04, file = "rds/rounding/widget_04.rds")
 ```
 
@@ -267,6 +300,7 @@ run;
 
 ```{r}
 #| echo: false
+#| eval: true
 readRDS(file = "rds/rounding/widget_04.rds")
 ```
 
