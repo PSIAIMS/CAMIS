@@ -245,7 +245,12 @@ MI_10$PATIENT = dat_expand$PATIENT
 gt(MI_10 %>% dplyr::filter(PATIENT %in% c("1513", "1514")) %>% head(8))
 
 # delta adjusted dataset
-rbmi:::apply_delta(MI_10, delta = dat_delta_0, group = c("PATIENT", "VISIT", "THERAPY"), outcome = "CHANGE") %>%
+rbmi:::apply_delta(
+  MI_10,
+  delta = dat_delta_0,
+  group = c("PATIENT", "VISIT", "THERAPY"),
+  outcome = "CHANGE"
+) %>%
   dplyr::filter(PATIENT %in% c("1513", "1514")) %>%
   head(8) %>%
   gt()
@@ -257,7 +262,7 @@ You may have noticed that the `is_missing` and `is_post_ice` columns of the delt
 #| label: template_delta_5_v1
 # delta template
 dat_delta_5_v1 <- delta_template(imputations = imputeObj) %>%
-    mutate(delta = is_missing * 5)
+  mutate(delta = is_missing * 5)
 
 dat_delta_5_v1 |>
   dplyr::filter(PATIENT %in% c("1513", "1514")) |>
@@ -271,7 +276,12 @@ dat_delta_5_v1 |>
 gt(MI_10 %>% dplyr::filter(PATIENT %in% c("1513", "1514")) %>% head(8))
 
 # delta adjusted dataset
-rbmi:::apply_delta(MI_10, delta = dat_delta_5_v1, group = c("PATIENT", "VISIT", "THERAPY"), outcome = "CHANGE") %>%
+rbmi:::apply_delta(
+  MI_10,
+  delta = dat_delta_5_v1,
+  group = c("PATIENT", "VISIT", "THERAPY"),
+  outcome = "CHANGE"
+) %>%
   dplyr::filter(PATIENT %in% c("1513", "1514")) %>%
   head(8) %>%
   gt()
@@ -291,7 +301,12 @@ gt(dat_delta_5_v1 %>% dplyr::filter(PATIENT == "3618"))
 gt(MI_10 %>% dplyr::filter(PATIENT == "3618"))
 
 # delta adjusted dataset
-rbmi:::apply_delta(MI_10, delta = dat_delta_5_v1, group = c("PATIENT", "VISIT", "THERAPY"), outcome = "CHANGE") %>%
+rbmi:::apply_delta(
+  MI_10,
+  delta = dat_delta_5_v1,
+  group = c("PATIENT", "VISIT", "THERAPY"),
+  outcome = "CHANGE"
+) %>%
   dplyr::filter(PATIENT == "3618") %>%
   gt()
 ```
@@ -302,7 +317,7 @@ If you consider the `is_post_ice` column too, you can restrict the delta adjustm
 #| label: template_delta_5_v2
 # delta template
 dat_delta_5_v2 <- delta_template(imputations = imputeObj) %>%
-    mutate(delta = is_missing * is_post_ice * 5)
+  mutate(delta = is_missing * is_post_ice * 5)
 
 dat_delta_5_v2 |>
   dplyr::filter(PATIENT == "3618") |>
@@ -315,7 +330,12 @@ dat_delta_5_v2 |>
 gt(MI_10 %>% dplyr::filter(PATIENT == "3618"))
 
 # delta adjusted dataset
-rbmi:::apply_delta(MI_10, delta = dat_delta_5_v2, group = c("PATIENT", "VISIT", "THERAPY"), outcome = "CHANGE") %>%
+rbmi:::apply_delta(
+  MI_10,
+  delta = dat_delta_5_v2,
+  group = c("PATIENT", "VISIT", "THERAPY"),
+  outcome = "CHANGE"
+) %>%
   dplyr::filter(PATIENT == "3618") %>%
   gt()
 ```
@@ -344,7 +364,12 @@ dat_delta_0_5 |>
 ```{r}
 #| label: apply_stratified_delta
 # delta adjusted dataset
-rbmi:::apply_delta(MI_10, delta = dat_delta_0_5, group = c("PATIENT", "VISIT", "THERAPY"), outcome = "CHANGE") %>%
+rbmi:::apply_delta(
+  MI_10,
+  delta = dat_delta_0_5,
+  group = c("PATIENT", "VISIT", "THERAPY"),
+  outcome = "CHANGE"
+) %>%
   dplyr::filter(PATIENT %in% c("1513", "1514")) %>%
   head(8) %>%
   gt()
@@ -390,20 +415,24 @@ delta_df1 <- expand.grid(
   as_tibble()
 ```
 
-To cut down on computation time, you may want to increase the number of parallel processes.
+To cut down on computation time, you may want to increase the number of parallel processes using the modern `mirai` backend.
 
 ```{r}
-#| label: cluster_specification
-cl <- rbmi::make_rbmi_cluster(ncores = 4)
+#| label: setup_parallel
+library(mirai)
+library(purrr)
+
+# Set up parallel processing with 4 daemons (background processes)
+mirai::daemons(4)
 ```
 
 ### Perform tipping point analysis
 
-To enable a tipping point analysis within a single function, we create `perform_tipp_analysis()`. This custom function requires a stratified delta for `delta_control` and `delta_intervention`, alongside `cl` as set in the previous step.
+To enable a tipping point analysis within a single function, we create `perform_tipp_analysis()`. This custom function requires a stratified delta for `delta_control` and `delta_intervention`. Note that we now use `in_parallel()` from purrr to wrap our analysis function for parallel execution.
 
 ```{r}
 #| label: function_tipping_point_analysis
-perform_tipp_analysis <- function(delta_control, delta_intervention, cl) {
+perform_tipp_analysis <- function(delta_control, delta_intervention) {
   dat_delta <- rbmi::delta_template(imputeObj) |>
     mutate(
       delta_ctl = (THERAPY == "PLACEBO") * is_missing * delta_control,
@@ -415,8 +444,7 @@ perform_tipp_analysis <- function(delta_control, delta_intervention, cl) {
     imputations = imputeObj,
     fun = ancova,
     delta = dat_delta,
-    vars = vars_analyse,
-    ncores = cl
+    vars = vars_analyse
   )
 
   poolObj <- as.data.frame(pool(anaObj)) |>
@@ -431,22 +459,28 @@ perform_tipp_analysis <- function(delta_control, delta_intervention, cl) {
 }
 ```
 
-Now, let's apply this function to the antidepressant data as follows:
+Now, let's apply this function to the antidepressant data using the new `in_parallel()` approach:
 
 ```{r}
 #| label: MAR_v1_tipping_point_analysis
 MAR_tipp_df1 <- delta_df1 |>
   mutate(
-    results_list = map2(
+    results_list = purrr::map2(
       delta_control,
       delta_intervention,
-      perform_tipp_analysis,
-      cl = cl
+      purrr::in_parallel(
+        \(dc, di) perform_tipp_analysis(dc, di),
+        perform_tipp_analysis = perform_tipp_analysis,
+        imputeObj = imputeObj,
+        ancova = ancova,
+        pool = pool,
+        vars_analyse = vars_analyse
+      )
     ),
-    trt_7 = map_dbl(results_list, "trt_7"),
-    pval_7 = map_dbl(results_list, "pval_7"),
-    lci_7 = map_dbl(results_list, "lci_7"),
-    uci_7 = map_dbl(results_list, "uci_7")
+    trt_7 = purrr::map_dbl(results_list, "trt_7"),
+    pval_7 = purrr::map_dbl(results_list, "pval_7"),
+    lci_7 = purrr::map_dbl(results_list, "lci_7"),
+    uci_7 = purrr::map_dbl(results_list, "uci_7")
   ) |>
   select(-results_list)
 ```
@@ -556,14 +590,20 @@ delta_df2 <- expand.grid(
 #| label: MAR_v2_tipping_point_analysis
 MAR_tipp_df2 <- delta_df2 |>
   mutate(
-    results_list = map2(
+    results_list = purrr::map2(
       delta_control,
       delta_intervention,
-      perform_tipp_analysis,
-      cl = cl
+      purrr::in_parallel(
+        \(dc, di) perform_tipp_analysis(dc, di),
+        perform_tipp_analysis = perform_tipp_analysis,
+        imputeObj = imputeObj,
+        ancova = ancova,
+        pool = pool,
+        vars_analyse = vars_analyse
+      )
     ),
-    trt_7 = map_dbl(results_list, "trt_7"),
-    pval_7 = map_dbl(results_list, "pval_7")
+    trt_7 = purrr::map_dbl(results_list, "trt_7"),
+    pval_7 = purrr::map_dbl(results_list, "pval_7")
   ) |>
   select(-results_list) |>
   mutate(
@@ -600,11 +640,11 @@ MAR_heat <- ggplot(
 MAR_heat
 ```
 
-Don't forget to close the computing clusters when you are done.
+Don't forget to reset the daemons when you are done with parallel processing.
 
 ```{r}
-#| label: close_clusters
-parallel::stopCluster(cl)
+#| label: close_daemons
+mirai::daemons(0)
 ```
 
 ## Comparison with rbmi MNAR approaches
@@ -751,7 +791,7 @@ Adding a fixed delta in this way seems similar to what we explained in the *simp
 #| label: delta_5_v1
 # 1) mutate delta = is_missing * 5
 dat_delta_5_v1 <- delta_template(imputations = imputeObj) %>%
-    mutate(delta = is_missing * 5)
+  mutate(delta = is_missing * 5)
 ```
 
 And remember the second case where we added delta = 5 to all imputed `is_missing` and `is_post_ice` values:
@@ -760,7 +800,7 @@ And remember the second case where we added delta = 5 to all imputed `is_missing
 #| label: delta_5_v2
 # 2) mutate delta = is_missing * is_post_ice * 5
 dat_delta_5_v2 <- delta_template(imputations = imputeObj) %>%
-    mutate(delta = is_missing * is_post_ice * 5)
+  mutate(delta = is_missing * is_post_ice * 5)
 ```
 
 Similarly, we now set `delta = c(5, 5, 5, 5)` and `dlag = c(1, 0, 0, 0)`:
@@ -769,8 +809,8 @@ Similarly, we now set `delta = c(5, 5, 5, 5)` and `dlag = c(1, 0, 0, 0)`:
 #| label: delta_5_v3
 # 3) delta = c(5, 5, 5, 5), dlag = c(1, 0, 0, 0)
 dat_delta_5_v3 <- delta_template(
-  imputeObj, 
-  delta = c(5, 5, 5, 5), 
+  imputeObj,
+  delta = c(5, 5, 5, 5),
   dlag = c(1, 0, 0, 0)
 )
 ```
@@ -785,17 +825,32 @@ If we consider patient 3618 again, we see that its intermittent missing value at
 gt(MI_10 %>% dplyr::filter(PATIENT == "3618"))
 
 # 1) mutate delta = is_missing * 5
-rbmi:::apply_delta(MI_10, delta = dat_delta_5_v1, group = c("PATIENT", "VISIT", "THERAPY"), outcome = "CHANGE") %>%
+rbmi:::apply_delta(
+  MI_10,
+  delta = dat_delta_5_v1,
+  group = c("PATIENT", "VISIT", "THERAPY"),
+  outcome = "CHANGE"
+) %>%
   dplyr::filter(PATIENT == 3618) %>%
   gt()
 
 # 2) mutate delta = is_missing * is_post_ice * 5
-rbmi:::apply_delta(MI_10, delta = dat_delta_5_v2, group = c("PATIENT", "VISIT", "THERAPY"), outcome = "CHANGE") %>%
+rbmi:::apply_delta(
+  MI_10,
+  delta = dat_delta_5_v2,
+  group = c("PATIENT", "VISIT", "THERAPY"),
+  outcome = "CHANGE"
+) %>%
   dplyr::filter(PATIENT == 3618) %>%
   gt()
 
 # 3) delta = c(5, 5, 5, 5), dlag = c(1, 0, 0, 0)
-rbmi:::apply_delta(MI_10, delta = dat_delta_5_v3, group = c("PATIENT", "VISIT", "THERAPY"), outcome = "CHANGE") %>%
+rbmi:::apply_delta(
+  MI_10,
+  delta = dat_delta_5_v3,
+  group = c("PATIENT", "VISIT", "THERAPY"),
+  outcome = "CHANGE"
+) %>%
   dplyr::filter(PATIENT == 3618) %>%
   gt()
 ```
