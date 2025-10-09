@@ -43,6 +43,12 @@ set.seed(5123)
 
 In this vignette we briefly compare the `mmrm::mmrm`, SAS's `PROC GLIMMIX`, `nlme::gls`, `lme4::lmer`, and `glmmTMB::glmmTMB` functions for fitting mixed models for repeated measures (MMRMs). A primary difference in these implementations lies in the covariance structures that are supported "out of the box". In particular, `PROC GLIMMIX` and `mmrm` are the only procedures which provide support for many of the most common MMRM covariance structures. Most covariance structures can be implemented in `gls`, though users are required to define them manually. `lmer` and `glmmTMB` are more limited. We find that `mmmrm` converges more quickly than other R implementations while also producing estimates that are virtually identical to `PROC GLIMMIX`'s.
 
+NOTE: that factor parameterization in the model, and the default order that SAS and R choose reference levels for factors are different.  Hence, the first thing to ensure when trying to replicate MMRMs in SAS and R is that you have these options aligned. See [parameterization in SAS](https://support.sas.com/documentation/cdl/en/statug/63033/HTML/default/viewer.htm#statug_mixed_sect023.htm) for more detail on SAS parameterization.  This can be matched in R using the default `contr.treatment` option.  It is reccommended to specify the level of any factors you want to use as the reference in both SAS and R.
+
+In SAS this is done on the class row: 'class armcd(ref="ARM A")' 
+In R, this is done using `relevel(ARMCD,ref="ARM A")`  in addition to adding the base option to the contrast() statement when selecting the contr.treatment parameterization. 
+`contrasts(ARMCD) <- contr.treatment(levels(ARMCD), base=which(levels(ARMCD)=="ARM A"))`
+
 # Datasets
 
 Two datasets are used to illustrate model fitting with the `mmrm`, `lme4`, `nlme`, `glmmTMB` R packages as well as `PROC GLIMMIX`. These data are also used to compare these implementations' operating characteristics.
