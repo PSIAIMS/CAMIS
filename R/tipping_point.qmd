@@ -31,6 +31,11 @@ library(emmeans)
 library(mmrm)
 library(rstan)
 library(rbmi)
+
+# Paralleisation libraries
+library(future)
+library(furrr)
+library(parallelly)
 ```
 
 ### Random seed
@@ -448,33 +453,18 @@ perform_tipp_analysis <- function(delta_control, delta_intervention) {
 
 Now, let's apply this function to the antidepressant data as follows:
 
+**Note:** here we are adding some parallelisation using {furrr} to speed things up.
+
 ```{r}
 #| label: MAR_v1_tipping_point_analysis
+workers <- parallelly::availableCores(omit = 1)
+future::plan(multisession, workers = workers)
 
-library(future)
-library(furrr)
-library(future.mirai)
-library(mirai)
+MAR_tipp_df1 <- delta_df1 |> 
+  furrr::future_pmap(perform_tipp_analysis) |>
+  purrr::reduce(bind_rows) 
 
-mirai::daemons(2)
-
-future::plan(future.mirai::mirai_cluster)
-
-MAR_tipp_df1 <- delta_df1 |>
-  mutate(
-    results_list = furrr::future_map2(
-      delta_control,
-      delta_intervention,
-      perform_tipp_analysis
-    )
-  ) |>
-  mutate(
-    trt_7 = map_dbl(results_list, "trt_7"),
-    pval_7 = map_dbl(results_list, "pval_7"),
-    lci_7 = map_dbl(results_list, "lci_7"),
-    uci_7 = map_dbl(results_list, "uci_7")
-  ) |>
-  select(-results_list)
+MAR_tipp_df1 <- dplyr::bind_cols(delta_df1, MAR_tipp_df1)
 ```
 
 The results of the tipping point analysis under MAR with p-value $\geq$ 0.05 are:
@@ -578,21 +568,16 @@ delta_df2 <- expand.grid(
   as_tibble()
 ```
 
-
 ```{r}
 #| label: MAR_v2_tipping_point_analysis
 
 MAR_tipp_df2 <- delta_df2 |>
+  furrr::future_pmap(perform_tipp_analysis) |>
+  purrr::reduce(bind_rows) 
+
+# Adding back the delta's used for reference 
+MAR_tipp_df2 <- dplyr::bind_cols(delta_df2, MAR_tipp_df2) |>
   mutate(
-    results_list = furrr::future_map2(
-      delta_control,
-      delta_intervention,
-      perform_tipp_analysis
-    )
-  ) |>
-  mutate(
-    trt_7 = map_dbl(results_list, "trt_7"),
-    pval_7 = map_dbl(results_list, "pval_7"),
     pval = cut(
       pval_7,
       c(0, 0.001, 0.01, 0.05, 0.2, 1),
@@ -605,8 +590,7 @@ MAR_tipp_df2 <- delta_df2 |>
         ">= 0.20"
       )
     )
-  ) |>
-  select(-results_list)
+  ) 
 ```
 
 We can visualize the result of this tipping point analysis using a heatmap. Here, the **(0,0)** point corresponds to the original result without any delta adjustment (p \~ 0.0125).
@@ -625,10 +609,6 @@ MAR_heat <- ggplot(
   scale_y_continuous(breaks = seq(-5, 10, 1)) +
   labs(x = "Delta (control)", y = "Delta (intervention)", fill = "P-value")
 MAR_heat
-```
-
-```{r}
-mirai::daemons(0)
 ```
 
 ## Comparison with rbmi MNAR approaches
@@ -863,5 +843,4 @@ One should be aware of this discrepancy when using the `rbmi` package for delta 
 si <- sessioninfo::session_info(c())
 si
 ```
-
 :::
