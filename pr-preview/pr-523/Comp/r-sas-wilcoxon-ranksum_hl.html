@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.25">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>R vs SAS Wilcoxon Rank-Sum Test</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../images/logo.png" rel="icon" type="image/png">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-635a35c16803d16fd9db22f392043487.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../images/logo.png" alt="" class="navbar-logo light-content">
+    <img src="../images/logo.png" alt="" class="navbar-logo dark-content">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-publications-and-projects" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Publications and Projects</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-publications-and-projects">    
+        <li>
+    <a class="dropdown-item" href="../publication/white_paper.html"><i class="bi bi-file-earmark-word-fill" role="img">
+</i> 
+ <span class="dropdown-text">White Paper</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/conference.html"><i class="bi bi-easel3-fill" role="img">
+</i> 
+ <span class="dropdown-text">Conferences</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/dissertation.html"><i class="bi bi-mortarboard-fill" role="img">
+</i> 
+ <span class="dropdown-text">Academic Projects</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../minutes/index.html"> 
+<span class="menu-text">Meeting Minutes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../blogs/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-help" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Help</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-help">    
+        <li>
+    <a class="dropdown-item" href="https://github.com/PSIAIMS/CAMIS/issues"><i class="bi bi-bug-fill" role="img">
+</i> 
+ <span class="dropdown-text">Report a Bug</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/get_started.html"><i class="bi bi-git" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with Your Environment</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/contribution.html"><i class="bi bi-person-raised-hand" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with CAMIS</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/package_review.html"><i class="bi bi-box-fill" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with a New R Package</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+    <a href="https://github.com/PSIAIMS/CAMIS/" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a>
+  <ul class="collapse">
+  <li><a href="#example-data" id="toc-example-data" class="nav-link" data-scroll-target="#example-data">Example Data</a></li>
+  </ul></li>
+  <li><a href="#comparison" id="toc-comparison" class="nav-link" data-scroll-target="#comparison">Comparison</a>
+  <ul class="collapse">
+  <li><a href="#software-capabilities" id="toc-software-capabilities" class="nav-link" data-scroll-target="#software-capabilities">Software Capabilities</a></li>
+  <li><a href="#wilcoxon-rank-sum-test" id="toc-wilcoxon-rank-sum-test" class="nav-link" data-scroll-target="#wilcoxon-rank-sum-test">Wilcoxon Rank Sum test</a></li>
+  <li><a href="#hodges-lehmann-estimator" id="toc-hodges-lehmann-estimator" class="nav-link" data-scroll-target="#hodges-lehmann-estimator">Hodges-Lehmann estimator</a></li>
+  <li><a href="#mann-whitney-parameter" id="toc-mann-whitney-parameter" class="nav-link" data-scroll-target="#mann-whitney-parameter">Mann-Whitney Parameter</a></li>
+  </ul></li>
+  <li><a href="#special-considerations-for-one-sided-p-values" id="toc-special-considerations-for-one-sided-p-values" class="nav-link" data-scroll-target="#special-considerations-for-one-sided-p-values">Special considerations for one-sided p-values</a>
+  <ul class="collapse">
+  <li><a href="#asymptotic-results-without-continuity-correction" id="toc-asymptotic-results-without-continuity-correction" class="nav-link" data-scroll-target="#asymptotic-results-without-continuity-correction">Asymptotic results without continuity correction</a></li>
+  <li><a href="#exact-results" id="toc-exact-results" class="nav-link" data-scroll-target="#exact-results">Exact results</a></li>
+  </ul></li>
+  <li><a href="#summary-and-recommendation" id="toc-summary-and-recommendation" class="nav-link" data-scroll-target="#summary-and-recommendation">Summary and Recommendation</a></li>
+  <li><a href="#ties" id="toc-ties" class="nav-link" data-scroll-target="#ties">Ties</a></li>
+  <li><a href="#additional-references" id="toc-additional-references" class="nav-link" data-scroll-target="#additional-references">Additional References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">R vs SAS Wilcoxon Rank-Sum Test</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>This page compares the Wilcoxon rank-sum test, Hodges-Lehmann estimator, and estimation of the Mann-Whitney parameter in R and SAS.</p>
+<section id="example-data" class="level3">
+<h3 class="anchored" data-anchor-id="example-data">Example Data</h3>
+<p>For this example we are using a dataset of birth weights for smoking and non-smoking mothers (<em>Data source: Table 30.4, Kirkwood BR. and Sterne JAC. Essentials of medical statistics. Second Edition. ISBN 978-0-86542-871-3</em>). This dataset is both small (so an exact test is recommended) and has ties in it.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>bw_ns <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">3.99</span>, <span class="fl">3.89</span>, <span class="fl">3.6</span>, <span class="fl">3.73</span>, <span class="fl">3.31</span>, </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>            <span class="fl">3.7</span>, <span class="fl">4.08</span>, <span class="fl">3.61</span>, <span class="fl">3.83</span>, <span class="fl">3.41</span>, </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>            <span class="fl">4.13</span>, <span class="fl">3.36</span>, <span class="fl">3.54</span>, <span class="fl">3.51</span>, <span class="fl">2.71</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>bw_s <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">3.18</span>, <span class="fl">2.74</span>, <span class="fl">2.9</span>, <span class="fl">3.27</span>, <span class="fl">3.65</span>, </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>           <span class="fl">3.42</span>, <span class="fl">3.23</span>, <span class="fl">2.86</span>, <span class="fl">3.6</span>, <span class="fl">3.65</span>, </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>           <span class="fl">3.69</span>, <span class="fl">3.53</span>, <span class="fl">2.38</span>, <span class="fl">2.34</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>smk_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">value =</span> <span class="fu">c</span>(bw_ns, bw_s), </span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">smoke =</span> <span class="fu">as.factor</span>(<span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">"non"</span>, <span class="st">"smoke"</span>), <span class="fu">c</span>(<span class="fu">length</span>(bw_ns), <span class="fu">length</span>(bw_s))))</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>) </span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Relevel the factors to make it smoker - non-smokers </span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>smk_data<span class="sc">$</span>smoke <span class="ot">&lt;-</span> forcats<span class="sc">::</span><span class="fu">fct_relevel</span>(smk_data<span class="sc">$</span>smoke, <span class="st">"smoke"</span>)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(smk_data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  value smoke
+1  3.99   non
+2  3.89   non
+3  3.60   non
+4  3.73   non
+5  3.31   non
+6  3.70   non</code></pre>
+</div>
+</div>
+<p>To view the code implementations, see the <a href="../SAS/ranksum.html">SAS</a> and <a href="../R/nonpara_wilcoxon_ranksum.html">R</a> pages, respectively.</p>
+</section>
+</section>
+<section id="comparison" class="level2">
+<h2 class="anchored" data-anchor-id="comparison">Comparison</h2>
+<section id="software-capabilities" class="level3">
+<h3 class="anchored" data-anchor-id="software-capabilities">Software Capabilities</h3>
+<p>The following table provides an overview of the supported analyses between R and SAS. A specific comparison of the results and whether they match are provided below.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 22%">
+<col style="width: 21%">
+<col style="width: 21%">
+<col style="width: 17%">
+<col style="width: 6%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Analysis</th>
+<th>Supported in R {stats}</th>
+<th>Supported in R {coin}</th>
+<th>Supported in R {asht}</th>
+<th>Supported in SAS</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Wilcoxon Rank-Sum – Normal approximation <strong>with</strong> continuity correction</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>In {coin}, one can add <code>correct=TRUE</code>, but note that no error is given and the results of a normal approximation approach <strong>without</strong> continuity correction are provided.</td>
+</tr>
+<tr class="even">
+<td>Wilcoxon Rank-Sum – Normal approximation <strong>without</strong> continuity correction</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Wilcoxon Rank-Sum – Exact</td>
+<td>Partly</td>
+<td>Yes</td>
+<td>Partly</td>
+<td>Yes</td>
+<td>In {stats}, one can only do the exact method when no ties are present.; In {asht}, exact test is possible but the run time is long for larger sample size.</td>
+</tr>
+<tr class="even">
+<td>Wilcoxon Rank-Sum – Approximative (Monte Carlo simulation)</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Hodges-Lehmann estimator – Asymptotic</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Hodges-Lehmann estimator – Exact</td>
+<td>Partly</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>In {stats}, one can only do the exact method when no ties are present.</td>
+</tr>
+<tr class="odd">
+<td>Hodges-Lehmann estimator – Approximative (Monte Carlo simulation)</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Mann-Whitney parameter</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+<td>In {asht}, confidence intervals can be obtained using asymptotic approximation, Monte Carlo simulations, or exact methods (for small sample size)</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="wilcoxon-rank-sum-test" class="level3">
+<h3 class="anchored" data-anchor-id="wilcoxon-rank-sum-test">Wilcoxon Rank Sum test</h3>
+<p>In the below table the p-values of the Wilcoxon Rank Sum Test with different options are compared.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 18%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 8%">
+<col style="width: 11%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Analysis</th>
+<th>R {stats}</th>
+<th>R {coin}</th>
+<th>R {asht}</th>
+<th>SAS</th>
+<th>Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Wilcoxon Rank-Sum – Normal approximation <strong>with</strong> continuity correction</td>
+<td>0.0100</td>
+<td>/</td>
+<td>0.0100</td>
+<td>0.0100</td>
+<td>Yes</td>
+<td>Not possible with {coin}</td>
+</tr>
+<tr class="even">
+<td>Wilcoxon Rank-Sum – Normal approximation <strong>without</strong> continuity correction</td>
+<td>0.0094</td>
+<td>0.0094</td>
+<td>0.0094</td>
+<td>0.0094</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Wilcoxon Rank-Sum – Exact</td>
+<td>/</td>
+<td>0.0082</td>
+<td>/</td>
+<td>0.0082</td>
+<td>Yes</td>
+<td>Not possible with {stats} since there are ties.; In {asht} run-time very long.</td>
+</tr>
+<tr class="even">
+<td>Wilcoxon Rank-Sum – Approximative (Monte Carlo simulation)</td>
+<td>/</td>
+<td>0.0083</td>
+<td>0.0083</td>
+<td>/</td>
+<td>Yes</td>
+<td>With 100,000 simulations</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="hodges-lehmann-estimator" class="level3">
+<h3 class="anchored" data-anchor-id="hodges-lehmann-estimator">Hodges-Lehmann estimator</h3>
+<p>In the below table the Hodges-Lehmann estimate and 95% confidence intervals are compared.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 18%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 8%">
+<col style="width: 11%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Analysis</th>
+<th>R {stats}</th>
+<th>R {coin}</th>
+<th>R {asht}</th>
+<th>SAS</th>
+<th>Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Hodges-Lehmann estimator – Asymptotic</td>
+<td>-0.426 (-0.770 to -0.090)</td>
+<td>-0.426 (-0.760 to -0.100)</td>
+<td>/</td>
+<td>-0.425 (-0.770 to -0.090)</td>
+<td>No</td>
+<td>In {coin}, the CI is the exact CI. The CIs match between {stats} and SAS.</td>
+</tr>
+<tr class="even">
+<td>Hodges-Lehmann estimator – Exact</td>
+<td>/</td>
+<td>-0.425 (-0.760 to -0.100)</td>
+<td>/</td>
+<td>-0.425 (-0.760 to -0.100)</td>
+<td>Yes</td>
+<td>Not possible with {stats} since there are ties; In {asht} run-time very long.</td>
+</tr>
+<tr class="odd">
+<td>Hodges-Lehmann estimator – Approximative (Monte Carlo simulation)</td>
+<td>/</td>
+<td>-0.425 (-0.760 to -0.100)</td>
+<td>/</td>
+<td>/</td>
+<td>/</td>
+<td>With 500,000 simulations</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="mann-whitney-parameter" class="level3">
+<h3 class="anchored" data-anchor-id="mann-whitney-parameter">Mann-Whitney Parameter</h3>
+<p>The estimation of the Mann-Whitney parameter is only possible in R <code>asht</code> package.</p>
+</section>
+</section>
+<section id="special-considerations-for-one-sided-p-values" class="level2">
+<h2 class="anchored" data-anchor-id="special-considerations-for-one-sided-p-values">Special considerations for one-sided p-values</h2>
+<p>It is important to note that in SAS you can get an <em>unexpected</em> one-sided p-value. In the SAS documentation for <a href="https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_npar1way_details04.htm">PROC NPAR1WAY</a> it is stated that:</p>
+<p><em>“PROC NPAR1WAY computes one-sided and two-sided asymptotic p-values for each two-sample linear rank test. When the test statistic z is greater than its null hypothesis expected value of 0, PROC NPAR1WAY computes the right-sided p-value, which is the probability of a larger value of the statistic occurring under the null hypothesis. When the test statistic is less than or equal to 0, PROC NPAR1WAY computes the left-sided p-value, which is the probability of a smaller value of the statistic occurring under the null hypothesis”</em> (similar for the exact p-value).</p>
+<p>Thus SAS reports the one-sided p-value in the direction of the test statistic. This can cause an <em>unexpected</em> one-sided p-value, if your data provides a test statistic in the other direction of the pre-specified one-sided hypothesis.</p>
+<p>Consider the following data example to showcase this:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>dat_used <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">ID =</span> <span class="fu">c</span>(<span class="st">"001"</span>, <span class="st">"002"</span>, <span class="st">"003"</span>, <span class="st">"004"</span>, <span class="st">"005"</span>, <span class="st">"006"</span>, <span class="st">"007"</span>, <span class="st">"008"</span>, <span class="st">"009"</span>, <span class="st">"010"</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>         <span class="st">"011"</span>, <span class="st">"012"</span>, <span class="st">"013"</span>, <span class="st">"014"</span>, <span class="st">"015"</span>, <span class="st">"016"</span>, <span class="st">"017"</span>, <span class="st">"018"</span>, <span class="st">"019"</span>, <span class="st">"020"</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>         <span class="st">"021"</span>, <span class="st">"022"</span>, <span class="st">"023"</span>, <span class="st">"024"</span>, <span class="st">"025"</span>, <span class="st">"026"</span>, <span class="st">"027"</span>, <span class="st">"028"</span>, <span class="st">"029"</span>, <span class="st">"030"</span>),</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">ARM =</span> <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"Placebo"</span>, <span class="st">"Placebo"</span>, <span class="st">"Placebo"</span>, <span class="st">"Placebo"</span>, <span class="st">"Placebo"</span>, <span class="st">"Placebo"</span>, <span class="st">"Placebo"</span>, <span class="st">"Placebo"</span>, <span class="st">"Placebo"</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>          <span class="st">"Low"</span>, <span class="st">"Low"</span>, <span class="st">"Low"</span>, <span class="st">"Low"</span>, <span class="st">"Low"</span>, <span class="st">"Low"</span>, <span class="st">"Low"</span>, <span class="st">"Low"</span>, <span class="st">"Low"</span>, <span class="st">"Low"</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>          <span class="st">"High"</span>, <span class="st">"High"</span>, <span class="st">"High"</span>, <span class="st">"High"</span>, <span class="st">"High"</span>, <span class="st">"High"</span>, <span class="st">"High"</span>, <span class="st">"High"</span>, <span class="st">"High"</span>, <span class="st">"High"</span>),</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">Y =</span> <span class="fu">c</span>(<span class="fl">8.5</span>, <span class="fl">8.9</span>, <span class="fl">8.2</span>, <span class="fl">8.1</span>, <span class="fl">7.1</span>, <span class="fl">7.4</span>, <span class="fl">6.0</span>, <span class="fl">6.5</span>, <span class="fl">7.0</span>, <span class="fl">7.0</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="fl">6.5</span>, <span class="fl">9.4</span>, <span class="fl">8.9</span>, <span class="fl">8.8</span>, <span class="fl">9.6</span>, <span class="fl">8.3</span>, <span class="fl">8.9</span>, <span class="fl">7.0</span>, <span class="fl">9.1</span>, <span class="fl">6.9</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="fl">8.0</span>, <span class="fl">7.3</span>, <span class="fl">7.1</span>, <span class="fl">6.2</span>, <span class="fl">4.7</span>, <span class="fl">4.7</span>, <span class="fl">4.2</span>, <span class="fl">4.1</span>, <span class="fl">3.4</span>, <span class="fl">3.9</span>)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>dat_used</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    ID     ARM   Y
+1  001 Placebo 8.5
+2  002 Placebo 8.9
+3  003 Placebo 8.2
+4  004 Placebo 8.1
+5  005 Placebo 7.1
+6  006 Placebo 7.4
+7  007 Placebo 6.0
+8  008 Placebo 6.5
+9  009 Placebo 7.0
+10 010 Placebo 7.0
+11 011     Low 6.5
+12 012     Low 9.4
+13 013     Low 8.9
+14 014     Low 8.8
+15 015     Low 9.6
+16 016     Low 8.3
+17 017     Low 8.9
+18 018     Low 7.0
+19 019     Low 9.1
+20 020     Low 6.9
+21 021    High 8.0
+22 022    High 7.3
+23 023    High 7.1
+24 024    High 6.2
+25 025    High 4.7
+26 026    High 4.7
+27 027    High 4.2
+28 028    High 4.1
+29 029    High 3.4
+30 030    High 3.9</code></pre>
+</div>
+</div>
+<p>Suppose we would have the following two hypothesis, where for both Low Dose and High Dose we expect smaller values (Y) than Placebo:</p>
+<ul>
+<li><p><span class="math inline">\(H_{0}\)</span>: No difference between Placebo and Low Dose, vs <span class="math inline">\(H_{1}\)</span>: Placebo has higher values (Y) than Low Dose</p></li>
+<li><p><span class="math inline">\(H_{0}\)</span>: No difference between Placebo and High Dose, vs <span class="math inline">\(H_{1}\)</span>: Placebo has higher values (Y) than High Dose</p></li>
+</ul>
+<section id="asymptotic-results-without-continuity-correction" class="level3">
+<h3 class="anchored" data-anchor-id="asymptotic-results-without-continuity-correction">Asymptotic results without continuity correction</h3>
+<p><strong>Placebo and High Dose group</strong></p>
+<p>Let us the {coin} package in R to compare the Placebo and High Dose group:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: greater implies that H1 is Y1 - Y2 = Placebo - High &gt; 0</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>coin<span class="sc">::</span><span class="fu">wilcox_test</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  Y <span class="sc">~</span> <span class="fu">factor</span>(ARM, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"High"</span>)),</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">distribution =</span> <span class="st">"asymptotic"</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">alternative =</span> <span class="st">"greater"</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dat_used <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(ARM <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"High"</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic Wilcoxon-Mann-Whitney Test
+
+data:  Y by
+     factor(ARM, levels = c("Placebo", "High")) (Placebo, High)
+Z = 2.5352, p-value = 0.005619
+alternative hypothesis: true mu is greater than 0</code></pre>
+</div>
+</div>
+<p>In SAS, the following results is obtained. As can be seen in both R and SAS the one-sided p-value is 0.0056.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/ranksum/SAS_one_sided_pvalue.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:90.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Placebo and Low Dose group</strong></p>
+<p>Let us the {coin} package in R to compare the Placebo and Low Dose group:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: greater implies that H1 is Y1 - Y2 = Placebo - High &gt; 0</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>coin<span class="sc">::</span><span class="fu">wilcox_test</span>(</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  Y <span class="sc">~</span> <span class="fu">factor</span>(ARM, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"Low"</span>)),</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">distribution =</span> <span class="st">"asymptotic"</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">alternative =</span> <span class="st">"greater"</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dat_used <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(ARM <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"Low"</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic Wilcoxon-Mann-Whitney Test
+
+data:  Y by
+     factor(ARM, levels = c("Placebo", "Low")) (Placebo, Low)
+Z = -1.7066, p-value = 0.9561
+alternative hypothesis: true mu is greater than 0</code></pre>
+</div>
+</div>
+<p>In SAS, the following results is obtained. The one-sided p-values clearly do not match ({coin} p-value = 0.9561; SAS p-value = 0.0439). As mentioned above, SAS reports the p-value in the direction of the test statistic. This can cause an <em>unexpected</em> one-sided p-value, if your data provides a test statistic in the other directiont than the pre-specified one-sided hypothesis. Do note that <span class="math inline">\(1 - 0.9561 = 0.0439\)</span>.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/ranksum/SAS_one_sided_pvalue2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:90.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="exact-results" class="level3">
+<h3 class="anchored" data-anchor-id="exact-results">Exact results</h3>
+<p><strong>Placebo and High Dose group</strong></p>
+<p>Let us the {coin} package in R to compare the Placebo and High Dose group:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: greater implies that H1 is Y1 - Y2 = Placebo - High &gt; 0</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>coin<span class="sc">::</span><span class="fu">wilcox_test</span>(</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  Y <span class="sc">~</span> <span class="fu">factor</span>(ARM, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"High"</span>)),</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">distribution =</span> <span class="st">"exact"</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">alternative =</span> <span class="st">"greater"</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dat_used <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(ARM <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"High"</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Exact Wilcoxon-Mann-Whitney Test
+
+data:  Y by
+     factor(ARM, levels = c("Placebo", "High")) (Placebo, High)
+Z = 2.5352, p-value = 0.004682
+alternative hypothesis: true mu is greater than 0</code></pre>
+</div>
+</div>
+<p>In SAS (see above), the same one-sided p-value of 0.0047 is obtained.</p>
+<p><strong>Placebo and Low Dose group</strong></p>
+<p>Let us the {coin} package in R to compare the Placebo and Low Dose group:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: greater implies that H1 is Y1 - Y2 = Placebo - High &gt; 0</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>coin<span class="sc">::</span><span class="fu">wilcox_test</span>(</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  Y <span class="sc">~</span> <span class="fu">factor</span>(ARM, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"Low"</span>)),</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">distribution =</span> <span class="st">"exact"</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">alternative =</span> <span class="st">"greater"</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dat_used <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(ARM <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"Low"</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Exact Wilcoxon-Mann-Whitney Test
+
+data:  Y by
+     factor(ARM, levels = c("Placebo", "Low")) (Placebo, Low)
+Z = -1.7066, p-value = 0.9574
+alternative hypothesis: true mu is greater than 0</code></pre>
+</div>
+</div>
+<p>Please see above for the SAS result. The one-sided p-values clearly do not match ({coin} p-value = 0.9574; SAS p-value = 0.0455).</p>
+</section>
+</section>
+<section id="summary-and-recommendation" class="level2">
+<h2 class="anchored" data-anchor-id="summary-and-recommendation">Summary and Recommendation</h2>
+<p>Wilcoxon Rank Sum test and the associated Hodges-Lehmann CI are able to be consistently computed in both SAS and R. The user needs to be aware of some small differences:</p>
+<ul>
+<li><p>In SAS the <code>exact wilcoxon hl</code> statement is needed to get both the exact p-value and CI.</p></li>
+<li><p>In {stats} exact values are only possible when there are no ties and the exact parameter is set to true (<code>exact = TRUE</code>). This will give the exact p-value and CI.</p></li>
+<li><p>In {coin} it is not possible to do a normal approximation <strong>with</strong> continuity correction.</p></li>
+<li><p>For the asymptotic Hodges-Lehmann estimator, {stats} and {coin} use an algorithm to define the estimate, whereas SAS provides the <em>traditional</em> Hodges-Lehmann estimator.</p></li>
+</ul>
+<p>If you have a study where you would like to use R for the exact Wilcoxon Rank Sum test and there is the risk of ties, {coin} would be recommended.</p>
+</section>
+<section id="ties" class="level2">
+<h2 class="anchored" data-anchor-id="ties">Ties</h2>
+<p>In all presented R packages and SAS, when there are tied values, the average score method (mid-ranks) is used. This is done by first sorting the observations in ascending order and assigning ranks as if there were no ties. The procedure averages the scores for tied observations and assigns this average score to each of the tied observations. Thus, all tied data values have the same score value.</p>
+</section>
+<section id="additional-references" class="level2">
+<h2 class="anchored" data-anchor-id="additional-references">Additional References</h2>
+<p>Provided are references and additional reading materials for both R and SAS documentation related to the analysis.</p>
+<p><strong>R Documentation:</strong></p>
+<ul>
+<li><p><code>wilcox.test</code> function: <a href="https://rdrr.io/r/stats/wilcox.test.html" class="uri">https://rdrr.io/r/stats/wilcox.test.html</a></p></li>
+<li><p><code>wilcox_test</code> function: <a href="https://rdrr.io/cran/coin/man/LocationTests.html" class="uri">https://rdrr.io/cran/coin/man/LocationTests.html</a></p></li>
+</ul>
+<p><strong>SAS Documentation:</strong></p>
+<ul>
+<li><code>PROC npar1way</code>: <a href="https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_npar1way_gettingstarted.htm" class="uri">https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_npar1way_gettingstarted.htm</a></li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled" title="Session Info">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Session Info
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>─ Session info ───────────────────────────────────────────────────────────────
+ setting  value
+ version  R version 4.4.2 (2024-10-31)
+ os       macOS Sequoia 15.6.1
+ system   aarch64, darwin20
+ ui       X11
+ language (EN)
+ collate  en_US.UTF-8
+ ctype    en_US.UTF-8
+ tz       Europe/London
+ date     2025-10-13
+ pandoc   3.4 @ /Applications/RStudio.app/Contents/Resources/app/quarto/bin/tools/aarch64/ (via rmarkdown)
+
+─ Packages ───────────────────────────────────────────────────────────────────
+ ! package * version date (UTC) lib source
+ P coin    * 1.4-3   2023-09-27 [?] CRAN (R 4.4.0)
+
+ [1] /Users/christinafillmore/Documents/GitHub/CAMIS/renv/library/macos/R-4.4/aarch64-apple-darwin20
+ [2] /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library
+
+ P ── Loaded and on-disk path mismatch.
+
+─ External software ──────────────────────────────────────────────────────────
+ setting value
+ SAS     9.04.01M7P080520
+
+──────────────────────────────────────────────────────────────────────────────</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/psiaims\.github\.io\/CAMIS\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
