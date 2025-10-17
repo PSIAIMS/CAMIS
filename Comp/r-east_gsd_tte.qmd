@@ -1,5 +1,5 @@
 ---
-title: "R vs EAST Group sequential design"
+title: "R vs EAST vs SAS: Group sequential design"
 editor_options: 
   chunk_output_type: console
 ---
@@ -594,9 +594,11 @@ pfs_sas <- tibble::tribble(
   'Events: 176', 'HR at bound',        0.66958056578528,   0.89472503989941,
   'Month: 25',   'P(Cross) if HR=1',   NA_real_,           NA_real_,
   '',            'P(Cross) if HR=0.6', NA_real_,           NA_real_,
-   
+
+
   'FA',          'Z',                  2.27984635088813,   NA_real_,              
   'N=398',       'p (1-sided)',        0.0113084014373517, NA_real_,              
+  'Events: 235', 'HR at bound',        0.74271570535451,   NA_real_,
   'Month: 34',   'P(Cross) if HR=1',   NA_real_,           NA_real_,
   '',            'P(Cross) if HR=0.6', NA_real_,           NA_real_    
 )
@@ -611,8 +613,9 @@ pfs_sas |>
     fut_125 = "Futility"
   ) |>
   flextable::hline(i = c(5, 10)) |>
-  flextable::colformat_double(j = c(3, 4), digits = 5)
+  flextable::colformat_double(j = c(3, 4), digits = 4)
 ```
+
 -   SAS vs rapct comparison using absolute differences:
 
 ```{r}
@@ -643,6 +646,58 @@ pfs_rpact_sum |>
   flextable::set_header_labels(
     diff_eff_sas = 'Efficacy',
     diff_fut_sas = 'Futility'
+  ) |>
+  flextable::hline(i = c(5, 10)) |>
+  flextable::colformat_double(j = c(3, 4), digits = digit_comp) |>
+  flextable::bg(
+    ~ round(abs(diff_eff_sas), digit_comp) != 0,
+    ~diff_eff_sas,
+    bg = '#6ECEB2'
+  ) |>
+  flextable::bg(
+    ~ round(abs(diff_fut_sas), digit_comp) != 0,
+    ~diff_fut_sas,
+    bg = '#6ECEB2'
+  )
+```
+
+-   SAS vs EAST comparison using absolute differences:
+
+```{r}
+#| echo: false
+pfs_sas_sum <- tibble::tibble(
+  sas_eff = pfs_sas$eff_125,
+  sas_fut = pfs_sas$fut_125
+)
+pfs_sas_sum |>
+  dplyr::bind_cols(
+    pfs_east |>
+      dplyr::select(
+        value,
+        analysis,
+        eff_east = eff_125,
+        fut_east = fut_125
+      ) |>
+      dplyr::mutate(
+        eff_east = ifelse(value == 'Z', -eff_east, eff_east),
+        fut_east = ifelse(value == 'Z', -fut_east, fut_east)
+      )
+  ) |>
+  dplyr::mutate(
+    diff_eff_sas = abs(eff_east - sas_eff),
+    diff_fut_sas = abs(fut_east - sas_fut)
+  ) |>
+  dplyr::select(
+    Analysis = analysis,
+    Value = value,
+    diff_eff_sas,
+    diff_fut_sas
+  ) |>
+  flextable::flextable() |>
+  flextable::autofit() |>
+  flextable::set_header_labels(
+    diff_eff_gsDesign = 'Efficacy',
+    diff_fut_gsDesign = 'Futility'
   ) |>
   flextable::hline(i = c(5, 10)) |>
   flextable::colformat_double(j = c(3, 4), digits = digit_comp) |>
