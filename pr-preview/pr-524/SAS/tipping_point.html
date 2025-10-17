@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.25">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>SAS Tipping Point (Delta Adjustment): Continuous Data</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../images/logo.png" rel="icon" type="image/png">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-c36ac71571ce982ed9f2a94585c95244.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../images/logo.png" alt="" class="navbar-logo light-content">
+    <img src="../images/logo.png" alt="" class="navbar-logo dark-content">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-publications-and-projects" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Publications and Projects</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-publications-and-projects">    
+        <li>
+    <a class="dropdown-item" href="../publication/white_paper.html"><i class="bi bi-file-earmark-word-fill" role="img">
+</i> 
+ <span class="dropdown-text">White Paper</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/conference.html"><i class="bi bi-easel3-fill" role="img">
+</i> 
+ <span class="dropdown-text">Conferences</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/dissertation.html"><i class="bi bi-mortarboard-fill" role="img">
+</i> 
+ <span class="dropdown-text">Academic Projects</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../minutes/index.html"> 
+<span class="menu-text">Meeting Minutes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../blogs/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-help" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Help</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-help">    
+        <li>
+    <a class="dropdown-item" href="https://github.com/PSIAIMS/CAMIS/issues"><i class="bi bi-bug-fill" role="img">
+</i> 
+ <span class="dropdown-text">Report a Bug</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/get_started.html"><i class="bi bi-git" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with Your Environment</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/contribution.html"><i class="bi bi-person-raised-hand" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with CAMIS</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/package_review.html"><i class="bi bi-box-fill" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with a New R Package</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+    <a href="https://github.com/PSIAIMS/CAMIS/" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#tipping-point-delta-adjustment" id="toc-tipping-point-delta-adjustment" class="nav-link active" data-scroll-target="#tipping-point-delta-adjustment">Tipping Point / Delta Adjustment</a>
+  <ul class="collapse">
+  <li><a href="#reference-based-multiple-imputation-rbmi" id="toc-reference-based-multiple-imputation-rbmi" class="nav-link" data-scroll-target="#reference-based-multiple-imputation-rbmi">Reference-based multiple imputation (rbmi)</a>
+  <ul class="collapse">
+  <li><a href="#methodology-introduction" id="toc-methodology-introduction" class="nav-link" data-scroll-target="#methodology-introduction">Methodology introduction</a></li>
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
+  </ul></li>
+  <li><a href="#tipping-point-analysis-and-delta-adjustment" id="toc-tipping-point-analysis-and-delta-adjustment" class="nav-link" data-scroll-target="#tipping-point-analysis-and-delta-adjustment">Tipping point analysis and delta adjustment</a>
+  <ul class="collapse">
+  <li><a href="#methodology-introduction-1" id="toc-methodology-introduction-1" class="nav-link" data-scroll-target="#methodology-introduction-1">Methodology introduction</a></li>
+  </ul></li>
+  <li><a href="#tipping-point-analysis-mar-approach" id="toc-tipping-point-analysis-mar-approach" class="nav-link" data-scroll-target="#tipping-point-analysis-mar-approach">Tipping point analysis: MAR approach</a>
+  <ul class="collapse">
+  <li><a href="#perform-tipping-point-analysis" id="toc-perform-tipping-point-analysis" class="nav-link" data-scroll-target="#perform-tipping-point-analysis">Perform tipping point analysis</a></li>
+  <li><a href="#visualize-results" id="toc-visualize-results" class="nav-link" data-scroll-target="#visualize-results">Visualize results</a></li>
+  </ul></li>
+  <li><a href="#comparison-with-rbmi-mnar-approaches" id="toc-comparison-with-rbmi-mnar-approaches" class="nav-link" data-scroll-target="#comparison-with-rbmi-mnar-approaches">Comparison with rbmi MNAR approaches</a>
+  <ul class="collapse">
+  <li><a href="#summary-of-results" id="toc-summary-of-results" class="nav-link" data-scroll-target="#summary-of-results">Summary of results</a></li>
+  <li><a href="#visual-comparison" id="toc-visual-comparison" class="nav-link" data-scroll-target="#visual-comparison">Visual comparison</a></li>
+  </ul></li>
+  <li><a href="#flexible-delta-adjustments" id="toc-flexible-delta-adjustments" class="nav-link" data-scroll-target="#flexible-delta-adjustments">Flexible delta adjustments</a>
+  <ul class="collapse">
+  <li><a href="#scaling-delta-by-visit" id="toc-scaling-delta-by-visit" class="nav-link" data-scroll-target="#scaling-delta-by-visit">Scaling delta by visit</a></li>
+  <li><a href="#fixed-delta" id="toc-fixed-delta" class="nav-link" data-scroll-target="#fixed-delta">Fixed delta</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">SAS Tipping Point (Delta Adjustment): Continuous Data</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="tipping-point-delta-adjustment" class="level1">
+<h1>Tipping Point / Delta Adjustment</h1>
+<section id="reference-based-multiple-imputation-rbmi" class="level2">
+<h2 class="anchored" data-anchor-id="reference-based-multiple-imputation-rbmi">Reference-based multiple imputation (rbmi)</h2>
+<section id="methodology-introduction" class="level3">
+<h3 class="anchored" data-anchor-id="methodology-introduction">Methodology introduction</h3>
+<p>The concept of delta adjustment and tipping point analysis builds on the framework of reference-based multiple imputation (rbmi) as seen on its respective <a href="../SAS/rbmi_continuous_joint.html">CAMIS webpage</a>. The use of the <code>five macros</code> (<a href="https://baselbiometrics.github.io/home/docs/talks/20221208/5_JamesRoger%2020121118.pdf">Roger 2022</a>) in SAS for the following standard and reference-based multiple imputation approaches are introduced there:</p>
+<ul>
+<li><p>Missing At Random (MAR)</p></li>
+<li><p>Jump to Reference (J2R)</p></li>
+<li><p>Copy Reference (CR)</p></li>
+<li><p>Copy Increment from Reference (CIR)</p></li>
+</ul>
+<p>Essentially, the workflow comes down to sequentially running the five macro’s:</p>
+<ul>
+<li><p><code>Part1A()</code> declares the parameter estimation model and checks consistency with the dataset. It builds a master dataset which holds details of the current job (run of the macros in sequence). It also builds indexes for the classification variables, which may be either numeric or character.</p></li>
+<li><p><code>Part1B()</code> fits the parameter estimation model using the MCMC procedure and draws a pseudo-independent sample from the joint posterior distribution for the linear predictor parameters and the covariance parameters.</p></li>
+<li><p><code>Part2A()</code> calculates the predicted mean under MAR, and under MNAR for each subject based on their withdrawal pattern once for each draw of the linear predictor parameter estimates. The choice of MNAR is controlled by the method used, which may vary from subject to subject.</p></li>
+<li><p><code>Part2B()</code> imputes the intermediate missing values using MAR and the trailing missing values using MNAR, by deriving the conditional distribution for the missing values conditional on the observed values and covariates, using the appropriate sampled covariance parameter estimates.</p></li>
+<li><p><code>Part3()</code> carries out a univariate ANOVA analysis at selected time points usually based on the same covariates as the parameter estimation model. It then combines the least-squares means and their differences using the MIANALYZE procedure to provide final results. It is in this macro which handles the Delta methods.</p></li>
+</ul>
+<p>The <code>five macros</code> are available at <a href="https://www.lshtm.ac.uk/research/centres-projects-groups/missing-data#dia-missing-data">LSHTM DIA Missing Data</a> under <em>Imputation based approaches</em> &gt; <em>Reference-based MI via Multivariate Normal RM (the “five macros” and MIWithD)</em> &gt; <em>Downloads</em>. Please make sure to familiarize yourself with its functionalities before checking this tutorial. For more details, see the user guide available upon download (<a href="https://www.lshtm.ac.uk/research/centres-projects-groups/missing-data#dia-missing-data">Roger 2017</a>).</p>
+</section>
+<section id="data" class="level3">
+<h3 class="anchored" data-anchor-id="data">Data</h3>
+<p>The same publicly available <a href="https://r-packages.io/datasets/antidepressant_data">dataset</a> from an antidepressant clinical trial that was used to illustrate rbmi is again used for this tutorial. This dataset is also used in the R version of this <a href="https://psiaims.github.io/CAMIS/SAS/tipping_point_SAS.html">CAMIS webpage</a> and the <a href="https://cran.r-project.org/web/packages/rbmi/vignettes/quickstart.html">quickstart vignette</a> of the <code>rbmi</code> R package.</p>
+<p>The relevant endpoint for the antidepressant trial was assessed using the Hamilton 17-item depression rating scale (HAMD17), which was measured at baseline and subsequently at weeks 1, 2, 3, 4 and 6 (visits 4-7). Study drug discontinuation occurred in 24% (20/84) of subjects in the active drug group, compared to 26% (23/88) of subjects in the placebo group. Importantly, all data after study drug discontinuation are missing and there is a single intermittent missing observation.</p>
+<div class="cell">
+<pre class="sas cell-code"><code>proc print data=dat (obs=10);
+    var PATIENT GENDER THERAPY RELDAYS VISIT BASVAL HAMDTL17 CHANGE;
+run;</code></pre>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/tipping_point/SAS_data_exploration_1.PNG" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:80.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The number of patients per visit and treatment group are:</p>
+<div class="cell">
+<pre class="sas cell-code"><code>proc freq data=dat;
+    table VISIT*THERAPY / norow nocol nopercent nocum;
+run;</code></pre>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/tipping_point/SAS_data_exploration_2.PNG" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:80.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The mean change from baseline of the HAMD17 endpoint per visit and treatment group using only the complete cases are:</p>
+<div class="cell">
+<pre class="sas cell-code"><code>proc means data=dat n mean nonobs;
+    class VISIT THERAPY;
+    var CHANGE;
+run;</code></pre>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/tipping_point/SAS_data_exploration_3.PNG" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:80.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The missingness pattern is:</p>
+<div class="cell">
+<pre class="sas cell-code"><code>proc transpose data=dat out=HAMD_wide(drop=_NAME_) prefix=CHG;
+    by PATIENT THERAPY BASVAL;
+    id VISIT;
+    var CHANGE;
+run;
+
+proc mi data=HAMD_wide nimpute=0 displaypattern=NOMEANS;
+    var CHG4 CHG5 CHG6 CHG7;
+run;</code></pre>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/tipping_point/SAS_data_exploration_4.PNG" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:80.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>There is a single patient with an intermittent missing observation at visit 5, which is patient 3618. Special considerations need to be taken when applying delta adjustments to intermittent missing observations like this one (more on this below).</p>
+</section>
+</section>
+<section id="tipping-point-analysis-and-delta-adjustment" class="level2">
+<h2 class="anchored" data-anchor-id="tipping-point-analysis-and-delta-adjustment">Tipping point analysis and delta adjustment</h2>
+<section id="methodology-introduction-1" class="level3">
+<h3 class="anchored" data-anchor-id="methodology-introduction-1">Methodology introduction</h3>
+<p>When analyses for endpoints are performed under MAR or MNAR assumptions for missing data, it is important to perform sensitivity analyses to assess the impact of deviations from these assumptions. Tipping point analysis (or delta adjustment method) is an example of a sensitivity analysis that can be used to assess the robustness of a clinical trial when its result is based on imputed missing data.</p>
+<p>Generally, tipping point analysis explores the influence of missingness on the overall conclusion of the treatment difference by shifting imputed missing values in the treatment group towards the reference group until the result becomes non-significant. The tipping point is the minimum shift needed to make the result non-significant. If the minimum shift needed to make the result non-significant is implausible, then greater confidence in the primary results can be inferred.</p>
+<p>Tipping point analysis generally happens by adjusting imputing values by a so-called delta values. The observed tipping point is the minimum delta needed to make the result non-significant. Mostly a range of delta values is explored and only imputed values from the active treatment group are adjusted by the delta value. However, delta adjustments to the control group are possible as well. Naturally, the range of acceptable values for delta should be agreed a priori, before taking this approach.</p>
+<p>For an extensive discussion on delta adjustment methods, we refer to <a href="https://pubmed.ncbi.nlm.nih.gov/32419182/">Cro et al.&nbsp;2020</a>.</p>
+</section>
+</section>
+<section id="tipping-point-analysis-mar-approach" class="level2">
+<h2 class="anchored" data-anchor-id="tipping-point-analysis-mar-approach">Tipping point analysis: MAR approach</h2>
+<p>As mentioned, we will illustrate the use of the so-called <code>five macros</code> in SAS for delta adjustment and tipping point analysis. These are available at <a href="https://www.lshtm.ac.uk/research/centres-projects-groups/missing-data#dia-missing-data">LSHTM DIA Missing Data</a> under <em>Imputation based approaches</em> &gt; <em>Reference-based MI via Multivariate Normal RM (the “five macros” and MIWithD)</em> &gt; <em>Downloads</em>.</p>
+<section id="perform-tipping-point-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="perform-tipping-point-analysis">Perform tipping point analysis</h3>
+<p>To conduct a tipping point analysis under the MAR assumption, we simply specify <code>method = MAR</code> under <code>Part2A()</code> of the <code>five macros</code>. Generally, the rest of <code>Part1</code> and <code>Part2</code> are the same as in the scenario without any delta adjustment.</p>
+<div class="cell">
+<pre class="sas cell-code"><code>%part1A(jobname = HAMD, 
+        Data=dat,
+        Subject=PATIENT,
+        RESPONSE = CHANGE,
+        Time = VISIT,
+        Treat = THERAPY,
+        Covbytime = BASVAL,
+        Catcov = GENDER);
+
+%part1B(jobname = HAMD,
+        Ndraws = 500,
+        thin = 10,
+        seed = 12345);
+
+%part2A(jobname = HAMD_MAR,
+        inname = HAMD,
+        method = MAR);
+
+%part2B(jobname = HAMD_MAR,
+        seed = 12345);</code></pre>
+</div>
+<p>Then, in <code>Part3()</code>, we create a series of delta values that increases sequentially for the intervention group by changing the <code>Delta</code> argument within a do loop, and setting <code>Dgroups = DRUG</code> and <code>Dlag = 1 0 0 0</code> (more on this below).</p>
+<p>A clear description of these arguments is given in the documentation:</p>
+<ul>
+<li><code>Delta</code>: A vector of Delta values from visit 1 up to the final visit (default is not applying a delta adjustment)</li>
+<li><code>Dlag</code>: A vector of multipliers for each Lag after withdrawal for the Delta values (default is all values of 1)</li>
+<li><code>Dgroups</code>: The treatment groups to which Delta should be applied (default is all treatment groups)</li>
+</ul>
+<p>To automate the tipping point analysis, you can create a new macro like shown below. The first part of this macro prints all results, while the second part prints the non-significant and significant results separately by filtering on <code>Probt</code>.</p>
+<div class="cell">
+<pre class="sas cell-code"><code>data all_results;
+    length DELTA 8 VISIT $10 THERAPY $20 _THERAPY $20 Diff SE_Diff df Probt LCL_Diff UCL_Diff 8;
+    stop;
+run;
+
+%macro part3_TP;
+
+%do delta = -5 %to 10 %by 1;
+%part3(Jobname = HAMD_MAR, anref=PLACEBO, Delta = &amp;delta &amp;delta &amp;delta &amp;delta, DLag = 1 0 0 0, DGroups = DRUG, Label=MAR);
+
+data current_result;
+    set HAMD_MAR_OUT(keep = VISIT THERAPY _THERAPY Diff SE_Diff df Probt LCL_Diff UCL_Diff);
+    DELTA = &amp;delta;
+run;
+
+proc append base=all_results data=current_result force nowarn;
+run;
+
+%end;
+proc print data = all_results noobs label;
+    where VISIT = "7";
+    var DELTA VISIT THERAPY _THERAPY Diff SE_Diff df Probt LCL_Diff UCL_Diff;
+    title "MAR: all results";
+run;</code></pre>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/tipping_point/SAS_MAR_all_results.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:80.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>proc sql noprint;</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    create table delta_ge_05 as</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    select distinct DELTA</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    from all_results</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    where Probt <span class="sc">&gt;=</span> <span class="fl">0.05</span> and not <span class="fu">missing</span>(Probt) and VISIT <span class="ot">=</span> <span class="st">"7"</span>;</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    select DELTA into <span class="sc">:</span>non_sig_delta separated by <span class="st">' '</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    from delta_ge_05;</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    create table delta_lt_05 as</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    select distinct DELTA</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    from all_results</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    where Probt <span class="sc">&lt;</span> <span class="fl">0.05</span> and not <span class="fu">missing</span>(Probt) and VISIT <span class="ot">=</span> <span class="st">"7"</span>;</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    select DELTA into <span class="sc">:</span>sig_delta separated by <span class="st">' '</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    from delta_lt_05;</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>quit;</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>proc print data <span class="ot">=</span> all_results noobs label;</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    where DELTA <span class="cf">in</span> (<span class="sc">&amp;</span>non_sig_delta.) and VISIT <span class="ot">=</span> <span class="st">"7"</span>;</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    var DELTA VISIT THERAPY _THERAPY Diff SE_Diff df Probt LCL_Diff UCL_Diff;</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    title <span class="st">"MAR: non-significant results"</span>;</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>proc print data <span class="ot">=</span> all_results noobs label;</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    where DELTA <span class="cf">in</span> (<span class="sc">&amp;</span>sig_delta.) and VISIT <span class="ot">=</span> <span class="st">"7"</span>;</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>    var DELTA VISIT THERAPY _THERAPY Diff SE_Diff df Probt LCL_Diff UCL_Diff;</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>    title <span class="st">"MAR: significant results"</span>;</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>run;</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>%mend;</span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>%part3_TP;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/tipping_point/SAS_MAR_non_sig_results.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:80.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/tipping_point/SAS_MAR_sig_results.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:80.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>To determine the <strong>exact</strong> tipping point between the last “significant” delta and the first “non-significant” delta, you may manually perform linear interpolation for <code>DELTA</code>, <code>Diff</code>, <code>LCL_Diff</code> and <code>UCL_Diff</code> at <code>Probt = 0.05</code>.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/tipping_point/SAS_MAR_TP.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:80.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><u><strong>Note:</strong></u> In the <code>five macros</code>, delta adjustments happen right after data imputation under MAR or MNAR (using reference-based imputation approaches) in <code>Part2</code>, but before implementing the analysis model in <code>Part3</code>. Sensitivity analyses can therefore be performed without having to refit the imputation model, which is computationally efficient. This approach is considered a <em>marginal</em> delta adjustment approach, because the delta is simply added to the mean of the conditional multivariate normal distribution (conditional on the observed values and the covariates) for the imputation model (<a href="https://www.lshtm.ac.uk/research/centres-projects-groups/missing-data#dia-missing-data">Roger 2017</a>).</p>
+</section>
+<section id="visualize-results" class="level3">
+<h3 class="anchored" data-anchor-id="visualize-results">Visualize results</h3>
+<p>A nice visualization of this tipping point analysis for the MAR approach is shown below. The dashed horizontal line indicates a p-value of 0.05 in the left plot and no treatment effect in the right plot.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/tipping_point/SAS_MAR_est_pval.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:80.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We clearly see that the p-value under MAR reaches a tipping point from 3 onward in the range of delta’s considered.</p>
+</section>
+</section>
+<section id="comparison-with-rbmi-mnar-approaches" class="level2">
+<h2 class="anchored" data-anchor-id="comparison-with-rbmi-mnar-approaches">Comparison with rbmi MNAR approaches</h2>
+<section id="summary-of-results" class="level3">
+<h3 class="anchored" data-anchor-id="summary-of-results">Summary of results</h3>
+<p>In the table below we present the results of the different imputation strategies with varying number of multiple imputation draws, M = 500 and M = 5000. Note that the results can be slightly different from the results above due to a possible different seed. The estimates show the contrast at visit 7 between DRUG and PLACEBO (DRUG - PLACEBO). Delta adjustments were applied to all imputed missing data, <em>except</em> intermittent missing data, in the intervention group only.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Delta control</th>
+<th>Delta intervention at TP</th>
+<th>Estimate at TP</th>
+<th>95% CI</th>
+<th>P-value</th>
+<th>Original estimate</th>
+<th>Original p-value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>MI - MAR (M=500)</td>
+<td>0</td>
+<td>3</td>
+<td>-2.081</td>
+<td>-4.337 to 0.175</td>
+<td>0.0703</td>
+<td>-2.810</td>
+<td>0.0134</td>
+</tr>
+<tr class="even">
+<td>MI - MAR (M=5000)</td>
+<td>0</td>
+<td>3</td>
+<td>-2.096</td>
+<td>-4.353 to 0.161</td>
+<td>0.0684</td>
+<td>-2.825</td>
+<td>0.0130</td>
+</tr>
+<tr class="odd">
+<td>MI - MNAR J2R (M=500)</td>
+<td>0</td>
+<td>-1</td>
+<td>-2.365</td>
+<td>-4.604 to -0.125</td>
+<td>0.0386</td>
+<td>-2.122</td>
+<td>0.0650</td>
+</tr>
+<tr class="even">
+<td>MI - MNAR J2R (M=5000)</td>
+<td>0</td>
+<td>-1</td>
+<td>-2.387</td>
+<td>-4.617 to -0.157</td>
+<td>0.0361</td>
+<td>-2.144</td>
+<td>0.0611</td>
+</tr>
+<tr class="odd">
+<td>MI - MNAR CR (M=500)</td>
+<td>0</td>
+<td>1</td>
+<td>-2.141</td>
+<td>-4.370 to 0.089</td>
+<td>0.0597</td>
+<td>-2.384</td>
+<td>0.0350</td>
+</tr>
+<tr class="even">
+<td>MI - MNAR CR (M=5000)</td>
+<td>0</td>
+<td>1</td>
+<td>-2.157</td>
+<td>-4.377 to 0.062</td>
+<td>0.0566</td>
+<td>-2.400</td>
+<td>0.0330</td>
+</tr>
+<tr class="odd">
+<td>MI - MNAR CIR (M=500)</td>
+<td>0</td>
+<td>1</td>
+<td>-2.218</td>
+<td>-4.446 to 0.010</td>
+<td>0.0510</td>
+<td>-2.461</td>
+<td>0.0296</td>
+</tr>
+<tr class="even">
+<td>MI - MNAR CIR (M=5000)</td>
+<td>0</td>
+<td>2</td>
+<td>-1.995</td>
+<td>-4.229 to 0.240</td>
+<td>0.0798</td>
+<td>-2.481</td>
+<td>0.0276</td>
+</tr>
+</tbody>
+</table>
+<p>Of all considered approaches, the MAR approach yields the largest delta adjustment at its tipping point, with a delta intervention of 3 at both M = 500 and M = 5000. This indicates that the MAR assumption is the most robust against slight deviations of its conditions. Notice that for the MNAR JR approach we included, for completeness, tipping point analyses to know when the results switch from non-significant to significant. Correspondingly, two negative delta’s (-1) are found at the tipping point. This is expected, given that the original analyses are non-significant (p ~ 0.0650 and p ~ 0.0611) and a tipping point analysis here aims to find the point at which the analysis turns to be significant, instead of non-significant.</p>
+</section>
+<section id="visual-comparison" class="level3">
+<h3 class="anchored" data-anchor-id="visual-comparison">Visual comparison</h3>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/tipping_point/SAS_comparison_est.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:80.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/tipping_point/SAS_comparison_pval.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:80.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="flexible-delta-adjustments" class="level2">
+<h2 class="anchored" data-anchor-id="flexible-delta-adjustments">Flexible delta adjustments</h2>
+<p>So far, we have only considered simple delta adjustments that add the same value to all imputed missing data. However, you may want to implement more flexible delta adjustments for missing data following an intercurrent event (ICE), where the magnitude of the delta varies depending on the distance of the visit from the ICE visit.</p>
+<p>To enable flexible delta adjustments, <code>Part3()</code> includes three delta arguments: <code>Delta</code>, <code>DLag</code> and <code>DGroups</code>. Although these arguments were introduced earlier in the tutorial, we will now elaborate on how exactly these arguments allow for flexible delta adjustments with a few examples taken from the <a href="https://cran.r-project.org/web/packages/rbmi/vignettes/advanced.html#sensitivity-analyses-delta-adjustments-and-tipping-point-analyses">advanced functionality vignette</a> of the <code>rbmi</code> R package.</p>
+<section id="scaling-delta-by-visit" class="level3">
+<h3 class="anchored" data-anchor-id="scaling-delta-by-visit">Scaling delta by visit</h3>
+<p>Assume a setting with 4 visits and the user specified <code>Delta = 5 6 7 8</code> and <code>DLag = 1 2 3 4</code>. For a subject for whom the first visit affected by the ICE is visit 2, these values of <code>Delta</code> and <code>DLag</code> would imply the following delta adjustments:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th></th>
+<th>Visit 1</th>
+<th>Visit 2</th>
+<th>Visit 3</th>
+<th>Visit 4</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Delta</td>
+<td>5</td>
+<td>6</td>
+<td>7</td>
+<td>8</td>
+</tr>
+<tr class="even">
+<td>DLag</td>
+<td>0</td>
+<td>1</td>
+<td>2</td>
+<td>3</td>
+</tr>
+<tr class="odd">
+<td>Delta * DLag</td>
+<td>0</td>
+<td>6</td>
+<td>14</td>
+<td>24</td>
+</tr>
+<tr class="even">
+<td>Cumulative sum</td>
+<td>0</td>
+<td>6</td>
+<td>20</td>
+<td>44</td>
+</tr>
+</tbody>
+</table>
+<p>That is, the subject would have a delta adjustment of 0 applied to visit 1, 6 for visit 2, 20 for visit 3 and 44 for visit 4.</p>
+<p>Assume instead, that the subject’s first visit affected by the ICE was visit 3. Then, the above values of <code>Delta</code> and <code>DLag</code> would imply the following delta adjustment:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th></th>
+<th>Visit 1</th>
+<th>Visit 2</th>
+<th>Visit 3</th>
+<th>Visit 4</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Delta</td>
+<td>5</td>
+<td>6</td>
+<td>7</td>
+<td>8</td>
+</tr>
+<tr class="even">
+<td>DLag</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>Delta * DLag</td>
+<td>0</td>
+<td>0</td>
+<td>7</td>
+<td>16</td>
+</tr>
+<tr class="even">
+<td>Cumulative sum</td>
+<td>0</td>
+<td>0</td>
+<td>7</td>
+<td>23</td>
+</tr>
+</tbody>
+</table>
+<p>And thus the subject would have a delta adjustment of 0 applied to visits 1 and 2, 7 for visit 3 and 23 for visit 4.</p>
+<p>Another way of using these arguments is to set <code>Delta</code> to the difference in time between visits and <code>DLag</code> to be the amount of delta per unit of time. For example, let’s say that visits occur on weeks 1, 5, 6 and 9 and that we want a delta of 3 to be applied for each week after an ICE. For simplicity, we assume that the ICE occurs immediately after the subject’s last visit which is not affected by the ICE. This this could be achieved by setting <code>Delta = 1 4 1 3</code>, i.e.&nbsp;the difference in weeks between each visit, and <code>DLag = 3 3 3 3</code>.</p>
+<p>Assume a subject’s first visit affected by the ICE was visit 2, then these values of <code>Delta</code> and <code>DLag</code> would imply the following delta offset:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th></th>
+<th>Visit 1</th>
+<th>Visit 2</th>
+<th>Visit 3</th>
+<th>Visit 4</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Delta</td>
+<td>1</td>
+<td>4</td>
+<td>1</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>DLag</td>
+<td>0</td>
+<td>3</td>
+<td>3</td>
+<td>3</td>
+</tr>
+<tr class="odd">
+<td>Delta * DLag</td>
+<td>0</td>
+<td>12</td>
+<td>3</td>
+<td>9</td>
+</tr>
+<tr class="even">
+<td>Cumulative sum</td>
+<td>0</td>
+<td>12</td>
+<td>15</td>
+<td>24</td>
+</tr>
+</tbody>
+</table>
+<p>Let’s now consider the antidepressant data again. Suppose we apply a delta adjustment of 2 for each week following an ICE in the intervention group only. For example, if the ICE took place immediately after visit 4, then the cumulative delta applied to a missing value from visit 5 would be 2, from visit 6 would be 4, and from visit 7 would be 6.</p>
+<p>To program this, we would define <code>Delta</code>, <code>DLag</code> and <code>DGroups</code> in <code>Part3()</code> of the <code>five macros</code> as follows:</p>
+<div class="cell">
+<pre class="sas cell-code"><code>%part3(Jobname = HAMD_MAR, 
+        anref=PLACEBO, 
+        Delta = 2 2 2 2, 
+        DLag = 1 1 1 1, 
+        DGroups = DRUG, 
+        Label=MAR);</code></pre>
+</div>
+<p>Notice that <code>DLag = 1 1 1 1</code> is the default for this argument in SAS, you may also leave it unspecified in this case.</p>
+</section>
+<section id="fixed-delta" class="level3">
+<h3 class="anchored" data-anchor-id="fixed-delta">Fixed delta</h3>
+<p>As already illustrated in the tipping point analysis assuming MAR above, you may also add a simple, fixed delta using the <code>Delta</code> and <code>DLag</code> arguments. To do this, <code>Delta</code> should be the same value repeated for each visit, e.g.&nbsp;<code>5 5 5 5</code>, while <code>DLag</code> should be <code>1 0 0 0</code>. This ensures a delta of 5 is added to each imputed missing value following an ICE, which we here assume to occur at the visit 2:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th></th>
+<th>Visit 1</th>
+<th>Visit 2</th>
+<th>Visit 3</th>
+<th>Visit 4</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Delta</td>
+<td>5</td>
+<td>5</td>
+<td>5</td>
+<td>5</td>
+</tr>
+<tr class="even">
+<td>Dlag</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>Delta * dlag</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>Cumulative sum</td>
+<td>0</td>
+<td>5</td>
+<td>5</td>
+<td>5</td>
+</tr>
+</tbody>
+</table>
+<p>To apply this delta = 5 to both groups we leave <code>DGroups</code> unspecified.</p>
+<div class="cell">
+<pre class="sas cell-code"><code>%part3(Jobname = HAMD_MAR, 
+        anref=PLACEBO, 
+        Delta = 5 5 5 5, 
+        DLag = 1 0 0 0, 
+        Label=MAR);</code></pre>
+</div>
+<p>In the <code>five macros</code>, delta adjustments are not applied to intermittent missing observations, but only to missing observations after withdrawal. From the documentation, it seems like this cannot be altered. In contrast, the choice of which missing data to apply delta adjustments to can be more freely managed using the <code>rbmi</code> R package. This may lead to discrepancies between tipping point analyses conducted in SAS and R, and may have important implications for datasets with high proportions of intermittent missing values in particular.</p>
+<p><u><strong>Note:</strong></u> By making use of the <code>DGroupsV</code> argument in <code>Part3</code> (see <code>five macros</code> documentation) one can specify a variable in the dataset that indicates whether a delta adjustment should be applied to any imputed value for the record after withdrawal. The <code>five macros</code> documentation states that “<em>As an alternative to DGroups=, this option specifies a numeric variable with a logical value indicating whether Delta should be applied to any imputed value for the record. This variable should be Numeric holding a logical value.</em>”. However, from our experience the intermittent missing values are not delta adjusted using this argument, only the missing values after withdrawal.</p>
+<p><u><strong>Note:</strong></u> By making use of the <code>DeltaV</code> argument in <code>Part3</code> (see <code>five macros</code> documentation) one can set specific delta adjustments by records.</p>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p><a href="https://pubmed.ncbi.nlm.nih.gov/32419182/">Cro et al.&nbsp;2020</a>. Sensitivity analysis for clinical trials with missing continuous outcome data using controlled multiple imputation: A practical guide. <em>Statistics in Medicine</em>. 2020;39(21):2815-2842.</p>
+<p><a href="https://cran.r-project.org/web/packages/rbmi/vignettes/advanced.html#sensitivity-analyses-delta-adjustments-and-tipping-point-analyses">rbmi: Advanced Functionality</a></p>
+<p><a href="https://cran.r-project.org/web/packages/rbmi/vignettes/quickstart.html">rbmi: Quickstart</a></p>
+<p><a href="https://baselbiometrics.github.io/home/docs/talks/20221208/5_JamesRoger%2020121118.pdf">Roger 2022</a>. Other statistical software for continuous longitudinal endpoints: SAS macros for multiple imputation. Addressing intercurrent events: Treatment policy and hypothetical strategies. <em>Joint EFSPI and BBS virtual event.</em></p>
+<p><a href="https://www.lshtm.ac.uk/research/centres-projects-groups/missing-data#dia-missing-data">Roger 2017</a>. Fitting reference-based models for missing data to longitudinal repeated-measures Normal data. User guide five macros.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/psiaims\.github\.io\/CAMIS\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
