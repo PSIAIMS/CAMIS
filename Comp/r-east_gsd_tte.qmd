@@ -1,5 +1,5 @@
 ---
-title: "R vs EAST Group sequential design"
+title: "R vs EAST vs SAS: Group sequential design"
 editor_options: 
   chunk_output_type: console
 ---
@@ -7,6 +7,7 @@ editor_options:
 ## Introduction
 
 In this vignette, we briefly compare sample size/power calculations for a group sequential design (GSD) for time to event endpoints between EAST and [gsDesign](https://keaven.github.io/gsDesign/), [gsDesign2](https://merck.github.io/gsDesign2/), and [rpact](https://www.rpact.org/). Note that, a comparison between rpact and gsDesign has been previously reported [here](https://www.rpact.org/vignettes/planning/rpact_vs_gsdesign_examples/#comparison-analysis-time-of-rpact-vs.-gsdesign).
+Additionally, we present comparative results between SAS `PROC EQDESIGN` and rpact to provide a comprehensive evaluation framework.
 
 There are two main methods that are generally used for GSD sample-size/power calculations for time to event endpoints under proportional hazard assumption:
 
@@ -15,11 +16,13 @@ There are two main methods that are generally used for GSD sample-size/power cal
 
 The main difference between the two methods is that LF method requires specification of accrual duration as well as study duration, while KT method calculates study duration iteratively given accrual rates and accrual duration. In general, these two methods produce similar, but not identical results.
 
-Both LF and KT methods are implemented in gsDesign, while KT method is implemented in EAST and rpact. gsDesign2 uses a modification of the LF method while applying an average hazard ratio (AHR) approach for non-proportional hazards (Schemper, Wakounig, and Heinze, 2009, Yung and Liu 2020). gsDesign2 also enables use of the sample size method of Yung and Liu (2020).
+Both LF and KT methods are implemented in gsDesign and [SAS](https://documentation.sas.com/doc/en/pgmsascdc/v_067/statug/statug_seqdesign_details42.htm#statug.seqdesign.cseqdinputd), while KT method is implemented in EAST and rpact. gsDesign2 uses a modification of the LF method while applying an average hazard ratio (AHR) approach for non-proportional hazards (Schemper, Wakounig, and Heinze, 2009, Yung and Liu 2020). gsDesign2 also enables use of the sample size method of Yung and Liu (2020).
 
 One additional computational difference to note for EAST vs gsDesign/gsDesign2 is the usage of different log hazard ratio variance assumptions. By default, EAST uses the variance under the null hypothesis and provides an option for using the variance under the alternative hypothesis. gsDesign, on the other hand, is using both of these variances as suggested by Lachin and Foulkes (1986). gsDesign2 has `info_scale` argument in `gsDesign2::gs_power_ahr()`, `gsDesign2::gs_design_ahr()`, which could be set to variance under the null or alternative hypothesis or to the combination of variances.
 
-Below we provide an example of reproducing EAST results from [this vignette](https://psiaims.github.io/CAMIS/East/gsd-tte.html) using gsDesign/gsDesign2/rpact. As shown in the example, gsDesign2 and rpact can reproduce EAST calculations for GSD boundaries, while gsDesign results have minor differences. gsDesign has an option under development to support a complete concordance with EAST.
+Below we provide an example of reproducing EAST results from [this vignette](https://psiaims.github.io/CAMIS/East/gsd-tte.html) using gsDesign/gsDesign2/rpact. As shown in the example, gsDesign2 and rpact can reproduce EAST calculations for GSD boundaries, while gsDesign results have minor differences. 
+Similarly, our comparison between SAS `PROC SEQDESIGN` and rpact shows good agreement in the calculation, with only minimal numerical differences observed. 
+gsDesign has an option under development to support a complete concordance with EAST.
 
 ## Design example
 
@@ -531,6 +534,183 @@ pfs_rpact_sum |>
     bg = '#6ECEB2'
   )
 
+```
+
+### SAS code
+
+-   SAS code to reproduce the above rpact results appears below.
+
+```{sas}
+#| eval: false
+PROC SEQDESIGN BOUNDARYSCALE=MLE ERRSPEND;
+   DESIGN NSTAGES=2 
+          INFO=CUM(0.748936170212766 1.0) 
+          ALT=UPPER 
+          ALPHA=0.0125 
+          BETA=0.05
+          METHOD(ALPHA)=ERRFUNCOBF 
+          METHOD(BETA)=ERRFUNCGAMMA(GAMMA=-10)  
+          STOP=BOTH(BETABOUNDARY=NONBINDING);
+   SAMPLESIZE MODEL=TWOSAMPLESURVIVAL(
+          NULLMEDSURVTIME=9.4
+          HAZARDRATIO=0.6
+          ACCTIME=24 
+          FOLTIME=10
+          LOSS=EXP(HAZARD=0.018595295942851)
+          WEIGHT=1);
+  ODS OUTPUT Boundary=BMLE SampleSize=SS SampleSizeSummary=SSS;
+RUN;
+```
+
+Please note that the `BOUNDARYSCALE=MLE | SCORE | STDZ | PVALUE` options display the boundary values in the MLE, standardize Z, score, and p-value scales, respectively. 
+SAS will provide a boundary information table based on the specified `BOUNDARYSCALE`. In the information table, Alpha indicates the efficacy boundaries, and Beta indicates futility boundaries.
+
+SAS doesn't provide a boundary information with HR, so the HR boundaries is obtained from the MLE boundaries (as MLE $=\hat{\theta}=-log(\text{HR})$, see [SAS User's Guide: Test for Two Survival Distributions with a Log-Rank Test](https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.5/statug/statug_seqdesign_details52.htm#statug.seqdesign.cseqdlogrank)) via the following code.
+
+```{sas}
+#| eval: false
+DATA BHR;
+   SET BMLE;
+   Bound_UA_HR=exp(-Bound_UA);
+   Bound_UB_HR=exp(-Bound_UB);
+   LABEL BOUND_UA_HR="Upper Alpha (HR)" BOUND_UA_HR="Upper Beta (HR)";
+PROC PRINT LABEL;
+   VAR _Stage_ _InfoProp_ Bound_UA Bound_UB Bound_UA_HR Bound_UB_HR;
+RUN;
+```
+(The snapshot of HR table will be uploaded later.)
+
+The results calculated by SAS are presneted in the table below. Please note that SAS doesn't report the probablities $P(Cross | HR=1)$ and $P(Cross | HR=0.6)$, resulting in empty cells for these results in the table. 
+
+```{r}
+#| echo: false
+#| warning: false
+library(flextable)
+pfs_sas <- tibble::tribble(
+  ~analysis, ~value, ~eff_125, ~fut_125,
+  
+  'IA1: 75%',    'Z',                  2.66061808144625,   0.73787394550289,
+  'N=398',       'p (1-sided)',        0.0038998686377375, 0.23029552649592,
+  'Events: 176', 'HR at bound',        0.66958056578528,   0.89472503989941,
+  'Month: 25',   'P(Cross) if HR=1',   NA_real_,           NA_real_,
+  '',            'P(Cross) if HR=0.6', NA_real_,           NA_real_,
+
+
+  'FA',          'Z',                  2.27984635088813,   NA_real_,              
+  'N=398',       'p (1-sided)',        0.0113084014373517, NA_real_,              
+  'Events: 235', 'HR at bound',        0.74271570535451,   NA_real_,
+  'Month: 34',   'P(Cross) if HR=1',   NA_real_,           NA_real_,
+  '',            'P(Cross) if HR=0.6', NA_real_,           NA_real_    
+)
+
+pfs_sas |>
+  flextable::flextable() |>
+  flextable::autofit() |>
+  flextable::set_header_labels(
+    analysis = 'Analysis',
+    value = 'Value',
+    eff_125 = "Efficacy",
+    fut_125 = "Futility"
+  ) |>
+  flextable::hline(i = c(5, 10)) |>
+  flextable::colformat_double(j = c(3, 4), digits = 4)
+```
+
+-   SAS vs rapct comparison using absolute differences:
+
+```{r}
+#| echo: false
+#| warning: false
+pfs_rpact_sum |>
+  dplyr::bind_cols(
+    pfs_sas |>
+      dplyr::select(
+        value,
+        analysis,
+        eff_sas = eff_125,
+        fut_sas = fut_125
+      )
+  ) |>
+  dplyr::mutate(
+    diff_eff_sas = abs(eff_sas - rpact_eff),
+    diff_fut_sas = abs(fut_sas - rpact_fut)
+  ) |>
+  dplyr::select(
+    Analysis = analysis,
+    Value = value,
+    diff_eff_sas,
+    diff_fut_sas
+  ) |>
+  flextable::flextable() |>
+  flextable::autofit() |>
+  flextable::set_header_labels(
+    diff_eff_sas = 'Efficacy',
+    diff_fut_sas = 'Futility'
+  ) |>
+  flextable::hline(i = c(5, 10)) |>
+  flextable::colformat_double(j = c(3, 4), digits = digit_comp) |>
+  flextable::bg(
+    ~ round(abs(diff_eff_sas), digit_comp) != 0,
+    ~diff_eff_sas,
+    bg = '#6ECEB2'
+  ) |>
+  flextable::bg(
+    ~ round(abs(diff_fut_sas), digit_comp) != 0,
+    ~diff_fut_sas,
+    bg = '#6ECEB2'
+  )
+```
+
+-   SAS vs EAST comparison using absolute differences:
+
+```{r}
+#| echo: false
+pfs_sas_sum <- tibble::tibble(
+  sas_eff = pfs_sas$eff_125,
+  sas_fut = pfs_sas$fut_125
+)
+pfs_sas_sum |>
+  dplyr::bind_cols(
+    pfs_east |>
+      dplyr::select(
+        value,
+        analysis,
+        eff_east = eff_125,
+        fut_east = fut_125
+      ) |>
+      dplyr::mutate(
+        eff_east = ifelse(value == 'Z', -eff_east, eff_east),
+        fut_east = ifelse(value == 'Z', -fut_east, fut_east)
+      )
+  ) |>
+  dplyr::mutate(
+    diff_eff_sas = abs(eff_east - sas_eff),
+    diff_fut_sas = abs(fut_east - sas_fut)
+  ) |>
+  dplyr::select(
+    Analysis = analysis,
+    Value = value,
+    diff_eff_sas,
+    diff_fut_sas
+  ) |>
+  flextable::flextable() |>
+  flextable::autofit() |>
+  flextable::set_header_labels(
+    diff_eff_gsDesign = 'Efficacy',
+    diff_fut_gsDesign = 'Futility'
+  ) |>
+  flextable::hline(i = c(5, 10)) |>
+  flextable::colformat_double(j = c(3, 4), digits = digit_comp) |>
+  flextable::bg(
+    ~ round(abs(diff_eff_sas), digit_comp) != 0,
+    ~diff_eff_sas,
+    bg = '#6ECEB2'
+  ) |>
+  flextable::bg(
+    ~ round(abs(diff_fut_sas), digit_comp) != 0,
+    ~diff_fut_sas,
+    bg = '#6ECEB2'
+  )
 ```
 
 ```{r}
