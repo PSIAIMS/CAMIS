@@ -263,9 +263,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="naming-convention">Naming Convention</h2>
 <p>For the remainder of this document, we adopt the following naming convention when referring to variables of a contingency table:</p>
 <ul>
-<li><p>X = exposure (Often the treatment variable)</p></li>
+<li><p>X = exposure (often the treatment variable)</p></li>
 <li><p>Y = response (the variable of interest)</p></li>
-<li><p>K = control (often a potential confounder you want to control for)</p></li>
+<li><p>K = control/strata (often a potential confounder you want to control for)</p></li>
 </ul>
 </section>
 <section id="scale" class="level2">
@@ -328,7 +328,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="schemes" class="level2">
 <h2 class="anchored" data-anchor-id="schemes">Schemes</h2>
 <p>In order to follow a systematic approach to testing, and to cover variations in the CMH test, we considered the traditional 2 x 2 x K design as well as scenarios where the generalized CMH test is employed (e.g.&nbsp;5 x 3 x 3).</p>
-<p>We present 5 archetype test scenarios that illustrate diverging results, possibly related to sparse data and possibly considered edge cases.</p>
+<p>We present 6 test scenarios, some of which have sparse data.</p>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 20%">
@@ -340,7 +340,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <thead>
 <tr class="header">
 <th>Number</th>
-<th>Schema (XxYxK)</th>
+<th>Schema (X x Y x K)</th>
 <th>Variables</th>
 <th>Relevant Test</th>
 <th>Description</th>
@@ -363,31 +363,31 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td>3</td>
-<td>2x2x3</td>
+<td>3x2x3</td>
 <td>X = TRTP, Y = SEX, K = RACE</td>
 <td>General Association</td>
-<td>Gives back NaN in R because RACE is very imbalanced</td>
+<td>One stratum of RACE has only n=1</td>
 </tr>
 <tr class="even">
 <td>6</td>
 <td>2x5x2</td>
 <td>X = TRTP, Y = AVAL, K = SEX</td>
 <td>Row Means</td>
-<td>Compare Row Means results for R and SAS because Y is ordinal</td>
+<td>Compare Row Means results because Y is ordinal</td>
 </tr>
 <tr class="odd">
 <td>9</td>
 <td>3x5x17</td>
 <td>X = TRTP, Y = AVAL, K = SITEID</td>
 <td>Row Means</td>
-<td>SITEID has many strata and provokes sparse groups, AVAL is ordinal, therefore row means statistic applies here, R threw an error</td>
+<td>SITEID has many strata and provokes sparse groups; AVAL is ordinal, therefore row means statistic applies here</td>
 </tr>
 <tr class="even">
 <td>10</td>
 <td>5x3x3</td>
-<td>X = AVAL, Y = AGEGR1, K = TRTP</td>
+<td>X = AVAL, Y = AGEGR1N, K = TRTP</td>
 <td>Correlation</td>
-<td>X and Y are ordinal variables and therefore the correlation statistics has to be taken here</td>
+<td>X and Y are ordinal variables and therefore the correlation statistics can be used</td>
 </tr>
 </tbody>
 </table>
@@ -395,32 +395,36 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="results" class="level1">
 <h1>Results</h1>
-<p>Here the results can be seen:</p>
 <section id="cmh-statistics" class="level2">
 <h2 class="anchored" data-anchor-id="cmh-statistics">CMH Statistics</h2>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>sas_results <span class="ot">&lt;-</span> <span class="fu">tribble</span>(</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="sc">~</span>Scenario, <span class="sc">~</span>Test, <span class="sc">~</span>Chisq, <span class="sc">~</span>Df, <span class="sc">~</span>Prob,</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="dv">1</span>L ,<span class="st">"Correlation"</span>,         <span class="fl">0.2166</span>, <span class="dv">1</span>, <span class="fl">0.617</span>,</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="dv">1</span>L ,<span class="st">"Row Means"</span>,           <span class="fl">0.2166</span>, <span class="dv">1</span>, <span class="fl">0.617</span>,</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="dv">1</span>L ,<span class="st">"General Association"</span>, <span class="fl">0.2166</span>, <span class="dv">1</span>, <span class="fl">0.617</span>,</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="dv">2</span>L ,<span class="st">"Correlation"</span>,         <span class="fl">0.0009</span>, <span class="dv">1</span>, <span class="fl">0.9765</span>,</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="dv">2</span>L ,<span class="st">"Row Means"</span>,           <span class="fl">2.4820</span>, <span class="dv">1</span>, <span class="fl">0.2891</span>,</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="dv">2</span>L ,<span class="st">"General Association"</span>, <span class="fl">2.4820</span>, <span class="dv">1</span>, <span class="fl">0.2891</span>,</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="dv">6</span>L ,<span class="st">"Correlation"</span>,         <span class="fl">1.1472</span>, <span class="dv">1</span>, <span class="fl">0.2841</span>,</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="dv">6</span>L ,<span class="st">"Row Means"</span>,           <span class="fl">1.1472</span>, <span class="dv">1</span>, <span class="fl">0.2841</span>,</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="dv">6</span>L ,<span class="st">"General Association"</span>, <span class="fl">2.5672</span>, <span class="dv">4</span>, <span class="fl">0.6326</span>,</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="dv">10</span>L ,<span class="st">"Correlation"</span>,        <span class="fl">2.738160852</span>, <span class="dv">1</span>, <span class="fl">0.09797747</span>,</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  <span class="dv">10</span>L ,<span class="st">"Row Means"</span>,          <span class="fl">4.407010917</span>,<span class="dv">4</span>, <span class="fl">0.35371641</span>,</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  <span class="dv">10</span>L ,<span class="st">"General Association"</span>,<span class="fl">5.730538193</span>, <span class="dv">8</span>, <span class="fl">0.67738613</span>, </span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="dv">3</span>L ,<span class="st">"Correlation"</span>,         <span class="fl">0.002787130</span>, <span class="dv">1</span>, <span class="fl">0.95789662</span>,</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  <span class="dv">3</span>L ,<span class="st">"Row Means"</span>,           <span class="fl">2.386069847</span>, <span class="dv">2</span>, <span class="fl">0.30329938</span>, </span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>  <span class="dv">3</span>L ,<span class="st">"General Association"</span>, <span class="fl">2.386069847</span>, <span class="dv">2</span>, <span class="fl">0.30329938</span>,</span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="dv">9</span>L ,<span class="st">"Correlation"</span>,         <span class="fl">0.085443119</span>, <span class="dv">1</span>, <span class="fl">0.77005225</span>,</span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  <span class="dv">9</span>L ,<span class="st">"Row Means"</span>,           <span class="fl">2.476313667</span>, <span class="dv">2</span>, <span class="fl">0.28991809</span>,</span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>  <span class="dv">9</span>L ,<span class="st">"General Association"</span>, <span class="fl">7.033878442</span>, <span class="dv">8</span>, <span class="fl">0.53298189</span></span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">lang =</span> <span class="st">"SAS"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="dv">1</span>L ,<span class="st">"Correlation"</span>,         <span class="fl">0.2166</span>, <span class="dv">1</span>, <span class="fl">0.6417</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="dv">1</span>L ,<span class="st">"Row Means"</span>,           <span class="fl">0.2166</span>, <span class="dv">1</span>, <span class="fl">0.6417</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="dv">1</span>L ,<span class="st">"General Association"</span>, <span class="fl">0.2166</span>, <span class="dv">1</span>, <span class="fl">0.6417</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="dv">2</span>L ,<span class="st">"Correlation"</span>,         <span class="fl">0.0009</span>, <span class="dv">1</span>, <span class="fl">0.9765</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="dv">2</span>L ,<span class="st">"Row Means"</span>,           <span class="fl">2.4820</span>, <span class="dv">1</span>, <span class="fl">0.2891</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="dv">2</span>L ,<span class="st">"General Association"</span>, <span class="fl">2.4820</span>, <span class="dv">1</span>, <span class="fl">0.2891</span>,</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="dv">3</span>L ,<span class="st">"Correlation"</span>,         <span class="fl">0.0028</span>, <span class="dv">1</span>, <span class="fl">0.9579</span>,</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="dv">3</span>L ,<span class="st">"Row Means"</span>,           <span class="fl">2.3861</span>, <span class="dv">2</span>, <span class="fl">0.3033</span>, </span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  <span class="dv">3</span>L ,<span class="st">"General Association"</span>, <span class="fl">2.3861</span>, <span class="dv">2</span>, <span class="fl">0.3033</span>,</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="dv">6</span>L ,<span class="st">"Correlation"</span>,         <span class="fl">1.7487</span>, <span class="dv">1</span>, <span class="fl">0.1860</span>,</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  <span class="dv">6</span>L ,<span class="st">"Row Means"</span>,           <span class="fl">1.7487</span>, <span class="dv">1</span>, <span class="fl">0.1860</span>,</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>  <span class="dv">6</span>L ,<span class="st">"General Association"</span>, <span class="fl">8.0534</span>, <span class="dv">4</span>, <span class="fl">0.0896</span>,</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  <span class="dv">9</span>L ,<span class="st">"Correlation"</span>,         <span class="fl">0.0854</span>, <span class="dv">1</span>, <span class="fl">0.7701</span>,</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>  <span class="dv">9</span>L ,<span class="st">"Row Means"</span>,           <span class="fl">2.4763</span>, <span class="dv">2</span>, <span class="fl">0.2899</span>,</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>  <span class="dv">9</span>L ,<span class="st">"General Association"</span>, <span class="fl">7.0339</span>, <span class="dv">8</span>, <span class="fl">0.5330</span>,</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>  <span class="dv">10</span>L ,<span class="st">"Correlation"</span>,        <span class="fl">1.6621</span>, <span class="dv">1</span>, <span class="fl">0.1973</span>,</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>  <span class="dv">10</span>L ,<span class="st">"Row Means"</span>,          <span class="fl">2.2980</span>, <span class="dv">4</span>, <span class="fl">0.6811</span>,</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>  <span class="dv">10</span>L ,<span class="st">"General Association"</span>,<span class="fl">5.7305</span>, <span class="dv">8</span>, <span class="fl">0.6774</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">lang =</span> <span class="st">"SAS"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(vcdExtra)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -465,38 +469,42 @@ Attaching package: 'vcdExtra'</code></pre>
 <span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>s6 <span class="ot">&lt;-</span> vcdExtra<span class="sc">::</span><span class="fu">CMHtest</span>(</span>
 <span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>  Freq <span class="sc">~</span> TRTP <span class="sc">+</span> AVAL <span class="sc">|</span> SEX,</span>
-<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> data,</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> data2,</span>
 <span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>  <span class="at">overall =</span> <span class="cn">TRUE</span></span>
 <span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>)<span class="sc">$</span>ALL<span class="sc">$</span>table</span>
 <span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a><span class="co"># Unable to run</span></span>
-<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a><span class="co"># For large sparse table (many strata) CMHTest will occasionally throw an error in solve.default(AVA) because of singularity</span></span>
-<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a><span class="co"># s9 &lt;- CMHtest(Freq ~ TRTP + AVAL | SITEID, data = data, overall = TRUE)$ALL$table</span></span>
-<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>s10 <span class="ot">&lt;-</span> vcdExtra<span class="sc">::</span><span class="fu">CMHtest</span>(</span>
-<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a>  Freq <span class="sc">~</span> AVAL <span class="sc">+</span> AGEGR1 <span class="sc">|</span> TRTP,</span>
-<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> data,</span>
-<span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a>  <span class="at">overall =</span> <span class="cn">TRUE</span></span>
-<span id="cb11-35"><a href="#cb11-35" aria-hidden="true" tabindex="-1"></a>)<span class="sc">$</span>ALL<span class="sc">$</span>table</span>
-<span id="cb11-36"><a href="#cb11-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-37"><a href="#cb11-37" aria-hidden="true" tabindex="-1"></a>r_results <span class="ot">&lt;-</span> <span class="fu">list</span>(s1, s2, s3, s6, s10) <span class="sc">|&gt;</span></span>
-<span id="cb11-38"><a href="#cb11-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(<span class="cf">function</span>(x) {</span>
-<span id="cb11-39"><a href="#cb11-39" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as_tibble</span>(x) <span class="sc">|&gt;</span></span>
-<span id="cb11-40"><a href="#cb11-40" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">everything</span>(), unlist), <span class="at">Test =</span> <span class="fu">rownames</span>(x))</span>
-<span id="cb11-41"><a href="#cb11-41" aria-hidden="true" tabindex="-1"></a>  }) <span class="sc">|&gt;</span></span>
-<span id="cb11-42"><a href="#cb11-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">reduce</span>(bind_rows) <span class="sc">|&gt;</span></span>
-<span id="cb11-43"><a href="#cb11-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb11-44"><a href="#cb11-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">Scenario =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">6</span>, <span class="dv">10</span>), <span class="at">each =</span> <span class="dv">4</span>),</span>
-<span id="cb11-45"><a href="#cb11-45" aria-hidden="true" tabindex="-1"></a>    <span class="at">Test =</span> <span class="fu">case_when</span>(</span>
-<span id="cb11-46"><a href="#cb11-46" aria-hidden="true" tabindex="-1"></a>      Test <span class="sc">==</span> <span class="st">"cor"</span> <span class="sc">~</span> <span class="st">"Correlation"</span>,</span>
-<span id="cb11-47"><a href="#cb11-47" aria-hidden="true" tabindex="-1"></a>      Test <span class="sc">==</span> <span class="st">"rmeans"</span> <span class="sc">~</span> <span class="st">"Row Means"</span>,</span>
-<span id="cb11-48"><a href="#cb11-48" aria-hidden="true" tabindex="-1"></a>      Test <span class="sc">==</span> <span class="st">"general"</span> <span class="sc">~</span> <span class="st">"General Association"</span></span>
-<span id="cb11-49"><a href="#cb11-49" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb11-50"><a href="#cb11-50" aria-hidden="true" tabindex="-1"></a>    <span class="at">lang =</span> <span class="st">"R"</span></span>
-<span id="cb11-51"><a href="#cb11-51" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb11-52"><a href="#cb11-52" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(Test))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a><span class="do">## Unable to run: For large sparse table (many strata) CMHTest will occasionally throw an error in solve.default(AVA) because of singularity</span></span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a><span class="co"># s9 &lt;- vcdExtra::CMHtest(</span></span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a><span class="co">#   Freq ~ TRTP + AVAL | SITEID,</span></span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a><span class="co">#   data = data, overall = TRUE</span></span>
+<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a><span class="co">#   )$ALL$table</span></span>
+<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a>s10 <span class="ot">&lt;-</span> vcdExtra<span class="sc">::</span><span class="fu">CMHtest</span>(</span>
+<span id="cb11-35"><a href="#cb11-35" aria-hidden="true" tabindex="-1"></a>  Freq <span class="sc">~</span> AVAL <span class="sc">+</span> AGEGR1N <span class="sc">|</span> TRTP,</span>
+<span id="cb11-36"><a href="#cb11-36" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> data,</span>
+<span id="cb11-37"><a href="#cb11-37" aria-hidden="true" tabindex="-1"></a>  <span class="at">overall =</span> <span class="cn">TRUE</span></span>
+<span id="cb11-38"><a href="#cb11-38" aria-hidden="true" tabindex="-1"></a>)<span class="sc">$</span>ALL<span class="sc">$</span>table</span>
+<span id="cb11-39"><a href="#cb11-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-40"><a href="#cb11-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-41"><a href="#cb11-41" aria-hidden="true" tabindex="-1"></a><span class="co"># Summarize the results</span></span>
+<span id="cb11-42"><a href="#cb11-42" aria-hidden="true" tabindex="-1"></a>r_results <span class="ot">&lt;-</span> <span class="fu">list</span>(s1, s2, s3, s6, s10) <span class="sc">|&gt;</span></span>
+<span id="cb11-43"><a href="#cb11-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(<span class="cf">function</span>(x) {</span>
+<span id="cb11-44"><a href="#cb11-44" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as_tibble</span>(x) <span class="sc">|&gt;</span></span>
+<span id="cb11-45"><a href="#cb11-45" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">everything</span>(), unlist), <span class="at">Test =</span> <span class="fu">rownames</span>(x))</span>
+<span id="cb11-46"><a href="#cb11-46" aria-hidden="true" tabindex="-1"></a>  }) <span class="sc">|&gt;</span></span>
+<span id="cb11-47"><a href="#cb11-47" aria-hidden="true" tabindex="-1"></a>  <span class="fu">reduce</span>(bind_rows) <span class="sc">|&gt;</span></span>
+<span id="cb11-48"><a href="#cb11-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb11-49"><a href="#cb11-49" aria-hidden="true" tabindex="-1"></a>    <span class="at">Scenario =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">6</span>, <span class="dv">10</span>), <span class="at">each =</span> <span class="dv">4</span>),</span>
+<span id="cb11-50"><a href="#cb11-50" aria-hidden="true" tabindex="-1"></a>    <span class="at">Test =</span> <span class="fu">case_when</span>(</span>
+<span id="cb11-51"><a href="#cb11-51" aria-hidden="true" tabindex="-1"></a>      Test <span class="sc">==</span> <span class="st">"cor"</span> <span class="sc">~</span> <span class="st">"Correlation"</span>,</span>
+<span id="cb11-52"><a href="#cb11-52" aria-hidden="true" tabindex="-1"></a>      Test <span class="sc">==</span> <span class="st">"rmeans"</span> <span class="sc">~</span> <span class="st">"Row Means"</span>,</span>
+<span id="cb11-53"><a href="#cb11-53" aria-hidden="true" tabindex="-1"></a>      Test <span class="sc">==</span> <span class="st">"general"</span> <span class="sc">~</span> <span class="st">"General Association"</span></span>
+<span id="cb11-54"><a href="#cb11-54" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb11-55"><a href="#cb11-55" aria-hidden="true" tabindex="-1"></a>    <span class="at">lang =</span> <span class="st">"R"</span></span>
+<span id="cb11-56"><a href="#cb11-56" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb11-57"><a href="#cb11-57" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(Test))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>scenarios this is a test</p>
-<p>As it can be seen, there are two schemata where R does not provide any results:</p>
+<p>As can be seen, there are 2 scenarios where <code>vcdExtra</code> in R does not provide any results:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gt)</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -529,38 +537,37 @@ Attaching package: 'vcdExtra'</code></pre>
 <span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_options</span>(<span class="at">row_group.as_column =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
 <span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_footnote</span>(</span>
 <span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">footnote =</span> <span class="fu">md</span>(</span>
-<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>      <span class="st">"**Reason for NaN in schema 3**: Stratum k = AMERICAN INDIAN OR ALASKA NATIVE can not be compared because there are only values for one treatment and one gender."</span></span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>      <span class="st">"**Reason for NaN in scenario 3**: Stratum k = AMERICAN INDIAN OR ALASKA NATIVE has n=1."</span></span>
 <span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>    ),</span>
 <span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cells_row_groups</span>(<span class="at">groups =</span> <span class="st">"3"</span>),</span>
 <span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>    <span class="at">placement =</span> <span class="st">"right"</span></span>
 <span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
 <span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_footnote</span>(</span>
 <span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">footnote =</span> <span class="fu">md</span>(</span>
-<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>      <span class="st">"**Reason for Error 4:**</span></span>
-<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a><span class="st">For large sparse table (many strata) CMHTest will occasionally throw an error in solve.default(AVA) because of singularity"</span></span>
-<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cells_row_groups</span>(<span class="at">groups =</span> <span class="st">"9"</span>),</span>
-<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>    <span class="at">placement =</span> <span class="st">"right"</span></span>
-<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">opt_footnote_marks</span>(<span class="at">marks =</span> <span class="st">"standard"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>      <span class="st">"**Reason for in scenario 9:** For large sparse table (many strata) CMHTest will throw an error in solve.default(AVA) because of singularity"</span></span>
+<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cells_row_groups</span>(<span class="at">groups =</span> <span class="st">"9"</span>),</span>
+<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>    <span class="at">placement =</span> <span class="st">"right"</span></span>
+<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>  <span class="fu">opt_footnote_marks</span>(<span class="at">marks =</span> <span class="st">"standard"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
-<div id="kgokzihtao" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#kgokzihtao table {
+<div id="bpoyxhxnry" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#bpoyxhxnry table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#kgokzihtao thead, #kgokzihtao tbody, #kgokzihtao tfoot, #kgokzihtao tr, #kgokzihtao td, #kgokzihtao th {
+#bpoyxhxnry thead, #bpoyxhxnry tbody, #bpoyxhxnry tfoot, #bpoyxhxnry tr, #bpoyxhxnry td, #bpoyxhxnry th {
   border-style: none;
 }
 
-#kgokzihtao p {
+#bpoyxhxnry p {
   margin: 0;
   padding: 0;
 }
 
-#kgokzihtao .gt_table {
+#bpoyxhxnry .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -586,12 +593,12 @@ Attaching package: 'vcdExtra'</code></pre>
   border-left-color: #D3D3D3;
 }
 
-#kgokzihtao .gt_caption {
+#bpoyxhxnry .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#kgokzihtao .gt_title {
+#bpoyxhxnry .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -603,7 +610,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-bottom-width: 0;
 }
 
-#kgokzihtao .gt_subtitle {
+#bpoyxhxnry .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -615,7 +622,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-top-width: 0;
 }
 
-#kgokzihtao .gt_heading {
+#bpoyxhxnry .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -627,13 +634,13 @@ Attaching package: 'vcdExtra'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#kgokzihtao .gt_bottom_border {
+#bpoyxhxnry .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#kgokzihtao .gt_col_headings {
+#bpoyxhxnry .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -648,7 +655,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#kgokzihtao .gt_col_heading {
+#bpoyxhxnry .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -668,7 +675,7 @@ Attaching package: 'vcdExtra'</code></pre>
   overflow-x: hidden;
 }
 
-#kgokzihtao .gt_column_spanner_outer {
+#bpoyxhxnry .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -680,15 +687,15 @@ Attaching package: 'vcdExtra'</code></pre>
   padding-right: 4px;
 }
 
-#kgokzihtao .gt_column_spanner_outer:first-child {
+#bpoyxhxnry .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#kgokzihtao .gt_column_spanner_outer:last-child {
+#bpoyxhxnry .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#kgokzihtao .gt_column_spanner {
+#bpoyxhxnry .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -700,11 +707,11 @@ Attaching package: 'vcdExtra'</code></pre>
   width: 100%;
 }
 
-#kgokzihtao .gt_spanner_row {
+#bpoyxhxnry .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#kgokzihtao .gt_group_heading {
+#bpoyxhxnry .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -730,7 +737,7 @@ Attaching package: 'vcdExtra'</code></pre>
   text-align: left;
 }
 
-#kgokzihtao .gt_empty_group_heading {
+#bpoyxhxnry .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -745,15 +752,15 @@ Attaching package: 'vcdExtra'</code></pre>
   vertical-align: middle;
 }
 
-#kgokzihtao .gt_from_md > :first-child {
+#bpoyxhxnry .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#kgokzihtao .gt_from_md > :last-child {
+#bpoyxhxnry .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#kgokzihtao .gt_row {
+#bpoyxhxnry .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -772,7 +779,7 @@ Attaching package: 'vcdExtra'</code></pre>
   overflow-x: hidden;
 }
 
-#kgokzihtao .gt_stub {
+#bpoyxhxnry .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -785,7 +792,7 @@ Attaching package: 'vcdExtra'</code></pre>
   padding-right: 5px;
 }
 
-#kgokzihtao .gt_stub_row_group {
+#bpoyxhxnry .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -799,15 +806,15 @@ Attaching package: 'vcdExtra'</code></pre>
   vertical-align: top;
 }
 
-#kgokzihtao .gt_row_group_first td {
+#bpoyxhxnry .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#kgokzihtao .gt_row_group_first th {
+#bpoyxhxnry .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#kgokzihtao .gt_summary_row {
+#bpoyxhxnry .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -817,16 +824,16 @@ Attaching package: 'vcdExtra'</code></pre>
   padding-right: 5px;
 }
 
-#kgokzihtao .gt_first_summary_row {
+#bpoyxhxnry .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#kgokzihtao .gt_first_summary_row.thick {
+#bpoyxhxnry .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#kgokzihtao .gt_last_summary_row {
+#bpoyxhxnry .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -836,7 +843,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#kgokzihtao .gt_grand_summary_row {
+#bpoyxhxnry .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -846,7 +853,7 @@ Attaching package: 'vcdExtra'</code></pre>
   padding-right: 5px;
 }
 
-#kgokzihtao .gt_first_grand_summary_row {
+#bpoyxhxnry .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -856,7 +863,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-top-color: #D3D3D3;
 }
 
-#kgokzihtao .gt_last_grand_summary_row_top {
+#bpoyxhxnry .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -866,11 +873,11 @@ Attaching package: 'vcdExtra'</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#kgokzihtao .gt_striped {
+#bpoyxhxnry .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#kgokzihtao .gt_table_body {
+#bpoyxhxnry .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -879,7 +886,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#kgokzihtao .gt_footnotes {
+#bpoyxhxnry .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -893,7 +900,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#kgokzihtao .gt_footnote {
+#bpoyxhxnry .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -902,7 +909,7 @@ Attaching package: 'vcdExtra'</code></pre>
   padding-right: 5px;
 }
 
-#kgokzihtao .gt_sourcenotes {
+#bpoyxhxnry .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -916,7 +923,7 @@ Attaching package: 'vcdExtra'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#kgokzihtao .gt_sourcenote {
+#bpoyxhxnry .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -924,72 +931,72 @@ Attaching package: 'vcdExtra'</code></pre>
   padding-right: 5px;
 }
 
-#kgokzihtao .gt_left {
+#bpoyxhxnry .gt_left {
   text-align: left;
 }
 
-#kgokzihtao .gt_center {
+#bpoyxhxnry .gt_center {
   text-align: center;
 }
 
-#kgokzihtao .gt_right {
+#bpoyxhxnry .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#kgokzihtao .gt_font_normal {
+#bpoyxhxnry .gt_font_normal {
   font-weight: normal;
 }
 
-#kgokzihtao .gt_font_bold {
+#bpoyxhxnry .gt_font_bold {
   font-weight: bold;
 }
 
-#kgokzihtao .gt_font_italic {
+#bpoyxhxnry .gt_font_italic {
   font-style: italic;
 }
 
-#kgokzihtao .gt_super {
+#bpoyxhxnry .gt_super {
   font-size: 65%;
 }
 
-#kgokzihtao .gt_footnote_marks {
+#bpoyxhxnry .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#kgokzihtao .gt_asterisk {
+#bpoyxhxnry .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#kgokzihtao .gt_indent_1 {
+#bpoyxhxnry .gt_indent_1 {
   text-indent: 5px;
 }
 
-#kgokzihtao .gt_indent_2 {
+#bpoyxhxnry .gt_indent_2 {
   text-indent: 10px;
 }
 
-#kgokzihtao .gt_indent_3 {
+#bpoyxhxnry .gt_indent_3 {
   text-indent: 15px;
 }
 
-#kgokzihtao .gt_indent_4 {
+#bpoyxhxnry .gt_indent_4 {
   text-indent: 20px;
 }
 
-#kgokzihtao .gt_indent_5 {
+#bpoyxhxnry .gt_indent_5 {
   text-indent: 25px;
 }
 
-#kgokzihtao .katex-display {
+#bpoyxhxnry .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#kgokzihtao div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#bpoyxhxnry div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -1032,177 +1039,177 @@ p-value
 <tr class="gt_row_group_first odd">
 <td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="1 stub_1_1 stub_1">1</td>
 <td class="gt_row gt_left" headers="1 stub_1_1 Test">Correlation</td>
-<td class="gt_row gt_right" headers="1 stub_1_1 Chisq_SAS">0.21660000</td>
+<td class="gt_row gt_right" headers="1 stub_1_1 Chisq_SAS">0.2166</td>
 <td class="gt_row gt_right" headers="1 stub_1_1 Chisq_R">0.2165549886</td>
 <td class="gt_row gt_right" headers="1 stub_1_1 Df_SAS">1</td>
 <td class="gt_row gt_right" headers="1 stub_1_1 Df_R">1</td>
-<td class="gt_row gt_right" headers="1 stub_1_1 Prob_SAS">0.61700000</td>
-<td class="gt_row gt_right" headers="1 stub_1_1 Prob_R">0.6416775</td>
+<td class="gt_row gt_right" headers="1 stub_1_1 Prob_SAS">0.6417</td>
+<td class="gt_row gt_right" headers="1 stub_1_1 Prob_R">0.64167748</td>
 </tr>
 <tr class="even">
 <td class="gt_row gt_left" headers="1 Test_2 Test">Row Means</td>
-<td class="gt_row gt_right" headers="1 Test_2 Chisq_SAS">0.21660000</td>
+<td class="gt_row gt_right" headers="1 Test_2 Chisq_SAS">0.2166</td>
 <td class="gt_row gt_right" headers="1 Test_2 Chisq_R">0.2165549886</td>
 <td class="gt_row gt_right" headers="1 Test_2 Df_SAS">1</td>
 <td class="gt_row gt_right" headers="1 Test_2 Df_R">1</td>
-<td class="gt_row gt_right" headers="1 Test_2 Prob_SAS">0.61700000</td>
-<td class="gt_row gt_right" headers="1 Test_2 Prob_R">0.6416775</td>
+<td class="gt_row gt_right" headers="1 Test_2 Prob_SAS">0.6417</td>
+<td class="gt_row gt_right" headers="1 Test_2 Prob_R">0.64167748</td>
 </tr>
 <tr class="odd">
 <td class="gt_row gt_left" headers="1 Test_3 Test">General Association</td>
-<td class="gt_row gt_right" headers="1 Test_3 Chisq_SAS">0.21660000</td>
+<td class="gt_row gt_right" headers="1 Test_3 Chisq_SAS">0.2166</td>
 <td class="gt_row gt_right" headers="1 Test_3 Chisq_R">0.2165549886</td>
 <td class="gt_row gt_right" headers="1 Test_3 Df_SAS">1</td>
 <td class="gt_row gt_right" headers="1 Test_3 Df_R">1</td>
-<td class="gt_row gt_right" headers="1 Test_3 Prob_SAS">0.61700000</td>
-<td class="gt_row gt_right" headers="1 Test_3 Prob_R">0.6416775</td>
+<td class="gt_row gt_right" headers="1 Test_3 Prob_SAS">0.6417</td>
+<td class="gt_row gt_right" headers="1 Test_3 Prob_R">0.64167748</td>
 </tr>
 <tr class="gt_row_group_first even">
 <td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="2 stub_1_4 stub_1">2</td>
 <td class="gt_row gt_left" headers="2 stub_1_4 Test">Correlation</td>
-<td class="gt_row gt_right" headers="2 stub_1_4 Chisq_SAS">0.00090000</td>
+<td class="gt_row gt_right" headers="2 stub_1_4 Chisq_SAS">0.0009</td>
 <td class="gt_row gt_right" headers="2 stub_1_4 Chisq_R">0.0008689711</td>
 <td class="gt_row gt_right" headers="2 stub_1_4 Df_SAS">1</td>
 <td class="gt_row gt_right" headers="2 stub_1_4 Df_R">1</td>
-<td class="gt_row gt_right" headers="2 stub_1_4 Prob_SAS">0.97650000</td>
-<td class="gt_row gt_right" headers="2 stub_1_4 Prob_R">0.9764831</td>
+<td class="gt_row gt_right" headers="2 stub_1_4 Prob_SAS">0.9765</td>
+<td class="gt_row gt_right" headers="2 stub_1_4 Prob_R">0.97648311</td>
 </tr>
 <tr class="odd">
 <td class="gt_row gt_left" headers="2 Test_5 Test">Row Means</td>
-<td class="gt_row gt_right" headers="2 Test_5 Chisq_SAS">2.48200000</td>
+<td class="gt_row gt_right" headers="2 Test_5 Chisq_SAS">2.4820</td>
 <td class="gt_row gt_right" headers="2 Test_5 Chisq_R">2.4820278527</td>
 <td class="gt_row gt_right" headers="2 Test_5 Df_SAS">1</td>
 <td class="gt_row gt_right" headers="2 Test_5 Df_R">2</td>
-<td class="gt_row gt_right" headers="2 Test_5 Prob_SAS">0.28910000</td>
-<td class="gt_row gt_right" headers="2 Test_5 Prob_R">0.2890910</td>
+<td class="gt_row gt_right" headers="2 Test_5 Prob_SAS">0.2891</td>
+<td class="gt_row gt_right" headers="2 Test_5 Prob_R">0.28909095</td>
 </tr>
 <tr class="even">
 <td class="gt_row gt_left" headers="2 Test_6 Test">General Association</td>
-<td class="gt_row gt_right" headers="2 Test_6 Chisq_SAS">2.48200000</td>
+<td class="gt_row gt_right" headers="2 Test_6 Chisq_SAS">2.4820</td>
 <td class="gt_row gt_right" headers="2 Test_6 Chisq_R">2.4820278527</td>
 <td class="gt_row gt_right" headers="2 Test_6 Df_SAS">1</td>
 <td class="gt_row gt_right" headers="2 Test_6 Df_R">2</td>
-<td class="gt_row gt_right" headers="2 Test_6 Prob_SAS">0.28910000</td>
-<td class="gt_row gt_right" headers="2 Test_6 Prob_R">0.2890910</td>
+<td class="gt_row gt_right" headers="2 Test_6 Prob_SAS">0.2891</td>
+<td class="gt_row gt_right" headers="2 Test_6 Prob_R">0.28909095</td>
 </tr>
 <tr class="gt_row_group_first odd">
 <td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="3 stub_1_7 stub_1">3<span class="gt_footnote_marks gt_asterisk" style="white-space:nowrap;font-style:italic;font-weight:normal;line-height:0;"><sup>*</sup></span></td>
 <td class="gt_row gt_left" headers="3 stub_1_7 Test">Correlation</td>
-<td class="gt_row gt_right" headers="3 stub_1_7 Chisq_SAS">0.00278713</td>
+<td class="gt_row gt_right" headers="3 stub_1_7 Chisq_SAS">0.0028</td>
 <td class="gt_row gt_right" headers="3 stub_1_7 Chisq_R">NaN</td>
 <td class="gt_row gt_right" headers="3 stub_1_7 Df_SAS">1</td>
 <td class="gt_row gt_right" headers="3 stub_1_7 Df_R">1</td>
-<td class="gt_row gt_right" headers="3 stub_1_7 Prob_SAS">0.95789662</td>
+<td class="gt_row gt_right" headers="3 stub_1_7 Prob_SAS">0.9579</td>
 <td class="gt_row gt_right" headers="3 stub_1_7 Prob_R">NaN</td>
 </tr>
 <tr class="even">
 <td class="gt_row gt_left" headers="3 Test_8 Test">Row Means</td>
-<td class="gt_row gt_right" headers="3 Test_8 Chisq_SAS">2.38606985</td>
+<td class="gt_row gt_right" headers="3 Test_8 Chisq_SAS">2.3861</td>
 <td class="gt_row gt_right" headers="3 Test_8 Chisq_R">NaN</td>
 <td class="gt_row gt_right" headers="3 Test_8 Df_SAS">2</td>
 <td class="gt_row gt_right" headers="3 Test_8 Df_R">2</td>
-<td class="gt_row gt_right" headers="3 Test_8 Prob_SAS">0.30329938</td>
+<td class="gt_row gt_right" headers="3 Test_8 Prob_SAS">0.3033</td>
 <td class="gt_row gt_right" headers="3 Test_8 Prob_R">NaN</td>
 </tr>
 <tr class="odd">
 <td class="gt_row gt_left" headers="3 Test_9 Test">General Association</td>
-<td class="gt_row gt_right" headers="3 Test_9 Chisq_SAS">2.38606985</td>
+<td class="gt_row gt_right" headers="3 Test_9 Chisq_SAS">2.3861</td>
 <td class="gt_row gt_right" headers="3 Test_9 Chisq_R">NaN</td>
 <td class="gt_row gt_right" headers="3 Test_9 Df_SAS">2</td>
 <td class="gt_row gt_right" headers="3 Test_9 Df_R">2</td>
-<td class="gt_row gt_right" headers="3 Test_9 Prob_SAS">0.30329938</td>
+<td class="gt_row gt_right" headers="3 Test_9 Prob_SAS">0.3033</td>
 <td class="gt_row gt_right" headers="3 Test_9 Prob_R">NaN</td>
 </tr>
 <tr class="gt_row_group_first even">
 <td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="6 stub_1_10 stub_1">6</td>
 <td class="gt_row gt_left" headers="6 stub_1_10 Test">Correlation</td>
-<td class="gt_row gt_right" headers="6 stub_1_10 Chisq_SAS">1.14720000</td>
-<td class="gt_row gt_right" headers="6 stub_1_10 Chisq_R">0.1115439738</td>
+<td class="gt_row gt_right" headers="6 stub_1_10 Chisq_SAS">1.7487</td>
+<td class="gt_row gt_right" headers="6 stub_1_10 Chisq_R">1.7487003723</td>
 <td class="gt_row gt_right" headers="6 stub_1_10 Df_SAS">1</td>
 <td class="gt_row gt_right" headers="6 stub_1_10 Df_R">1</td>
-<td class="gt_row gt_right" headers="6 stub_1_10 Prob_SAS">0.28410000</td>
-<td class="gt_row gt_right" headers="6 stub_1_10 Prob_R">0.7383931</td>
+<td class="gt_row gt_right" headers="6 stub_1_10 Prob_SAS">0.1860</td>
+<td class="gt_row gt_right" headers="6 stub_1_10 Prob_R">0.18604020</td>
 </tr>
 <tr class="odd">
 <td class="gt_row gt_left" headers="6 Test_11 Test">Row Means</td>
-<td class="gt_row gt_right" headers="6 Test_11 Chisq_SAS">1.14720000</td>
-<td class="gt_row gt_right" headers="6 Test_11 Chisq_R">2.6632420358</td>
+<td class="gt_row gt_right" headers="6 Test_11 Chisq_SAS">1.7487</td>
+<td class="gt_row gt_right" headers="6 Test_11 Chisq_R">1.7487003723</td>
 <td class="gt_row gt_right" headers="6 Test_11 Df_SAS">1</td>
-<td class="gt_row gt_right" headers="6 Test_11 Df_R">2</td>
-<td class="gt_row gt_right" headers="6 Test_11 Prob_SAS">0.28410000</td>
-<td class="gt_row gt_right" headers="6 Test_11 Prob_R">0.2640489</td>
+<td class="gt_row gt_right" headers="6 Test_11 Df_R">1</td>
+<td class="gt_row gt_right" headers="6 Test_11 Prob_SAS">0.1860</td>
+<td class="gt_row gt_right" headers="6 Test_11 Prob_R">0.18604020</td>
 </tr>
 <tr class="even">
 <td class="gt_row gt_left" headers="6 Test_12 Test">General Association</td>
-<td class="gt_row gt_right" headers="6 Test_12 Chisq_SAS">2.56720000</td>
-<td class="gt_row gt_right" headers="6 Test_12 Chisq_R">6.5238474681</td>
+<td class="gt_row gt_right" headers="6 Test_12 Chisq_SAS">8.0534</td>
+<td class="gt_row gt_right" headers="6 Test_12 Chisq_R">8.0533878514</td>
 <td class="gt_row gt_right" headers="6 Test_12 Df_SAS">4</td>
-<td class="gt_row gt_right" headers="6 Test_12 Df_R">8</td>
-<td class="gt_row gt_right" headers="6 Test_12 Prob_SAS">0.63260000</td>
-<td class="gt_row gt_right" headers="6 Test_12 Prob_R">0.5887637</td>
+<td class="gt_row gt_right" headers="6 Test_12 Df_R">4</td>
+<td class="gt_row gt_right" headers="6 Test_12 Prob_SAS">0.0896</td>
+<td class="gt_row gt_right" headers="6 Test_12 Prob_R">0.08964199</td>
 </tr>
 <tr class="gt_row_group_first odd">
 <td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="9 stub_1_13 stub_1">9<span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;line-height:0;"><sup>†</sup></span></td>
 <td class="gt_row gt_left" headers="9 stub_1_13 Test">Correlation</td>
-<td class="gt_row gt_right" headers="9 stub_1_13 Chisq_SAS">0.08544312</td>
+<td class="gt_row gt_right" headers="9 stub_1_13 Chisq_SAS">0.0854</td>
 <td class="gt_row gt_right" headers="9 stub_1_13 Chisq_R">NA</td>
 <td class="gt_row gt_right" headers="9 stub_1_13 Df_SAS">1</td>
 <td class="gt_row gt_right" headers="9 stub_1_13 Df_R">NA</td>
-<td class="gt_row gt_right" headers="9 stub_1_13 Prob_SAS">0.77005225</td>
+<td class="gt_row gt_right" headers="9 stub_1_13 Prob_SAS">0.7701</td>
 <td class="gt_row gt_right" headers="9 stub_1_13 Prob_R">NA</td>
 </tr>
 <tr class="even">
 <td class="gt_row gt_left" headers="9 Test_14 Test">Row Means</td>
-<td class="gt_row gt_right" headers="9 Test_14 Chisq_SAS">2.47631367</td>
+<td class="gt_row gt_right" headers="9 Test_14 Chisq_SAS">2.4763</td>
 <td class="gt_row gt_right" headers="9 Test_14 Chisq_R">NA</td>
 <td class="gt_row gt_right" headers="9 Test_14 Df_SAS">2</td>
 <td class="gt_row gt_right" headers="9 Test_14 Df_R">NA</td>
-<td class="gt_row gt_right" headers="9 Test_14 Prob_SAS">0.28991809</td>
+<td class="gt_row gt_right" headers="9 Test_14 Prob_SAS">0.2899</td>
 <td class="gt_row gt_right" headers="9 Test_14 Prob_R">NA</td>
 </tr>
 <tr class="odd">
 <td class="gt_row gt_left" headers="9 Test_15 Test">General Association</td>
-<td class="gt_row gt_right" headers="9 Test_15 Chisq_SAS">7.03387844</td>
+<td class="gt_row gt_right" headers="9 Test_15 Chisq_SAS">7.0339</td>
 <td class="gt_row gt_right" headers="9 Test_15 Chisq_R">NA</td>
 <td class="gt_row gt_right" headers="9 Test_15 Df_SAS">8</td>
 <td class="gt_row gt_right" headers="9 Test_15 Df_R">NA</td>
-<td class="gt_row gt_right" headers="9 Test_15 Prob_SAS">0.53298189</td>
+<td class="gt_row gt_right" headers="9 Test_15 Prob_SAS">0.5330</td>
 <td class="gt_row gt_right" headers="9 Test_15 Prob_R">NA</td>
 </tr>
 <tr class="gt_row_group_first even">
 <td rowspan="3" class="gt_row gt_left gt_stub_row_group" headers="10 stub_1_16 stub_1">10</td>
 <td class="gt_row gt_left" headers="10 stub_1_16 Test">Correlation</td>
-<td class="gt_row gt_right" headers="10 stub_1_16 Chisq_SAS">2.73816085</td>
-<td class="gt_row gt_right" headers="10 stub_1_16 Chisq_R">0.8715295423</td>
+<td class="gt_row gt_right" headers="10 stub_1_16 Chisq_SAS">1.6621</td>
+<td class="gt_row gt_right" headers="10 stub_1_16 Chisq_R">1.6620500937</td>
 <td class="gt_row gt_right" headers="10 stub_1_16 Df_SAS">1</td>
 <td class="gt_row gt_right" headers="10 stub_1_16 Df_R">1</td>
-<td class="gt_row gt_right" headers="10 stub_1_16 Prob_SAS">0.09797747</td>
-<td class="gt_row gt_right" headers="10 stub_1_16 Prob_R">0.3505322</td>
+<td class="gt_row gt_right" headers="10 stub_1_16 Prob_SAS">0.1973</td>
+<td class="gt_row gt_right" headers="10 stub_1_16 Prob_R">0.19732675</td>
 </tr>
 <tr class="odd">
 <td class="gt_row gt_left" headers="10 Test_17 Test">Row Means</td>
-<td class="gt_row gt_right" headers="10 Test_17 Chisq_SAS">4.40701092</td>
-<td class="gt_row gt_right" headers="10 Test_17 Chisq_R">3.0445270087</td>
+<td class="gt_row gt_right" headers="10 Test_17 Chisq_SAS">2.2980</td>
+<td class="gt_row gt_right" headers="10 Test_17 Chisq_R">2.2980213984</td>
 <td class="gt_row gt_right" headers="10 Test_17 Df_SAS">4</td>
 <td class="gt_row gt_right" headers="10 Test_17 Df_R">4</td>
-<td class="gt_row gt_right" headers="10 Test_17 Prob_SAS">0.35371641</td>
-<td class="gt_row gt_right" headers="10 Test_17 Prob_R">0.5504018</td>
+<td class="gt_row gt_right" headers="10 Test_17 Prob_SAS">0.6811</td>
+<td class="gt_row gt_right" headers="10 Test_17 Prob_R">0.68112931</td>
 </tr>
 <tr class="even">
 <td class="gt_row gt_left" headers="10 Test_18 Test">General Association</td>
-<td class="gt_row gt_right" headers="10 Test_18 Chisq_SAS">5.73053819</td>
+<td class="gt_row gt_right" headers="10 Test_18 Chisq_SAS">5.7305</td>
 <td class="gt_row gt_right" headers="10 Test_18 Chisq_R">5.7305381934</td>
 <td class="gt_row gt_right" headers="10 Test_18 Df_SAS">8</td>
 <td class="gt_row gt_right" headers="10 Test_18 Df_R">8</td>
-<td class="gt_row gt_right" headers="10 Test_18 Prob_SAS">0.67738613</td>
-<td class="gt_row gt_right" headers="10 Test_18 Prob_R">0.6773861</td>
+<td class="gt_row gt_right" headers="10 Test_18 Prob_SAS">0.6774</td>
+<td class="gt_row gt_right" headers="10 Test_18 Prob_R">0.67738613</td>
 </tr>
 </tbody><tfoot class="gt_footnotes">
 <tr class="odd">
-<td colspan="8" class="gt_footnote"><span class="gt_footnote_marks gt_asterisk" style="white-space:nowrap;font-style:italic;font-weight:normal;line-height:0;"><sup>*</sup></span> <strong>Reason for NaN in schema 3</strong>: Stratum k = AMERICAN INDIAN OR ALASKA NATIVE can not be compared because there are only values for one treatment and one gender.</td>
+<td colspan="8" class="gt_footnote"><span class="gt_footnote_marks gt_asterisk" style="white-space:nowrap;font-style:italic;font-weight:normal;line-height:0;"><sup>*</sup></span> <strong>Reason for NaN in scenario 3</strong>: Stratum k = AMERICAN INDIAN OR ALASKA NATIVE has n=1.</td>
 </tr>
 <tr class="even">
-<td colspan="8" class="gt_footnote"><span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;line-height:0;"><sup>†</sup></span> <strong>Reason for Error 4:</strong> For large sparse table (many strata) CMHTest will occasionally throw an error in solve.default(AVA) because of singularity</td>
+<td colspan="8" class="gt_footnote"><span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;line-height:0;"><sup>†</sup></span> <strong>Reason for in scenario 9:</strong> For large sparse table (many strata) CMHTest will throw an error in solve.default(AVA) because of singularity</td>
 </tr>
 </tfoot>
 
@@ -1215,8 +1222,8 @@ p-value
 </section>
 <section id="summary-and-recommendation" class="level1">
 <h1>Summary and Recommendation</h1>
-<p>Having explored the available R packages to calculate the CMH statistics, using R can only be recommended if the analysis design is equivalent to 2 x 2 x K. Then, the base mantelhaen.test() function as well as the vcdExtra package show reliable results which are equal to the output of the SAS function. The same is true for the common odds ratio even though there is a marked difference in decimals.</p>
-<p>For the generalized version of the cmh test no R package can be recommended so far. SAS and R outputs differ substantially (possibly due to the underlying subroutines or functions) and the vcdExtra package seems to deliver inconsistent results outside the 2 x 2 x K design.</p>
+<p>Having explored the available R packages to calculate the CMH statistics, the base <code>stats::mantelhaen.test()</code> function can be recommended for the classic CMH test in the 2 x 2 x K scenarios. The <code>vcdExtra</code> package shows matching results with SAS, however in cases with sparse data the <code>vcdExtra</code> package will not provide results.</p>
+<p>The base <code>stats::mantelhaen.test()</code> function does return results in cases of sparse data (required n &gt; 1 in each strata).</p>
 </section>
 <section id="references" class="level1">
 <h1>References</h1>
