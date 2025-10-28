@@ -17,7 +17,7 @@ library(tidyr)
 
 The CMH procedure tests for conditional independence in partial contingency tables for a 2 x 2 x K design. However, it can be generalized to tables of X x Y x K dimensions.
 
-```{r}
+```{r, fig.width=10}
 #| fig-align: center
 knitr::include_graphics('../images/cmh/img.png')
 ```
@@ -26,11 +26,11 @@ knitr::include_graphics('../images/cmh/img.png')
 
 For the remainder of this document, we adopt the following naming convention when referring to variables of a contingency table:
 
--   X = exposure (Often the treatment variable)
+-   X = exposure (often the treatment variable)
 
 -   Y = response (the variable of interest)
 
--   K = control (often a potential confounder you want to control for)
+-   K = control/strata (often a potential confounder you want to control for)
 
 ## Scale
 
@@ -57,20 +57,19 @@ head(data)
 
 In order to follow a systematic approach to testing, and to cover variations in the CMH test, we considered the traditional 2 x 2 x K design as well as scenarios where the generalized CMH test is employed (e.g. 5 x 3 x 3).
 
-We present 5 archetype test scenarios that illustrate diverging results, possibly related to sparse data and possibly considered edge cases.
+We present 6 test scenarios, some of which have sparse data.
 
-| Number | Schema (XxYxK) | Variables                      | Relevant Test       | Description                                                                                                                             |
+| Number | Schema (X x Y x K) | Variables                      | Relevant Test       | Description                                                                                                                             |
 |---------------|---------------|---------------|---------------|---------------|
 | 1      | 2x2x2          | X = TRTP, Y = SEX, K = AGEGR1  | General Association | TRTP and AGEGR1 were limited to two categories (removing the low dose and \>80 year group), overall the the groups were rather balanced |
-| 2      | 3x2x3          | X = TRTP, Y = SEX, K = AGEGR1  | General Association | TRTP and AGEGR1 each have 3 levels, SEX has 2 levels, overall the the groups were rather balanced                                       |
-| 3      | 2x2x3          | X = TRTP, Y = SEX, K = RACE    | General Association | Gives back NaN in R because RACE is very imbalanced                                                                                     |
-| 6      | 2x5x2          | X = TRTP, Y = AVAL, K = SEX    | Row Means           | Compare Row Means results for R and SAS because Y is ordinal                                                                            |
-| 9      | 3x5x17         | X = TRTP, Y = AVAL, K = SITEID | Row Means           | SITEID has many strata and provokes sparse groups, AVAL is ordinal, therefore row means statistic applies here, R threw an error        |
-| 10     | 5x3x3          | X = AVAL, Y = AGEGR1, K = TRTP | Correlation         | X and Y are ordinal variables and therefore the correlation statistics has to be taken here                                             |
+| 2      | 3x2x3          | X = TRTP, Y = SEX, K = AGEGR1  | General Association | TRTP and AGEGR1 each have 3 levels, SEX has 2 levels, overall the the groups were rather balanced |
+| 3      | 3x2x3          | X = TRTP, Y = SEX, K = RACE    | General Association | One stratum of RACE has only n=1 |
+| 6      | 2x5x2          | X = TRTP, Y = AVAL, K = SEX    | Row Means           | Compare Row Means results because Y is ordinal |
+| 9      | 3x5x17         | X = TRTP, Y = AVAL, K = SITEID | Row Means           | SITEID has many strata and provokes sparse groups; AVAL is ordinal, therefore row means statistic applies here |
+| 10     | 5x3x3          | X = AVAL, Y = AGEGR1N, K = TRTP | Correlation        | X and Y are ordinal variables and therefore the correlation statistics can be used   |
 
 # Results
 
-Here the results can be seen:
 
 ## CMH Statistics
 
@@ -78,24 +77,29 @@ Here the results can be seen:
 #| warning: false
 sas_results <- tribble(
   ~Scenario, ~Test, ~Chisq, ~Df, ~Prob,
-  1L ,"Correlation",         0.2166, 1, 0.617,
-  1L ,"Row Means",           0.2166, 1, 0.617,
-  1L ,"General Association", 0.2166, 1, 0.617,
+  1L ,"Correlation",         0.2166, 1, 0.6417,
+  1L ,"Row Means",           0.2166, 1, 0.6417,
+  1L ,"General Association", 0.2166, 1, 0.6417,
+  
   2L ,"Correlation",         0.0009, 1, 0.9765,
   2L ,"Row Means",           2.4820, 1, 0.2891,
   2L ,"General Association", 2.4820, 1, 0.2891,
-  6L ,"Correlation",         1.1472, 1, 0.2841,
-  6L ,"Row Means",           1.1472, 1, 0.2841,
-  6L ,"General Association", 2.5672, 4, 0.6326,
-  10L ,"Correlation",        2.738160852, 1, 0.09797747,
-  10L ,"Row Means",          4.407010917,4, 0.35371641,
-  10L ,"General Association",5.730538193, 8, 0.67738613, 
-  3L ,"Correlation",         0.002787130, 1, 0.95789662,
-  3L ,"Row Means",           2.386069847, 2, 0.30329938, 
-  3L ,"General Association", 2.386069847, 2, 0.30329938,
-  9L ,"Correlation",         0.085443119, 1, 0.77005225,
-  9L ,"Row Means",           2.476313667, 2, 0.28991809,
-  9L ,"General Association", 7.033878442, 8, 0.53298189
+  
+  3L ,"Correlation",         0.0028, 1, 0.9579,
+  3L ,"Row Means",           2.3861, 2, 0.3033, 
+  3L ,"General Association", 2.3861, 2, 0.3033,
+  
+  6L ,"Correlation",         1.7487, 1, 0.1860,
+  6L ,"Row Means",           1.7487, 1, 0.1860,
+  6L ,"General Association", 8.0534, 4, 0.0896,
+  
+  9L ,"Correlation",         0.0854, 1, 0.7701,
+  9L ,"Row Means",           2.4763, 2, 0.2899,
+  9L ,"General Association", 7.0339, 8, 0.5330,
+  
+  10L ,"Correlation",        1.6621, 1, 0.1973,
+  10L ,"Row Means",          2.2980, 4, 0.6811,
+  10L ,"General Association",5.7305, 8, 0.6774
 ) |>
   mutate(lang = "SAS")
 ```
@@ -126,19 +130,24 @@ s3 <- vcdExtra::CMHtest(
 
 s6 <- vcdExtra::CMHtest(
   Freq ~ TRTP + AVAL | SEX,
-  data = data,
+  data = data2,
   overall = TRUE
 )$ALL$table
 
-# Unable to run
-# For large sparse table (many strata) CMHTest will occasionally throw an error in solve.default(AVA) because of singularity
-# s9 <- CMHtest(Freq ~ TRTP + AVAL | SITEID, data = data, overall = TRUE)$ALL$table
+## Unable to run: For large sparse table (many strata) CMHTest will occasionally throw an error in solve.default(AVA) because of singularity
+# s9 <- vcdExtra::CMHtest(
+#   Freq ~ TRTP + AVAL | SITEID,
+#   data = data, overall = TRUE
+#   )$ALL$table
+
 s10 <- vcdExtra::CMHtest(
-  Freq ~ AVAL + AGEGR1 | TRTP,
+  Freq ~ AVAL + AGEGR1N | TRTP,
   data = data,
   overall = TRUE
 )$ALL$table
 
+
+# Summarize the results
 r_results <- list(s1, s2, s3, s6, s10) |>
   map(function(x) {
     as_tibble(x) |>
@@ -157,9 +166,8 @@ r_results <- list(s1, s2, s3, s6, s10) |>
   filter(!is.na(Test))
 ```
 
-scenarios this is a test
 
-As it can be seen, there are two schemata where R does not provide any results:
+As can be seen, there are 2 scenarios where `vcdExtra` in R does not provide any results:
 
 ```{r}
 library(gt)
@@ -193,15 +201,14 @@ bind_rows(sas_results, r_results) |>
   tab_options(row_group.as_column = TRUE) |>
   tab_footnote(
     footnote = md(
-      "**Reason for NaN in schema 3**: Stratum k = AMERICAN INDIAN OR ALASKA NATIVE can not be compared because there are only values for one treatment and one gender."
+      "**Reason for NaN in scenario 3**: Stratum k = AMERICAN INDIAN OR ALASKA NATIVE has n=1."
     ),
     cells_row_groups(groups = "3"),
     placement = "right"
   ) |>
   tab_footnote(
     footnote = md(
-      "**Reason for Error 4:**
-For large sparse table (many strata) CMHTest will occasionally throw an error in solve.default(AVA) because of singularity"
+      "**Reason for in scenario 9:** For large sparse table (many strata) CMHTest will throw an error in solve.default(AVA) because of singularity"
     ),
     cells_row_groups(groups = "9"),
     placement = "right"
@@ -212,9 +219,10 @@ For large sparse table (many strata) CMHTest will occasionally throw an error in
 
 # Summary and Recommendation
 
-Having explored the available R packages to calculate the CMH statistics, using R can only be recommended if the analysis design is equivalent to 2 x 2 x K. Then, the base mantelhaen.test() function as well as the vcdExtra package show reliable results which are equal to the output of the SAS function. The same is true for the common odds ratio even though there is a marked difference in decimals.
+Having explored the available R packages to calculate the CMH statistics, the base `stats::mantelhaen.test()` function can be recommended for the classic CMH test in the 2 x 2 x K scenarios. The `vcdExtra` package shows matching results with SAS, however in cases with sparse data the `vcdExtra` package will not provide results.
 
-For the generalized version of the cmh test no R package can be recommended so far. SAS and R outputs differ substantially (possibly due to the underlying subroutines or functions) and the vcdExtra package seems to deliver inconsistent results outside the 2 x 2 x K design.
+The base `stats::mantelhaen.test()` function does return results in cases of sparse data (required n > 1 in each strata).
+
 
 # References
 
