@@ -1,0 +1,15 @@
+{
+  "hash": "c26732d94e176e7922a0e8b6877f9a1b",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Group Sequential Design in Survival Endpoints Using SAS\"\ndate: last-modified\ndate-format: D MMMM, YYYY\n---\n\n\n\n# Introduction\n\nPROC SEQDESIGN^1^ can be used for sample size calculations for group sequential design (GSD). SAS provides a [flowchart](https://documentation.sas.com/api/docsets/statug/15.4/content/images/seqchart.png)^2^ which summarizes the steps in a typical group sequential trial and the relevant SAS procedures. Here we focus on a GSD applied for time-to-event endpoints.\n\n# **Log-Rank Test for Two Survival Distributions**\n\nThis example illustrates sample size computation for survival data with the same setting in another [R example](https://psiaims.github.io/CAMIS/R/gsd-tte.html):\n\nA GSD will be utilized for progression-free survival (PFS). PFS will be tested at one interim analysis (IA) at 75% information fraction for both efficacy and non-binding futility. A Lan-DeMets O'Brien-Fleming-type (LD-OBF) spending function will be used for efficacy testing, and a Hwang-Shih-Decani (HSD) spending function (as known as gamma cumulative spending function) with $\\gamma = -10$ will be used for futility. In the GSD, $\\alpha$ is one-sided at 0.025, $\\beta$ is 0.05, the accrual period is 24 months, and the follow-up period is 10 months. As described in the [R example](https://psiaims.github.io/CAMIS/R/gsd-tte.html), the dropout rates are 0.2 by month 12 for the both group; that is, the dropout times follow the exponential distribution with the parameter $\\lambda = -\\ln(1-0.2)/12 = 0.0185953$.\n\nThe SAS code is shown below:\n\n\n\n::: {.cell}\n\n```{.sas .cell-code}\nPROC SEQDESIGN;\n   DESIGN NSTAGES=2 \n      INFO=CUM(0.75 1.0) \n      ALT=UPPER \n      ALPHA=0.0125 \n      BETA=0.05\n      METHOD(ALPHA)=ERRFUNCOBF \n      METHOD(BETA)=ERRFUNCGAMMA(GAMMA=-10)  \n      STOP=BOTH(BETABOUNDARY=NONBINDING);\n   SAMPLESIZE MODEL=TWOSAMPLESURVIVAL(\n         NULLMEDSURVTIME=9.4\n         HAZARDRATIO=0.6\n         ACCTIME=24 \n         FOLTIME=10\n         LOSS=EXP(HAZARD=0.0185953)\n         WEIGHT=1);\nRUN;\n```\n:::\n\n\n\nAs shown below, a total sample size of 398 is recommended, which equates to 199 in each group.\n\n\n\n::: {.cell layout-align=\"center\"}\n::: {.cell-output-display}\n![](../images/gsd-tte/result-pfs-sas.png){fig-align='center' width=100%}\n:::\n:::\n\n\n\n### References\n\n1.  [The SEQDESIGN procedure: SAS® 9.4 and SAS® Viya® 3.5 Programming Documentation](https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.5/statug/statug_seqdesign_toc.htm)\n2.  [Overview: SEQDESIGN Procedure](https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.5/statug/statug_seqdesign_overview.htm)\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
