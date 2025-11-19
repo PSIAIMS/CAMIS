@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.26">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Generalized Estimating Equations (GEE) methods</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../images/logo.png" rel="icon" type="image/png">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-587c61ba64f3a5504c4d52d930310e48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-635a35c16803d16fd9db22f392043487.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../images/logo.png" alt="" class="navbar-logo light-content">
+    <img src="../images/logo.png" alt="" class="navbar-logo dark-content">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-publications-and-projects" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Publications and Projects</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-publications-and-projects">    
+        <li>
+    <a class="dropdown-item" href="../publication/white_paper.html"><i class="bi bi-file-earmark-word-fill" role="img">
+</i> 
+ <span class="dropdown-text">White Paper</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/conference.html"><i class="bi bi-easel3-fill" role="img">
+</i> 
+ <span class="dropdown-text">Conferences</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/dissertation.html"><i class="bi bi-mortarboard-fill" role="img">
+</i> 
+ <span class="dropdown-text">Academic Projects</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../minutes/index.html"> 
+<span class="menu-text">Meeting Minutes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../blogs/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-help" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Help</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-help">    
+        <li>
+    <a class="dropdown-item" href="https://github.com/PSIAIMS/CAMIS/issues"><i class="bi bi-bug-fill" role="img">
+</i> 
+ <span class="dropdown-text">Report a Bug</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/get_started.html"><i class="bi bi-git" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with Your Environment</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/contribution.html"><i class="bi bi-person-raised-hand" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with CAMIS</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/package_review.html"><i class="bi bi-box-fill" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with a New R Package</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+    <a href="https://github.com/PSIAIMS/CAMIS/" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#comparison-of-sas-vs-r" id="toc-comparison-of-sas-vs-r" class="nav-link active" data-scroll-target="#comparison-of-sas-vs-r">Comparison of SAS vs R</a></li>
+  <li><a href="#binary-outcome" id="toc-binary-outcome" class="nav-link" data-scroll-target="#binary-outcome">BINARY OUTCOME</a></li>
+  <li><a href="#outcome-with-more-than-two-categories" id="toc-outcome-with-more-than-two-categories" class="nav-link" data-scroll-target="#outcome-with-more-than-two-categories">OUTCOME WITH MORE THAN TWO CATEGORIES</a>
+  <ul class="collapse">
+  <li><a href="#ordinal-variable---example" id="toc-ordinal-variable---example" class="nav-link" data-scroll-target="#ordinal-variable---example">Ordinal variable - Example</a></li>
+  <li><a href="#nominal-variable---example" id="toc-nominal-variable---example" class="nav-link" data-scroll-target="#nominal-variable---example">Nominal variable - Example</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">REFERENCES</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Generalized Estimating Equations (GEE) methods</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="comparison-of-sas-vs-r" class="level1">
+<h1>Comparison of SAS vs R</h1>
+</section>
+<section id="binary-outcome" class="level1">
+<h1>BINARY OUTCOME</h1>
+<p>For dichotomous response variables, the link functions is the probit (in case of rare events complementary log-log may be preferable). For outcomes with more than two categories, the cumulative link function is used in case of ordinal variables and generalized logit for nominal variables.</p>
+<p>In SAS, PROC GEE or PROC GENMOD can be used to compute GEE models. In R, GEE models can be fitted using <code>geepack::geeglm</code> or <code>gee::gee.</code></p>
+<p>Estimated probabilities and odds ratios (OR) can be obtained in SAS by adding an <code>LSMEANS</code> statement, and in R by using an additional function with results from <code>geepack::geeglm</code>. For models fitted with <code>gee::gee</code>, the <code>emmeans</code> package is not supported.</p>
+<p>The table below summarizes options and details for each procedure/function:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 24%">
+<col style="width: 24%">
+<col style="width: 26%">
+<col style="width: 24%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>Procedure/Function</strong></th>
+<th>geepack::geeglm</th>
+<th><strong>gee:gee</strong></th>
+<th>PROC GEE/GENMOD</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Outcome variable</td>
+<td>Numeric (0, 1)</td>
+<td>Factor</td>
+<td>Numeric or character in <code>class</code> statement</td>
+</tr>
+<tr class="even">
+<td>Correlation matrix (default)</td>
+<td>Independence</td>
+<td>Independence</td>
+<td>Independence</td>
+</tr>
+<tr class="odd">
+<td>Correlation matrix (options)</td>
+<td>independence, exchangeable, ar1, unstructured and user defined.</td>
+<td>independence, fixed, stat_M_dep, non_stat_M_dep, exchangeable, AR-M and unstructured.</td>
+<td>independence, ar, exchangeable, mdep, unstructured and user defined.</td>
+</tr>
+<tr class="even">
+<td>Outcome variable</td>
+<td>Numeric (0, 1)</td>
+<td>Factor</td>
+<td>Numeric or factor, in <code>class</code> statement</td>
+</tr>
+<tr class="odd">
+<td>Sandwich SE</td>
+<td>By default</td>
+<td>By default</td>
+<td>By default</td>
+</tr>
+<tr class="even">
+<td>Model-based (naive) SE</td>
+<td>No</td>
+<td>By default</td>
+<td><code>modelse</code> option in <code>repeated</code> statement</td>
+</tr>
+<tr class="odd">
+<td>Link functions</td>
+<td>probit, logit</td>
+<td>probit, logit</td>
+<td>probit, logit, clogit and glogit</td>
+</tr>
+<tr class="even">
+<td>Estimated probability of event</td>
+<td>additional function <code>emmeans::emmeans</code></td>
+<td><code>emmeans::emmeans</code> not supported</td>
+<td><code>LSMEANS</code> statement with <code>ilink</code> option</td>
+</tr>
+<tr class="odd">
+<td>Odds Ratio (OR)</td>
+<td>additional function <code>emmeans::emmeans</code></td>
+<td><code>emmeans::emmeans</code> not supported</td>
+<td><code>LSMEANS</code> statement with <code>exp</code> or <code>oddsraio</code>option</td>
+</tr>
+</tbody>
+</table>
+<p>A comparison between SAS (using PROC GEE) and the R functions using data available in <a href="https://documentation.sas.com/doc/en/statug/15.2/statug_code_genmex5.htm">“Gee Model for Binary Data”</a>, and similar results were found across software using similar options (See R and SAS sections).</p>
+<p>Note small differences may be found in later decimal places (&gt;9 decimal position) in results obtained with PROC GENMOD and PROC GEE. Similarly, differences in later decimals may be found across R functions.</p>
+</section>
+<section id="outcome-with-more-than-two-categories" class="level1">
+<h1>OUTCOME WITH MORE THAN TWO CATEGORIES</h1>
+<p>Models with cumulative logit link functions apply to ordinal data and generalized logit models are fit to nominal data.</p>
+<p>In SAS, similar syntax used for GEE models can be applied by specifying a multinomial distribution and selecting the appropriate link function. In R, the <code>multgee</code>package provides two functions for estimating GEE models when the outcome has more than two categories: <code>ordLORgee</code> for ordinal variables and <code>nomLORgee</code> for nominal variables.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>Procedure/Function</strong></th>
+<th>multgee:ordLORgee</th>
+<th>multgee:nomLORgee</th>
+<th>PROC GEE/PROC GENMOD</th>
+<th>PROC GEE/GENMOD</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Correlation matrix (default)</td>
+<td>Exchangeable</td>
+<td>Independence</td>
+<td>Independence</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Correlation matrix (options)</td>
+<td>independence, uniform, exchangeable, time.exch, fixed</td>
+<td>independence, exchangeable, RC or fixed</td>
+<td>Independence<sup>(1)</sup></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Link function</td>
+<td>clogit (implicit - not user configurable)</td>
+<td>glogit (implicit - not user configurable)</td>
+<td>glogit, glogit<sup>(2)</sup></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Model-based (naive) SE</td>
+<td>No</td>
+<td>By default</td>
+<td><code>modelse</code> option in <code>repeated</code> statement</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<ol type="1">
+<li><p>For multinomial responses, SAS limits the correlation matrix type to <code>independent,</code> so other correlation matrix options are not supported.</p></li>
+<li><p>Generalized logit is available in PROC GEE, but not in PROC GENMOD.</p></li>
+</ol>
+<p>The same data analyzed in the corresponding section for SAS and R are analyzed to compare results using equivalent settings, i.e.: specifying ‘independence’ correlation matrix in R to match SAS.</p>
+<p>SAS results were stored in a dataset and reformatted to align with R output in terms of order and decimal precision, making visual comparison easier.</p>
+<section id="ordinal-variable---example" class="level3">
+<h3 class="anchored" data-anchor-id="ordinal-variable---example">Ordinal variable - Example</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>proc genmod data<span class="ot">=</span>resp ;</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>class <span class="fu">trtp</span>(<span class="at">ref=</span><span class="st">"P"</span>) <span class="fu">avisitn</span>(<span class="at">ref=</span><span class="st">'1'</span>) usubjid ;  </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>model respord<span class="ot">=</span>trtp avisitn trtp<span class="sc">*</span>avisitn <span class="sc">/</span> dist<span class="ot">=</span>multinomial link<span class="ot">=</span>cumlogit ; </span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>repeated subject<span class="ot">=</span>usubjid  <span class="sc">/</span>corr<span class="ot">=</span>ind;  </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>lsmeans trtp<span class="sc">*</span>avisitn<span class="sc">/</span>cl exp ilink oddsratio diff;</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>ods output   GEEEmpPEst<span class="ot">=</span>GEEEmpPEst_ord ;</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>run;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/gee/r_sas_1_ordinal_variable.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> multgee<span class="sc">::</span><span class="fu">ordLORgee</span>(<span class="at">formula =</span> respord <span class="sc">~</span>  trtp <span class="sc">+</span> avisitn  <span class="sc">+</span> trtp<span class="sc">*</span>avisitn,</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">data =</span> resp,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">id =</span> usubjid,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">repeated =</span> avisitn,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>                   <span class="at">LORstr =</span> <span class="st">"independence"</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>GEE FOR ORDINAL MULTINOMIAL RESPONSES 
+version 1.6.0 modified 2017-07-10 
+
+Link : Cumulative logit 
+
+Local Odds Ratios:
+Structure:         independence
+
+call:
+multgee::ordLORgee(formula = respord ~ trtp + avisitn + trtp * 
+    avisitn, data = resp, id = usubjid, repeated = avisitn, LORstr = "independence")
+
+Summary of residuals:
+      Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
+-0.4698929 -0.3568933 -0.2853896  0.0002563  0.6339985  0.7277428 
+
+Number of Iterations: 1 
+
+Coefficients:
+               Estimate   san.se   san.z Pr(&gt;|san.z|)  
+beta10         -0.55049  0.24303 -2.2652      0.02350 *
+beta20          0.62726  0.25615  2.4488      0.01433 *
+trtpA           0.42992  0.34205  1.2569      0.20880  
+avisitn2        0.00108  0.36663  0.0030      0.99765  
+avisitn3        0.11733  0.32268  0.3636      0.71616  
+avisitn4       -0.15048  0.33263 -0.4524      0.65099  
+trtpA:avisitn2 -0.27197  0.50959 -0.5337      0.59355  
+trtpA:avisitn3 -0.58563  0.46208 -1.2674      0.20503  
+trtpA:avisitn4 -0.31782  0.44813 -0.7092      0.47819  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Local Odds Ratios Estimates:
+     [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8]
+[1,]    0    0    1    1    1    1    1    1
+[2,]    0    0    1    1    1    1    1    1
+[3,]    1    1    0    0    1    1    1    1
+[4,]    1    1    0    0    1    1    1    1
+[5,]    1    1    1    1    0    0    1    1
+[6,]    1    1    1    1    0    0    1    1
+[7,]    1    1    1    1    1    1    0    0
+[8,]    1    1    1    1    1    1    0    0
+
+p-value of Null model: 0.68672 </code></pre>
+</div>
+</div>
+</section>
+<section id="nominal-variable---example" class="level3">
+<h3 class="anchored" data-anchor-id="nominal-variable---example">Nominal variable - Example</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>proc gee data<span class="ot">=</span>resp ;</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>class <span class="fu">trtp</span>(<span class="at">ref=</span><span class="st">"P"</span>) <span class="fu">avisitn</span>(<span class="at">ref=</span><span class="st">'1'</span>) usubjid <span class="fu">respnom</span>(<span class="at">ref=</span><span class="st">'Lung'</span>);  </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>model respnom<span class="ot">=</span>trtp avisitn trtp<span class="sc">*</span>avisitn<span class="sc">/</span> dist<span class="ot">=</span>multinomial link<span class="ot">=</span>glogit ; </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>repeated subject<span class="ot">=</span>usubjid  <span class="sc">/</span>corr<span class="ot">=</span>ind <span class="sc">/</span><span class="er">*</span>modelse<span class="sc">*</span><span class="er">/</span>;  </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>lsmeans trtp<span class="sc">*</span>avisitn<span class="sc">/</span>cl exp ilink oddsratio diff;</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>ods output   GEEEmpPEst<span class="ot">=</span>GEEEmpPEst_nom ;</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>run;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/gee/r_sas_2_nominal_variable.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> multgee<span class="sc">::</span><span class="fu">nomLORgee</span>(<span class="at">formula =</span> respnom <span class="sc">~</span>  trtp <span class="sc">+</span> avisitn  <span class="sc">+</span> trtp<span class="sc">*</span>avisitn,</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">data =</span> resp,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">id =</span> usubjid,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">repeated =</span> avisitn,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>                   <span class="at">LORstr =</span> <span class="st">"independence"</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>GEE FOR NOMINAL MULTINOMIAL RESPONSES 
+version 1.6.0 modified 2017-07-10 
+
+Link : Baseline Category Logit 
+
+Local Odds Ratios:
+Structure:         independence
+Homogenous scores: TRUE
+
+call:
+multgee::nomLORgee(formula = respnom ~ trtp + avisitn + trtp * 
+    avisitn, data = resp, id = usubjid, repeated = avisitn, LORstr = "independence")
+
+Summary of residuals:
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+-0.4444 -0.3684 -0.3333  0.0000  0.6111  0.7778 
+
+Number of Iterations: 1 
+
+Coefficients:
+                 Estimate   san.se   san.z Pr(&gt;|san.z|)
+beta10            0.22314  0.33541  0.6653       0.5059
+trtpA:1          -0.62861  0.50139 -1.2537       0.2099
+avisitn2:1        0.18232  0.43095  0.4231       0.6722
+avisitn3:1        0.01325  0.47862  0.0277       0.9779
+avisitn4:1       -0.06899  0.48140 -0.1433       0.8860
+trtpA:avisitn2:1  0.16252  0.63421  0.2563       0.7977
+trtpA:avisitn3:1  0.95184  0.69786  1.3639       0.1726
+trtpA:avisitn4:1  0.64631  0.70063  0.9225       0.3563
+beta20            0.27193  0.33184  0.8195       0.4125
+trtpA:2           0.01575  0.45535  0.0346       0.9724
+avisitn2:2        0.18005  0.42536  0.4233       0.6721
+avisitn3:2        0.15551  0.46598  0.3337       0.7386
+avisitn4:2       -0.27193  0.50787 -0.5354       0.5924
+trtpA:avisitn2:2 -0.25642  0.60253 -0.4256       0.6704
+trtpA:avisitn3:2  0.11642  0.64694  0.1800       0.8572
+trtpA:avisitn4:2  0.15610  0.63994  0.2439       0.8073
+
+Local Odds Ratios Estimates:
+     [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8]
+[1,]    0    0    1    1    1    1    1    1
+[2,]    0    0    1    1    1    1    1    1
+[3,]    1    1    0    0    1    1    1    1
+[4,]    1    1    0    0    1    1    1    1
+[5,]    1    1    1    1    0    0    1    1
+[6,]    1    1    1    1    0    0    1    1
+[7,]    1    1    1    1    1    1    0    0
+[8,]    1    1    1    1    1    1    0    0
+
+p-value of Null model: 0.28295 </code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="references" class="level1">
+<h1>REFERENCES</h1>
+<p>[1] <a href="https://documentation.sas.com/doc/en/statug/15.2/statug_gee_examples01.htm">SAS Institute Inc.. SAS Help Center. The GEE procedure.</a></p>
+<p>[2] <a href="https://support.sas.com/documentation/onlinedoc/stat/141/gee.pdf">SAS/STAT® 13.1 User’s Guide The GEE Procedure.</a></p>
+<p>[3] <a href="https://support.sas.com/documentation/onlinedoc/stat/131/genmod.pdf">SAS/STAT® 13.1 User’s Guide The GENMOD Procedure.</a></p>
+<p>[4] <a href="https://cran.r-project.org/web/packages/geepack/geepack.pdf">Generalized Estimating Equation Package</a></p>
+<p>[5] <a href="https://cran.r-project.org/web/packages/gee/gee.pdf">Generalized Estimation Equation Solver</a></p>
+<p>[6] <a href="https://www.jstatsoft.org/article/view/v064i08">Touloumis A. (2015). “R Package multgee: A Generalized Estimating Equations Solver for Multinomial Responses.” Journal of Statistical Software.</a></p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/psiaims\.github\.io\/CAMIS\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
