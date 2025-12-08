@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.26">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Generalized Estimating Equations (GEE) methods in R</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../images/logo.png" rel="icon" type="image/png">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-587c61ba64f3a5504c4d52d930310e48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-635a35c16803d16fd9db22f392043487.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../images/logo.png" alt="" class="navbar-logo light-content">
+    <img src="../images/logo.png" alt="" class="navbar-logo dark-content">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-publications-and-projects" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Publications and Projects</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-publications-and-projects">    
+        <li>
+    <a class="dropdown-item" href="../publication/white_paper.html"><i class="bi bi-file-earmark-word-fill" role="img">
+</i> 
+ <span class="dropdown-text">White Paper</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/conference.html"><i class="bi bi-easel3-fill" role="img">
+</i> 
+ <span class="dropdown-text">Conferences</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/dissertation.html"><i class="bi bi-mortarboard-fill" role="img">
+</i> 
+ <span class="dropdown-text">Academic Projects</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../minutes/index.html"> 
+<span class="menu-text">Meeting Minutes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../blogs/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-help" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Help</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-help">    
+        <li>
+    <a class="dropdown-item" href="https://github.com/PSIAIMS/CAMIS/issues"><i class="bi bi-bug-fill" role="img">
+</i> 
+ <span class="dropdown-text">Report a Bug</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/get_started.html"><i class="bi bi-git" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with Your Environment</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/contribution.html"><i class="bi bi-person-raised-hand" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with CAMIS</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/package_review.html"><i class="bi bi-box-fill" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with a New R Package</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+    <a href="https://github.com/PSIAIMS/CAMIS/" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">INTRODUCTION</a></li>
+  <li><a href="#example-data" id="toc-example-data" class="nav-link" data-scroll-target="#example-data">EXAMPLE DATA</a></li>
+  <li><a href="#packages" id="toc-packages" class="nav-link" data-scroll-target="#packages">PACKAGES</a></li>
+  <li><a href="#binary-outcome" id="toc-binary-outcome" class="nav-link" data-scroll-target="#binary-outcome">BINARY OUTCOME</a>
+  <ul class="collapse">
+  <li><a href="#probabilities-and-odds-ratio-or" id="toc-probabilities-and-odds-ratio-or" class="nav-link" data-scroll-target="#probabilities-and-odds-ratio-or">PROBABILITIES AND ODDS RATIO (OR)</a></li>
+  </ul></li>
+  <li><a href="#outcome-with-more-than-two-categories" id="toc-outcome-with-more-than-two-categories" class="nav-link" data-scroll-target="#outcome-with-more-than-two-categories">OUTCOME WITH MORE THAN TWO CATEGORIES</a>
+  <ul class="collapse">
+  <li><a href="#ordinal-variable" id="toc-ordinal-variable" class="nav-link" data-scroll-target="#ordinal-variable">Ordinal variable</a></li>
+  <li><a href="#nominal-variable" id="toc-nominal-variable" class="nav-link" data-scroll-target="#nominal-variable">Nominal variable</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">REFERENCES</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Generalized Estimating Equations (GEE) methods in R</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level1">
+<h1>INTRODUCTION</h1>
+<p>Generalized Estimating Equations (GEE) methods extend the Generalized Linear Model (GLM) framework using link functions that relate the predictors to transformed outcome variable. For dichotomous response variables, the link functions is the probit (in case of rare events complementary log-log may be preferable). For outcomes with more than two categories, the cumulative link function is used in case of ordinal variables and generalized logit for nominal variables.</p>
+<p>GEE are marginal models and therefore estimate population-averaged effects and within-subject correlation is analysed by specifying a working correlation structure (as in MMRM). Estimators are obtained via quasi-likelihood via iterative solving of estimating equations.</p>
+</section>
+<section id="example-data" class="level1">
+<h1>EXAMPLE DATA</h1>
+<p>A SAS data of clinical trial data comparing two treatments for a respiratory disorder available in <a href="https://documentation.sas.com/doc/en/statug/15.2/statug_code_genmex5.htm">“Gee Model for Binary Data”</a> in the SAS/STAT Sample Program Library [1] is used to create these examples.</p>
+<p>To uniquely identify subjects, a new variable USUBJID was created by concatenating SITE and ID. Variables TREATMENT, BASELINE, and VISIT were renamed to TRTP, BASE, and AVISITN.</p>
+<p>Additionally, two variables were created using randomly generated values to simulate variables with more than two categories. One was an ordinal variable with values 1, 2, and 3; the other was a nominal variable with categories ‘liver’, ‘lung’, and ‘bone’. Data were created in SAS (See SAS section), and imported to R.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#install.packages("readxl")</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>resp <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"../data/resp_gee.xlsx"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Variables&nbsp;OUTCOME, TRTP&nbsp;and&nbsp;AVISITN&nbsp;were converted to factors. Since the modeling functions use the first (alphabetically) level as the reference category, TRTP levels are ordered as&nbsp;‘P’&nbsp;(placebo) and&nbsp;‘A’&nbsp;(active), to ensure that placebo is used as the reference category in the models:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>resp<span class="sc">$</span>trtp<span class="ot">&lt;-</span><span class="fu">factor</span>(resp<span class="sc">$</span>trtp, <span class="at">levels=</span><span class="fu">c</span>(<span class="st">'P'</span>, <span class="st">'A'</span>))</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>resp<span class="sc">$</span>avisitn<span class="ot">&lt;-</span><span class="fu">factor</span>(resp<span class="sc">$</span>avisitn)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>resp<span class="sc">$</span>outcome<span class="ot">&lt;-</span><span class="fu">factor</span>(resp<span class="sc">$</span>outcome)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>resp<span class="sc">$</span>usubjid<span class="ot">&lt;-</span><span class="fu">factor</span>(resp<span class="sc">$</span>usubjid)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>resp<span class="sc">$</span>respnom<span class="ot">&lt;-</span><span class="fu">factor</span>(resp<span class="sc">$</span>respnom)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>GEE models are run in the next section, including treatment, visit and visit by treatment interaction as fixed effects.</p>
+</section>
+<section id="packages" class="level1">
+<h1>PACKAGES</h1>
+</section>
+<section id="binary-outcome" class="level1">
+<h1>BINARY OUTCOME</h1>
+<p>Binary outcomes can be analyzed with <code>geepack::geelm</code> [2] and and <code>gee::gee</code> [3] functions. Independence correlation matrix is used by default in both functions, and can be modified in the <code>corstr=</code> argument.</p>
+<p>Both functions estimate robust “Sandwich” standard errors (SE) by default, and the gee::gee function also returns the naive SE (model-based SE).</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Create numeric outcome (values: 1/0).</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>resp<span class="sc">$</span>outcome_num<span class="ot">&lt;-</span><span class="fu">as.numeric</span>(resp<span class="sc">$</span>outcome)<span class="sc">-</span><span class="dv">1</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> geepack<span class="sc">::</span><span class="fu">geeglm</span>(outcome_num <span class="sc">~</span> trtp <span class="sc">+</span> avisitn <span class="sc">+</span>trtp<span class="sc">*</span>avisitn,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>                <span class="at">id=</span>usubjid,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>                <span class="at">data=</span>resp,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>                <span class="at">family=</span><span class="fu">binomial</span>(<span class="at">link=</span><span class="st">'logit'</span>),</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>                <span class="at">corstr=</span><span class="st">"independence"</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+geepack::geeglm(formula = outcome_num ~ trtp + avisitn + trtp * 
+    avisitn, family = binomial(link = "logit"), data = resp, 
+    id = usubjid, corstr = "independence")
+
+ Coefficients:
+               Estimate  Std.err  Wald Pr(&gt;|W|)  
+(Intercept)    -0.03509  0.26495 0.018   0.8946  
+trtpA           0.81280  0.39503 4.234   0.0396 *
+avisitn2       -0.42921  0.26357 2.652   0.1034  
+avisitn3       -0.14080  0.29834 0.223   0.6370  
+avisitn4       -0.21177  0.25344 0.698   0.4034  
+trtpA:avisitn2  0.51651  0.41043 1.584   0.2082  
+trtpA:avisitn3  0.31861  0.42839 0.553   0.4570  
+trtpA:avisitn4 -0.11395  0.39485 0.083   0.7729  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Correlation structure = independence 
+Estimated Scale Parameters:
+
+            Estimate Std.err
+(Intercept)        1 0.05045
+Number of clusters:   111  Maximum cluster size: 4 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>model<span class="ot">&lt;-</span> gee<span class="sc">::</span><span class="fu">gee</span>(outcome <span class="sc">~</span> trtp <span class="sc">+</span> avisitn <span class="sc">+</span> trtp<span class="sc">*</span>avisitn,</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>            <span class="at">id=</span>usubjid,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">data=</span>resp,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">family=</span><span class="fu">binomial</span>(<span class="at">link=</span><span class="st">'logit'</span>),</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">corstr =</span> <span class="st">"independence"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Beginning Cgee S-function, @(#) geeformula.q 4.13 98/01/27</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>running glm to get initial regression estimate</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   (Intercept)          trtpA       avisitn2       avisitn3       avisitn4 
+      -0.03509        0.81280       -0.42921       -0.14080       -0.21177 
+trtpA:avisitn2 trtpA:avisitn3 trtpA:avisitn4 
+       0.51651        0.31861       -0.11395 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+ GEE:  GENERALIZED LINEAR MODELS FOR DEPENDENT DATA
+ gee S-function, version 4.13 modified 98/01/27 (1998) 
+
+Model:
+ Link:                      Logit 
+ Variance to Mean Relation: Binomial 
+ Correlation Structure:     Independent 
+
+Call:
+gee::gee(formula = outcome ~ trtp + avisitn + trtp * avisitn, 
+    id = usubjid, data = resp, family = binomial(link = "logit"), 
+    corstr = "independence")
+
+Summary of Residuals:
+    Min      1Q  Median      3Q     Max 
+-0.7222 -0.4561  0.2778  0.3889  0.6140 
+
+
+Coefficients:
+               Estimate Naive S.E. Naive z Robust S.E. Robust z
+(Intercept)    -0.03509     0.2674 -0.1312      0.2649  -0.1324
+trtpA           0.81280     0.3986  2.0389      0.3950   2.0576
+avisitn2       -0.42921     0.3832 -1.1200      0.2636  -1.6285
+avisitn3       -0.14080     0.3788 -0.3717      0.2983  -0.4719
+avisitn4       -0.21177     0.3795 -0.5580      0.2534  -0.8356
+trtpA:avisitn2  0.51651     0.5699  0.9064      0.4104   1.2585
+trtpA:avisitn3  0.31861     0.5700  0.5589      0.4284   0.7437
+trtpA:avisitn4 -0.11395     0.5575 -0.2044      0.3948  -0.2886
+
+Estimated Scale Parameter:  1.018
+Number of Iterations:  1
+
+Working Correlation
+     [,1] [,2] [,3] [,4]
+[1,]    1    0    0    0
+[2,]    0    1    0    0
+[3,]    0    0    1    0
+[4,]    0    0    0    1</code></pre>
+</div>
+</div>
+<section id="probabilities-and-odds-ratio-or" class="level3">
+<h3 class="anchored" data-anchor-id="probabilities-and-odds-ratio-or">PROBABILITIES AND ODDS RATIO (OR)</h3>
+<p>The estimated probabilities of event and OR can be obtained using the <code>emmeans</code> function from a <code>geepack::geeglm</code> object. The code below computes probabilities and OR, along with p-values.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> geepack<span class="sc">::</span><span class="fu">geeglm</span>(outcome_num <span class="sc">~</span> trtp <span class="sc">+</span> avisitn <span class="sc">+</span>trtp<span class="sc">*</span>avisitn,</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>                <span class="at">id=</span>usubjid,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>                <span class="at">data=</span>resp,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">family=</span><span class="fu">binomial</span>(<span class="at">link=</span><span class="st">'logit'</span>),</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>                <span class="at">corstr=</span><span class="st">"independence"</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co">#Get predicted probabilities for each treatment.</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="co">#Get predicted probabilities for each treatment, using the covariance matrix computed by the model</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>prob <span class="ot">&lt;-</span> emmeans<span class="sc">::</span><span class="fu">emmeans</span>(model, <span class="sc">~</span> trtp<span class="sc">*</span>avisitn, <span class="at">data=</span>resp, <span class="at">vcov.method=</span><span class="fu">vcov</span>(model), <span class="at">type=</span><span class="st">'response'</span>)</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>prob</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> trtp avisitn  prob     SE  df lower.CL upper.CL
+ P    1       0.491 0.0662 436    0.364    0.619
+ A    1       0.685 0.0632 436    0.550    0.795
+ P    2       0.386 0.0645 436    0.269    0.518
+ A    2       0.704 0.0621 436    0.569    0.810
+ P    3       0.456 0.0660 436    0.332    0.586
+ A    3       0.722 0.0609 436    0.589    0.825
+ P    4       0.439 0.0657 436    0.316    0.569
+ A    4       0.611 0.0663 436    0.476    0.731
+
+Covariance estimate used: user-supplied 
+Confidence level used: 0.95 
+Intervals are back-transformed from the logit scale </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Get differences between treatments by visit (option "revpairwise" is used to compare A vs P) </span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>diffs_mean<span class="ot">&lt;-</span>emmeans<span class="sc">::</span><span class="fu">emmeans</span>(model, <span class="sc">~</span> trtp<span class="sc">*</span>avisitn, <span class="at">data=</span>resp, <span class="at">vcov.method=</span><span class="fu">vcov</span>(model))</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>diffs <span class="ot">&lt;-</span> emmeans<span class="sc">::</span><span class="fu">contrast</span>(diffs_mean,<span class="st">"revpairwise"</span> , <span class="at">simple=</span><span class="st">"trtp"</span>)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>diffs <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(diffs)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="co">#Calculate CI (alpha=0.05)</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>alpha<span class="ot">&lt;-</span><span class="fl">0.05</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>z_crit <span class="ot">&lt;-</span> <span class="fu">qnorm</span>(<span class="dv">1</span> <span class="sc">-</span> alpha <span class="sc">/</span> <span class="dv">2</span>)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>diffs<span class="sc">$</span>low<span class="ot">&lt;-</span>diffs<span class="sc">$</span>estimate <span class="sc">-</span> (z_crit<span class="sc">*</span>diffs<span class="sc">$</span>SE)</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>diffs<span class="sc">$</span>upp<span class="ot">&lt;-</span>diffs<span class="sc">$</span>estimate <span class="sc">+</span> (z_crit<span class="sc">*</span>diffs<span class="sc">$</span>SE)</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="co">#Get OR applying exponential transformation;</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>or<span class="ot">&lt;-</span><span class="fu">exp</span>(diffs<span class="sc">$</span>estimate)</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>or_low<span class="ot">&lt;-</span><span class="fu">exp</span>(diffs<span class="sc">$</span>low)</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>or_upp<span class="ot">&lt;-</span><span class="fu">exp</span>(diffs<span class="sc">$</span>up)</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="co">#Get two-sided p-value</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>z <span class="ot">&lt;-</span> diffs<span class="sc">$</span>estimate<span class="sc">/</span>diffs<span class="sc">$</span>SE</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>pvalue <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="fu">pnorm</span>(z))</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a><span class="co">#Create a dataset with all the results</span></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>OR<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(<span class="fu">cbind</span>(diffs<span class="sc">$</span>avisitn, or,or_low, or_upp, z, <span class="fu">round</span>(pvalue, <span class="at">digits=</span><span class="dv">4</span>)))</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(OR)<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="st">'avisit'</span>, <span class="st">'OR'</span>, <span class="st">'lower.CL'</span>, <span class="st">'upper.CL'</span>, <span class="st">'Z'</span>, <span class="st">'p-value'</span>)</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>OR</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  avisit    OR lower.CL upper.CL     Z p-value
+1      1 2.254   1.0393    4.889 2.058  0.0396
+2      2 3.778   1.7132    8.333 3.294  0.0010
+3      3 3.100   1.4050    6.840 2.802  0.0051
+4      4 2.011   0.9435    4.288 1.809  0.0704</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="outcome-with-more-than-two-categories" class="level1">
+<h1>OUTCOME WITH MORE THAN TWO CATEGORIES</h1>
+<p>The functions used for binary outcomes above do not support outcomes with more than two categories, as these functions relay on the family function, which does not include the multinomial option. Nevertheless, the multgee package [4] provides two functions for estimating GEE models when the outcome has more than two categories:</p>
+<p>The correlation matrix by default is “Exchangeable”, and it can be modified using the <code>LORstr=</code> argument in both functions.</p>
+<section id="ordinal-variable" class="level3">
+<h3 class="anchored" data-anchor-id="ordinal-variable">Ordinal variable</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> multgee<span class="sc">::</span><span class="fu">ordLORgee</span>(<span class="at">formula =</span> respord <span class="sc">~</span> trtp <span class="sc">+</span> avisitn  <span class="sc">+</span> trtp<span class="sc">*</span>avisitn,</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">data =</span> resp,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">id =</span> usubjid,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">repeated =</span> avisitn,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>                   <span class="at">LORstr=</span><span class="st">"time.exch"</span>,</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>                   )</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>GEE FOR ORDINAL MULTINOMIAL RESPONSES 
+version 1.6.0 modified 2017-07-10 
+
+Link : Cumulative logit 
+
+Local Odds Ratios:
+Structure:         time.exch
+Model:             3way
+Homogenous scores: TRUE
+
+call:
+multgee::ordLORgee(formula = respord ~ trtp + avisitn + trtp * 
+    avisitn, data = resp, id = usubjid, repeated = avisitn, LORstr = "time.exch")
+
+Summary of residuals:
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+-0.4704 -0.3542 -0.2854  0.0003  0.6335  0.7279 
+
+Number of Iterations: 3 
+
+Coefficients:
+               Estimate  san.se san.z Pr(&gt;|san.z|)  
+beta10          -0.5472  0.2417 -2.26        0.024 *
+beta20           0.6304  0.2551  2.47        0.013 *
+trtpA            0.4284  0.3432  1.25        0.212  
+avisitn2        -0.0024  0.3668 -0.01        0.995  
+avisitn3         0.1156  0.3228  0.36        0.720  
+avisitn4        -0.1470  0.3323 -0.44        0.658  
+trtpA:avisitn2  -0.2717  0.5094 -0.53        0.594  
+trtpA:avisitn3  -0.5974  0.4619 -1.29        0.196  
+trtpA:avisitn4  -0.3269  0.4488 -0.73        0.466  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Local Odds Ratios Estimates:
+      [,1]  [,2]  [,3]  [,4]  [,5]  [,6]  [,7]  [,8]
+[1,] 0.000 0.000 1.000 0.999 1.000 0.999 1.000 0.999
+[2,] 0.000 0.000 0.999 1.281 0.999 1.281 0.999 1.281
+[3,] 1.000 0.999 0.000 0.000 1.000 0.999 1.000 0.999
+[4,] 0.999 1.281 0.000 0.000 0.999 1.281 0.999 1.281
+[5,] 1.000 0.999 1.000 0.999 0.000 0.000 1.000 0.999
+[6,] 0.999 1.281 0.999 1.281 0.000 0.000 0.999 1.281
+[7,] 1.000 0.999 1.000 0.999 1.000 0.999 0.000 0.000
+[8,] 0.999 1.281 0.999 1.281 0.999 1.281 0.000 0.000
+
+p-value of Null model: 0.69 </code></pre>
+</div>
+</div>
+</section>
+<section id="nominal-variable" class="level3">
+<h3 class="anchored" data-anchor-id="nominal-variable">Nominal variable</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> multgee<span class="sc">::</span><span class="fu">nomLORgee</span>(<span class="at">formula =</span> respnom <span class="sc">~</span> trtp <span class="sc">+</span> avisitn  <span class="sc">+</span> trtp<span class="sc">*</span>avisitn,</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">data =</span> resp,</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">id =</span> usubjid,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">repeated =</span> avisitn,</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>                   <span class="at">LORstr =</span> <span class="st">"time.exch"</span>)</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>                   </span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>GEE FOR NOMINAL MULTINOMIAL RESPONSES 
+version 1.6.0 modified 2017-07-10 
+
+Link : Baseline Category Logit 
+
+Local Odds Ratios:
+Structure:         time.exch
+Model:             3way
+Homogenous scores: TRUE
+
+call:
+multgee::nomLORgee(formula = respnom ~ trtp + avisitn + trtp * 
+    avisitn, data = resp, id = usubjid, repeated = avisitn, LORstr = "time.exch")
+
+Summary of residuals:
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ -0.444  -0.368  -0.333   0.000   0.611   0.778 
+
+Number of Iterations: 1 
+
+Coefficients:
+                 Estimate  san.se san.z Pr(&gt;|san.z|)
+beta10             0.2231  0.3354  0.67         0.51
+trtpA:1           -0.6286  0.5014 -1.25         0.21
+avisitn2:1         0.1823  0.4310  0.42         0.67
+avisitn3:1         0.0132  0.4786  0.03         0.98
+avisitn4:1        -0.0690  0.4814 -0.14         0.89
+trtpA:avisitn2:1   0.1625  0.6342  0.26         0.80
+trtpA:avisitn3:1   0.9518  0.6979  1.36         0.17
+trtpA:avisitn4:1   0.6463  0.7006  0.92         0.36
+beta20             0.2719  0.3318  0.82         0.41
+trtpA:2            0.0158  0.4553  0.03         0.97
+avisitn2:2         0.1800  0.4254  0.42         0.67
+avisitn3:2         0.1555  0.4660  0.33         0.74
+avisitn4:2        -0.2719  0.5079 -0.54         0.59
+trtpA:avisitn2:2  -0.2564  0.6025 -0.43         0.67
+trtpA:avisitn3:2   0.1164  0.6469  0.18         0.86
+trtpA:avisitn4:2   0.1561  0.6399  0.24         0.81
+
+Local Odds Ratios Estimates:
+      [,1]  [,2]  [,3]  [,4]  [,5]  [,6]  [,7]  [,8]
+[1,] 0.000 0.000 1.279 1.001 1.279 1.001 1.279 1.001
+[2,] 0.000 0.000 1.001 1.000 1.001 1.000 1.001 1.000
+[3,] 1.279 1.001 0.000 0.000 1.279 1.001 1.279 1.001
+[4,] 1.001 1.000 0.000 0.000 1.001 1.000 1.001 1.000
+[5,] 1.279 1.001 1.279 1.001 0.000 0.000 1.279 1.001
+[6,] 1.001 1.000 1.001 1.000 0.000 0.000 1.001 1.000
+[7,] 1.279 1.001 1.279 1.001 1.279 1.001 0.000 0.000
+[8,] 1.001 1.000 1.001 1.000 1.001 1.000 0.000 0.000
+
+p-value of Null model: 0.28 </code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="references" class="level1">
+<h1>REFERENCES</h1>
+<p>[1] <a href="https://documentation.sas.com/doc/en/statug/15.2/statug_gee_examples01.htm">SAS Institute Inc.. SAS Help Center. The GEE procedure.</a></p>
+<p>[2] <a href="https://cran.r-project.org/web/packages/geepack/geepack.pdf">Generalized Estimating Equation Package</a></p>
+<p>[3] <a href="https://cran.r-project.org/web/packages/gee/gee.pdf">Generalized Estimation Equation Solver</a></p>
+<p>[4] <a href="https://www.jstatsoft.org/article/view/v064i08">Touloumis A. (2015). “R Package multgee: A Generalized Estimating Equations Solver for Multinomial Responses.” Journal of Statistical Software.</a></p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/psiaims\.github\.io\/CAMIS\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
