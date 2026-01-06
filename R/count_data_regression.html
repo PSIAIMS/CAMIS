@@ -235,8 +235,13 @@ window.Quarto = {
    
   <ul>
   <li><a href="#example-familial-andenomatous-polyposis-data" id="toc-example-familial-andenomatous-polyposis-data" class="nav-link active" data-scroll-target="#example-familial-andenomatous-polyposis-data">Example: Familial Andenomatous Polyposis Data</a></li>
-  <li><a href="#model-fit" id="toc-model-fit" class="nav-link" data-scroll-target="#model-fit">Model Fit</a></li>
-  <li><a href="#modelling-overdispersion" id="toc-modelling-overdispersion" class="nav-link" data-scroll-target="#modelling-overdispersion">Modelling Overdispersion</a></li>
+  <li><a href="#poisson-distribution-models" id="toc-poisson-distribution-models" class="nav-link" data-scroll-target="#poisson-distribution-models">Poisson Distribution Models</a></li>
+  <li><a href="#modelling-overdispersion" id="toc-modelling-overdispersion" class="nav-link" data-scroll-target="#modelling-overdispersion">Modelling Overdispersion</a>
+  <ul class="collapse">
+  <li><a href="#quasi-poisson-modelling" id="toc-quasi-poisson-modelling" class="nav-link" data-scroll-target="#quasi-poisson-modelling">Quasi Poisson Modelling</a></li>
+  <li><a href="#negative-binomial-modelling" id="toc-negative-binomial-modelling" class="nav-link" data-scroll-target="#negative-binomial-modelling">Negative Binomial Modelling</a></li>
+  <li><a href="#negative-binomial-modelling-with-an-offset-variable" id="toc-negative-binomial-modelling-with-an-offset-variable" class="nav-link" data-scroll-target="#negative-binomial-modelling-with-an-offset-variable">Negative Binomial Modelling with an offset variable</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -304,8 +309,8 @@ $ age    &lt;dbl&gt; 20, 16, 18, 22, 13, 23, 34, 50, 19, 17, 23, 22, 30, 27, 23,
 </div>
 </div>
 </section>
-<section id="model-fit" class="level1">
-<h1>Model Fit</h1>
+<section id="poisson-distribution-models" class="level1">
+<h1>Poisson Distribution Models</h1>
 <p>We fit a generalized linear model for <code>number</code> using the Poisson distribution with default log link.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Poisson</span></span>
@@ -366,6 +371,8 @@ age          0.9505226   0.9729788</code></pre>
 </section>
 <section id="modelling-overdispersion" class="level1">
 <h1>Modelling Overdispersion</h1>
+<section id="quasi-poisson-modelling" class="level2">
+<h2 class="anchored" data-anchor-id="quasi-poisson-modelling">Quasi Poisson Modelling</h2>
 <p>Poisson model assumes that mean and variance are equal, which can be a very restrictive assumption. One option to relax the assumption is adding a overdispersion constant to the relationship, i.e.&nbsp;<span class="math inline">\(\text{Var}(\text{response}) = \phi\cdot \mu\)</span>, which results in a quasipoisson model:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Quasi poisson</span></span>
@@ -394,6 +401,9 @@ AIC: NA
 Number of Fisher Scoring iterations: 5</code></pre>
 </div>
 </div>
+</section>
+<section id="negative-binomial-modelling" class="level2">
+<h2 class="anchored" data-anchor-id="negative-binomial-modelling">Negative Binomial Modelling</h2>
 <p>Alternatively, we can explicitly model the count data with overdispersion using the negative Binomial model. In this case, the overdispersion is a function of both <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\mu^2\)</span>:</p>
 <p><span class="math display">\[
 \text{Var}(\text{response}) = \mu + \kappa\,\mu^2.
@@ -431,8 +441,53 @@ Number of Fisher Scoring iterations: 1
 </div>
 </div>
 <p>Both model result very similar parameter estimates, but vary in estimates for their respective standard deviation.</p>
+<p><strong>Note:</strong> the MASS::select() function can cause conflict with the dplyr::select() function. To make your code robust to duplicate functions appearing in different packages, it’s good practice to always include the package name in your code prior to the function. For example, use dplyr::select() instead of just select(), and then if you are using MASS() for negative binomial regression then you wont have a conflict with using select() in other parts of your code!</p>
+</section>
+<section id="negative-binomial-modelling-with-an-offset-variable" class="level2">
+<h2 class="anchored" data-anchor-id="negative-binomial-modelling-with-an-offset-variable">Negative Binomial Modelling with an offset variable</h2>
+<p>On clinical trials, subjects are not usually all followed for the full duration of the trial (e.g.&nbsp;for a full 12 months). Instead, it is common to have subjects withdrawing from study or treatment and being impacted by intercurrent events (ICEs) such as rescue medications. This means when we are counting numbers of events, their count may be impacted by the follow up time that we studied them for.</p>
+<p>Negative binomial modelling is often adjusted for the follow up time, by including an ‘offset’ variable as shown below.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Suppose we have a variable with the Follow up period for each subject</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="co"># We've just created a pretend one below!</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">12345</span>)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>polyps2 <span class="ot">&lt;-</span> polyps <span class="sc">%&gt;%</span> </span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>         dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">followup =</span> <span class="fu">runif</span>(<span class="fu">nrow</span>(.),<span class="at">min=</span><span class="dv">1</span>,<span class="at">max=</span><span class="dv">100</span>)) </span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Negative Binomial with offset of the follow up time per subject</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>m3 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">glm.nb</span>(number <span class="sc">~</span> treat <span class="sc">+</span> age <span class="sc">+</span> <span class="fu">offset</span>(<span class="fu">log</span>(followup)), <span class="at">data =</span> polyps2)</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m3)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+MASS::glm.nb(formula = number ~ treat + age + offset(log(followup)), 
+    data = polyps2, init.theta = 0.5594476787, link = log)
+
+Coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept)  2.00562    0.99456   2.017   0.0437 *  
+treatdrug   -2.86236    0.62679  -4.567 4.96e-06 ***
+age         -0.02711    0.03458  -0.784   0.4331    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for Negative Binomial(0.5594) family taken to be 1)
+
+    Null deviance: 39.165  on 19  degrees of freedom
+Residual deviance: 24.462  on 17  degrees of freedom
+AIC: 190.33
+
+Number of Fisher Scoring iterations: 1
+
+              Theta:  0.559 
+          Std. Err.:  0.155 
+
+ 2 x log-likelihood:  -182.330 </code></pre>
+</div>
+</div>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
