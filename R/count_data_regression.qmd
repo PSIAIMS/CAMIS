@@ -6,6 +6,8 @@ title: "Regression for Count Data"
 #| echo: false
 #| include: false
 library(tidyverse)
+library(MASS)
+library(HSAUR2)
 ```
 
 The most commonly used models for count data in clinical trials include:
@@ -41,7 +43,7 @@ polyps |>
   theme_minimal()
 ```
 
-# Model Fit
+# Poisson Distribution Models
 
 We fit a generalized linear model for `number` using the Poisson distribution with default log link.
 
@@ -69,6 +71,8 @@ predict(m1, new_pt, type = "response")
 
 # Modelling Overdispersion
 
+## Quasi Poisson Modelling
+
 Poisson model assumes that mean and variance are equal, which can be a very restrictive assumption. One option to relax the assumption is adding a overdispersion constant to the relationship, i.e. $\text{Var}(\text{response}) = \phi\cdot \mu$, which results in a quasipoisson model:
 
 ```{r}
@@ -76,6 +80,8 @@ Poisson model assumes that mean and variance are equal, which can be a very rest
 m2 <- stats::glm(number ~ treat + age, data = polyps, family = quasipoisson)
 summary(m2)
 ```
+
+## Negative Binomial Modelling
 
 Alternatively, we can explicitly model the count data with overdispersion using the negative Binomial model. In this case, the overdispersion is a function of both $\mu$ and $\mu^2$:
 
@@ -90,3 +96,23 @@ summary(m3)
 ```
 
 Both model result very similar parameter estimates, but vary in estimates for their respective standard deviation.
+
+**Note:** the MASS::select() function can cause conflict with the dplyr::select() function. To make your code robust to duplicate functions appearing in different packages, it's good practice to always include the package name in your code prior to the function. For example, use dplyr::select() instead of just select(), and then if you are using MASS() for negative binomial regression then you wont have a conflict with using select() in other parts of your code!
+
+## Negative Binomial Modelling with an offset variable
+
+On clinical trials, subjects are not usually all followed for the full duration of the trial (e.g. for a full 12 months). Instead, it is common to have subjects withdrawing from study or treatment and being impacted by intercurrent events (ICEs) such as rescue medications. This means when we are counting numbers of events, their count may be impacted by the follow up time that we studied them for.
+
+Negative binomial modelling is often adjusted for the follow up time, by including an 'offset' variable as shown below.
+
+```{r}
+# Suppose we have a variable with the Follow up period for each subject
+# We've just created a pretend one below!
+set.seed(12345)
+polyps2 <- polyps %>% 
+         dplyr::mutate(followup = runif(nrow(.),min=1,max=100)) 
+
+# Negative Binomial with offset of the follow up time per subject
+m3 <- MASS::glm.nb(number ~ treat + age + offset(log(followup)), data = polyps2)
+summary(m3)
+```
