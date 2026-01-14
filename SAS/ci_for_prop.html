@@ -278,7 +278,7 @@ run;</code></pre>
 </div>
 <p>The below shows that for the Actual Treatment, there are 36 responders out of 154 subjects = 0.2338 (23.38% responders).</p>
 <div class="cell">
-<pre class="sas cell-code"><code>proc freq data=adcibc;
+<pre class="sas cell-code"><code>proc freq data=adcibc2;
     table trt*resp/ nopct nocol;
 run;</code></pre>
 </div>
@@ -363,11 +363,11 @@ run;</code></pre>
 <p><strong>It is very important to ensure you are calculating the CI for the correct level! Check your output to confirm, you will see below it states <code>resp=Yes</code> !</strong></p>
 <p>The output consists of the proportion of resp=Yes, the Asymptotic SE, 95% CIs using normal-approximation method, 95% CI using the Clopper-Pearson method (Exact), and then a Binomial test statistic and p-value for the null hypothesis of H0: Proportion = 0.5.</p>
 <div class="cell">
-<pre class="sas cell-code"><code>proc sort data=adcibc;
+<pre class="sas cell-code"><code>proc sort data=adcibc2;
     by trt; 
 run; 
 
-proc freq data=adcibc ; 
+proc freq data=adcibc2; 
     table resp/ nopct nocol BINOMIAL(LEVEL="Yes");
     by trt;
 run;</code></pre>
@@ -389,7 +389,7 @@ run;</code></pre>
 <li><p><code>BINOMIALc(LEVEL="Yes" CL=WILSON(CORRECT)  WALD(CORRECT));</code>will return Wilson(with continuity correction) and Wald (with continuity correction)</p></li>
 </ul>
 <div class="cell">
-<pre class="sas cell-code"><code>proc freq data=adcibc;
+<pre class="sas cell-code"><code>proc freq data=adcibc2;
     table resp/ nopct nocol 
     BINOMIAL(LEVEL="Yes" 
             CL= CLOPPERPEARSON WALD WILSON 
@@ -408,7 +408,7 @@ run;</code></pre>
 </div>
 </div>
 <div class="cell">
-<pre class="sas cell-code"><code>proc freq data=adcibc;
+<pre class="sas cell-code"><code>proc freq data=adcibc2;
     table resp/ nopct nocol 
         BINOMIAL(LEVEL="Yes" 
         CL= WILSON(CORRECT)  WALD(CORRECT));
@@ -620,8 +620,24 @@ Response = No</th>
 <p>The default method is Mantel-Haenszel confidence limits. SAS can also Score (Miettinen-Nurminen) CIs and Stratified Newcombe CIs (constructed from stratified Wilson Score CIs). See <a href="https://support.sas.com/documentation/cdl/en/procstat/67528/HTML/default/viewer.htm#procstat_freq_details63.htm">here</a> for equations.</p>
 <p>As you can see below, this is not a CI for difference in proportions of 0.196, it is a CI for the risk difference of 0.0260. So must be interpreted with much consideration.</p>
 <div class="cell">
-<pre class="sas cell-code"><code>proc freq data=adcibc; 
-    table act*pbo/commonriskdiff(cl=MH); 
+<pre class="sas cell-code"><code>data dat_used;
+    input ID$ PBO ACT @@;
+    datalines;
+  001 0 0   002 0 0   003 0 0   004 0 0   005 0 0
+  006 1 0   007 1 0   008 1 0   009 1 0   010 1 0
+  011 1 0   012 0 1   013 0 1   014 0 1   015 0 1
+  016 0 1   017 0 1   018 0 1   019 0 1   020 0 1
+  021 0 1   022 0 1   023 0 1   024 0 1   025 0 1
+  026 0 1   027 1 1   028 1 1   029 1 1   030 1 1
+  031 1 1   032 1 1   033 1 1   034 1 1   035 1 1
+  036 1 1   037 1 1   038 1 1   039 1 1   040 1 1
+  041 1 1   042 1 1   043 1 1   044 1 1   045 1 1
+  046 1 1
+    ;
+run;
+
+proc freq data=dat_used; 
+    table ACT*PBO/commonriskdiff(cl=MH); 
 run;</code></pre>
 </div>
 <div class="cell" data-layout-align="center">
@@ -640,12 +656,12 @@ run;</code></pre>
 <p>SAS is able to calculate CIs using the following methods: Exact, Agresti/Caffo, Wald, Wald with Continuity correction, Wilson/Newcombe Score, Wilson/Newcombe score with continuity correction, Miettinen and Nurminen, and Hauck-Anderson. Example code is shown below, before provision of a much more detailed analysis using Wald and Wilson with and without continuity correction.</p>
 <div class="cell">
 <pre class="sas cell-code"><code># Wald, Wilson, Agresti/Caffo, Hauck-Anderson, and Miettinen and Nurminen methods
-proc freq data=adcibc order=data;
-    table trt*resp /riskdiff(CL=(wald wilson ac ha mn ));
+proc freq data=adcibc2 order=data;
+    table trt*resp /riskdiff(CL=(wald wilson ac ha mn));
 run;
 
 # exact method
-proc freq data=adcibc order=data;
+proc freq data=adcibc2 order=data;
     exact riskdiff (method=noscore);
     table trt*resp/riskdiff(CL=(exact)); 
 run;</code></pre>
@@ -679,17 +695,17 @@ and</p>
 <p>It is important to check the output to ensure that you are modelling Active - Placebo, and response = Yes (not Response=No). By default SAS sorts alphabetically and calculates CI’s for the first column. You can change this by using the <code>COLUMN= Option</code> on riskdiff or by sorting the dataset (here by trt, then descending resp), and then using <code>order=data</code> in the proc freq. This tells SAS to use the order you have sorted the data by. SAS confirms this by saying “Difference is (Row 1 - Row 2)” and “Column 1 (resp=Yes)”. Note how in the SAS output, it calls the requested ‘wilson’ method ‘Newcombe’ in the output.</p>
 <p>Options for riskdiff(CL=XXX) consist of AC:Agresti-Caffo, EXACT=exact, HA:Hauck-Anderson, MN or SCORE:Miettinen-Nurminen (another type of Score CI), WILSON or NEWCOMBE: Wilson method described above, and WALD: normal approximation wald method described above. Examples using Wald and Wilson are shown below with and without continuity correction.</p>
 <div class="cell">
-<pre class="sas cell-code"><code>proc sort data=adcibc;
+<pre class="sas cell-code"><code>proc sort data=adcibc2;
     by  trt descending resp;
 run;
 
 # without continuity correction
-proc freq data=adcibc order=data;
+proc freq data=adcibc2 order=data;
     table trt*resp/riskdiff(CL=(wald wilson)); 
 run;
 
 # with continuity correction
-proc freq data=adcibc order=data;
+proc freq data=adcibc2 order=data;
     table trt*resp/riskdiff(CORRECT CL=(wald wilson)); 
 run;</code></pre>
 </div>
