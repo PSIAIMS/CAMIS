@@ -37,7 +37,7 @@ The below shows that for the Actual Treatment, there are 36 responders out of 15
 
 ```{sas}
 #| eval: false 
-proc freq data=adcibc;
+proc freq data=adcibc2;
     table trt*resp/ nopct nocol;
 run;
 ```
@@ -150,11 +150,11 @@ The output consists of the proportion of resp=Yes, the Asymptotic SE, 95% CIs us
 
 ```{sas}
 #| eval: false
-proc sort data=adcibc;
+proc sort data=adcibc2;
     by trt; 
 run; 
 
-proc freq data=adcibc ; 
+proc freq data=adcibc2; 
     table resp/ nopct nocol BINOMIAL(LEVEL="Yes");
     by trt;
 run;
@@ -179,7 +179,7 @@ By adding the option `BINOMIAL(LEVEL="Yes" CL=<name of CI method>)`, the other C
 
 ```{sas}
 #| eval: false
-proc freq data=adcibc;
+proc freq data=adcibc2;
     table resp/ nopct nocol 
     BINOMIAL(LEVEL="Yes" 
             CL= CLOPPERPEARSON WALD WILSON 
@@ -198,7 +198,7 @@ knitr::include_graphics("../images/ci_for_prop/binomial_prop_all_act.png")
 
 ```{sas}
 #| eval: false
-proc freq data=adcibc;
+proc freq data=adcibc2;
     table resp/ nopct nocol 
         BINOMIAL(LEVEL="Yes" 
         CL= WILSON(CORRECT)  WALD(CORRECT));
@@ -351,8 +351,24 @@ As you can see below, this is not a CI for difference in proportions of 0.196, i
 
 ```{sas}
 #| eval: false 
-proc freq data=adcibc; 
-    table act*pbo/commonriskdiff(cl=MH); 
+data dat_used;
+    input ID$ PBO ACT @@;
+    datalines;
+  001 0 0   002 0 0   003 0 0   004 0 0   005 0 0
+  006 1 0   007 1 0   008 1 0   009 1 0   010 1 0
+  011 1 0   012 0 1   013 0 1   014 0 1   015 0 1
+  016 0 1   017 0 1   018 0 1   019 0 1   020 0 1
+  021 0 1   022 0 1   023 0 1   024 0 1   025 0 1
+  026 0 1   027 1 1   028 1 1   029 1 1   030 1 1
+  031 1 1   032 1 1   033 1 1   034 1 1   035 1 1
+  036 1 1   037 1 1   038 1 1   039 1 1   040 1 1
+  041 1 1   042 1 1   043 1 1   044 1 1   045 1 1
+  046 1 1
+    ;
+run;
+
+proc freq data=dat_used; 
+    table ACT*PBO/commonriskdiff(cl=MH); 
 run;
 ```
 
@@ -372,12 +388,12 @@ SAS is able to calculate CIs using the following methods: Exact, Agresti/Caffo, 
 ```{sas}
 #| eval: false
 # Wald, Wilson, Agresti/Caffo, Hauck-Anderson, and Miettinen and Nurminen methods
-proc freq data=adcibc order=data;
-    table trt*resp /riskdiff(CL=(wald wilson ac ha mn ));
+proc freq data=adcibc2 order=data;
+    table trt*resp /riskdiff(CL=(wald wilson ac ha mn));
 run;
 
 # exact method
-proc freq data=adcibc order=data;
+proc freq data=adcibc2 order=data;
     exact riskdiff (method=noscore);
     table trt*resp/riskdiff(CL=(exact)); 
 run;
@@ -427,17 +443,17 @@ Options for riskdiff(CL=XXX) consist of AC:Agresti-Caffo, EXACT=exact, HA:Hauck-
 
 ```{sas}
 #| eval: false
-proc sort data=adcibc;
+proc sort data=adcibc2;
     by  trt descending resp;
 run;
 
 # without continuity correction
-proc freq data=adcibc order=data;
+proc freq data=adcibc2 order=data;
     table trt*resp/riskdiff(CL=(wald wilson)); 
 run;
 
 # with continuity correction
-proc freq data=adcibc order=data;
+proc freq data=adcibc2 order=data;
     table trt*resp/riskdiff(CORRECT CL=(wald wilson)); 
 run;
 ```
