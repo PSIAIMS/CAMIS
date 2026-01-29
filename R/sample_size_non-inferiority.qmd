@@ -1,19 +1,25 @@
 ---
 title: "Sample Size for Non-Inferiority Trials in R"
 ---
-In R there are lots of packages for sample size calculations. Here we will cover one of the most common {rpact}
+
+In R there are lots of packages for sample size calculations. Here we will cover **TrialSize** , **epiR** and **rpact**.
 
 ```{r}
 library(rpact)
+library(epiR)
+library(TrialSize)
 ```
 
-# **Two Sample Non-inferiority test: Comparing means for parallel design (unpaired)**
+### Two Sample Non-inferiority test: Comparing means for parallel design (unpaired)
 
 This example is a sample size calculation for the following hypotheses: $H_0:\mu2-\mu1\le -\theta$ versus $H_1: \mu2-\mu1\gt -\theta$.
+
+#### Example
 
 A client is interested in conducting a clinical trial to compare two cholesterol lowering agents for treatment of hypercholesterolemic patients through a parallel design. The primary efficacy parameter is a low-density lipidprotein cholesterol (LDL-C). We will consider the situation where the intended trial is for testing noninferiority. For establishing it, suppose the true mean difference is 0 and the noninferiority margin is chosen to be -0.05 (-5%). Assuming SD = 0.1, how many patients are required for an 80% power and an overall significance level of 5%?
 
 ```{r}
+# rpact:
 rpact::getDesignInverseNormal(kMax = 1, alpha = 0.05) |>
   rpact::getSampleSizeMeans(
     thetaH0 = -0.05,
@@ -24,4 +30,34 @@ rpact::getDesignInverseNormal(kMax = 1, alpha = 0.05) |>
   summary()
 ```
 
-Here the recommended sample size is 100.3, so we will need to round up to 51 subjects per arm. 
+Here the recommended sample size is 100.3, so we will need to round up to 51 subjects per arm.
+
+
+```{r}
+# epiR:
+epi.ssninfc(treat = 0.20, control = 0.20, sigma = 0.10, delta = 0.05, n = NA, 
+            power = 0.80, r = 1, nfractional = FALSE, alpha = 0.05)
+
+# TrialSize:
+TwoSampleMean.NIS(0.05,0.2,0.1,1,-0.05,0)
+
+```
+
+In epiR, when calculating the power of a study, the argument n refers to the total study size (that is, the number of subjects in the treatment group plus the number in the control group). Hence, a total of 100 subjects is needed to be enrolled in the trial, 50 in the treatment group and 50 in the control group. TrialSize presents the results in the same format.
+
+
+### Comparing means for crossover design (paired) {.unnumbered}
+
+#### Example
+
+Let's consider a standard two-sequence, two period crossover design. Suppose that the sponsor is interested in showing noninferiority of the test drug against the reference with the noninferiority margin -20%. Assume power of 80%. Based on the results from previous trials, it is estimated that the variance (of the difference) is 0.2 (20%). Suppose that the true mean difference is -0.1 (-10%). What is the required sample size, assuming significance level of 5%?
+
+```{r}
+# TrialSize:
+TwoSampleCrossOver.NIS(0.05,0.2,0.2,-0.2,-0.1)
+
+```
+
+#### References {.unnumbered}
+
+Majority of the examples are taken from: *Chow SC, Liu JP (1998). Design and analysis of clinical trials. Concepts and methodologies. Wiley, New York.* and *Machin, D., Campbell, M. J., Fayers, P., & Pinol, A. (Eds.) (1997). Sample Size Tables for Clinical Studies. (2nd ed.) Blackwell Science.*
