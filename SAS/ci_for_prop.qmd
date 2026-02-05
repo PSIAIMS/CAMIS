@@ -56,18 +56,20 @@ SAS PROC FREQ in Version 9.4 can compute 11 methods to calculate CIs for a singl
 
 For more information about some of these methods in R & SAS, including which performs better in different scenarios see [Five Confidence Intervals for Proportions That You Should Know about](https://towardsdatascience.com/five-confidence-intervals-for-proportions-that-you-should-know-about-7ff5484c024f)^2^ and [Confidence Intervals for Binomial Proportion Using SAS](https://www.lexjansen.com/sesug/2015/103_Final_PDF.pdf)^3^. Key literature on the subject includes papers by [Brown et al.](https://www.jstor.org/stable/2676784?seq=1)^4^ and [Newcombe](https://pubmed.ncbi.nlm.nih.gov/9595616/)^5^.
 
-Clopper-Pearson method is output by SAS as the default method, but you can also specify it using `BINOMIAL(LEVEL="Yes" CL=CLOPPERPEARSON);`
 ### Strictly conservative vs proximate coverage
 
 Because of the discrete nature of binomial data, it is impossible for any CI to cover the true value of the estimated proportion precisely 95% of the time for all values of p. CI methods may be designed to achieve the nominal confidence level **as a minimum**, but many researchers find such a criterion to be excessive, producing CIs that are unnecessarily wide. The alternative position is to aim for coverage probability that is close to the nominal confidence level **on average.** These two opposing positions are described by Newcombe^5^ as "aiming to align either the minimum or the mean coverage with the nominal $(1-\alpha)$", or in other words aiming for coverage to be either "strictly conservative" or "proximate". Many alternative CI methods are designed to meet the latter criterion, but some include an optional adjustment ("continuity correction") to achieve the former.
 
-### Normal Approximation Method (Also known as the Wald or asymptotic CI Method)
 ### Clopper-Pearson (Exact or binomial CI) method
 
-The most commonly used alternative to the Clopper-Pearson (Exact) method is the asymptotic Normal Approximation (Wald) CI. In large random samples from independent trials, the sampling distribution of proportions approximately follows the normal distribution. The expectation of a sample proportion is the corresponding population proportion. Therefore, based on a sample of size $n$, a $(1-\alpha)\%$ confidence interval for population proportion can be calculated using normal approximation as follows:
 With binary endpoint data (response/non-response), we make the assumption that the proportion of responders has been derived from a series of Bernoulli trials. Trials (Subjects) are independent and we have a fixed number of repeated trials with an outcome of respond or not respond. This type of data follows the discrete binomial probability distribution, and the Clopper-Pearson^6^ (Exact) method uses this distribution to calculate the CIs.
 
 $p\approx \hat p \pm z_\alpha \sqrt{\hat p(1-\hat p)}/{n}$, where $\hat p$ is the sample proportion, $z_\alpha$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to level $\alpha$, and $\sqrt{\hat p(1-\hat p)}/{n}$ is the standard error.
+The Clopper-Pearson method is output by SAS as one of the default methods (labelled as "Exact Conf Limits" in the "Proportion" ODS output object), but you can also specify it using `BINOMIAL(LEVEL="Yes" CL=CLOPPERPEARSON);` which creates a separate output object "ProportionCLs".
+
+### Normal Approximation method (Also known as the Wald or asymptotic CI method)
+
+The traditional alternative to the Clopper-Pearson (Exact) method is the asymptotic Normal Approximation (Wald) CI. The poor performance of this method is well documented - it can fail to achieve the nominal confidence level even with large sample sizes, and there is a consensus in the literature that it should be avoided^4, p128^. Nevertheless, it remains a default output component in SAS, so is included here for reference.
 
 One should note that the approximation can become unreliable as the proportion of responders gets close to 0 or 1 (e.g. 0 or 100% responding), and alternative methods may be more suitable. In this scenario, common issues consist of:
 
