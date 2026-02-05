@@ -4,18 +4,17 @@ title: "Confidence intervals for Proportions in SAS"
 
 ## Introduction
 
-The methods to use for calculating a confidence interval (CI) for a proportion depend on the type of proportion you have.
+The methods to use for calculating a confidence interval (CI) for a proportion depend on the type of situation you have.
 
 -   1 sample proportion (1 proportion calculated from 1 group of subjects)
 
--   2 sample proportions and you want a CI for the difference in the 2 proportions.
+-   2 sample proportions and you want a CI for the difference in the 2 proportions (or the ratio, or an odds ratio) e.g. for estimating the magnitude of a treatment effect.
 
-    -   If the 2 samples come from 2 independent samples (different subjects in each of the 2 groups)
+    -   If the 2 samples come from 2 independent samples (different subjects in each of the 2 treatment groups)
 
-    -   If the 2 samples are matched (i.e. the same subject has 2 results, one on each group \[paired data\]).
+    -   If the 2 samples are matched (i.e. the same subject has 2 results, one from each treatment \[paired data\]).
 
-The method selected is also dependent on whether your proportion is close to 0 or 1 (or near to the 0.5 midpoint), and your sample size.
-
+The method selected may also be dependent on whether your proportion is close to 0 or 1 (or near to the 0.5 midpoint), and your sample size.
 
 ## Data used
 
@@ -78,17 +77,20 @@ $p\approx \hat p \pm z_{\alpha/2} \sqrt{\hat p(1-\hat p)/n}$, where $\hat p$ is 
 
 One should note that the approximation can become increasingly unreliable as the proportion of responders gets closer to 0 or 1 (e.g. 0 or 100% responding). In this scenario, common issues consist of:
 
--   it does not respect the 0 and 1 proportion boundary (so you can get a lower CI of -0.1 or an upper CI of 1.1%!)
+-   it does not respect the 0 and 1 proportion boundary (so you can get a lower CI of -0.1 or an upper CI of 1.1!)
+
+-   the derived 95% CI may cover the true proportion substantially less than 95% of the time
 
 -   the left and right tail probabilities of the 95% CI are asymmetrical, such that there is generally more (and often substantially more) than 2.5% chance of the interval not covering the true proportion at one end (as observed in Newcombe^5^). Note that symmetrical or "equal-tailed" coverage (or what Newcombe calls "central interval location") has direct relevance to the type 1 error for non-inferiority hypothesis tests, but is also a generally desirable property.
 
--   the derived 95% CI may not cover the true proportion 95% of the time
+Although these undesirable features become more severe for proportions close to 0 or 1, they also occur more generally for the Wald interval, and any of the alternative methods should be preferred instead.
+
 The Wald method can be derived with or without a Yates "continuity correction". In principle, this correction is intended to approximate the conservative coverage of the Clopper-Pearson method, but it fails to achieve the minimum coverage criterion, and tail probabilities remain imbalanced. (Note that in general, there is some debate over the use of the term "correction" - particularly when applied to other methods, the adjustment produces coverage probabilities that are further away from the nominal confidence level to achieve strictly conservative coverage, which may or may not be more "correct", depending on your point of view.)
 
+The Wald normal approximation method is output by SAS as a default method, but you can also specify it using `BINOMIAL(LEVEL="Yes" CL=WALD);`
 
-Normal approximation method is output by SAS as the default method, but you can also specify it using `BINOMIAL(LEVEL="Yes" CL=WALD);`
+The "continuity corrected" version is obtained using `BINOMIAL(LEVEL="Yes" CL=WALD(CORRECT));`
 
-SAS also produces a continuity correction version of the Wald method, you can specify it using `BINOMIAL(LEVEL="Yes" CL=WALD(CORRECT));`
 ### Wilson method (Also known as the Score method)^7^
 
 The Wilson (Score) method is also based on an asymptotic normal approximation, but uses a score statistic that replaces the estimated variance $\hat V(\hat p)=\hat p(1-\hat p)/n$ with the true variance $V(\hat p)=p(1-p)/n$. The resulting score is then rearranged to a quadratic equation and solved for p for a given $\alpha$. This method resolves many of the issues affecting the Wald method - it avoids boundary violations, and achieves coverage probabilities close to the nominal level (on average). However, it over-corrects the asymmetric coverage of Wald - the location of the Wilson interval is shifted too far towards 0.5.
@@ -96,11 +98,11 @@ The Wilson (Score) method is also based on an asymptotic normal approximation, b
 The method can be derived with or without a Yates continuity correction. The corrected interval closely approximates the coverage of the Clopper-Pearson method, but only in terms of overall two-sided coverage - due to the asymmetric coverage, it does not guarantee that the non-coverage probability is less than $\alpha/2$.
 
 Let p=r/n, where r= number of responses, and n=number of subjects, q=1-p, and z= the appropriate value from standard normal distribution:\
-$$ z{_1-\alpha/2} $$For example, for 95% confidence intervals, alpha=0.05, using standard normal tables, z in the equations below will take the value =1.96. Calculate 3 quantities
+$$ z{_{1-\alpha/2}} $$For example, for 95% confidence intervals, $\alpha=0.05$, using standard normal tables, z in the equations below will take the value =1.96. Calculate 3 quantities
 
 $$ A= 2r+z^2$$
 
-$$ B=z\sqrt(z^2 + 4rq) $$ $$ C=2(n+z^2) $$The method calculates the confidence interval (Low to High) as: (A-B)/C to (A+B)/C
+$$ B=z\sqrt(z^2 + 4rq) $$ $$ C=2(n+z^2) $$The method calculates the confidence interval \[Lower, Upper\] as: \[(A-B)/C, (A+B)/C\]
 
 A = 2 \* 36 + 1.96\^2 = 75.8416
 
@@ -114,9 +116,9 @@ Upper interval = A+B/C = 75.8416 + 20.9435 / 315.6832 = 0.30659
 
 CI = 0.17390 to 0.30659
 
-Wilson (score) method is output by SAS using `BINOMIAL(LEVEL="Yes" CL=Wilson);`
+The Wilson (score) method is output by SAS using `BINOMIAL(LEVEL="Yes" CL=Wilson);`
 
-SAS also produces a continuity correction version of the Wilson method, you can specify it using `BINOMIAL(LEVEL="Yes" CL=WILSON(CORRECT));`
+The continuity corrected Wilson method is specified using `BINOMIAL(LEVEL="Yes" CL=WILSON(CORRECT));`
 
 The only differences in the equations to calculate the Wilson score with continuity correction is that the equations for A and B are changed as follows:
 
@@ -124,11 +126,11 @@ $$ A= 2r+z^2 -1$$
 
 $$ B=z\sqrt(z^2 - 2 -\frac{1}{n} + 4rq) $$
 
-### Agresti-Coull Method
+### Agresti-Coull method
 
 The Agresti-Coull method is a 'simple solution' designed to improve coverage compared to the Wald method and still perform better (i.e. less conservative) than Clopper-Pearson particularly when the probability isn't in the mid-range (0.5). It is less conservative whilst still having good coverage. The only difference compared to the Wald method is that it adds two successes and two failures to the original observations (increasing the sample by 4 observations). In practice it is not often used *\[Ed: what is the basis for this statement?\]*.
 
-Agresti-Coull method is output by SAS using `BINOMIAL(LEVEL="Yes" CL=AGRESTICOULL);`
+The Agresti-Coull method is output by SAS using `BINOMIAL(LEVEL="Yes" CL=AGRESTICOULL);`
 
 ### Jeffreys method
 
@@ -144,13 +146,13 @@ The Mid-P method is similar to the Clopper-Pearson method, in the sense that it 
 
 The mid-P method is output by SAS using `BINOMIAL(LEVEL="Yes" CL=MIDP);`
 
-### Blaker Method^6^
+### Blaker method^10^
 
-The Blaker method is a less conservative alternative to the Clopper-pearson exact test. It is also an exact method, but derives the CI by inverting the p-value function of an exact test.
+The Blaker method is a less conservative alternative to the Clopper-Pearson exact CI. It derives the CI by inverting the p-value function of a 2-sided exact test, so it achieves strictly conservative 2-sided coverage, but as a result the 1-sided coverage is not strictly conservative.
 
-The Clopper-pearson CI's are always wider and contain the Blaker CI limits. It's adoption has been limited due to the numerical algorithm taking longer to compute compared to some of the other methods especially when the sample size is large. NOTE: Klaschka and Reiczigel^5^ is yet another adaptation of this method.
+The Clopper-Pearson CI's are always wider and contain the Blaker CI limits. It's adoption has been limited due to the numerical algorithm taking longer to compute compared to some of the other methods especially when the sample size is large. NOTE: Klaschka and Reiczigel^11^ is yet another adaptation of this method.
 
-BLAKER method is output by SAS using `BINOMIAL(LEVEL="Yes" CL=BLAKER);`
+The Blaker method is output by SAS using `BINOMIAL(LEVEL="Yes" CL=BLAKER);`
 
 ## Example Code using PROC FREQ
 
@@ -181,13 +183,13 @@ run;
 knitr::include_graphics("../images/ci_for_prop/binomial_prop_pbo.png")
 ```
 
-By adding the option `BINOMIAL(LEVEL="Yes" CL=<name of CI method>)`, the other CIs are output as shown below. You can list any number of the available methods within the BINOMIAL option CL=XXXX separated by a space. However, SAS will only calculate the WILSON and WALD or the WILSON(CORRECT) and WALD(CORRECT). SAS wont output them both from the same procedure.
+By adding the option `BINOMIAL(LEVEL="Yes" CL=<name of CI method>)`, the other CIs are output as shown below. You can list any number of the available methods within the BINOMIAL option CL=XXXX separated by a space. However, SAS will only calculate the WILSON and WALD or the WILSON(CORRECT) and WALD(CORRECT). SAS won't output them both from the same procedure.
 
--   `BINOMIAL(LEVEL="Yes" CL=CLOPPERPEARSON WALD WILSON AGRESTICOULL JEFFREYS MIDP LIKELIHOODRATIO LOGIT BLAKER)` will return Agresti-Coull, BLAKER, Clopper-pearson(Exact), WALD(without continuity correction) WILSON(without continuity correction), JEFFREYS, MIDP, LIKELIHOODRATIO, and LOGIT
+-   `BINOMIAL(LEVEL="Yes" CL=CLOPPERPEARSON WALD WILSON AGRESTICOULL JEFFREYS MIDP LIKELIHOODRATIO LOGIT BLAKER)` will return Agresti-Coull, Blaker, Clopper-Pearson(Exact), Wald(without continuity correction) Wilson(without continuity correction), Jeffreys, Mid-P, Likelihood Ratio, and Logit
 
--   `BINOMIAL(LEVEL="Yes" CL=ALL);` will return Agresti-Coull, Clopper-pearson (Exact), Jeffreys, Wald(without continuity correction), Wilson (without continuity correction)
+-   `BINOMIAL(LEVEL="Yes" CL=ALL);` will return Agresti-Coull, Clopper-Pearson (Exact), Jeffreys, Wald(without continuity correction), Wilson (without continuity correction). *\[If the developers of SAS are reading this, it would seem more natural for Mid-P to be included here instead of Clopper-Pearson!\]*
 
--   `BINOMIALc(LEVEL="Yes" CL=ALL);`will return Agresti-Coull, Clopper-pearson (Exact), Jeffreys, Wald (with continuity correction), Wilson(with continuity correction)
+-   `BINOMIALc(LEVEL="Yes" CL=ALL);`will return Agresti-Coull, Clopper-Pearson (Exact), Jeffreys, Wald (with continuity correction), Wilson(with continuity correction)
 
 -   `BINOMIALc(LEVEL="Yes" CL=WILSON(CORRECT)  WALD(CORRECT));`will return Wilson(with continuity correction) and Wald (with continuity correction)
 
