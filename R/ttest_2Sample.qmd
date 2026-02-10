@@ -63,7 +63,7 @@ stats::t.test(d1p$WtGain, d1t$WtGain, var.equal = TRUE, paired = FALSE)
 
 #### Code
 
-The following code was used to test the comparison in Base R using Welch's t-test. Observe that in this case, the `var.equal` parameter is set to FALSE.
+The following code was used to test the comparison in Base R using Welch's t-test. Observe that in this case, the `var.equal` parameter is set to FALSE. The Satterthwaite approximation is used to calculate the effective degrees of freedom.
 
 ```{r}
 #| eval: true
@@ -77,13 +77,14 @@ stats::t.test(d1p$WtGain, d1t$WtGain, var.equal = FALSE, paired = FALSE)
 
 ```
 
+
 ## Procs Package
 
 ### Student's T-Test and Welch's T-Test {#procs}
 
 #### Code
 
-The following code from the **procs** package was used to perform a two sample t-test. Note that the `proc_ttest()` function performs both the Student's t-test and Welch's (Satterthwaite) t-test in the same call. The results are displayed on separate rows. This output is similar to SAS.
+The following code from the **procs** package was used to perform a two sample t-test. Note that the `proc_ttest()` function performs both the Student's t-test and Welch's t-test (the Satterthwaite approximation is used to calculate the effective degrees of freedom) in the same call. The results are displayed on separate rows. This output is similar to SAS.
 
 ```{r}
 #| eval: true
@@ -103,6 +104,43 @@ Viewer Output:
 #| out-width: 50%
 knitr::include_graphics("../images/ttest/twosample_rtest1.png")
 ```
+
+
+## Example with unequal variances
+
+```{r}
+#| eval: true
+#| echo: true
+# Create sample data
+d2 <- tibble::tribble(
+  ~trt_grp,	~WtGain,
+  "placebo",	14, "placebo",	15, "placebo",	15, "placebo",	15,
+  "placebo",	16, "placebo",	18, "placebo",	22, "placebo",	23,
+  "placebo",	24, "placebo",	25, "placebo",	25,
+  "treatment",	10, "treatment",	12, "treatment",	14, "treatment",	15,
+  "treatment",	18, "treatment",	22, "treatment",	24, "treatment",	27,
+  "treatment",	31, "treatment",	33, "treatment",	34, "treatment",	34,
+  "treatment",	34,
+)
+
+d2p <- dplyr::filter(d2, trt_grp == 'placebo')
+d2t <- dplyr::filter(d2, trt_grp == 'treatment')
+
+# Perform t-test
+stats::t.test(d2p$WtGain, d2t$WtGain, var.equal = FALSE, paired = FALSE)
+procs::proc_ttest(d2, var = WtGain, class = trt_grp)
+```
+
+Viewer Output:
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 70%
+knitr::include_graphics("../images/ttest/twosample_rtest2.png")
+```
+
+
 
 ::: {.callout-note collapse="true" title="Session Info"}
 ```{r}
