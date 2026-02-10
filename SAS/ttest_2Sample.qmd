@@ -1,5 +1,5 @@
 ---
-title: "Independant Two-Sample t-test"
+title: "Independent Two-Sample t-test"
 output: html_document
 ---
 
@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### Data Used
+## Data Used
 
 The following data was used in this example.
 
@@ -31,11 +31,12 @@ treatment  87 treatment 100 treatment  76 treatment  80
 run;
 ```
 
-### **Independent Two-Sample t-test in SAS** {#sas}
+## **Independent Two-Sample t-test in SAS** {#sas}
 
 The null hypothesis of the Independent Samples t-test is, the means for the two populations are equal.
 
 In SAS the following code was used to test the mean comparison (mean of Weight Gain) of two independent treatment groups (Treatment and Placebo).
+Both the Student's t-test and Welch's t-test (the Satterthwaite approximation is used to calculate the effective degrees of freedom and variance) in the same call.
 
 For this example, we're testing the significant difference in mean of Weight gain (*WtGain*) between treatment and placebo (*trt_grp*) using PROC TTEST procedure in SAS.
 
@@ -62,7 +63,7 @@ knitr::include_graphics("../images/ttest/test1.png")
 
 Here the t-value is --0.70, degrees of freedom is 30 and P value is 0.4912 which is greater than 0.05, so we accept the null hypothesis that there is no evidence of a significant difference between the means of treatment groups. The mean in placebo group is 75.1875 and mean in Treatment group is 83.1250. The mean difference the treatment groups (Treatment-Placebo) is --7.9375 and the 95% CI for the mean difference is \[--31.1984, 15.3234\]. The 95% confidence interval includes a treatment difference of 0, which supports the conclusion that the data fail to provide any evidence of a difference between the treatment groups.
 
-### Model Checking
+## Model Checking
 
 Note: Before entering straight into the t-test we need to check whether the assumptions (like the equality of variance, the observations should be independent, observations should be normally distributed) are met or not. If normality is not satisfied, we may consider using a suitable non-parametric test.
 
@@ -114,3 +115,45 @@ Output:
 #| out-width: 30%
 knitr::include_graphics("../images/ttest/variance_sas.png")
 ```
+
+
+## Example with unequal variances
+
+For this example, it is important to use the Welch's t-test (the Satterthwaite approximation is used to calculate the effective degrees of freedom and variance) results.
+
+```{sas}
+#| eval: false
+data d2;
+    length trt_grp $ 9;
+    input trt_grp $ WtGain @@;
+    datalines;
+placebo    14 placebo    15 placebo    15 placebo    15 
+placebo    16 placebo    18 placebo    22 placebo    23 
+placebo    24 placebo    25 placebo    25
+treatment  10 treatment  12 treatment  14 treatment  15 
+treatment  18 treatment  22 treatment  24 treatment  27 
+treatment  31 treatment  33 treatment  34 treatment  34 
+treatment  34 
+;
+run;
+
+proc ttest data=d2; 
+    class trt_grp; 
+    var WtGain; 
+run;
+```
+
+Output:
+
+```default
+             Figure 1: Test results for independent t-test using PROC TTEST in SAS
+```
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 50%
+knitr::include_graphics("../images/ttest/test2.png")
+```
+
+
