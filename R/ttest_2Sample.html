@@ -217,6 +217,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#procs" id="toc-procs" class="nav-link" data-scroll-target="#procs">Student’s T-Test and Welch’s T-Test</a></li>
   </ul></li>
+  <li><a href="#example-with-unequal-variances" id="toc-example-with-unequal-variances" class="nav-link" data-scroll-target="#example-with-unequal-variances">Example with unequal variances</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -298,7 +299,7 @@ mean of x mean of y
 <h3 class="anchored" data-anchor-id="baseW">Welch’s T-Test</h3>
 <section id="code-1" class="level4">
 <h4 class="anchored" data-anchor-id="code-1">Code</h4>
-<p>The following code was used to test the comparison in Base R using Welch’s t-test. Observe that in this case, the <code>var.equal</code> parameter is set to FALSE.</p>
+<p>The following code was used to test the comparison in Base R using Welch’s t-test. Observe that in this case, the <code>var.equal</code> parameter is set to FALSE. The Satterthwaite approximation is used to calculate the effective degrees of freedom.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>d1p <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(d1, trt_grp <span class="sc">==</span> <span class="st">'placebo'</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>d1t <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(d1, trt_grp <span class="sc">==</span> <span class="st">'treatment'</span>)</span>
@@ -328,7 +329,7 @@ mean of x mean of y
 <h3 class="anchored" data-anchor-id="procs">Student’s T-Test and Welch’s T-Test</h3>
 <section id="code-2" class="level4">
 <h4 class="anchored" data-anchor-id="code-2">Code</h4>
-<p>The following code from the <strong>procs</strong> package was used to perform a two sample t-test. Note that the <code>proc_ttest()</code> function performs both the Student’s t-test and Welch’s (Satterthwaite) t-test in the same call. The results are displayed on separate rows. This output is similar to SAS.</p>
+<p>The following code from the <strong>procs</strong> package was used to perform a two sample t-test. Note that the <code>proc_ttest()</code> function performs both the Student’s t-test and Welch’s t-test (the Satterthwaite approximation is used to calculate the effective degrees of freedom) in the same call. The results are displayed on separate rows. This output is similar to SAS.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform t-test</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>procs<span class="sc">::</span><span class="fu">proc_ttest</span>(d1, <span class="at">var =</span> WtGain, <span class="at">class =</span> trt_grp)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -372,6 +373,83 @@ $Equality
 </div>
 </div>
 </div>
+</section>
+</section>
+</section>
+<section id="example-with-unequal-variances" class="level2">
+<h2 class="anchored" data-anchor-id="example-with-unequal-variances">Example with unequal variances</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create sample data</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>d2 <span class="ot">&lt;-</span> tibble<span class="sc">::</span><span class="fu">tribble</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="sc">~</span>trt_grp, <span class="sc">~</span>WtGain,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"placebo"</span>,    <span class="dv">14</span>, <span class="st">"placebo"</span>,  <span class="dv">15</span>, <span class="st">"placebo"</span>,  <span class="dv">15</span>, <span class="st">"placebo"</span>,  <span class="dv">15</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"placebo"</span>,    <span class="dv">16</span>, <span class="st">"placebo"</span>,  <span class="dv">18</span>, <span class="st">"placebo"</span>,  <span class="dv">22</span>, <span class="st">"placebo"</span>,  <span class="dv">23</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"placebo"</span>,    <span class="dv">24</span>, <span class="st">"placebo"</span>,  <span class="dv">25</span>, <span class="st">"placebo"</span>,  <span class="dv">25</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">"treatment"</span>,  <span class="dv">10</span>, <span class="st">"treatment"</span>,    <span class="dv">12</span>, <span class="st">"treatment"</span>,    <span class="dv">14</span>, <span class="st">"treatment"</span>,    <span class="dv">15</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">"treatment"</span>,  <span class="dv">18</span>, <span class="st">"treatment"</span>,    <span class="dv">22</span>, <span class="st">"treatment"</span>,    <span class="dv">24</span>, <span class="st">"treatment"</span>,    <span class="dv">27</span>,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="st">"treatment"</span>,  <span class="dv">31</span>, <span class="st">"treatment"</span>,    <span class="dv">33</span>, <span class="st">"treatment"</span>,    <span class="dv">34</span>, <span class="st">"treatment"</span>,    <span class="dv">34</span>,</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="st">"treatment"</span>,  <span class="dv">34</span>,</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>d2p <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(d2, trt_grp <span class="sc">==</span> <span class="st">'placebo'</span>)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>d2t <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(d2, trt_grp <span class="sc">==</span> <span class="st">'treatment'</span>)</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform t-test</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>stats<span class="sc">::</span><span class="fu">t.test</span>(d2p<span class="sc">$</span>WtGain, d2t<span class="sc">$</span>WtGain, <span class="at">var.equal =</span> <span class="cn">FALSE</span>, <span class="at">paired =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Welch Two Sample t-test
+
+data:  d2p$WtGain and d2t$WtGain
+t = -1.5379, df = 18.137, p-value = 0.1413
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -10.453875   1.614714
+sample estimates:
+mean of x mean of y 
+ 19.27273  23.69231 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>procs<span class="sc">::</span><span class="fu">proc_ttest</span>(d2, <span class="at">var =</span> WtGain, <span class="at">class =</span> trt_grp)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$Statistics
+     VAR      CLASS        METHOD  N     MEAN      STD   STDERR MIN MAX
+1 WtGain    placebo          &lt;NA&gt; 11 19.27273 4.518648 1.362424  14  25
+2 WtGain  treatment          &lt;NA&gt; 13 23.69231 9.123090 2.530290  10  34
+3 WtGain Diff (1-2)        Pooled NA -4.41958       NA 3.029355  NA  NA
+4 WtGain Diff (1-2) Satterthwaite NA -4.41958       NA 2.873772  NA  NA
+
+$ConfLimits
+     VAR      CLASS        METHOD     MEAN      LCLM      UCLM      STD
+1 WtGain    placebo          &lt;NA&gt; 19.27273  16.23706 22.308396 4.518648
+2 WtGain  treatment          &lt;NA&gt; 23.69231  18.17928 29.205336 9.123090
+3 WtGain Diff (1-2)        Pooled -4.41958 -10.70208  1.862918       NA
+4 WtGain Diff (1-2) Satterthwaite -4.41958 -10.45387  1.614714       NA
+   LCLMSTD   UCLMSTD
+1 3.157257  7.929927
+2 6.542040 15.059805
+3       NA        NA
+4       NA        NA
+
+$TTests
+     VAR        METHOD VARIANCES       DF         T     PROBT
+1 WtGain        Pooled     Equal 22.00000 -1.458918 0.1587188
+2 WtGain Satterthwaite   Unequal 18.13738 -1.537902 0.1413355
+
+$Equality
+     VAR   METHOD NDF DDF     FVAL      PROBF
+1 WtGain Folded F  12  10 4.076307 0.03338774</code></pre>
+</div>
+</div>
+<p>Viewer Output:</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/ttest/twosample_rtest2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:70.0%"></p>
+</figure>
+</div>
+</div>
+</div>
 <div class="callout callout-style-default callout-note callout-titled" title="Session Info">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -389,48 +467,48 @@ $Equality
 <pre><code>─ Session info ───────────────────────────────────────────────────────────────
  setting  value
  version  R version 4.4.2 (2024-10-31)
- os       macOS Sequoia 15.6.1
- system   aarch64, darwin20
+ os       Ubuntu 24.04.3 LTS
+ system   x86_64, linux-gnu
  ui       X11
  language (EN)
- collate  en_US.UTF-8
- ctype    en_US.UTF-8
- tz       Europe/London
- date     2025-10-13
- pandoc   3.4 @ /Applications/RStudio.app/Contents/Resources/app/quarto/bin/tools/aarch64/ (via rmarkdown)
+ collate  C.UTF-8
+ ctype    C.UTF-8
+ tz       UTC
+ date     2026-02-10
+ pandoc   3.6.3 @ /opt/quarto/bin/tools/ (via rmarkdown)
 
 ─ Packages ───────────────────────────────────────────────────────────────────
  ! package    * version date (UTC) lib source
- P cli          3.6.3   2024-06-21 [?] CRAN (R 4.4.0)
- P common     * 1.1.3   2024-04-05 [?] CRAN (R 4.4.0)
- P crayon       1.5.3   2024-06-20 [?] CRAN (R 4.4.0)
- P dplyr      * 1.1.4   2023-11-17 [?] CRAN (R 4.4.0)
- P fansi        1.0.6   2023-12-08 [?] CRAN (R 4.4.0)
- P fmtr         1.6.5   2024-06-13 [?] CRAN (R 4.4.0)
- P generics     0.1.3   2022-07-05 [?] CRAN (R 4.4.0)
- P glue         1.8.0   2024-09-30 [?] CRAN (R 4.4.1)
- P jpeg         0.1-10  2022-11-29 [?] CRAN (R 4.4.0)
- P lifecycle    1.0.4   2023-11-07 [?] CRAN (R 4.4.0)
- P magrittr     2.0.3   2022-03-30 [?] CRAN (R 4.4.0)
- P mvtnorm      1.3-1   2024-09-03 [?] CRAN (R 4.4.1)
- P pillar       1.9.0   2023-03-22 [?] CRAN (R 4.4.0)
- P pkgconfig    2.0.3   2019-09-22 [?] CRAN (R 4.4.0)
- P procs      * 1.0.6   2024-03-06 [?] CRAN (R 4.4.0)
- P R6           2.5.1   2021-08-19 [?] CRAN (R 4.4.0)
- P Rcpp         1.0.13  2024-07-17 [?] CRAN (R 4.4.0)
- P reporter     1.4.4   2024-03-19 [?] CRAN (R 4.4.0)
- P rlang        1.1.6   2025-04-11 [?] RSPM
- P sasLM        0.10.5  2024-10-02 [?] CRAN (R 4.4.1)
- P stringi      1.8.4   2024-05-06 [?] CRAN (R 4.4.0)
- P tibble     * 3.2.1   2023-03-20 [?] CRAN (R 4.4.0)
- P tidyselect   1.2.1   2024-03-11 [?] CRAN (R 4.4.0)
- P utf8         1.2.4   2023-10-22 [?] CRAN (R 4.4.0)
- P vctrs        0.6.5   2023-12-01 [?] CRAN (R 4.4.0)
- P withr        3.0.1   2024-07-31 [?] CRAN (R 4.4.0)
- P zip          2.3.1   2024-01-27 [?] CRAN (R 4.4.0)
+ P cli          3.6.3   2024-06-21 [?] RSPM (R 4.4.0)
+ P common     * 1.1.3   2024-04-05 [?] RSPM (R 4.4.0)
+ P crayon       1.5.3   2024-06-20 [?] RSPM (R 4.4.0)
+ P dplyr      * 1.1.4   2023-11-17 [?] RSPM (R 4.4.0)
+ P fansi        1.0.6   2023-12-08 [?] RSPM (R 4.4.0)
+ P fmtr         1.6.5   2024-06-13 [?] RSPM (R 4.4.0)
+ P generics     0.1.3   2022-07-05 [?] RSPM (R 4.4.0)
+ P glue         1.8.0   2024-09-30 [?] RSPM (R 4.4.0)
+ P jpeg         0.1-10  2022-11-29 [?] RSPM (R 4.4.0)
+ P lifecycle    1.0.4   2023-11-07 [?] RSPM (R 4.4.0)
+ P magrittr     2.0.3   2022-03-30 [?] RSPM (R 4.4.0)
+ P mvtnorm      1.3-1   2024-09-03 [?] RSPM (R 4.4.0)
+ P pillar       1.9.0   2023-03-22 [?] RSPM (R 4.4.0)
+ P pkgconfig    2.0.3   2019-09-22 [?] RSPM (R 4.4.0)
+ P procs      * 1.0.6   2024-03-06 [?] RSPM (R 4.4.0)
+ P R6           2.5.1   2021-08-19 [?] RSPM (R 4.4.0)
+ P Rcpp         1.0.13  2024-07-17 [?] RSPM (R 4.4.0)
+ P reporter     1.4.4   2024-03-19 [?] RSPM (R 4.4.0)
+ P rlang        1.1.6   2025-04-11 [?] RSPM (R 4.4.0)
+ P sasLM        0.10.5  2024-10-02 [?] RSPM (R 4.4.0)
+ P stringi      1.8.4   2024-05-06 [?] RSPM (R 4.4.0)
+ P tibble     * 3.2.1   2023-03-20 [?] RSPM (R 4.4.0)
+ P tidyselect   1.2.1   2024-03-11 [?] RSPM (R 4.4.0)
+ P utf8         1.2.4   2023-10-22 [?] RSPM (R 4.4.0)
+ P vctrs        0.6.5   2023-12-01 [?] RSPM (R 4.4.0)
+ P withr        3.0.1   2024-07-31 [?] RSPM (R 4.4.0)
+ P zip          2.3.1   2024-01-27 [?] RSPM (R 4.4.0)
 
- [1] /Users/christinafillmore/Documents/GitHub/CAMIS/renv/library/macos/R-4.4/aarch64-apple-darwin20
- [2] /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library
+ [1] /home/runner/work/CAMIS/CAMIS/renv/library/linux-ubuntu-noble/R-4.4/x86_64-pc-linux-gnu
+ [2] /opt/R/4.4.2/lib/R/library
 
  P ── Loaded and on-disk path mismatch.
 
@@ -442,8 +520,6 @@ $Equality
 </div>
 
 
-</section>
-</section>
 </section>
 </section>
 
