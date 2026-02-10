@@ -173,18 +173,20 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#simulating-coin-flips" id="toc-simulating-coin-flips" class="nav-link active" data-scroll-target="#simulating-coin-flips">Simulating Coin Flips</a></li>
   <li><a href="#counting-heads-and-tails" id="toc-counting-heads-and-tails" class="nav-link" data-scroll-target="#counting-heads-and-tails">Counting Heads and Tails</a></li>
   <li><a href="#display-the-results" id="toc-display-the-results" class="nav-link" data-scroll-target="#display-the-results">Display the Results</a></li>
-  <li><a href="#perform-binomial-test-on-coin-flip-results" id="toc-perform-binomial-test-on-coin-flip-results" class="nav-link" data-scroll-target="#perform-binomial-test-on-coin-flip-results">Perform Binomial Test on Coin Flip Results</a></li>
+  <li><a href="#perform-asymptotic-binomial-test-on-coin-flip-results" id="toc-perform-asymptotic-binomial-test-on-coin-flip-results" class="nav-link" data-scroll-target="#perform-asymptotic-binomial-test-on-coin-flip-results">Perform Asymptotic Binomial Test on Coin Flip Results</a></li>
   <li><a href="#example-binomial-test-in-clinical-trial-data" id="toc-example-binomial-test-in-clinical-trial-data" class="nav-link" data-scroll-target="#example-binomial-test-in-clinical-trial-data">Example: Binomial Test in Clinical Trial Data</a>
   <ul class="collapse">
   <li><a href="#import-dataset" id="toc-import-dataset" class="nav-link" data-scroll-target="#import-dataset">Import Dataset</a></li>
   <li><a href="#create-binary-flag-for-deaths" id="toc-create-binary-flag-for-deaths" class="nav-link" data-scroll-target="#create-binary-flag-for-deaths">Create Binary Flag for Deaths</a></li>
+  <li><a href="#perform-asymptotic-binomial-test" id="toc-perform-asymptotic-binomial-test" class="nav-link" data-scroll-target="#perform-asymptotic-binomial-test">Perform Asymptotic Binomial Test</a></li>
   <li><a href="#perform-exact-binomial-test" id="toc-perform-exact-binomial-test" class="nav-link" data-scroll-target="#perform-exact-binomial-test">Perform Exact Binomial Test</a></li>
+  <li><a href="#perform-mid-p-adjusted-exact-binomial-test" id="toc-perform-mid-p-adjusted-exact-binomial-test" class="nav-link" data-scroll-target="#perform-mid-p-adjusted-exact-binomial-test">Perform mid-P adjusted Exact Binomial Test</a></li>
   </ul></li>
   <li><a href="#sas-output" id="toc-sas-output" class="nav-link" data-scroll-target="#sas-output">SAS Output</a>
   <ul class="collapse">
   <li><a href="#coin-flip-summary" id="toc-coin-flip-summary" class="nav-link" data-scroll-target="#coin-flip-summary">Coin Flip Summary</a></li>
   <li><a href="#binomial-test-on-coin-flips" id="toc-binomial-test-on-coin-flips" class="nav-link" data-scroll-target="#binomial-test-on-coin-flips">Binomial Test on Coin Flips</a></li>
-  <li><a href="#exact-binomial-test-for-death-proportion" id="toc-exact-binomial-test-for-death-proportion" class="nav-link" data-scroll-target="#exact-binomial-test-for-death-proportion">Exact Binomial Test for Death Proportion</a></li>
+  <li><a href="#asymptotic-binomial-test-for-death-proportion" id="toc-asymptotic-binomial-test-for-death-proportion" class="nav-link" data-scroll-target="#asymptotic-binomial-test-for-death-proportion">Asymptotic Binomial Test for Death Proportion</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -251,8 +253,8 @@ quit;</code></pre>
 %put Tails Count: &amp;tails_count;
 %put Total Flips: &amp;total_flips;</code></pre>
 </section>
-<section id="perform-binomial-test-on-coin-flip-results" class="level2">
-<h2 class="anchored" data-anchor-id="perform-binomial-test-on-coin-flip-results">Perform Binomial Test on Coin Flip Results</h2>
+<section id="perform-asymptotic-binomial-test-on-coin-flip-results" class="level2">
+<h2 class="anchored" data-anchor-id="perform-asymptotic-binomial-test-on-coin-flip-results">Perform Asymptotic Binomial Test on Coin Flip Results</h2>
 <p>Use <code>proc freq</code> to check if the observed results differ significantly from the expected probability of 0.5.</p>
 <pre class="{sas}"><code>proc freq data=coin_flips;
     tables result / binomial(p=0.5);
@@ -269,6 +271,7 @@ proc import datafile='/home/u63532805/CAMIS/lung_cancer.csv'
     dbms=csv
     replace;
     getnames=yes;
+    guessingrows=max;
 run;</code></pre>
 </section>
 <section id="create-binary-flag-for-deaths" class="level3">
@@ -279,12 +282,30 @@ data lung_cancer;
     death_flag = (status = 1);
 run;</code></pre>
 </section>
+<section id="perform-asymptotic-binomial-test" class="level3">
+<h3 class="anchored" data-anchor-id="perform-asymptotic-binomial-test">Perform Asymptotic Binomial Test</h3>
+<pre class="{sas}"><code>#| eval: false 
+proc freq data=lung_cancer;
+    tables death_flag / binomial(p=0.19 level='1');
+    title "Asymptotic Binomial Test for Death Proportion"; 
+run;</code></pre>
+</section>
 <section id="perform-exact-binomial-test" class="level3">
 <h3 class="anchored" data-anchor-id="perform-exact-binomial-test">Perform Exact Binomial Test</h3>
 <pre class="{sas}"><code>#| eval: false
 proc freq data=lung_cancer;
     tables death_flag / binomial(p=0.19 level='1');
+    exact binomial;
     title "Exact Binomial Test for Death Proportion";
+run;</code></pre>
+</section>
+<section id="perform-mid-p-adjusted-exact-binomial-test" class="level3">
+<h3 class="anchored" data-anchor-id="perform-mid-p-adjusted-exact-binomial-test">Perform mid-P adjusted Exact Binomial Test</h3>
+<pre class="{sas}"><code>#| eval: false 
+proc freq data=lung_cancer;     
+    tables death_flag / binomial(p=0.19 level='1');  
+    exact binomial / midp;
+    title "Exact mid-P Binomial Test for Death Proportion"; 
 run;</code></pre>
 </section>
 </section>
@@ -375,8 +396,8 @@ run;</code></pre>
 <li>Sample Size: 1000</li>
 </ul>
 </section>
-<section id="exact-binomial-test-for-death-proportion" class="level3">
-<h3 class="anchored" data-anchor-id="exact-binomial-test-for-death-proportion">Exact Binomial Test for Death Proportion</h3>
+<section id="asymptotic-binomial-test-for-death-proportion" class="level3">
+<h3 class="anchored" data-anchor-id="asymptotic-binomial-test-for-death-proportion">Asymptotic Binomial Test for Death Proportion</h3>
 <p><strong>The FREQ Procedure</strong></p>
 <table class="caption-top table">
 <colgroup>
