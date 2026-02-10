@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Restricted Mean Survival Time (RMST) in SAS</title>
+<title>R: Kolmogorov-Smirnov test</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,6 +19,41 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -170,21 +205,15 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#common-mistakes-doing-rmst-in-sas" id="toc-common-mistakes-doing-rmst-in-sas" class="nav-link active" data-scroll-target="#common-mistakes-doing-rmst-in-sas">Common Mistakes doing RMST in SAS</a></li>
-  <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data used</a></li>
-  <li><a href="#view-your-data---kaplan-meier-curves" id="toc-view-your-data---kaplan-meier-curves" class="nav-link" data-scroll-target="#view-your-data---kaplan-meier-curves">View your data - Kaplan-Meier Curves</a></li>
-  <li><a href="#setting-tau" id="toc-setting-tau" class="nav-link" data-scroll-target="#setting-tau">Setting tau</a></li>
-  <li><a href="#method-1-inverse-probability-censoring-weighting-ipcw-estimation-proc-rmstreg" id="toc-method-1-inverse-probability-censoring-weighting-ipcw-estimation-proc-rmstreg" class="nav-link" data-scroll-target="#method-1-inverse-probability-censoring-weighting-ipcw-estimation-proc-rmstreg">Method 1: Inverse Probability Censoring Weighting (IPCW) Estimation (proc rmstreg)</a>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#libraries-or-extensions-needed" id="toc-libraries-or-extensions-needed" class="nav-link" data-scroll-target="#libraries-or-extensions-needed">Libraries or Extensions Needed</a></li>
+  <li><a href="#data-sources-for-the-analysis" id="toc-data-sources-for-the-analysis" class="nav-link" data-scroll-target="#data-sources-for-the-analysis">Data Sources for the Analysis</a></li>
+  <li><a href="#statistical-method" id="toc-statistical-method" class="nav-link" data-scroll-target="#statistical-method">Statistical Method</a>
   <ul class="collapse">
-  <li><a href="#linear-link-model---provides-estimates-of-treatment-differences" id="toc-linear-link-model---provides-estimates-of-treatment-differences" class="nav-link" data-scroll-target="#linear-link-model---provides-estimates-of-treatment-differences">Linear link model - provides estimates of treatment differences</a></li>
-  <li><a href="#log-link-model---provides-estimates-of-treatment-ratios" id="toc-log-link-model---provides-estimates-of-treatment-ratios" class="nav-link" data-scroll-target="#log-link-model---provides-estimates-of-treatment-ratios">Log link model - provides estimates of treatment ratios</a></li>
+  <li><a href="#one-sample-k-s-test" id="toc-one-sample-k-s-test" class="nav-link" data-scroll-target="#one-sample-k-s-test">One-sample K-S test</a></li>
+  <li><a href="#two-sample-k-s-test" id="toc-two-sample-k-s-test" class="nav-link" data-scroll-target="#two-sample-k-s-test">Two-sample K-S test</a></li>
   </ul></li>
-  <li><a href="#method-2-pseudo-value-estimation-proc-rmstreg" id="toc-method-2-pseudo-value-estimation-proc-rmstreg" class="nav-link" data-scroll-target="#method-2-pseudo-value-estimation-proc-rmstreg">Method 2: Pseudo Value Estimation (proc rmstreg)</a></li>
-  <li><a href="#method-3-rmst-area-under-the-curve-method-proc-lifetest" id="toc-method-3-rmst-area-under-the-curve-method-proc-lifetest" class="nav-link" data-scroll-target="#method-3-rmst-area-under-the-curve-method-proc-lifetest">Method 3: RMST Area under the curve method (proc lifetest)</a>
-  <ul class="collapse">
-  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
-  <li><a href="#version" id="toc-version" class="nav-link" data-scroll-target="#version">Version</a></li>
-  </ul></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
   </ul>
 </nav>
     </div>
@@ -193,7 +222,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Restricted Mean Survival Time (RMST) in SAS</h1>
+<h1 class="title">R: Kolmogorov-Smirnov test</h1>
 </div>
 
 
@@ -201,12 +230,6 @@ ul.task-list li input[type="checkbox"] {
 <div class="quarto-title-meta">
 
     
-    <div>
-    <div class="quarto-title-meta-heading">Published</div>
-    <div class="quarto-title-meta-contents">
-      <p class="date">10 February, 2026</p>
-    </div>
-  </div>
   
     
   </div>
@@ -216,283 +239,100 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<p>Under the situation where you time to event outcome has non-proportional hazards over time, the commonly used Cox Proportional Hazards regression analysis and the log-rank test can be invalid - especially when the survival curves are crossing. One alternative is to analyse the Restricted Mean Survival Time (RMST).</p>
-<p>There are a few ways in SAS to estimate the RMST. A parametric approach is to use general estimating equations(GEE) modelling using linear or log-linear link functions and the IPCW or pseudo-value approach as described in Methods 1 and 2 below. Alternatively you can use a non-parametric approach using an Area Under the Curve (AUC) calculated for the Kaplan-Meier curves.</p>
-<p>For treatment comparisons, the RMST can be compared across treatments and it was recommended by the FDA in draft guidance in 2020 for analysis of Acute Myeloid Leukemia (AML) <a href="https://www.fda.gov/regulatory-information/search-fda-guidance-documents/acute-myeloid-leukemia-developing-drugs-and-biological-products-treatment">here</a>. AML commonly has an initial higher rate of death following randomization, followed by a plateauing rate of death over time (Non-proportional hazards).</p>
-<p>The main advantage of this method is its easy clinical interpretation (e.g.&nbsp;with an endpoint of time to death - we are measuring average time to death). The biggest disadvantage is you have to select a time at which to calculated the average over: this time is called <code>tau</code>. If data is not mature enough, you may get a unreliable result. In addition, one could accuse analysts of selecting <code>tau</code> such that you get the ‘most significant’ result in the direction you desire!</p>
-<p>References are found at the end of this page.</p>
-<section id="common-mistakes-doing-rmst-in-sas" class="level3">
-<h3 class="anchored" data-anchor-id="common-mistakes-doing-rmst-in-sas">Common Mistakes doing RMST in SAS</h3>
-<p><strong>Issue 1:</strong> page 8615 of User’s Guide for RMSTREG Procedure <a href="https://support.sas.com/documentation/onlinedoc/stat/151/rmstreg.pdf">here</a> says it expects the event indicator (Status) to be 1=event (death time) and 0=censor. If you follow this guidance, then you must ensure that you use: <code>model time*status(0)</code> to ensure SAS knows that 0 is the censored observation.</p>
-<p>A common mistake is to get the (0) or (1) indicator the wrong way around. For example, it’s common to use a <code>cnsr</code> variable which is set to 1=censored or 0=event. If this is used, then you must use<br>
-<code>model time*cnsr(1)</code>! Always make sure you check the SAS output to verify your counts of Events and Censored observations is the correct way around.</p>
-<p>Throughout this page, we will use cnsr(1) approach.</p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/rmst/SASrmstreg2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-<p><strong>Issue 2:</strong> page 8616 of User’s Guide for RMSTREG Procedure <a href="https://support.sas.com/documentation/onlinedoc/stat/151/rmstreg.pdf">here</a> tells us that if we omit the option <code>tau=xx</code> then SAS sets <code>tau</code> using the largest <strong>event</strong> time. However, what SAS actually does is use the largest <code>time</code> from either events or censored observations.</p>
-<p>The selection of <code>tau</code> for RMST analysis is very important. It’s the period of time the average (or AUC for proc lifetest) is calculated over. If events are no longer occurring on both treatment groups, then you may not be looking at the key time period of interest. Therefore, it is better practice, to calculate <code>tau</code> yourself and set this as an option in the SAS code, (commonly based on the minimum time of the last event observed in each treatment group).</p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/rmst/SASrmstreg1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-</section>
-<section id="data-used" class="level2">
-<h2 class="anchored" data-anchor-id="data-used">Data used</h2>
-<p>We are using the lung_cancer.csv dataset found <a href="CAMIS/data at main · PSIAIMS/CAMIS">here</a>. If you tabulate the censoring flag variable <code>cnsr</code><br>
-(1: censored, 0=event), we have 165 events, and 63 censored values.</p>
-<p>We only need the variables listed below</p>
-<ul>
-<li><p>time - Time(days) to event</p></li>
-<li><p>cnsr - 1=censored, 0=event</p></li>
-<li><p>age - Age of subject</p></li>
-<li><p>sex - 1=male, 2 = female</p></li>
-<li><p>trt01pn - 1=Active, 2=Placebo</p></li>
-</ul>
-<p>For example:</p>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>time</th>
-<th>cnsr</th>
-<th>trt01pn</th>
-<th>age</th>
-<th>sex</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>306</td>
-<td>0</td>
-<td>1</td>
-<td>74</td>
-<td>1</td>
-</tr>
-<tr class="even">
-<td>455</td>
-<td>0</td>
-<td>1</td>
-<td>68</td>
-<td>1</td>
-</tr>
-<tr class="odd">
-<td>1010</td>
-<td>1</td>
-<td>1</td>
-<td>56</td>
-<td>1</td>
-</tr>
-<tr class="even">
-<td>210</td>
-<td>0</td>
-<td>1</td>
-<td>57</td>
-<td>1</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="view-your-data---kaplan-meier-curves" class="level2">
-<h2 class="anchored" data-anchor-id="view-your-data---kaplan-meier-curves">View your data - Kaplan-Meier Curves</h2>
-<p>It is good practice to first view the shape of your Kaplan-Meier curves. As you can see our treatment curves are crossing at approximately 300 days.</p>
-<p>It is very important to pre-specify your approach for selection of <code>tau</code>. As you can see from the curves, if we compared the period 0 to 6 months, vs 0 to 18 months, we would get very different results for the treatment comparison.</p>
-<div class="cell">
-<pre class="sas cell-code"><code>proc lifetest data=adcibc  conftype=log;
-    time time*cnsr(1);
-    strata trt01pn;
-Run;</code></pre>
-</div>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/rmst/kmplot.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-</section>
-<section id="setting-tau" class="level2">
-<h2 class="anchored" data-anchor-id="setting-tau">Setting tau</h2>
-<p>The code below calculates <code>tau</code> as the minimum time of the last event observed in each treatment group. This will be the period of time, our AUC will be calculated over. As cnsr=0 are events, we only select these observations. Below, the maximum event in treatment 1 = 883 days and in treatment 2 = 350 days. We therefore set <code>tau</code> = 350. This method avoids including in the AUC a period of time where events are no longer occurring in both treatments. You can see why setting <code>tau</code> is very important as we are likely to get very different AUCs calculating over the 350 day as opposed to the 883 day period!</p>
-<div class="cell">
-<pre class="sas cell-code"><code>proc sort data=lung_cancer (where=(cnsr=0)) out=tau1;
-    by  trt01pn time;
-run;
-
-data tau1 (keep=studyid trt01pn time);
-    set tau1 ;
-    by trt01pn time;
-    if last.trt01pn then output;
-run;
-
-proc sort data=tau1;
-    by descending time;
-run;
-
-data tau2;
-    set tau1 end=last;
-    by descending time;
-    if last then call symput("_tau",put(time,best8.));
-run;
-
-%put &amp;_tau;
-350</code></pre>
-</div>
-</section>
-<section id="method-1-inverse-probability-censoring-weighting-ipcw-estimation-proc-rmstreg" class="level2">
-<h2 class="anchored" data-anchor-id="method-1-inverse-probability-censoring-weighting-ipcw-estimation-proc-rmstreg">Method 1: Inverse Probability Censoring Weighting (IPCW) Estimation (proc rmstreg)</h2>
-<p>The Inverse probability censoring weighting estimation as per <a href="https://pubmed.ncbi.nlm.nih.gov/24292992/">Tian L, Zhao L, Wei LJ. Biostatistics 2014, 15, 222-233</a> is found in SAS using <code>Proc rmstreg</code> and <code>method=ipcw</code>. This is using a generalized linear model (linear or log-linear options are available) to model right censored data over time. The estimation method uses : Generalized estimating equations (GEE).</p>
-<p>This method uses Kaplan-Meier estimation to obtain weights and it has been shown that weighting in this way provides an unbiased estimate for an adjusted survival curve <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5845164/">Calkins 2018</a>. See <a href="https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/1471-2288-13-152">Royston &amp; Parmar (2013)</a> for more detail.</p>
-<p>To calculate the stratified weights by treatment and use them in the iterative estimation process, you need to specify <code>strata=trt01pn</code></p>
-<p>In the output, its important to check that your event/censoring flag is the right was around and tau is set as expected. (165 events and tau=335)</p>
-<section id="linear-link-model---provides-estimates-of-treatment-differences" class="level3">
-<h3 class="anchored" data-anchor-id="linear-link-model---provides-estimates-of-treatment-differences">Linear link model - provides estimates of treatment differences</h3>
-<div class="cell">
-<pre class="sas cell-code"><code>proc rmstreg data=adcibc tau=&amp;_tau;
-    class trt01pn sex;
-    model time*cnsr(1) =trt01pn sex age /link=linear method=ipcw (strata=trt01pn);
-    lsmeans trt01pn/pdiff=control('2') cl alpha=0.05;
-    ods output lsmeans=lsm diffs= diff;
-run;</code></pre>
-</div>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/rmst/rmstreg_output1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>The above model results in a <code>restricted mean survival time</code> estimate of 257.16 days on treatment 1 vs 267.04 days on treatment 2. The difference (Active-Placebo) is -9.88 days (95% CI: -39.0 to 19.25, p=0.5061). Hence, there is no evidence of a difference between the treatments with respect to RMST when we look over the Kaplan-Meier plot from 0 to 350 days.</p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/rmst/rmstreg_output2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-</section>
-<section id="log-link-model---provides-estimates-of-treatment-ratios" class="level3">
-<h3 class="anchored" data-anchor-id="log-link-model---provides-estimates-of-treatment-ratios">Log link model - provides estimates of treatment ratios</h3>
-<p>The code is similar to above. We include the option <code>exp</code> on the lsmeans row, since this back transforms (exponentiates) the estimates of the RMST (and 95% CI) for each treatment and for the treatment difference back onto the days scale (rather than log(days) scale). NOTE: if you use the <code>ilink</code> option and link=log method, this does the same (given the link is log), however, does not back transform the treatment differences. It is currently believed that SAS is using the delta method from the treatment arm RMSTs, to estimate the standard error for the RMST ratio.</p>
-<p>Similar to the linear model, we obtain results of a <code>restricted mean survival time</code> estimate of 255.21 days on treatment 1 vs 264.75 days on treatment 2. The difference (Active-Placebo) on the log scale is -0.03667 (95% CI: -0.1493 to 0.07596, p=0.5234) but this is hard to interpret. Hence, once back transformed, the treatment ratio (Active/Placebo) is 0.9640 (95% CI: 0.8613 to 1.0789, p=0.5234).</p>
-<div class="cell">
-<pre class="sas cell-code"><code>proc rmstreg data=adcibc tau=&amp;_tau;
-    class trt01pn sex;
-    model time*cnsr(1) =trt01pn sex age /link=log method=ipcw (strata=trt01pn);
-    lsmeans trt01pn/pdiff=control('2') cl alpha=0.05 exp;
-    ods output lsmeans=lsm diffs= diff;
-run;</code></pre>
-</div>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/rmst/rmstreg_output3.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-</section>
-</section>
-<section id="method-2-pseudo-value-estimation-proc-rmstreg" class="level2">
-<h2 class="anchored" data-anchor-id="method-2-pseudo-value-estimation-proc-rmstreg">Method 2: Pseudo Value Estimation (proc rmstreg)</h2>
-<p>The pseudo-observations method <a href="https://pubmed.ncbi.nlm.nih.gov/15690989/">Andersen, Hansen and Klein 2004</a>, is available in SAS using the method=pv option. You use the link=linear or link=log options and output is similarly interpreted as described for Method 1 IPCW method.</p>
-<div class="cell">
-<pre class="sas cell-code"><code>proc rmstreg data=adcibc tau=&amp;_tau;
-    class trt01pn sex ;
-    model time*cnsr(1) =trt01pn sex age /link=linear  method=pv;
-    lsmeans trt01pn/pdiff=control('2') cl alpha=0.05;
-    ods output lsmeans=lsm diffs= diff;
-run;</code></pre>
-</div>
-</section>
-<section id="method-3-rmst-area-under-the-curve-method-proc-lifetest" class="level2">
-<h2 class="anchored" data-anchor-id="method-3-rmst-area-under-the-curve-method-proc-lifetest">Method 3: RMST Area under the curve method (proc lifetest)</h2>
-<p>A non-parametric method to calculate the RMST is available using the AUC Kaplan-Meier curves.</p>
-<div class="cell">
-<pre class="sas cell-code"><code>proc lifetest data=adcibc plots=(rmst  s) rmst  (tau=&amp;_tau);
-    time time*cnsr(1) ;
-    strata trt01pn / diff=control('2') ;
-run;</code></pre>
-</div>
-<p>As shown below, SAS only outputs the estimates and SEs. However, a 95% CI (assuming a normal distribution) can be calculated in an additional datastep using estimate +/- 1.96 * SE.</p>
-<p>The AUC method results in a <code>restricted mean survival time</code> estimate of 248.2156 days on treatment 1 vs 272.9520 days on treatment 2. The difference (Active-Placebo) is -24.7364. Calculating 95% CIs, for this results in 95% CI: -54.3971 to 4.9243, p=0.1021). Hence, there is no evidence of a difference between the treatments with respect to RMST when we look over the Kaplan-Meier plot from 0 to 350 days.</p>
-<p>Various multiple testing p-value adjustments are also available using this method.</p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/rmst/rmstreg_output4.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-<section id="references" class="level3">
-<h3 class="anchored" data-anchor-id="references">References</h3>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Kolmogorov-Smirnov (K-S) test is a non-parametric test employed to check whether the probability distributions of a sample and a control distribution, or two samples are equal. It is constructed based on the cumulative distribution function (CDF) and calculates the greatest difference between the empirical distribution function (EDF) of the sample and the theoretical or empirical distribution of the control sample.</p>
+<p>The Kolmogorov-Smirnov test is mostly used for two purposes:</p>
 <ol type="1">
-<li><a href="https://onbiostatistics.blogspot.com/2021/04/restricted-mean-survival-time-rmst-for.html">On Biostatistics and Clinical trials Monday April 19 2021</a></li>
-<li><a href="https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/1471-2288-13-152">Royston &amp; Parmar (2013)</a></li>
-<li><a href="https://support.sas.com/documentation/onlinedoc/stat/151/rmstreg.pdf">SAS User’s Guide for RMSTREG Procedure</a></li>
-<li><a href="https://support.sas.com/resources/papers/proceedings19/3013-20">Analyzing RMST using SAS/STAT, Changbin Guo and Yu LIang, SAS Institute, Paper SAS3013-2019</a></li>
-<li><a href="https://onlinelibrary.wiley.com/doi/abs/10.1002/pst.1846">Huang &amp; Kuan (2017)</a></li>
-<li><a href="https://pubmed.ncbi.nlm.nih.gov/24292992/">Tian L, Zhao L, Wei LJ. Biostatistics 2014, 15, 222-233</a></li>
-<li><a href="https://www.fda.gov/regulatory-information/search-fda-guidance-documents/acute-myeloid-leukemia-developing-drugs-and-biological-products-treatment">FDA 2020 guidance</a> and <a href="https://www.fda.gov/media/140821/download">download</a></li>
-<li><a href="https://pubmed.ncbi.nlm.nih.gov/15690989/">Andersen, Hansen and Klein 2004</a></li>
-<li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5845164/">Calkins KL, Canan CE, Moore RD, Lesko CR, Lau B. An application of restricted mean survival time in a competing risks setting: comparing time to ART initiation by injection drug use. BMC Med Res Methodol. 2018;18:27. doi: 10.1186/s12874-018-0484-z</a></li>
+<li><p><strong>One-sample K-S test</strong>:&nbsp;To compare the sample distribution&nbsp;to&nbsp;a known reference distribution.</p></li>
+<li><p><strong>Two-sample K-S test</strong>: To compare the two independent samples’ distributions.</p></li>
 </ol>
+<p>The K-S test is formulated on the basis of the maximum difference between the observed and expected cumulative distribution functions (CDFs). The test is non-parametric, as it does not assume any specific distribution for the sample data. This makes it especially helpful in testing the goodness-of-fit for continuous distributions.</p>
 </section>
-<section id="version" class="level3">
-<h3 class="anchored" data-anchor-id="version">Version</h3>
+<section id="libraries-or-extensions-needed" class="level1">
+<h1>Libraries or Extensions Needed</h1>
+<p>To perform the Kolmogorov-Smirnov test in R, we will use the <code>ks.test()</code> function from the <code>dgof</code> package.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dgof)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="data-sources-for-the-analysis" class="level1">
+<h1>Data Sources for the Analysis</h1>
+<p>We will use the <code>lung</code> dataset from the <code>survival</code> package.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survival)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">attach</span>(lung)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Details about the lung dataset can be found in the documentation for the <code>survival</code> package, which is available at <a href="https://cran.r-project.org/web/packages/survival/survival.pdf" class="uri">https://cran.r-project.org/web/packages/survival/survival.pdf</a>.</p>
+</section>
+<section id="statistical-method" class="level1">
+<h1>Statistical Method</h1>
+<section id="one-sample-k-s-test" class="level2">
+<h2 class="anchored" data-anchor-id="one-sample-k-s-test">One-sample K-S test</h2>
+<p>For this example, we will test whether the Karnofsky performance score rated by physician (<code>ph.karno</code>), and Karnofsky performance score rated by patient (<code>pat.karno</code>) follow a normal distribution.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ks.test</span>(ph.karno, <span class="st">"pnorm"</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ks.test</span>(pat.karno, <span class="st">"pnorm"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Both tests have p-values &lt; 2.2e-16, which indicates that the distributions of <code>ph.karno</code> and <code>pat.karno</code> are significantly different from a normal distribution.</p>
+</section>
+<section id="two-sample-k-s-test" class="level2">
+<h2 class="anchored" data-anchor-id="two-sample-k-s-test">Two-sample K-S test</h2>
+<p>Next, we will compare the distributions of <code>ph.karno</code> and <code>pat.karno</code> using the two-sample K-S test.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ks.test</span>(ph.karno, pat.karno)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The p-value of 0.2084 suggests that there is no significant difference between the distributions of <code>ph.karno</code> and <code>pat.karno</code>. This indicates that the Karnofsky performance scores rated by physicians and patients are not significantly different in terms of their distribution.</p>
+</section>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>We demonstrated the use of the Kolmogorov-Smirnov test in R using the ks.test() function from the dgof package, which is straightforward and handy to use. As far as we are aware of, this is the most widely used function in R to perform the Kolmogorov-Smirnov test.</p>
+<div class="callout callout-style-default callout-note callout-titled" title="Session Info">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Session Info
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code>─ Session info ───────────────────────────────────────────────────────────────
  setting  value
  version  R version 4.4.2 (2024-10-31)
- os       macOS Sequoia 15.6.1
- system   aarch64, darwin20
+ os       Ubuntu 24.04.3 LTS
+ system   x86_64, linux-gnu
  ui       X11
  language (EN)
- collate  en_US.UTF-8
- ctype    en_US.UTF-8
- tz       Europe/London
- date     2025-08-29
- pandoc   3.4 @ /Applications/RStudio.app/Contents/Resources/app/quarto/bin/tools/aarch64/ (via rmarkdown)
+ collate  C.UTF-8
+ ctype    C.UTF-8
+ tz       UTC
+ date     2026-02-10
+ pandoc   3.6.3 @ /opt/quarto/bin/tools/ (via rmarkdown)
 
 ─ Packages ───────────────────────────────────────────────────────────────────
- ! package * version date (UTC) lib source
- R rmst      &lt;NA&gt;    &lt;NA&gt;       [?] &lt;NA&gt;
+ ! package  * version date (UTC) lib source
+ R dgof       &lt;NA&gt;    &lt;NA&gt;       [?] &lt;NA&gt;
+   survival   3.7-0   2024-06-05 [2] CRAN (R 4.4.2)
 
- [1] /Users/christinafillmore/Documents/GitHub/CAMIS/renv/library/macos/R-4.4/aarch64-apple-darwin20
- [2] /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library
+ [1] /home/runner/work/CAMIS/CAMIS/renv/library/linux-ubuntu-noble/R-4.4/x86_64-pc-linux-gnu
+ [2] /opt/R/4.4.2/lib/R/library
 
  R ── Package was removed from disk.
-
-─ External software ──────────────────────────────────────────────────────────
- setting value
- SAS     9.04.01M7P08062020
 
 ──────────────────────────────────────────────────────────────────────────────</code></pre>
 </div>
 </div>
+</div>
+</div>
+</div>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->
