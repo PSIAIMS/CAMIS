@@ -4,17 +4,7 @@ title: "Confidence intervals for Proportions in SAS"
 
 ## Introduction
 
-The methods to use for calculating a confidence interval (CI) for a proportion depend on the type of situation you have.
-
--   1 sample proportion (1 proportion calculated from 1 group of subjects)
-
--   2 sample proportions and you want a CI for the difference in the 2 proportions (or the ratio, or an odds ratio) e.g. for estimating the magnitude of a treatment effect.
-
-    -   If the 2 samples come from 2 independent samples (different subjects in each of the 2 treatment groups)
-
-    -   If the 2 samples are matched (i.e. the same subject has 2 results, one from each treatment \[paired data\]).
-
-Some sources suggest selecting a different method depending on whether your proportion is close to 0 or 1 (or near to the 0.5 midpoint), and your sample size. Seemingly this advice stems from a preference to use the Wald method when the normal approximation assumptions are adequately satisfied. However, options are available for CI methods that have appropriate coverage properties across the whole parameter space, which with modern computing software are easily obtained, so there is no need for such a data-driven approach to method selection.
+\[See separate page for general introductory information on confidence intervals for proportions.\]
 
 ## Data used
 
@@ -54,14 +44,6 @@ Here we are calculating a 95% confidence interval for the proportion of responde
 SAS PROC FREQ in Version 9.4 can compute 11 methods to calculate CIs for a single proportion, an explanation of most of these methods and the code is shown below. See [BINOMIAL](https://support.sas.com/documentation/cdl/en/procstat/63104/HTML/default/viewer.htm#procstat_freq_sect010.htm)^1^ for more information on SAS parameterization. It is recommended to always sort your data prior to doing a PROC FREQ.
 
 For more information about some of these methods in R & SAS, including which performs better in different scenarios see [Five Confidence Intervals for Proportions That You Should Know about](https://towardsdatascience.com/five-confidence-intervals-for-proportions-that-you-should-know-about-7ff5484c024f)^2^ and [Confidence Intervals for Binomial Proportion Using SAS](https://www.lexjansen.com/sesug/2015/103_Final_PDF.pdf)^3^. Key literature on the subject includes papers by [Brown et al.](https://www.jstor.org/stable/2676784?seq=1)^4^ and [Newcombe](https://pubmed.ncbi.nlm.nih.gov/9595616/)^5^.
-
-### Strictly conservative vs proximate coverage
-
-Because of the discrete nature of binomial data, it is impossible for any CI to cover the true value of the estimated proportion precisely 95% of the time for all values of p. CI methods may be designed to achieve the nominal confidence level **as a minimum**, but many researchers find such a criterion to be excessive, producing CIs that are unnecessarily wide. The alternative position is to aim for coverage probability that is close to the nominal confidence level **on average.** These two opposing positions are described by Newcombe^5^ as "aiming to align either the minimum or the mean coverage with the nominal $(1-\alpha)$", or in other words aiming for coverage to be either "strictly conservative" or "proximate". Many alternative CI methods are designed to meet the latter criterion, but some include an optional adjustment ("continuity correction") to achieve the former.
-
-### Consistency with hypothesis tests
-
-Depending on the analysis plan, it may be desirable for a reported confidence interval to be consistent with the result of a hypothesis test, so that for example the 95% CI will exclude the null hypothesis value if and only if the test p-value is less than 0.05 (or 0.025 one-sided). Within SAS for the asymptotic methods, such consistency is provided by the Wilson CI, because the asymptotic test uses the standard error estimated under the null hypothesis (i.e. the value specified in the `BINOMIAL(P=...)` option of the `TABLES` statement. If an `EXACT BINOMIAL;` statement is used, the resulting test is consistent with the Clopper-Pearson CI. An exact hypothesis test with mid-P adjustment (consistent with the mid-P CI) is available via `EXACT BINOMIAL / MIDP;` but the output only gives the one-sided p-value, so if a 2-sided test is required it needs to be manually calculated by doubling the one-sided mid p-value.
 
 ### Clopper-Pearson (Exact or binomial CI) method
 
@@ -146,7 +128,7 @@ $$The coverage probabilities of the Jeffreys method are centred around the nomin
 
 ### Binomial based Mid-P method
 
-The Mid-P method is similar to the Clopper-Pearson method, in the sense that it is based on exact calculations from the binomial probability distribution, but it aims to reduce the conservatism. It's quite a complex method to compute compared to the methods above and rarely used in practice *\[Ed: what source is there for this statement?\]*. However, like the Jeffreys interval, it has excellent 1-sided and 2-sided coverage properties for those seeking to align mean coverage with the nominal confidence level^9^.
+The mid-P method is similar to the Clopper-Pearson method, in the sense that it is based on exact calculations from the binomial probability distribution, but it aims to reduce the conservatism. It's quite a complex method to compute compared to the methods above and rarely used in practice *\[Ed: what source is there for this statement?\]*. However, like the Jeffreys interval, it has excellent 1-sided and 2-sided coverage properties for those seeking to align mean coverage with the nominal confidence level^9^.
 
 The mid-P method is output by SAS using `BINOMIAL(LEVEL="Yes" CL=MIDP);`
 
@@ -157,6 +139,14 @@ The Blaker method is a less conservative alternative to the Clopper-Pearson exac
 The Clopper-Pearson CI's are always wider and contain the Blaker CI limits. It's adoption has been limited due to the numerical algorithm taking longer to compute compared to some of the other methods especially when the sample size is large. NOTE: Klaschka and Reiczigel^11^ is yet another adaptation of this method.
 
 The Blaker method is output by SAS using `BINOMIAL(LEVEL="Yes" CL=BLAKER);`
+
+## Consistency with hypothesis tests
+
+Within SAS for the asymptotic methods, consistency with the binomial test is provided by the Wilson CI, because the asymptotic test uses the standard error estimated under the null hypothesis (i.e. the value specified in the `BINOMIAL(P=...)` option of the `TABLES` statement.
+
+If an `EXACT BINOMIAL;` statement is used, the resulting test is consistent with the Clopper-Pearson CI.
+
+An exact hypothesis test with mid-P adjustment (consistent with the mid-P CI) is available via `EXACT BINOMIAL / MIDP;` but the output only gives the one-sided p-value, so if a 2-sided test is required it needs to be manually calculated by doubling the one-sided mid p-value.
 
 ## Example Code using PROC FREQ
 
