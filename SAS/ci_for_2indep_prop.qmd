@@ -4,19 +4,7 @@ title: "Confidence Intervals for Independent Proportions in SAS"
 
 ## Introduction
 
-The methods to use for calculating a confidence interval (CI) for independent proportions (p1 and p2) depend on the contrast parameter of interest. You might wish to quantify the simple difference between the proportions ('risk difference' RD = p1 - p2), or the ratio ( 'relative risk' RR = p1 / p2). Another option (for consistency with logistic regression output for example) is the Odds Ratio OR = (p1 (1-p2) / (p2 (1-p1)).
-
-The production of a confidence interval for such contrasts is useful for giving a clinically interpretable quantification of the magnitude of a treatment effect. Moreover, it is particularly relevant for non-inferiority (NI) or equivalence trials, where the hypothesis test is an assessment of whether the confidence interval spans a pre-specified NI margin or not.
-
-### Strictly conservative vs proximate coverage
-
-Because of the discrete nature of binomial data, it is impossible for any CI to cover the true value of the estimated proportion precisely 95% of the time for all values of p1 and p2. CI methods may be designed to achieve the nominal confidence level **as a minimum**, but many researchers find such a criterion to be excessive, producing CIs that are unnecessarily wide. The alternative position is to aim for coverage probability that is close to the nominal confidence level **on average.** These two opposing positions are described by Newcombe^5^ as "aiming to align either the minimum or the mean coverage with the nominal $(1-\alpha)$", or in other words aiming for coverage to be either "strictly conservative" or "proximate". Many alternative CI methods are designed to meet the latter criterion, but some include an optional adjustment ("continuity correction"), or employ computationally intensive approaches to achieve the former. It is worth noting that although one might assume that regulatory bodies would take the latter stance and insist on strictly conservative coverage (noting that one-sided non-coverage equates to the type 1 error of a NI test), in recent years it appears that the FDA's preferred method for RD is the Miettinen-Nurminen method.
-
-### Consistency with hypothesis tests
-
-Depending on the analysis plan, it may be desirable (or in the case of a non-inferority trial, essential) for a reported confidence interval to be consistent with the result of a hypothesis test, so that for example the 95% CI will exclude the null hypothesis value if and only if the test p-value is less than 0.05 (or 0.025 one-sided). Within SAS PROC FREQ for the asymptotic methods, such consistency is provided by the Miettinen-Nurminen CI, which is based on the same test statistic as the Farrington-Manning test\*\*\*. For the SCAS method, the macro provides the p-value for a specified NI margin, with guaranteed consistency with the CI.
-
-If an EXACT statement is used...
+\[See separate page for general introductory information on confidence intervals for proportions.\]
 
 ## Data used
 
@@ -53,7 +41,7 @@ knitr::include_graphics("../images/ci_for_prop/2by2crosstab.png")
 
 This [paper](https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf)^12^ describes many methods for the calculation of confidence intervals for 2 independent proportions. The performance of many of the same methods are compared graphically here\[add ref\]. According to a recent paper\[\], the most commonly reported method in non-inferiority clinical trials is the Wald asymptotic normal approximation (despite its well-documented poor performance), followed by the Miettinen-Nurminen (asymptotic score) method. More recently, an improved variant of the Miettinen-Nurminen method (SCAS) was developed, by including a skewness correction designed to optimise the performance in terms of one-sided coverage for NI testing. SCAS corrects the slightly asymmetrical coverage of the Miettinen-Nurminen interval (note the skewness is more pronounced when analysing the RR contrast).
 
-SAS PROC FREQ is able to calculate CIs using the following methods: Exact, Agresti/Caffo (AC), Wald, Wald with Continuity correction, Newcombe Score, Newcombe score with continuity correction, Miettinen and Nurminen (MN), and Hauck-Anderson (HA). The SCAS method is not available in PROC FREQ, but a SAS macro is available in a GitHub repository\[\], which also provides an optional continuity correction for both SCAS and MN. Example code is shown below, before provision of a much more detailed analysis using Wald and Wilson with and without continuity correction.
+SAS PROC FREQ is able to calculate CIs using the following methods: Exact, Agresti/Caffo (AC), Wald, Wald with Continuity correction, Newcombe Score, Newcombe score with continuity correction, Miettinen and Nurminen (MN or SCORE), Mee (MN(correct=Mee)), and Hauck-Anderson (HA). The SCAS method is not available in PROC FREQ, but a SAS macro is available in a GitHub repository\[\], which also provides an optional continuity correction for both SCAS and MN. Example code is shown below, before provision of a much more detailed analysis using Wald and Wilson with and without continuity correction.
 
 ```{sas}
 #| eval: false 
@@ -106,13 +94,41 @@ The CI for the difference between two proportions is: $$ D - sqrt((p_1-l_1)^2+(u
 
 ### Miettinen-Nurminen Asymptotic Score Method
 
-\[Details to be added, noting options for continuity 'correction' and skewness correction offered by the macro\]
+\[Details to be added, noting options for skewness correction offered by the %SCORECI macro\]
+
+## Methods for Calculating Confidence Intervals for Relative Risk from 2 independent samples
+
+SAS PROC FREQ is able to calculate CIs using the following methods: Miettinen-Nurminen (SCORE), Exact, Likelihood Ratio (LR), Wald, Haldane Modified Wald. The SCAS method (which addresses asymmetric one-sided coverage of the MN method which is particularly pronounced for RR) is not available in PROC FREQ, but is in the SAS macro %SCORECI.
+
+## Methods for Calculating Confidence Intervals for Odds Ratio from 2 independent samples
+
+SAS PROC FREQ is able to calculate CIs using the following methods: Miettinen-Nurminen (SCORE), Exact, Likelihood Ratio (LR), mid-P (MIDP), Wald, Haldane Modified Wald. The SCAS method is not available in PROC FREQ, but is in the SAS macro %SCORECI.
+
+## 
+
+### 
+
+## Continuity Adjusted Methods
+
+SAS provides an option (CORRECT) to apply continuity adjustment to the Wald or Newcombe methods for more conservative coverage. Note however that the Wald-cc method fails to achieve strictly conservative coverage \[See Laud & Dane 2014\].
+
+It is important to note that the CORRECT sub-option for the MN/Score method serves an entirely different purpose. It removes the variance bias correction factor N/(N-1) from the Miettinen-Nurminen formula in order to produce the Mee version of the score method. No continuity correction is currently available for the score methods in SAS. A 'sliding scale' adjustment has been described \[Laud & Dane 2014\] and implemented in the ratesci package for R, but not yet added to the %SCORECI macro.
+
+## Consistency with Hypothesis Tests
+
+Within SAS PROC FREQ for the asymptotic methods for RD, consistency with a traditional Chi-squared test for superiority (Karl Pearson version as produced by PROC FREQ), and the Farrington-Manning test for non-inferiority, is provided by the Mee CI (CL=SCORE(CORRECT=MEE)), which is similar to MN but omitting the N/(N-1) correction factor. Note that the MN method (including the correction factor) is consistent with the Egon Pearson 'N-1' version of the chi-squared test. SAS PROC FREQ does not produce that, nor does it offer the option to include the 'N-1' adjustment when requesting a non-inferiority test with the NONINF option. Consequently, there is a risk of contradictory results if using PROC FREQ to obtain a MN CI with a corresponding non-inferiority test.
+
+For example...
+
+For the SCAS method, the macro provides the p-value for a specified NI margin, with guaranteed consistency with the CI.
+
+If an EXACT statement is used...
 
 ## Example Code using PROC FREQ
 
 It is important to check the output to ensure that you are modelling Active - Placebo, and response = Yes (not Response=No). By default SAS sorts alphabetically and calculates CI's for the first column. You can change this by using the `COLUMN= Option` on riskdiff or by sorting the dataset (here by trt, then descending resp), and then using `order=data` in the proc freq. This tells SAS to use the order you have sorted the data by. SAS confirms this by saying "Difference is (Row 1 - Row 2)" and "Column 1 (resp=Yes)". Note how in the SAS output, it calls the requested 'wilson' method 'Newcombe' in the output.
 
-Options for riskdiff(CL=XXX) consist of AC:Agresti-Caffo, EXACT=exact, HA:Hauck-Anderson, MN or SCORE:Miettinen-Nurminen (another type of Score CI), WILSON or NEWCOMBE: Wilson method described above, and WALD: normal approximation wald method described above. Examples using Wald and Wilson are shown below with and without continuity correction.
+Options for riskdiff(CL=XXX) consist of AC: Agresti-Caffo, EXACT: exact, HA: Hauck-Anderson, MN or SCORE: Miettinen-Nurminen (another type of Score CI), SCORE(CORRECT=MEE): Mee (Score CI omitting variance bias correction), WILSON or NEWCOMBE: Newcombe hybrid score method described above, and WALD: normal approximation Wald method described above. Examples using Wald and Wilson are shown below with and without continuity correction.
 
 ```{sas}
 #| eval: false 
