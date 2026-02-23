@@ -37,23 +37,37 @@ A related issue is whether it is sufficient for two-sided coverage probability t
 
 There are some methods that apply (or have variants which apply) across all contrast parameters (i.e. $\theta=p$ or $\theta=RD$ etc.), which are outlined below.
 
-### Normal Approximation Method (Also known as the Wald Method)
+### Normal Approximation Methods (Also known as the Wald Method)
 
 The Wald confidence interval is constructed simply from the the point estimate plus and minus a multiple of its estimated standard error: $(L_{Wald}, U_{Wald}) = \hat \theta \pm z_{\alpha/2} \sqrt{\hat V(\hat\theta)}$ where $z_{\alpha/2}$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to the confidence level $(1-\alpha)$.
 
 For RR and OR, $\theta$ is log-transformed to improve the normal approximation, and $(L_{Wald}, U_{Wald}) = exp[ ln(\hat \theta) \pm z_{\alpha/2} \sqrt{\hat V(ln(\hat\theta))}]$, which requires a modification for boundary cases.
 
-### Asymptotic Score Method
+### Asymptotic Score Methods
 
 The Score confidence interval is also based on an asymptotic normal approximation, but uses a score statistic $Z(\theta) = S(\theta)/\sqrt {\tilde V}$ based on contrast function $S(\theta)$ and its true variance $\tilde V = V(S(\theta))$. For example, for the single proportion, $S(p) = \hat p - p$, or for RD, $S(\theta) = \hat p_1 - \hat p_2 - \theta$.
 
-$Z(\theta)$ can be evaluated at any value of $\theta$ to find the range of values for which $|Z(\theta)|< z_{\alpha/2}$. For the single proportion, this process simplifies to solving a quadratic equation in $p$.
+$Z(\theta)$ can be evaluated at any value of $\theta$ to find the range of values for which $|Z(\theta)|< z_{\alpha/2}$. For the single proportion (Wilson score interval), this process simplifies to solving a quadratic equation in $p$.
 
-For the contrast parameters, the variance is a function of both $p_1$ and $p_2$, or of $\theta$ and a 'nuisance parameter', which is eliminated using the maximum likelihood estimate for $p_2$ for the given value of $\theta$.
+For the contrast parameters, score methods were derived for independent proportions by Miettinen & Nurminen, Mee, and Koopman in the 1980s, and for paired data by Tango (1998), Nam & Blackwelder (2002) and Tang et al. (2003). In each case, the variance is a function of both $p_1$ and $p_2$, or of $\theta$ and a 'nuisance parameter', which is eliminated using the maximum likelihood estimate for $p_2$ (or for the paired case, the cell probability $p_{21}$) for the given value of $\theta$.
 
-### Skewness Corrected Asymptotic Score Method
+### SCAS Methods
 
-...
+Originating from papers published in 1985-1990 by Gart and Nam, the skewness-corrected asymptotic score ('SCAS') methods introduce a further term within the score statistic that involves $\tilde \mu$, the third central moment of $S(\theta)$
+
+$$
+Z(\theta) = \frac{S(\theta)}{\sqrt {\tilde V}} - \frac{(Z(\theta)^2 - 1)\tilde \mu_3}{6 \tilde V^{3/2}}
+$$
+
+Hence these are an extension of the asymptotic score intervals, designed to address asymmetric coverage which was observed for the score method, particularly for the RR contrast. The same principle is also applied to the Wilson score method, which has also been noted to have a systematic bias in one-sided coverage. A unified family of methods covering the single proportion and all independent contrasts was described by Laud (2017), with a further publication under review for paired data.
+
+\[SCAS intervals are not yet implemented in SAS PROC freq, but can be obtained using the %SCORECI and %PAIRBINCI macros.\]
+
+### MOVER Method
+
+This class of methods was popularised by Newcombe for the RD contrast, and is therefore labelled as the Newcombe method in current SAS PROC FREQ documentation. It has since been generalised to other contrasts and for paired data (though not implemented in SAS), and renamed as the Method of Variance Estimates Recovery (MOVER). It is also referred to as the 'Square-and-add' approach.
+
+MOVER intervals are produced by combining CIs for each of the two separate proportions involved (and an estimate of their correlation, in the paired data case). Originally Wilson intervals were used (hence earlier versions of SAS labelled the method as WILSON), but improved performance may be obtained by using Jeffreys intervals instead.
 
 ### 'Exact' Method(s)
 
@@ -62,6 +76,12 @@ So-called 'exact' methods are designed to guarantee strictly conservative covera
 There are actually a few different versions of 'exact' methods for each contrast, with alternatives aimed at reducing the conservatism of coverage. For example, Chan-Zhang is an improvement on Santner-Snell. However, it should be noted that some methods (e.g. Blaker, Agresti-Min) achieve reduced conservatism by inverting a two-sided exact test, but as a result they do not satisfy the strictly conservative criterion for one-sided coverage (and therefore would produce inflated type 1 error rates if used for a non-inferiority test).
 
 Several asymptotic methods offer a continuity adjustment, which aims to emulate 'exact' methods and achieve almost conservative coverage, by for example adding a quantity of the order $0.5 \times n$ to the formula. Generally this is not a successful modification to the Wald method, but can produce good results for score methods. It has been suggested that an adjustment of smaller magnitude such as $0.25 \times n$ could be used for almost-but-not-quite-strictly conservative coverage.
+
+### 'Mid-P' Method(s)
+
+Exact methods may be adapted to be less conservative (i.e. to achieve proximate coverage) by applying a mid-P adjustment, essentially including half the probability of the observed data in the calculations. This is like a reversal of the continuity adjustment for asymptotic methods.
+
+Although theoretically possible for any contrast, the mid-P method is only implemented in SAS for CIs for the single proportion and the odds ratio contrast.
 
 ## Reference
 
