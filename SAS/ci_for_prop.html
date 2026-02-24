@@ -20,6 +20,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -226,6 +261,12 @@ window.Quarto = {
   <li><a href="#wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method7-1" id="toc-wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method7-1" class="nav-link" data-scroll-target="#wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method7-1">Wilson Method (Also known as the Score method or the Altman, Newcombe method<sup>7</sup> )</a></li>
   </ul></li>
   <li><a href="#example-code-using-proc-freq-2" id="toc-example-code-using-proc-freq-2" class="nav-link" data-scroll-target="#example-code-using-proc-freq-2">Example Code using PROC FREQ</a></li>
+  <li><a href="#methods-for-calculating-confidence-intervals-for-2-independent-samples-proportion" id="toc-methods-for-calculating-confidence-intervals-for-2-independent-samples-proportion" class="nav-link" data-scroll-target="#methods-for-calculating-confidence-intervals-for-2-independent-samples-proportion">Methods for Calculating Confidence Intervals for 2 independent samples proportion</a>
+  <ul class="collapse">
+  <li><a href="#normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method-3" id="toc-normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method-3" class="nav-link" data-scroll-target="#normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method-3">Normal Approximation Method (Also known as the Wald or asymptotic CI Method)</a></li>
+  <li><a href="#wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method7-2" id="toc-wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method7-2" class="nav-link" data-scroll-target="#wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method7-2">Wilson Method (Also known as the Score method or the Altman, Newcombe method<sup>7</sup> )</a></li>
+  </ul></li>
+  <li><a href="#example-code-using-proc-freq-3" id="toc-example-code-using-proc-freq-3" class="nav-link" data-scroll-target="#example-code-using-proc-freq-3">Example Code using PROC FREQ</a></li>
   <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">Reference</a></li>
   </ul>
 </nav>
@@ -448,7 +489,17 @@ run;
 <h2 class="anchored" data-anchor-id="methods-for-calculating-confidence-intervals-for-2-independent-samples-proportion-difference">Methods for Calculating Confidence Intervals for 2 independent samples proportion difference</h2>
 <p>This <a href="https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf">paper</a><sup>12</sup> describes many methods for the calculation of confidence intervals for 2 independent proportions. The most commonly used are: Wald with continuity correction and Wilson with continuity correction. The Wilson method may be more applicable when sample sizes are smaller and/or the proportion is closer to 0 or 1, since reliance on a normal distribution may be inappropriate.</p>
 <p>SAS is able to calculate CIs using the following methods: Exact, Agresti/Caffo, Wald, Wald with Continuity correction, Wilson/Newcombe Score, Wilson/Newcombe score with continuity correction, Miettinen and Nurminen, and Hauck-Anderson. Example code is shown below, before provision of a much more detailed analysis using Wald and Wilson with and without continuity correction.</p>
-<p><code>{sas} #| eval: false # Wald, Wilson, Agresti/Caffo, Hauck-Anderson, and Miettinen and Nurminen methods proc freq data=adcibc2 order=data;     table trt*resp /riskdiff(CL=(wald wilson ac ha mn)); run;  # exact method proc freq data=adcibc2 order=data;     exact riskdiff (method=noscore);     table trt*resp/riskdiff(CL=(exact));  run;}</code></p>
+<div class="cell">
+<pre class="sas cell-code"><code># Wald, Wilson, Agresti/Caffo, Hauck-Anderson, and Miettinen and Nurminen methods 
+proc freq data=adcibc2 order=data;
+     table trt*resp /riskdiff(CL=(wald wilson ac ha mn)); 
+run;  # exact method 
+
+proc freq data=adcibc2 order=data;     
+    exact riskdiff (method=noscore);
+    table trt*resp/riskdiff(CL=(exact));  
+run;</code></pre>
+</div>
 <section id="normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method-1" class="level3">
 <h3 class="anchored" data-anchor-id="normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method-1">Normal Approximation Method (Also known as the Wald or asymptotic CI Method)</h3>
 <p>In large random samples from independent trials, the sampling distribution of the difference between two proportions approximately follows the normal distribution.</p>
@@ -479,20 +530,19 @@ and</p>
 <p>Options for riskdiff(CL=XXX) consist of AC:Agresti-Caffo, EXACT=exact, HA:Hauck-Anderson, MN or SCORE:Miettinen-Nurminen (another type of Score CI), WILSON or NEWCOMBE: Wilson method described above, and WALD: normal approximation wald method described above. Examples using Wald and Wilson are shown below with and without continuity correction.</p>
 <div class="cell">
 <pre class="sas cell-code"><code>proc sort data=adcibc2; 
-by  trt descending resp; 
+    by  trt descending resp; 
 run;  
 
 # without continuity correction 
 proc freq data=adcibc2 order=data; 
-table trt*resp/riskdiff(CL=(wald wilson)); 
+    table trt*resp/riskdiff(CL=(wald wilson)); 
 run;  
 
 # with continuity correction 
 proc freq data=adcibc2 order=data;
-table trt*resp/riskdiff(CORRECT CL=(wald wilson));
+    table trt*resp/riskdiff(CORRECT CL=(wald wilson));
 run;</code></pre>
 </div>
-<p><code>wqq #| echo: false  #| fig-align: center  #| out-width: 50%  knitr::include_graphics("../images/ci_for_prop/binomial_2sampleCI_noCC.png")</code></p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
@@ -715,11 +765,77 @@ proc freq data=dat_used;
     table ACT*PBO/commonriskdiff(cl=MH); 
 run;</code></pre>
 </div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-align: center</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co">#| out-width: 50%</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="st">"../images/ci_for_prop/riskdiff_matched.png"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="methods-for-calculating-confidence-intervals-for-2-independent-samples-proportion" class="level2">
+<h2 class="anchored" data-anchor-id="methods-for-calculating-confidence-intervals-for-2-independent-samples-proportion">Methods for Calculating Confidence Intervals for 2 independent samples proportion</h2>
+<p>This <a href="https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf">paper</a><sup>8</sup> describes many methods for the calculation of confidence intervals for 2 independent proportions. The most commonly used are: Wald with continuity correction and Wilson with continuity correction. The Wilson method may be more applicable when sample sizes are smaller and/or the proportion is closer to 0 or 1, since reliance on a normal distribution may be inappropriate.</p>
+<p>SAS is able to calculate CIs using the following methods: Exact, Agresti/Caffo, Wald, Wald with Continuity correction, Wilson/Newcombe Score, Wilson/Newcombe score with continuity correction, Miettinen and Nurminen, and Hauck-Anderson. Example code is shown below, before provision of a much more detailed analysis using Wald and Wilson with and without continuity correction.</p>
+<div class="cell">
+<pre class="sas cell-code"><code># Wald, Wilson, Agresti/Caffo, Hauck-Anderson, and Miettinen and Nurminen methods
+proc freq data=adcibc2 order=data;
+    table trt*resp /riskdiff(CL=(wald wilson ac ha mn));
+run;
+
+# exact method
+proc freq data=adcibc2 order=data;
+    exact riskdiff (method=noscore);
+    table trt*resp/riskdiff(CL=(exact)); 
+run;</code></pre>
+</div>
+<section id="normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method-3" class="level3">
+<h3 class="anchored" data-anchor-id="normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method-3">Normal Approximation Method (Also known as the Wald or asymptotic CI Method)</h3>
+<p>In large random samples from independent trials, the sampling distribution of the difference between two proportions approximately follows the normal distribution.</p>
+<p>The difference between two independent sample proportions is calculated as: <span class="math inline">\(D= \hat p_1-\hat p_2\)</span></p>
+<p>A confidence interval for the difference between two independent proportions <span class="math inline">\(D\)</span> can be calculated using:</p>
+<p><span class="math inline">\(D\approx \hat D \pm z_\alpha * SE(\hat p)\)</span>,</p>
+<p>where <span class="math inline">\(z_\alpha\)</span> is the <span class="math inline">\(1-\alpha/2\)</span> quantile of a standard normal distribution corresponding to level <span class="math inline">\(\alpha\)</span>, and</p>
+<p><span class="math inline">\(SE (\hat p) = sqrt{( \frac{\hat p_1 (1-\hat p_1)}{n_1} + \frac{\hat p_2 (1-\hat p_2)}{n_2})}\)</span></p>
+<p>With continuity correction, the equation becomes</p>
+<p><span class="math inline">\(D\approx \hat D \pm (CC + z_\alpha * SE(\hat p))\)</span>,</p>
+<p>where <span class="math inline">\(z_\alpha\)</span> is the <span class="math inline">\(1-\alpha/2\)</span> quantile of a standard normal distribution corresponding to level <span class="math inline">\(\alpha\)</span>,<br>
+and <span class="math inline">\(SE (\hat p)\)</span> = <span class="math inline">\(sqrt{( \frac{\hat p_1 (1-\hat p_1)}{n_1} + \frac{\hat p_2 (1-\hat p_2)}{n_2})}\)</span><br>
+and</p>
+<p><span class="math inline">\(CC = \frac{1}{2} (\frac{1}{n_1} + \frac{1}{n_2})\)</span></p>
+</section>
+<section id="wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method7-2" class="level3">
+<h3 class="anchored" data-anchor-id="wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method7-2">Wilson Method (Also known as the Score method or the Altman, Newcombe method<sup>7</sup> )</h3>
+<p>Derive the confidence intervals using the Wilson Method equations above for each of the individual single samples 1 and 2.</p>
+<p>Let l1 = Lower CI for sample 1, and u1 be the upper CI for sample 1.</p>
+<p>Let l2 = Lower CI for sample 2, and u2 be the upper CI for sample 2.</p>
+<p>Let D = p1-p2 (the difference between the observed proportions)</p>
+<p>The Confidence interval for the difference between two population proportions is: <span class="math display">\[ D - sqrt((p_1-l_1)^2+(u_2-p_2)^2) \quad to\quad D + sqrt((p_2-l_2)^2+(u_1-p_1)^2 )   \]</span></p>
+</section>
+</section>
+<section id="example-code-using-proc-freq-3" class="level2">
+<h2 class="anchored" data-anchor-id="example-code-using-proc-freq-3">Example Code using PROC FREQ</h2>
+<p>It is important to check the output to ensure that you are modelling Active - Placebo, and response = Yes (not Response=No). By default SAS sorts alphabetically and calculates CI’s for the first column. You can change this by using the <code>COLUMN= Option</code> on riskdiff or by sorting the dataset (here by trt, then descending resp), and then using <code>order=data</code> in the proc freq. This tells SAS to use the order you have sorted the data by. SAS confirms this by saying “Difference is (Row 1 - Row 2)” and “Column 1 (resp=Yes)”. Note how in the SAS output, it calls the requested ‘wilson’ method ‘Newcombe’ in the output.</p>
+<p>Options for riskdiff(CL=XXX) consist of AC:Agresti-Caffo, EXACT=exact, HA:Hauck-Anderson, MN or SCORE:Miettinen-Nurminen (another type of Score CI), WILSON or NEWCOMBE: Wilson method described above, and WALD: normal approximation wald method described above. Examples using Wald and Wilson are shown below with and without continuity correction.</p>
+<div class="cell">
+<pre class="sas cell-code"><code>proc sort data=adcibc2;
+    by  trt descending resp;
+run;
+
+# without continuity correction
+proc freq data=adcibc2 order=data;
+    table trt*resp/riskdiff(CL=(wald wilson)); 
+run;
+
+# with continuity correction
+proc freq data=adcibc2 order=data;
+    table trt*resp/riskdiff(CORRECT CL=(wald wilson)); 
+run;</code></pre>
+</div>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="../images/ci_for_prop/riskdiff_matched.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+<p><img src="../images/ci_for_prop/binomial_2sampleCI_noCC.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
 </figure>
 </div>
 </div>
@@ -735,10 +851,6 @@ run;</code></pre>
 <li><p>Newcombe RG (1998). “Two-sided confidence intervals for the single proportion: comparison of seven methods”, Statistics in Medicine 17(8):857-872</p></li>
 <li><p>Clopper,C.J.,and Pearson,E.S.(1934),“The Use of Confidence or Fiducial Limits Illustrated in the Case of the Binomial”, Biometrika 26, 404–413.</p></li>
 <li><p>D. Altman, D. Machin, T. Bryant, M. Gardner (eds). Statistics with Confidence: Confidence Intervals and Statistical Guidelines, 2nd edition. John Wiley and Sons 2000.</p></li>
-<li><p>Laud PJ (2017) Equal-tailed confidence intervals for comparison of rates. Pharmaceutical Statistics 16: 334-348</p></li>
-<li><p>Laud PJ (2018) Corrigendum: Equal-tailed confidence intervals for comparison of rates. Pharmaceutical Statistics 17: 290-293</p></li>
-<li><p>Blaker, H. (2000). Confidence curves and improved exact confidence intervals for discrete distributions, Canadian Journal of Statistics 28 (4), 783–798</p></li>
-<li><p>Klaschka, J. and Reiczigel, J. (2021). “On matching confidence intervals and tests for some discrete distributions: Methodological and computational aspects,”&nbsp;Computational Statistics, 36, 1775–1790.</p></li>
 <li><p><a href="https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf" class="uri">https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf</a></p></li>
 </ol>
 
