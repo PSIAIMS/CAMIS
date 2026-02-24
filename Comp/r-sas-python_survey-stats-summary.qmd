@@ -1,6 +1,8 @@
 ---
 title: "R vs SAS vs Python Survey Summary Statistics"
 bibliography: survey-stats-summary.bib
+execute: 
+  eval: false
 ---
 
 This document will compare the survey summary statistics functionality in SAS (available through SAS/STAT), R (available from the [`{survey}`](%5B%60%7Bsurvey%7D%60%5D(https://r-survey.r-forge.r-project.org/survey/html/api.html)) package), and Python (available from the [`samplics`](https://samplics-org.github.io/samplics/) package), highlighting differences in methods and results. Only the default Taylor series linearisation method for calculating variances is used in all languages. A more detailed comparison between R and SAS for specific methods and use-cases is available in [@2017_YRBS], [@so2020modelling], or [@adamico_2009]. For a general guide to survey statistics, which has companion guides for both R and SAS, see [@Lohr_2022].
@@ -9,15 +11,15 @@ This document will compare the survey summary statistics functionality in SAS (a
 
 The following table shows different survey summary statistics, the capabilities of each language, and whether or not the results match. Each analysis also includes calculating the standard error and confidence intervals.
 
-| Analysis        | Supported in R                                                                               | Supported in SAS                                                                                | Supported in Python                                             | Results Match\*  | Notes                                                                                                                                          |
+| Analysis | Supported in R | Supported in SAS | Supported in Python | Results Match\* | Notes |
 |------------|------------|------------|------------|------------|------------|
-| Mean            | [Yes](../R/survey-stats-summary.html#Mean)                                                   | [Yes](../SAS/survey-stats-summary.html#Mean)                                                    | [Yes](../Python/survey-stats-summary.html#Mean)                 | Yes              | Must specify degrees of freedom in R for confidence limits                                                                                     |
-| Total           | [Yes](../R/survey-stats-summary.html#Total)                                                  | [Yes](../SAS/survey-stats-summary.html#Total)                                                   | [Yes](../Python/survey-stats-summary.html#Total)                | Yes              | Must specify degrees of freedom in R for confidence limits                                                                                     |
-| Ratios          | [Yes](../R/survey-stats-summary.html#Ratios)                                                 | [Yes](../SAS/survey-stats-summary.html#Ratios)                                                  | [Yes](../Python/survey-stats-summary.html#Ratios)               | Yes              | Must specify degrees of freedom in R for confidence limits                                                                                     |
-| Proportions     | [Yes](../R/survey-stats-summary.html#Proportions)                                            | [Yes](../SAS/survey-stats-summary.html##Proportions)                                            | [Yes](../Python/survey-stats-summary.html#Proportions)          | Yes\*\*          | In Python, the confidence limits of proportions only match to 1 or 2 s.f. This is due to a different method being used, which is undocumented. |
-| Quantiles       | [Yes](../R/survey-stats-summary.html#Quantiles)                                              | [Yes](../SAS/survey-stats-summary.html#Quantiles)                                               | No                                                              | [No](#Quantiles) | Different methods for calculating quantiles                                                                                                    |
-| Domain Analysis | [Yes](../R/survey-stats-summary.html#Summary%20Statistics%20on%20Complex%20Survey%20Designs) | [Yes](../SAS/survey-stats-summary.html##Summary%20Statistics%20on%20Complex%20Survey%20Designs) | [Yes](../Python/survey-stats-summary.html#Domain%20Estimations) | Yes              |                                                                                                                                                |
-| Design Effect   | [Yes](../R/survey-stats-summary.html#Summary%20Statistics%20on%20Complex%20Survey%20Designs) | [Yes](../SAS/survey-stats-summary.html##Summary%20Statistics%20on%20Complex%20Survey%20Designs) | No                                                              | Yes              | Set `deff="replace"` in R to match SAS exactly                                                                                                 |
+| Mean | [Yes](../R/survey-stats-summary.html#Mean) | [Yes](../SAS/survey-stats-summary.html#Mean) | [Yes](../Python/survey-stats-summary.html#Mean) | Yes | Must specify degrees of freedom in R for confidence limits |
+| Total | [Yes](../R/survey-stats-summary.html#Total) | [Yes](../SAS/survey-stats-summary.html#Total) | [Yes](../Python/survey-stats-summary.html#Total) | Yes | Must specify degrees of freedom in R for confidence limits |
+| Ratios | [Yes](../R/survey-stats-summary.html#Ratios) | [Yes](../SAS/survey-stats-summary.html#Ratios) | [Yes](../Python/survey-stats-summary.html#Ratios) | Yes | Must specify degrees of freedom in R for confidence limits |
+| Proportions | [Yes](../R/survey-stats-summary.html#Proportions) | [Yes](../SAS/survey-stats-summary.html##Proportions) | [Yes](../Python/survey-stats-summary.html#Proportions) | Yes\*\* | In Python, the confidence limits of proportions only match to 1 or 2 s.f. This is due to a different method being used, which is undocumented. |
+| Quantiles | [Yes](../R/survey-stats-summary.html#Quantiles) | [Yes](../SAS/survey-stats-summary.html#Quantiles) | No | [No](#Quantiles) | Different methods for calculating quantiles |
+| Domain Analysis | [Yes](../R/survey-stats-summary.html#Summary%20Statistics%20on%20Complex%20Survey%20Designs) | [Yes](../SAS/survey-stats-summary.html##Summary%20Statistics%20on%20Complex%20Survey%20Designs) | [Yes](../Python/survey-stats-summary.html#Domain%20Estimations) | Yes |  |
+| Design Effect | [Yes](../R/survey-stats-summary.html#Summary%20Statistics%20on%20Complex%20Survey%20Designs) | [Yes](../SAS/survey-stats-summary.html##Summary%20Statistics%20on%20Complex%20Survey%20Designs) | No | Yes | Set `deff="replace"` in R to match SAS exactly |
 
 *\*Results match where feature is available*
 
@@ -29,6 +31,7 @@ For the full R, SAS, and Python code and results used for this comparison, see b
 ## R
 
 ```{r}
+#| eval: true
 #| message: false
 #| warning: false
 library(survey)
@@ -123,7 +126,6 @@ print(list(
 ## SAS
 
 ```{sas}
-#| eval: false
 * Mean, sum quantile of HI_CHOL;
 proc surveymeans data=nhanes mean sum clm quantile=(0.025 0.5 0.975);
     cluster SDMVPSU;
@@ -158,7 +160,7 @@ proc surveymeans data=nhanes mean deff;
 run;
 ```
 
-```default
+``` default
 
                                                  The SURVEYMEANS Procedure
 
@@ -275,6 +277,7 @@ run;
 ## Python
 
 ```{python}
+#| eval: true
 import pandas as pd
 from samplics import TaylorEstimator
 from samplics.utils.types import PopParam
@@ -351,7 +354,6 @@ print(
     """
 )
 ```
-
 :::
 
 # Differences
@@ -361,6 +363,7 @@ print(
 `samplics` in Python does not have a method for calculating quantiles, and in R and SAS the available methods lead to different results. To demonstrate the differences in calculating quantiles, we will use the `apisrs` dataset from the `survey` package in R [@API_2000].
 
 ```{r}
+#| eval: true
 #| message: false
 library(survey)
 
@@ -375,13 +378,12 @@ In SAS, PROC SURVEYMEANS will calculate quantiles of specific probabilities as y
 The method and results from SAS are as follows:
 
 ```{sas}
-#| eval: false
 proc surveymeans data=apisrs total=6194 quantile=(0.025 0.5 0.975);
     var growth;
 run;
 ```
 
-```default
+``` default
                              The SURVEYMEANS Procedure
 
                                     Data Summary
@@ -405,6 +407,7 @@ run;
 If in R we use the default `qrule="math"` (equivalent to `qrule="hf1"` and matches `type=1` in the `quantile` function for unweighted data) along with the default `interval.type="mean"`, we get the following results:
 
 ```{r}
+#| eval: true
 srs_design <- survey::svydesign(data = apisrs, id = ~1, fpc = ~fpc, )
 
 survey::svyquantile(
@@ -419,6 +422,7 @@ survey::svyquantile(
 Here we can see that the quantiles, confidence intervals, and standard errors do not match SAS. From testing, none of the available `qrule` methods match SAS for the quantile values, so it is recommended to use the default values unless you have need of some of the other properties of different quantile definitions - see [`vignette("qrule", package="survey")`](https://cran.r-project.org/web/packages/survey/vignettes/qrule.pdf) for more detail. If an exact match to SAS is required, then the `svyquantile` function allows for passing a custom function to the `qrule` argument to define your own method for calculating quantiles. Below is an example that will match SAS:
 
 ```{r}
+#| eval: true
 sas_qrule <- function(x, w, p) {
   # Custom qrule to match SAS, based on survey::oldsvyquantile's internal method
   if (any(is.na(x))) {
@@ -455,6 +459,7 @@ sas_quants
 Note that although the quantiles and standard errors match, the confidence intervals still do not match SAS. For this another custom calculation is required, based on the formula used in SAS:
 
 ```{r}
+#| eval: true
 sas_quantile_confint <- function(newsvyquantile, level = 0.05, df = Inf) {
   q <- coef(newsvyquantile)
   se <- survey::SE(newsvyquantile)
@@ -498,6 +503,7 @@ In contrast, the `samplics` package in Python is still early in development, and
 
 ::: {.callout-note collapse="true" title="Session Info"}
 ```{r}
+#| eval: true
 #| echo: false
 si <- sessioninfo::session_info("survey", dependencies = FALSE)
 # If reticulate is used, si will include python info. However, this doesn't
@@ -531,5 +537,4 @@ message = (
 
 print(message)
 ```
-
 :::
