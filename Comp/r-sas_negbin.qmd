@@ -3,7 +3,7 @@ title: "R vs SAS: Negative Binomial Regression"
 format: html
 toc: true
 echo: true
-eval: true
+eval: false
 keep-hidden: true
 ---
 
@@ -71,7 +71,7 @@ Let's walk through the conclusions for [Table 1](#tbl-1):
 -   Least-square or marginal means are not directly available in R but equivalent estimation as in SAS is possible with additional packages
 
 | Attribute | SAS <br> `PROC GENMOD` | R <br>`MASS::glm.nb` | Note |
-|:----------------:|:-----------------:|:-----------------:|:-----------------|
+|:----------------:|:----------------:|:----------------:|:-----------------|
 | Negative binomial parameterization | Variance of the negative binomial is given by $\mu + k\mu^2$ and the dispersion parameter `k` is estimated. Overdispersion increases as `k` goes to infinity. | Variance of the negative binomial is given by $\mu + \frac{\mu^2}{\theta}$ and the scale parameter `theta` is estimated. Overdispersion increases as `theta` goes to zero. | $k=\frac{1}{\theta}$ |
 | Likelihood optimization algorithm | Ridge-stabilized Newton-Raphson algorithm | Iteratively reweighted least squares (IWLS) | It seems SAS performs simultaneous optimization on all parameters (i.e. including dispersion). R uses an alternating process, where glm coefficients are fitted given a fixed theta and then theta is estimated given fixed coefficients until convergence. |
 | Estimation of variance-covariance matrix | Observed (rather than expected) fisher information is used for calculation of standard errors of coefficients, which allows for non-zero covariance between coefficients and dispersion parameter. | Expected fisher information is used for calculation of standard errors of coefficients, so covariance between coefficients and dispersion parameter is zero (which is asymptotically correct). However identical vcov matrix as in SAS can be obtained "post-hoc". | As shown in the numerical example below in R the variance-covariance matrix corresponding to the `PROC GENMOD` estimation can be obtained based on the outputs from `MASS::glm.nb` with the `glm.nb.cov` function. The "correct" standard errors, confidence intervals and p-values can then be manually calculated based on the new covariance matrix. |
@@ -96,6 +96,7 @@ In order to run these analyses we need to load a few packages.
 
 ```{r}
 #| output: false
+#| eval: true
 #| message: false
 library(MASS)
 library(dplyr)
@@ -107,6 +108,7 @@ We also define the `glm_nb_cov` function to obtain the SAS variance-covariance m
 ```{r}
 #| output: false
 #| message: false
+#| eval: true
 ## Helper function to compute the variance from negative binomial regression
 ## This matches with variance estimated from SAS
 glm_nb_cov <- function(mod) {
@@ -181,6 +183,7 @@ A dummy dataset is simulated, including
 The dummy dataset is saved as a csv file, and then the csv file is read into SAS.
 
 ```{r}
+#| eval: true
 N = 100
 
 # set seed for replication
@@ -233,7 +236,6 @@ Exact match (at 0.001 level) can be obtained using `glm.nb` in R vs `PROC GENMOD
 After importing the dummy dataset we can run the negative binomial regression in SAS using \`PROC GENMOD. We estimate the model parameters and lsmeans for the treatment arms using both the default and OM weights.
 
 ```{sas}
-#| eval: false
 proc genmod data=df;
 	class GRPC (ref='Plb') X2 (ref='A');
 	model y = GRPC x1 x2 / dist=negbin link=log offset=logtime;
@@ -251,6 +253,7 @@ Below is a screenshot of output tables summarizing coefficient estimates and lsm
 Lets now try to reproduce the results in R using `MASS::glm.nb`.
 
 ```{r}
+#| eval: true
 fit <- glm.nb(y ~ grpc + x1 + x2 + offset(logtime), data = df, x = TRUE)
 
 # model coefficients summary
@@ -260,6 +263,7 @@ summary(fit)$coefficients
 We can see that while the estimates are exactly matching those in SAS, the standard errors are slightly smaller. This is a result of the difference in covariance estimation mentioned above. To obtain exactly the same results as in SAS we need to re-estimate the covariance matrix using the `glm_nb_cov` function we defined earlier. Note that to use this function with the fitted results we needed to specify `x = TRUE` in the `glm.nb` function so that the design matrix is available.
 
 ```{r}
+#| eval: true
 sigma_hat <- glm_nb_cov(fit)
 
 ## recalculate confidence intervals, and p-values
@@ -289,6 +293,7 @@ new_summary
 Now the estimates, standard errors, 95% confidence interval limits and p-values are exactly matching those in SAS up to the 4th digit. We can also provide an estimate and CI for the dispersion parameter:
 
 ```{r}
+#| eval: true
 # estimate and 95%-CI for k = 1/theta
 theta_est <- fit$theta
 theta_se <- sqrt(sigma_hat[6, 6])
@@ -306,6 +311,7 @@ We see that while the point estimate is the same as in SAS, the CI for the dispe
 Finally we can replicate the estimation of lsmeans in SAS via the emmeans package. Note that we need to supply the re-estimated covariance matrix, but only provide the rows and columns for the model coefficients without the dispersion parameter as emmeans does not need the latter.
 
 ```{r}
+#| eval: true
 # lsmeans with weights = equal, equivalent to SAS default
 lsmean1 <- emmeans(
   fit,
@@ -332,6 +338,7 @@ lsmean2
 Estimates and CIs are exactly matching those in SAS for both of the options. Finally we can also obtain the z statistic and corresponding p-values:
 
 ```{r}
+#| eval: true
 test(lsmean1)
 test(lsmean2)
 ```

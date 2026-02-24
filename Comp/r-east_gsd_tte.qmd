@@ -2,12 +2,13 @@
 title: "R vs EAST vs SAS: Group sequential design"
 editor_options: 
   chunk_output_type: console
+execute: 
+  eval: false
 ---
 
 ## Introduction
 
-In this vignette, we briefly compare sample size/power calculations for a group sequential design (GSD) for time to event endpoints between EAST and [gsDesign](https://keaven.github.io/gsDesign/), [gsDesign2](https://merck.github.io/gsDesign2/), and [rpact](https://www.rpact.org/). Note that, a comparison between rpact and gsDesign has been previously reported [here](https://www.rpact.org/vignettes/planning/rpact_vs_gsdesign_examples/#comparison-analysis-time-of-rpact-vs.-gsdesign).
-Additionally, we present comparative results between SAS `PROC SEQDESIGN` and rpact to provide a comprehensive evaluation framework.
+In this vignette, we briefly compare sample size/power calculations for a group sequential design (GSD) for time to event endpoints between EAST and [gsDesign](https://keaven.github.io/gsDesign/), [gsDesign2](https://merck.github.io/gsDesign2/), and [rpact](https://www.rpact.org/). Note that, a comparison between rpact and gsDesign has been previously reported [here](https://www.rpact.org/vignettes/planning/rpact_vs_gsdesign_examples/#comparison-analysis-time-of-rpact-vs.-gsdesign). Additionally, we present comparative results between SAS `PROC SEQDESIGN` and rpact to provide a comprehensive evaluation framework.
 
 There are two main methods that are generally used for GSD sample-size/power calculations for time to event endpoints under proportional hazard assumption:
 
@@ -20,9 +21,7 @@ Both LF and KT methods are implemented in gsDesign and [SAS](https://documentati
 
 One additional computational difference to note for EAST vs gsDesign/gsDesign2 is the usage of different log hazard ratio variance assumptions. By default, EAST uses the variance under the null hypothesis and provides an option for using the variance under the alternative hypothesis. gsDesign, on the other hand, is using both of these variances as suggested by Lachin and Foulkes (1986). gsDesign2 has `info_scale` argument in `gsDesign2::gs_power_ahr()`, `gsDesign2::gs_design_ahr()`, which could be set to variance under the null or alternative hypothesis or to the combination of variances.
 
-Below we provide an example of reproducing EAST results from [this vignette](https://psiaims.github.io/CAMIS/East/gsd-tte.html) using gsDesign/gsDesign2/rpact. As shown in the example, gsDesign2 and rpact can reproduce EAST calculations for GSD boundaries, while gsDesign results have minor differences. 
-Similarly, our comparison between SAS `PROC SEQDESIGN` and rpact shows good agreement in the calculation, with only minimal numerical differences observed. 
-gsDesign has an option under development to support a complete concordance with EAST.
+Below we provide an example of reproducing EAST results from [this vignette](https://psiaims.github.io/CAMIS/East/gsd-tte.html) using gsDesign/gsDesign2/rpact. As shown in the example, gsDesign2 and rpact can reproduce EAST calculations for GSD boundaries, while gsDesign results have minor differences. Similarly, our comparison between SAS `PROC SEQDESIGN` and rpact shows good agreement in the calculation, with only minimal numerical differences observed. gsDesign has an option under development to support a complete concordance with EAST.
 
 ## Design example
 
@@ -31,6 +30,7 @@ We assume that a GSD is utilized for progression-free survival (PFS) endpoint. I
 Further design assumptions are as follows:
 
 ```{r}
+#| eval: true
 # PFS HR=0.6
 hr1_pfs <- 0.6
 # median PFS of 9.4 months in the control arm
@@ -62,6 +62,7 @@ Note that, in EAST the number of target events is reported as an integer, howeve
 For ease of comparison the results from EAST are summarized below:
 
 ```{r}
+#| eval: true
 #| echo: false
 #| warning: false
 library(flextable)
@@ -105,6 +106,7 @@ pfs_east |>
 -   gsDesign code to reproduce the above EAST results:
 
 ```{r}
+#| eval: true
 #| warning: false
 library(gsDesign)
 
@@ -134,6 +136,7 @@ pfs_gsDesign |>
 -   gsDesign vs EAST comparison using absolute differences:
 
 ```{r}
+#| eval: true
 #| echo: false
 digit_comp <- 4
 pfs_gsDesign |>
@@ -188,6 +191,7 @@ pfs_gsDesign |>
 -   Note that, here `gsDesign2::gs_power_ahr()` is used given the number of target events for each analysis based on EAST results.
 
 ```{r}
+#| eval: true
 #| echo: false
 #helper function to align the gsDesign2 summary with gsDesign summary
 as_gs <- function(xnph) {
@@ -314,6 +318,7 @@ as_gs <- function(xnph) {
 ```
 
 ```{r}
+#| eval: true
 #| warning: false
 #| message: false
 library(gsDesign2)
@@ -360,6 +365,7 @@ pfs_gsDesign2 |>
 -   gsDesign2 vs EAST comparison using absolute differences:
 
 ```{r}
+#| eval: true
 #| echo: false
 pfs_gsDesign2 |>
   as_gs() |>
@@ -412,6 +418,7 @@ pfs_gsDesign2 |>
 -   rpact code to reproduce the above EAST results appears below.
 
 ```{r}
+#| eval: true
 #| warning: false
 library(rpact)
 
@@ -444,6 +451,7 @@ kable(summary(pfs_rpact))
 
 ```{r}
 #| echo: false
+#| eval: true
 
 pcross_h1_eff <- cumsum(pfs_rpact$rejectPerStage)
 pcross_h1_fut <- pfs_rpact$futilityPerStage[1]
@@ -541,7 +549,6 @@ pfs_rpact_sum |>
 -   SAS code to reproduce the above rpact results appears below.
 
 ```{sas}
-#| eval: false
 PROC SEQDESIGN BOUNDARYSCALE=MLE ERRSPEND;
    DESIGN NSTAGES=2 
           INFO=CUM(0.748936170212766 1.0) 
@@ -563,7 +570,9 @@ RUN;
 ```
 
 The following shows the events (D) and required sample sizes (N) for IA and FA.
+
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 100%
@@ -572,13 +581,11 @@ knitr::include_graphics(
 )
 ```
 
-Please note that the `BOUNDARYSCALE=MLE | SCORE | STDZ | PVALUE` options display the boundary values in the MLE, standardize Z, score, and p-value scales, respectively. 
-SAS will provide a boundary information table based on the specified `BOUNDARYSCALE`. In the information table, Alpha indicates the efficacy boundaries, and Beta indicates futility boundaries.
+Please note that the `BOUNDARYSCALE=MLE | SCORE | STDZ | PVALUE` options display the boundary values in the MLE, standardize Z, score, and p-value scales, respectively. SAS will provide a boundary information table based on the specified `BOUNDARYSCALE`. In the information table, Alpha indicates the efficacy boundaries, and Beta indicates futility boundaries.
 
 SAS doesn't provide a boundary information with HR, so the HR boundaries is obtained from the MLE boundaries (as MLE $=\hat{\theta}=-log(\text{HR})$, see [SAS User's Guide: Test for Two Survival Distributions with a Log-Rank Test](https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.5/statug/statug_seqdesign_details52.htm#statug.seqdesign.cseqdlogrank)) via the following code.
 
 ```{sas}
-#| eval: false
 DATA BHR;
    SET BMLE;
    Bound_UA_HR=exp(-Bound_UA);
@@ -590,7 +597,9 @@ RUN;
 ```
 
 The HR boundaries are shown below.
+
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 100%
@@ -599,9 +608,10 @@ knitr::include_graphics(
 )
 ```
 
-The results calculated by SAS are presneted in the table below. Please note that SAS doesn't report the probablities $P(Cross | HR=1)$ and $P(Cross | HR=0.6)$, resulting in empty cells for these results in the table. 
+The results calculated by SAS are presneted in the table below. Please note that SAS doesn't report the probablities $P(Cross | HR=1)$ and $P(Cross | HR=0.6)$, resulting in empty cells for these results in the table.
 
 ```{r}
+#| eval: true
 #| echo: false
 #| warning: false
 library(flextable)
@@ -638,6 +648,7 @@ pfs_sas |>
 -   SAS vs rapct comparison using absolute differences:
 
 ```{r}
+#| eval: true
 #| echo: false
 #| warning: false
 pfs_rpact_sum |>
@@ -683,6 +694,7 @@ pfs_rpact_sum |>
 -   SAS vs EAST comparison using absolute differences:
 
 ```{r}
+#| eval: true
 #| echo: false
 pfs_sas_sum <- tibble::tibble(
   sas_eff = pfs_sas$eff_125,

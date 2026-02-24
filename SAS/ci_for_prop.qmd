@@ -1,5 +1,7 @@
 ---
 title: "Confidence intervals for Proportions in SAS"
+execute: 
+    eval: false
 ---
 
 ## Introduction
@@ -23,7 +25,6 @@ For more information about these methods in R & SAS, including which performs be
 The adcibc data stored [here](../data/adcibc.csv) was used in this example, creating a binary treatment variable `trt` taking the values of `Act` or `PBO` and a binary response variable `resp` taking the values of `Yes` or `No`. For this example, a response is defined as a score greater than 4.
 
 ```{sas}
-#| eval: false
 data adcibc2 (keep=trt resp) ;
     set adcibc;     
     if aval gt 4 then resp="Yes";
@@ -36,7 +37,6 @@ run;
 The below shows that for the Actual Treatment, there are 36 responders out of 154 subjects = 0.2338 (23.38% responders).
 
 ```{sas}
-#| eval: false 
 proc freq data=adcibc2;
     table trt*resp/ nopct nocol;
 run;
@@ -149,7 +149,6 @@ By adding the option `BINOMIAL(LEVEL="Yes")` to your 'PROC FREQ', SAS outputs th
 The output consists of the proportion of resp=Yes, the Asymptotic SE, 95% CIs using normal-approximation method, 95% CI using the Clopper-Pearson method (Exact), and then a Binomial test statistic and p-value for the null hypothesis of H0: Proportion = 0.5.
 
 ```{sas}
-#| eval: false
 proc sort data=adcibc2;
     by trt; 
 run; 
@@ -162,6 +161,7 @@ run;
 
 ```{r}
 #| echo: false
+#| eval: true
 #| fig-align: center
 #| out-width: 50%
 knitr::include_graphics("../images/ci_for_prop/binomial_prop_pbo.png")
@@ -178,7 +178,6 @@ By adding the option `BINOMIAL(LEVEL="Yes" CL=<name of CI method>)`, the other C
 -   `BINOMIALc(LEVEL="Yes" CL=WILSON(CORRECT)  WALD(CORRECT));`will return Wilson(with continuity correction) and Wald (with continuity correction)
 
 ```{sas}
-#| eval: false
 proc freq data=adcibc2;
     table resp/ nopct nocol 
     BINOMIAL(LEVEL="Yes" 
@@ -191,13 +190,13 @@ run;
 
 ```{r}
 #| echo: false
+#| eval: true
 #| fig-align: center
 #| out-width: 50%
 knitr::include_graphics("../images/ci_for_prop/binomial_prop_all_act.png")
 ```
 
 ```{sas}
-#| eval: false
 proc freq data=adcibc2;
     table resp/ nopct nocol 
         BINOMIAL(LEVEL="Yes" 
@@ -209,6 +208,7 @@ run;
 
 ```{r}
 #| echo: false
+#| eval: true
 #| fig-align: center
 #| out-width: 50%
 knitr::include_graphics("../images/ci_for_prop/binomial_prop_cc_act.png")
@@ -350,7 +350,6 @@ The default method is Mantel-Haenszel confidence limits. SAS can also Score (Mie
 As you can see below, this is not a CI for difference in proportions of 0.196, it is a CI for the risk difference of 0.0260. So must be interpreted with much consideration.
 
 ```{sas}
-#| eval: false 
 data dat_used;
     input ID$ PBO ACT @@;
     datalines;
@@ -386,7 +385,6 @@ This [paper](https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf)^8^ des
 SAS is able to calculate CIs using the following methods: Exact, Agresti/Caffo, Wald, Wald with Continuity correction, Wilson/Newcombe Score, Wilson/Newcombe score with continuity correction, Miettinen and Nurminen, and Hauck-Anderson. Example code is shown below, before provision of a much more detailed analysis using Wald and Wilson with and without continuity correction.
 
 ```{sas}
-#| eval: false
 # Wald, Wilson, Agresti/Caffo, Hauck-Anderson, and Miettinen and Nurminen methods
 proc freq data=adcibc2 order=data;
     table trt*resp /riskdiff(CL=(wald wilson ac ha mn));
@@ -442,7 +440,6 @@ It is important to check the output to ensure that you are modelling Active - Pl
 Options for riskdiff(CL=XXX) consist of AC:Agresti-Caffo, EXACT=exact, HA:Hauck-Anderson, MN or SCORE:Miettinen-Nurminen (another type of Score CI), WILSON or NEWCOMBE: Wilson method described above, and WALD: normal approximation wald method described above. Examples using Wald and Wilson are shown below with and without continuity correction.
 
 ```{sas}
-#| eval: false
 proc sort data=adcibc2;
     by  trt descending resp;
 run;
@@ -460,6 +457,7 @@ run;
 
 ```{r}
 #| echo: false
+#| eval: true
 #| fig-align: center
 #| out-width: 50%
 knitr::include_graphics("../images/ci_for_prop/binomial_2sampleCI_noCC.png")

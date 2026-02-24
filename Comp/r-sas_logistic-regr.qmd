@@ -2,7 +2,7 @@
 title: "R vs SAS: Logistic Regression"
 toc: true
 echo: true
-eval: true
+eval: false
 keep-hidden: true
 ---
 
@@ -14,8 +14,8 @@ Comparison of results between SAS vs R for different applications of logistic re
 
 ## Scope
 
-::: columns
-::: {.column width="45%"}
+::::::: columns
+:::: {.column width="45%"}
 ::: {.callout-note appearance="minimal" collapse="false"}
 ## Methodologies
 
@@ -23,17 +23,17 @@ Comparison of results between SAS vs R for different applications of logistic re
 -   Firth's bias-reduced logistic regression
 -   g-computation / standardization with covariate adjustment
 :::
-:::
+::::
 
-::: {.column width="55%"}
+:::: {.column width="55%"}
 ::: {.callout-note appearance="minimal" collapse="false"}
 ## Technical implementations
 
 -   SAS: `PROC LOGISTIC` (with and without firth option) and `%margins` macro\
 -   R: `stats::glm`, `logistf::logistf` and `beeca::get_marginal_effect`
 :::
-:::
-:::
+::::
+:::::::
 
 ## Findings
 
@@ -75,6 +75,7 @@ In the following sections, the parameterisation of logistic regression implement
 ## R packages
 
 ```{r}
+#| eval: true
 #| output: false
 #| message: false
 library(tidyverse)
@@ -90,6 +91,7 @@ library(beeca) # for covariate adjustment
 We use the `lung` dataset provided with {survival} R package. Initial data preparation involves generating a new binary outcome based on the weight change.
 
 ```{r}
+#| eval: true
 # the lung dataset is available in ./data/lung_cancer.csv
 lung2 <- survival::lung |>
   mutate(
@@ -103,6 +105,7 @@ glimpse(lung2)
 We use the `trial01` dataset provided with {beeca} R package. Initial data preparation involves setting the treatment indicator as a categorical variable and removing any incomplete cases.
 
 ```{r}
+#| eval: true
 data("trial01")
 
 trial01$trtp <- factor(trial01$trtp) ## set treatment to a factor
@@ -120,13 +123,13 @@ trial01 <- trial01 |>
 
 The following set of tables compare how to configure particular parameters / attributes of the methodologies.
 
-|                  Attribute                   | SAS <br> `PROC LOGISTIC` | R <br>`stats::glm`  | Description                                                                                                    | Note                                                                                                                                                                     |
+| Attribute | SAS <br> `PROC LOGISTIC` | R <br>`stats::glm` | Description | Note |
 |:-------------:|:-------------:|:-------------:|:--------------|:--------------|
-|      Likelihood optimization algorithm       |         Default          |       Default       | Fisher's scoring method (i.e., iteratively reweighted least squares (IRLS))                                    | For logistic regression, parameter estimates and covariance matrices estimated should be the same for both Fisher's and Newton-Raphson algorithm for maximum likelihood. |
-|             Convergence criteria             |         Default          |         NA          | Specifies relative gradient convergence criterion (GCONV=1E--8)                                                | In`PROC LOGISTIC` there are three other convergence criteria which can be specified. However, there is no exact criterion that matches the criteria in `stats::glm`.     |
-|             Convergence criteria             |            NA            |       Default       | Specifies relative difference between deviance \< 1E--8.                                                       |                                                                                                                                                                          |
-|  Confidence interval (CI) estimation method  |         Default          | `confint.default()` | Wald CI                                                                                                        | In `stats::glm` in R, function confint.default() gives the Wald confidence limits; whereas function confint() gives the profile-likelihood limits.                       |
-| Hypothesis tests for regression coefficients |         Default          |       Default       | Wald tests, which are based on estimates for the regression coefficients and its corresponding standard error. |                                                                                                                                                                          |
+| Likelihood optimization algorithm | Default | Default | Fisher's scoring method (i.e., iteratively reweighted least squares (IRLS)) | For logistic regression, parameter estimates and covariance matrices estimated should be the same for both Fisher's and Newton-Raphson algorithm for maximum likelihood. |
+| Convergence criteria | Default | NA | Specifies relative gradient convergence criterion (GCONV=1E--8) | In`PROC LOGISTIC` there are three other convergence criteria which can be specified. However, there is no exact criterion that matches the criteria in `stats::glm`. |
+| Convergence criteria | NA | Default | Specifies relative difference between deviance \< 1E--8. |  |
+| Confidence interval (CI) estimation method | Default | `confint.default()` | Wald CI | In `stats::glm` in R, function confint.default() gives the Wald confidence limits; whereas function confint() gives the profile-likelihood limits. |
+| Hypothesis tests for regression coefficients | Default | Default | Wald tests, which are based on estimates for the regression coefficients and its corresponding standard error. |  |
 
 : Standard Logistic Regression in SAS vs R {#tbl-1}
 
@@ -142,6 +145,7 @@ Note, the default fitting method in `glm` is consistent with the default fitting
 -   Default fitting method for `PROC LOGISTIC` procedure is Fisher's scoring method, which is reported as part of the SAS default output, and it is equivalent to "Iteratively reweighted least squares" method as reported in this [documentation](https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_logistic_sect033.htm).
 
 ```{r}
+#| eval: true
 m1 <- stats::glm(
   wt_grp ~ age + sex + ph.ecog + meal.cal,
   data = lung2,
@@ -155,13 +159,13 @@ summary(m1)$coefficients
 Note, function `confint.default` gives the Wald confidence limits, which is the default option in SAS `PROC LOGISTIC` procedure; whereas `confint` gives the profile-likelihood limits. Conditional odds ratio is calculated by taking the exponential of the model parameters.
 
 ```{r}
+#| eval: true
 cbind(est = coef(m1), confint.default(m1))
 ```
 
 ### `PROC LOGISTIC` in SAS (without firth option)
 
 ```{sas}
-#| eval: false
 PROC LOGISTIC DATA=LUNG2; # import lung
 	MODEL WT_GRP(EVENT="weight_gain") = AGE SEX PH_ECOG MEAL_CAL;
 	ods output ESTIMATEs=estimates;
@@ -190,17 +194,17 @@ The following set of tables compare how to configure particular parameters / att
 
 ## Parameterisation Comparison
 
-|                  Attribute                   | SAS <br> `PROC LOGISTIC` w/ Firth option | R <br>`logistf::logistf`                                         | Description                                                                                                                                                                                                                                                                           | Note                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Attribute | SAS <br> `PROC LOGISTIC` w/ Firth option | R <br>`logistf::logistf` | Description | Note |
 |:-------------:|:--------------|:--------------|:--------------|:--------------|
-|      Likelihood optimization algorithm       | Default                                  | `control =`<br>`logistf.control` <br>`(fit =“IRLS”)`             | Fisher's scoring method (i.e., iteratively reweighted least squares (IRLS))                                                                                                                                                                                                           |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-|      Likelihood optimization algorithm       | `TECHNIQUE = NEWTON`                     | Default                                                          | Newton-Raphson algorithm                                                                                                                                                                                                                                                              |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-|             Convergence criteria             | Default                                  | NA                                                               | Specifies relative gradient convergence criterion (GCONV=1E--8).                                                                                                                                                                                                                      | In`PROC LOGISTIC` there are three other convergence criteria which can be specified. If more than one convergence criterion is specified, the optimization is terminated as soon as one of the criteria is satisfied.                                                                                                                                                                                                                                                                                                                      |
-|             Convergence criteria             | NA                                       | Default                                                          | Specifies three criteria that need to be met: the change in log likelihood is less than lconv (default is 1E-5), the maximum absolute element of the score vector is less than gconv (default is 1E-5), and the maximum absolute change in beta is less than xconv (default is 1E-5). | The gconv criteria in `logistif` is different from `GCONV` in SAS. The lconv criteria is also not exactly the same as the `ABSFCONV` or `FCONV` in `PROC LOGISTIC` in SAS, although the criteria use log likelihood. However, the `xconv` in R and `XCONV` in SAS seems to be consistent.                                                                                                                                                                                                                                                  |
-|             Convergence criteria             | `XCONV = 1E–8`                           | `control = logistf.control( xconv = 1E–8, lconv = 1, gconv = 1)` | Specifies the maximum absolute change in beta \< 1E--8.                                                                                                                                                                                                                               | In `logistf`, three convergence criteria are checked at the same time. So here we use a large convergence criteria value for `lconv` and `gconv` to mimic the scenario where only `xconv` is checked.                                                                                                                                                                                                                                                                                                                                      |
-|  Confidence interval (CI) estimation method  | Default                                  | `pl= FALSE`                                                      | Wald CI                                                                                                                                                                                                                                                                               | For `logistf`: "Note that from version 1.24.1 on, the variance-covariance matrix is based on the second derivative of the likelihood of the augmented data rather than the original data, which proved to be a better approximation if the user chooses to set a higher value for the penalty strength." This could cause differences in standard error estimates in R vs SAS for Firth logistic regression, and consequently results in differences in the corresponding Wald CI estimates and hypothesis tests results (e.g., p-values). |
-|  Confidence interval (CI) estimation method  | `CLPARM = PL` <br> `CLODDS = PL`         | Default                                                          | Profile likelihood-based CI                                                                                                                                                                                                                                                           | For Firth's bias-reduced logistic regression, it makes more sense to use penalized likelihood-based CI so it is consistent with the parameter estimation method which uses penalized maximum likelihood.                                                                                                                                                                                                                                                                                                                                   |
-| Hypothesis tests for regression coefficients | Default                                  | pl= FALSE                                                        | Wald tests, which are based on estimates for the regression coefficients and its corresponding standard error.                                                                                                                                                                        |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Hypothesis tests for regression coefficients | NA                                       | Default                                                          | "Likelihood ratio tests", which are based on profile penalized log likelihood.                                                                                                                                                                                                        | In SAS, when the model statement option `CLPARM = PL` is specified, the CI will be calculated based on profile likelihood. However, the hypothesis testing method is still a Wald method. This could cause results mismatch in the p-value.                                                                                                                                                                                                                                                                                                |
+| Likelihood optimization algorithm | Default | `control =`<br>`logistf.control` <br>`(fit =“IRLS”)` | Fisher's scoring method (i.e., iteratively reweighted least squares (IRLS)) |  |
+| Likelihood optimization algorithm | `TECHNIQUE = NEWTON` | Default | Newton-Raphson algorithm |  |
+| Convergence criteria | Default | NA | Specifies relative gradient convergence criterion (GCONV=1E--8). | In`PROC LOGISTIC` there are three other convergence criteria which can be specified. If more than one convergence criterion is specified, the optimization is terminated as soon as one of the criteria is satisfied. |
+| Convergence criteria | NA | Default | Specifies three criteria that need to be met: the change in log likelihood is less than lconv (default is 1E-5), the maximum absolute element of the score vector is less than gconv (default is 1E-5), and the maximum absolute change in beta is less than xconv (default is 1E-5). | The gconv criteria in `logistif` is different from `GCONV` in SAS. The lconv criteria is also not exactly the same as the `ABSFCONV` or `FCONV` in `PROC LOGISTIC` in SAS, although the criteria use log likelihood. However, the `xconv` in R and `XCONV` in SAS seems to be consistent. |
+| Convergence criteria | `XCONV = 1E–8` | `control = logistf.control( xconv = 1E–8, lconv = 1, gconv = 1)` | Specifies the maximum absolute change in beta \< 1E--8. | In `logistf`, three convergence criteria are checked at the same time. So here we use a large convergence criteria value for `lconv` and `gconv` to mimic the scenario where only `xconv` is checked. |
+| Confidence interval (CI) estimation method | Default | `pl= FALSE` | Wald CI | For `logistf`: "Note that from version 1.24.1 on, the variance-covariance matrix is based on the second derivative of the likelihood of the augmented data rather than the original data, which proved to be a better approximation if the user chooses to set a higher value for the penalty strength." This could cause differences in standard error estimates in R vs SAS for Firth logistic regression, and consequently results in differences in the corresponding Wald CI estimates and hypothesis tests results (e.g., p-values). |
+| Confidence interval (CI) estimation method | `CLPARM = PL` <br> `CLODDS = PL` | Default | Profile likelihood-based CI | For Firth's bias-reduced logistic regression, it makes more sense to use penalized likelihood-based CI so it is consistent with the parameter estimation method which uses penalized maximum likelihood. |
+| Hypothesis tests for regression coefficients | Default | pl= FALSE | Wald tests, which are based on estimates for the regression coefficients and its corresponding standard error. |  |
+| Hypothesis tests for regression coefficients | NA | Default | "Likelihood ratio tests", which are based on profile penalized log likelihood. | In SAS, when the model statement option `CLPARM = PL` is specified, the CI will be calculated based on profile likelihood. However, the hypothesis testing method is still a Wald method. This could cause results mismatch in the p-value. |
 
 : Firth's Bias-Reduced Logistic Regression in SAS vs R {#tbl-2}
 
@@ -215,6 +219,7 @@ Note that while Firth logistic regression is not required for our example datase
 -   By default, `logistf` function in R computes the confidence interval estimates and hypothesis tests (including p-value) for each parameter based on profile likelihood, which is also reported in the output below. However, Wald method (confidence interval and tests) can be specified by specifying the `control` argument with [`pl = FALSE`](https://cran.r-project.org/web/packages/logistf/logistf.pdf).
 
 ```{r}
+#| eval: true
 firth_mod <- logistf(
   wt_grp ~ age + sex + ph.ecog + meal.cal,
   data = lung2,
@@ -234,6 +239,7 @@ summary(firth_mod)$coefficients
 Note, function `confint` gives the profile-likelihood limits. Given the parameters from Firth's bias-reduced logistic regression is estimated using penalized maximum likelihood, `confint` function is used. Conditional odds ratio is calculated by taking the exponential of the model parameters.
 
 ```{r}
+#| eval: true
 cbind(est = coef(firth_mod), confint(firth_mod))
 ```
 
@@ -244,7 +250,6 @@ cbind(est = coef(firth_mod), confint(firth_mod))
 -   `XCONV` specifies relative parameter convergence criterion, which should correspond to the `xconv` in `logistf` function in R. We specify `XCONV = 0.00000001` so it should be consistent with the R code above.
 
 ```{sas}
-#| eval: false
 PROC LOGISTIC DATA=LUNG2;
 	MODEL WT_GRP(EVENT="weight gain") = AGE SEX PH_ECOG MEAL_CAL / firth 
   clodds=PL clparm=PL xconv = 0.00000001;
@@ -281,6 +286,7 @@ We compare two implementions of g-computation in SAS:
 We fit a logistic regression model with covariate adjustment to estimate the marginal treatment effect using the delta method for variance estimation: as outlined in Ge et al (2011).
 
 ```{r}
+#| eval: true
 #| label: glm
 ## fit the model including model based variance estimation with delta method
 fit1 <- stats::glm(aval ~ trtp + bl_cov, family = "binomial", data = trial01) |>
@@ -305,7 +311,6 @@ fit1$marginal_se
 We now use the SAS [`%Margins`](https://support.sas.com/kb/63/038.html) macro to perform the Ge et al. (2011) method on `trial01` to estimate the marginal risk difference and it's standard error.
 
 ```{sas}
-#| eval: false
 %Margins(data      = myWork.trial01,
           class     = trtp,
           classgref = first, /*Set reference to first level*/
@@ -333,7 +338,6 @@ run;
 ### `%LR` macro in SAS (Ge et al, 2011)
 
 ```{sas}
-#| eval: false
 %LR(data = myWork.trial01, /* input data set */
 	var1 = bl_cov, /* continuous covariates in the logistic regression */
 	var2 = trtp, /* categorical covariates in the logistic regression */

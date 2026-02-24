@@ -1,5 +1,7 @@
 ---
 title: "CMH Test"
+execute: 
+  eval: false
 ---
 
 # Cochran-Mantel-Haenszel Test
@@ -15,7 +17,6 @@ When the design of the contingency table is 2 x 2 x K (i.e, X == 2 levels, Y == 
 Below is the syntax to conduct a CMH analysis in SAS:
 
 ```{sas}
-#| eval: false
 proc freq data = filtered_data; 
     tables K * X * Y / cmh; 
     * the order of K, X, and Y appearing on the line is important!;
@@ -31,7 +32,6 @@ The adcibc data described [here](https://psiaims.github.io/CAMIS/R/cmh.html) is 
 The code used is always the same, however, we can limit the number of levels in each example to show a 2x2x2 case, 2x3xK case etc.
 
 ```{sas}
-#| eval: false
 proc freq data = adcibc; 
     tables agegr1 * trtp *  sex / cmh;  
 run;
@@ -56,6 +56,7 @@ Let's test if there is a difference between 3 treatments (Placebo, Xanomeline lo
 #| echo: false
 #| fig-align: center
 #| out-width: 50%
+#| eval: true
 knitr::include_graphics("../images/cmh/saspage_output2.png")
 ```
 
@@ -70,7 +71,6 @@ Risk differences within each strata can be obtained by adding the riskdiff optio
 The individual treatment comparisons within strata can be useful to explore if the treatment effect is in the same direction and size for each strata, such as to determine if pooling them is in fact sensible.
 
 ```{sas}
-#| eval: false
 # Default method is: Wald asymptotic confidence limits 
 proc freq data = adcibc (where=(trtpn ne 54 and agegr1 ne ">80")); 
     tables  agegr1 * trtp *  sex / cmh riskdiff; 
@@ -81,13 +81,13 @@ run;
 #| echo: false
 #| fig-align: center
 #| out-width: 50%
+#| eval: true
 knitr::include_graphics("../images/cmh/saspage_output3.png")
 ```
 
 Note above that exact CI's are not output for the difference betweeen the treatments. You can request SAS output other CI methods as shown below. This outputs the risk difference between the treatments and 95% CI, calculated for each age group strata separately using the Miettinen-Nurminen (score) (MN) method.
 
 ```{sas}
-#| eval: false
 # You can change the confidence limits derivation using (cl=xxx) option
 proc freq data = adcibc (where=(trtpn ne 54 and agegr1 ne "\>80")); 
     tables agegr1 * trtp * sex / cmh riskdiff(cl=mn);
@@ -108,7 +108,6 @@ Note: you may think by running the following code, that you would be creating a 
 See the next section on Common risk differences available in SAS.
 
 ```{sas}
-#| eval: false
 # Specifying the Miettinen-Nurminen (score) method 
 proc freq data = adcibc (where=(trtpn ne 54 and agegr1 ne ">80")); 
     tables  agegr1 * trtp *  sex / cmh riskdiff (common cl=mn); 
@@ -119,6 +118,7 @@ run;
 #| echo: false
 #| fig-align: center
 #| out-width: 50%
+#| eval: true
 knitr::include_graphics("../images/cmh/saspage_output3c.png")
 ```
 
@@ -127,7 +127,6 @@ knitr::include_graphics("../images/cmh/saspage_output3c.png")
 Including either column=1 or column=2 tells SAS which is your outcome of interest (ie, often that you want to compare treatment responders and not treatment non-responders!) My default it takes the 1st column sorted alphabetically but you can change this as shown below.
 
 ```{sas}
-#| eval: false
 proc freq data = adcibc (where=(trtpn ne 54 and agegr1 ne "\>80")); 
     tables agegr1 * trtp * sex / cmh riskdiff(common column=2);
 run;
@@ -143,7 +142,6 @@ Note that SAS (since v9.3M2 / STAT 12.1) PROC FREQ will produce the Miettinen-Nu
 The only known way to have SAS produce stratified Miettinen-Nurminen CIs is to use this publicly available macro: [https://github.com/petelaud/ratesci-sas/tree/main](https://urldefense.com/v3/__https:/github.com/petelaud/ratesci-sas/tree/main__;!!GfteaDio!d_y6BtRjdLQgc_Wr-2-HGeyDSL1v71SvjvEQuVXNjzYaqLVDsEH0DdBLCBE3Q6LGFaTjE4LCjtECNYNFYfMSg4G49w$)
 
 ```{sas}
-#| eval: false
 proc freq data = adcibc (where=(trtpn ne 54 and agegr1 ne ">80")); 
     tables  agegr1 * trtp *  sex / cmh commonriskdiff(CL=SCORE TEST=SCORE); 
 run; 
@@ -154,11 +152,11 @@ run;
 #| echo: false
 #| fig-align: center
 #| out-width: 50%
+#| eval: true
 knitr::include_graphics("../images/cmh/saspage_output4.png")
 ```
 
 ```{sas}
-#| eval: false
 proc freq data = adcibc (where=(trtpn ne 54 and agegr1 ne ">80")); 
     tables  agegr1 * trtp *  sex / cmh commonriskdiff(CL= newcombe); 
 run;
@@ -168,6 +166,7 @@ run;
 #| echo: false
 #| fig-align: center
 #| out-width: 50%
+#| eval: true
 knitr::include_graphics("../images/cmh/saspage_output4b.png")
 ```
 

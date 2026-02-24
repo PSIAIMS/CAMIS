@@ -1,12 +1,14 @@
 ---
 title: "Tobit Regression"
+execute: 
+  eval: false
 ---
 
 # Tobit regression
 
 ## Tobit model
 
-Censoring occurs when data on the dependent variable is only partially known. For example, in virology, sample results could be below the lower limit of detection (eg, 100 copies/mL) and in such a case we only know that the sample result is <100 copies/mL, but we don't know the exact value.
+Censoring occurs when data on the dependent variable is only partially known. For example, in virology, sample results could be below the lower limit of detection (eg, 100 copies/mL) and in such a case we only know that the sample result is \<100 copies/mL, but we don't know the exact value.
 
 Let $y^{*}$ be the the true underlying latent variable, and $y$ the observed variable. We discuss here censoring on the left:
 
@@ -16,23 +18,15 @@ y =
  y^{*}, & y^{*} > \tau  \\
  \tau, & y^{*} \leq \tau
  \end{cases}       
-$$
-We consider tobit regression with a censored normal distribution. The model equation is
-$$
+$$ We consider tobit regression with a censored normal distribution. The model equation is $$
 y_{i}^{*} = X_{i}\beta + \epsilon_{i} 
-$$
-with $\epsilon_{i} \sim N(0,\sigma^2)$. But we only observe $y = max(\tau, y^{*})$.
-The tobit model uses maximum likelihood estimation (for details see for example Breen, 1996). It is important to note that $\beta$ estimates the effect of $x$ on the latent variable $y^{*}$, and not on the observed value $y$.
-
+$$ with $\epsilon_{i} \sim N(0,\sigma^2)$. But we only observe $y = max(\tau, y^{*})$. The tobit model uses maximum likelihood estimation (for details see for example Breen, 1996). It is important to note that $\beta$ estimates the effect of $x$ on the latent variable $y^{*}$, and not on the observed value $y$.
 
 ## Data used
 
-We assume two equally sized groups (n=10 in each group). The data is censored on the left at a value of $\tau=8.0$.
-In group A 4/10 records are censored, and 1/10 in group B.
+We assume two equally sized groups (n=10 in each group). The data is censored on the left at a value of $\tau=8.0$. In group A 4/10 records are censored, and 1/10 in group B.
 
 ```{sas}
-#| label: create data
-#| eval: false
 data dat_used;
     input ID$ ARM$ Y CENS;
     cards;
@@ -67,7 +61,6 @@ The analysis will be based on a Tobit analysis of variance with $Y$, rounded to 
 First a data manipulation step needs to be performed in which the censored values are set to missing for a new variable called *lower*.
 
 ```{sas}
-#| eval: false
 data dat_used;
     set dat_used;
     if Y <= 8.0 then lower=.; else lower=Y;
@@ -77,7 +70,6 @@ run;
 The data are sorted to make sure the intercept will correspond to the mean of ARM A.
 
 ```{sas}
-#| eval: false
 proc sort data=dat_used;
     by descending ARM;
 run;
@@ -85,14 +77,13 @@ run;
 
 The **LIFEREG** procedure is used for tobit regression. The following model syntax is used:
 
-```default
+``` default
   MODEL (lower,upper)= effects / options ;
 ```
 
 Here, if the *lower* value is missing, then the *upper* value is used as a left-censored value.
 
 ```{sas}
-#| eval: false
 proc lifereg data=dat_used order=data;
     class ARM;
     model (lower, Y) = ARM / d=normal;
@@ -104,6 +95,7 @@ run;
 The fit statistics, type 3 analysis of effects and parameter estimated are shown here. The output provides an estimate of difference between groups A and B (B-A), namely 1.8225 (se=0.8061). The presented p-value is a two-sided p-value based on the Z-test. The scale parameter is an estimate for $\sigma$.
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 100%
@@ -113,6 +105,7 @@ knitr::include_graphics("../images/tobit/SAS_tobit_1.PNG")
 The p-value and confidence intervals of the contrast B-A are shown here. The p-value is the same as above.
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 80%
