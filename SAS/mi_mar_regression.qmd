@@ -1,5 +1,7 @@
 ---
 title: "Multiple Imputaton: Linear Regression in SAS"
+execute: 
+  eval: false
 ---
 
 ## Input dataset preparation before multiple imputation
@@ -14,7 +16,6 @@ title: "Multiple Imputaton: Linear Regression in SAS"
 As PROC MI requires a horizontal, one record per subject data set. More often than not, the data we impute will come from a vertical ADaM BDS data set. So we need to first transpose the aval with the avisitn as ID (assuming avisitn = 1 to 5),creating transposed variable v1-v5.
 
 ```{sas}
-#| eval: false
 data dummy;
     length USUBJID $4;
     do i=1 to 10;
@@ -45,6 +46,7 @@ run;
 ```
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 100%
@@ -60,7 +62,6 @@ The pattern can be checked using the following code, missing data pattern could 
 -   "Arbitrary" : The missingness of data does not follow any specific order or predictable sequence. Data can be missing at random points without a discernible pattern.
 
 ```{sas}
-#| eval: false
 ods select MissPattern;
 proc mi data=dummyt nimpute=0;
     var v1 - v5;
@@ -70,6 +71,7 @@ run;
 As below figure shows the missingness dose not follow any specific order, obviously the missing pattern is arbitrary and non-monotone missing pattern.
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 100%
@@ -81,7 +83,6 @@ knitr::include_graphics(
 ## FCS Regression for non-monotone missing pattern
 
 ```{sas}
-#| eval: false
 proc mi data=dummyt out=outdata nimpute=10 seed=123;
     class sex1n;
     var sex1n v1 - v5;
@@ -99,6 +100,7 @@ run;
 -   The `DETAILS` option displays the regression coefficients in the regression model used in each imputation.
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 100%
@@ -106,6 +108,7 @@ knitr::include_graphics("../images/mi_mar_linear_sas/mi_mar_reg_fcs.PNG")
 ```
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 100%
@@ -117,7 +120,6 @@ knitr::include_graphics("../images/mi_mar_linear_sas/mi_mar_reg_fcs2.PNG")
 Let's update above SAS code to generate a dummy dataset with monotone missing pattern
 
 ```{sas}
-#| eval: false
 data dummy;
     length USUBJID $4;
     do i=1 to 10; 
@@ -154,6 +156,7 @@ run;
 ```
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 100%
@@ -165,7 +168,6 @@ knitr::include_graphics(
 In this case we will use `monotone` statement instead of `FCS` for the imputation, example code as below:
 
 ```{sas}
-#| eval: false
 proc mi data=dummyt out=outdata nimpute=10 seed=123;
     class sex1n;
     var sex1n v1 - v5;

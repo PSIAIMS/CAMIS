@@ -1,14 +1,18 @@
 ---
 title: "SAS Recurrent Events"
+execute: 
+  eval: false
 ---
 
 ```{r}
+#| eval: true
 #| label: setup
 #| include: FALSE
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
+#| eval: true
 #| label: libaries
 #| include: FALSE
 library(dplyr)
@@ -85,6 +89,7 @@ For both versions of the Andersen-Gill model, the data must be structured as fol
 This can be visually represented:
 
 ```{r}
+#| eval: true
 #| label: AG_lineplot
 #| echo: FALSE
 #| fig-align: 'center'
@@ -135,6 +140,7 @@ For the total time model, the data must be structured as follows:
 This can be visually represented:
 
 ```{r}
+#| eval: true
 #| label: PWPtt_lineplot
 #| echo: FALSE
 #| fig-align: 'center'
@@ -167,6 +173,7 @@ For the gap time model, the data must be structured as follows:
 This can be visually represented:
 
 ```{r}
+#| eval: true
 #| label: PWPgt_lineplot
 #| echo: FALSE
 #| fig-align: 'center'
@@ -237,6 +244,7 @@ Note that, because the ordering of events is not important in the Andersen-Gill 
 A nice visual representation of the stratification and time interval structure of each model is given below. The correct data structure is pivotal when modelling recurrent events and depends on the methodology you want to use, as illustrated in the figure.
 
 ```{r}
+#| eval: true
 #| label: combined_lineplot
 #| echo: FALSE
 #| fig-align: 'center'
@@ -281,12 +289,14 @@ Importantly, both datasets collect the data in a **counting process** structure.
 Let's look more closely at the `bladder2` and `bladder` data:
 
 ```{r}
+#| eval: true
 #| label: bladder2
 bladder2 <- survival::bladder2
 gt(head(bladder2, 6))
 ```
 
 ```{r}
+#| eval: true
 #| label: bladder2_enum
 bladder2 %>%
   group_by(enum) %>% summarise(n = n()) %>% gt()
@@ -295,12 +305,14 @@ bladder2 %>%
 In `bladder2`, in the Andersen-Gill format, each subject has a variable amount of records, depending on the amount of events that subject experienced.
 
 ```{r}
+#| eval: true
 #| label: bladder
 bladder <- survival::bladder
 gt(head(bladder, 20))
 ```
 
 ```{r}
+#| eval: true
 #| label: bladder_enum
 bladder %>%
   group_by(enum) %>% summarise(n = n()) %>% gt()
@@ -339,8 +351,7 @@ And the data structure must be:
 
 We will use the `bladder2` data for this.
 
-```{r}
-#| eval: FALSE
+```{sas}
 proc phreg data=bladder2 covs(aggregate);
 	class rx (ref='1');
 	model (tstart, tstop) * event(0) = rx size number /rl;
@@ -362,8 +373,7 @@ By including the `covs(aggregate)` option and setting `id subjid;`, SAS will com
 
 The original Andersen-Gill model of 1989 can be fitted by changing `covs(aggregate)` to `covs` in the procedure, while excluding `id subjid;`.
 
-```{r}
-#| eval: FALSE
+```{sas}
 proc phreg data=bladder2 covs;
 	class rx (ref='1');
 	model (tstart, tstop) * event(0) = rx size number /rl;
@@ -371,6 +381,7 @@ run;
 ```
 
 ```{r}
+#| eval: true
 #| label: AG_original
 #| echo: FALSE
 #| fig-align: 'center'
@@ -404,8 +415,7 @@ And the data structure must be:
 
 We will use the `bladder2` data for this.
 
-```{r}
-#| eval: FALSE
+```{sas}
 proc phreg data=bladder2 covs(aggregate);
 	class rx (ref='1');
 	model (tstart, tstop) * event(0) = rx size number /rl; 
@@ -415,6 +425,7 @@ run;
 ```
 
 ```{r}
+#| eval: true
 #| label: PWPtt
 #| echo: FALSE
 #| fig-align: 'center'
@@ -446,8 +457,7 @@ And the data structure must be:
 
 This data structure can be achieved in `bladder2` by adding a `gtime` variable.
 
-```{r}
-#| eval: FALSE
+```{sas}
 data bladder2;
 	set bladder2;
 	gtime = tstop - tstart;
@@ -456,8 +466,7 @@ run;
 
 We artificially set start = 0 for each gap time interval by including `gtime` instead of `(start, stop)` in the `model` statement.
 
-```{r}
-#| eval: FALSE
+```{sas}
 proc phreg data=bladder2 covs(aggregate);
 	class rx (ref='1');
 	model gtime * event(0) = rx size number/rl; 
@@ -467,6 +476,7 @@ run;
 ```
 
 ```{r}
+#| eval: true
 #| label: PWPgt
 #| echo: FALSE
 #| fig-align: 'center'
@@ -510,8 +520,7 @@ And the data structure must be:
 
 We will use the `bladder` data for this.
 
-```{r}
-#| eval: FALSE
+```{sas}
 proc phreg data=bladder covs(aggregate);
 	class rx (ref='1');
 	model tstop * event(0) = rx size number /rl;
@@ -521,6 +530,7 @@ run;
 ```
 
 ```{r}
+#| eval: true
 #| label: WLW
 #| echo: FALSE
 #| fig-align: 'center'
@@ -541,6 +551,7 @@ Importantly, the strata of the Wei-Lin-Weissfeld model as set by `strata enum;` 
 Summary for Prentice-Williams-Peterson models:
 
 ```{r}
+#| eval: true
 #| label: PWP_structure
 #| echo: FALSE
 #| fig-align: 'center'
@@ -551,6 +562,7 @@ knitr::include_graphics("../images/recurrent_events/SAS_PWP_structure.png")
 Summary for Wei-Lin-Weissfeld model:
 
 ```{r}
+#| eval: true
 #| label: WLW_structure
 #| echo: FALSE
 #| fig-align: 'center'
@@ -596,8 +608,7 @@ For the Prentice-Williams-Peterson and Wei-Lin-Weissfeld models we can incorpora
 
 To get event-specific estimates for the treatment effect (**rx**), we first need to introduce four new **rx** variables to the `bladder2` and `bladder` datasets, one for each stratum.
 
-```{r}
-#| eval: FALSE
+```{sas}
 data bladder2;
 	set bladder2;
 	rx_enum1 = rx*(enum=1);
@@ -607,8 +618,7 @@ data bladder2;
 run;
 ```
 
-```{r}
-#| eval: FALSE
+```{sas}
 data bladder;
 	set bladder;
 	rx_enum1 = rx*(enum=1);
@@ -624,8 +634,7 @@ With these four interaction variables, we need to specify `rx_enum1-rx_enum4` in
 
 **Total time model**
 
-```{r}
-#| eval: FALSE
+```{sas}
 proc phreg data=bladder2 covs(aggregate);
 	class enum / param=glm;
 	model (tstart, tstop) * event(0) = rx_enum1-rx_enum4 size number /rl; 
@@ -635,6 +644,7 @@ run;
 ```
 
 ```{r}
+#| eval: true
 #| label: PWPtt_stratified
 #| echo: FALSE
 #| fig-align: 'center'
@@ -644,8 +654,7 @@ knitr::include_graphics("../images/recurrent_events/SAS_PWPtt_stratified.png")
 
 **Gap time model**
 
-```{r}
-#| eval: FALSE
+```{sas}
 proc phreg data=bladder2 covs(aggregate);
 	class enum / param=glm;
 	model gtime * event(0) = rx_enum1-rx_enum4 size number/rl; 
@@ -655,6 +664,7 @@ run;
 ```
 
 ```{r}
+#| eval: true
 #| label: PWPgt_stratified
 #| echo: FALSE
 #| fig-align: 'center'
@@ -664,8 +674,7 @@ knitr::include_graphics("../images/recurrent_events/SAS_PWPgt_stratified.png")
 
 #### Wei-Lin-Weissfeld model
 
-```{r}
-#| eval: FALSE
+```{sas}
 proc phreg data=bladder covs(aggregate);
 	class enum / param=glm;
 	model tstop * event(0) = rx_enum1-rx_enum4 size number /rl;
@@ -675,6 +684,7 @@ run;
 ```
 
 ```{r}
+#| eval: true
 #| label: WLW_stratified
 #| echo: FALSE
 #| fig-align: 'center'

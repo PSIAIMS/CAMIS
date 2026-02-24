@@ -2,6 +2,8 @@
 title: "Restricted Mean Survival Time (RMST) in SAS"
 date: last-modified
 date-format: D MMMM, YYYY
+execute: 
+  eval: false
 ---
 
 Under the situation where you time to event outcome has non-proportional hazards over time, the commonly used Cox Proportional Hazards regression analysis and the log-rank test can be invalid - especially when the survival curves are crossing. One alternative is to analyse the Restricted Mean Survival Time (RMST).
@@ -24,6 +26,7 @@ A common mistake is to get the (0) or (1) indicator the wrong way around. For ex
 Throughout this page, we will use cnsr(1) approach.
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 50%
@@ -35,6 +38,7 @@ knitr::include_graphics("../images/rmst/SASrmstreg2.png")
 The selection of `tau` for RMST analysis is very important. It's the period of time the average (or AUC for proc lifetest) is calculated over. If events are no longer occurring on both treatment groups, then you may not be looking at the key time period of interest. Therefore, it is better practice, to calculate `tau` yourself and set this as an option in the SAS code, (commonly based on the minimum time of the last event observed in each treatment group).
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 50%
@@ -74,7 +78,6 @@ It is good practice to first view the shape of your Kaplan-Meier curves. As you 
 It is very important to pre-specify your approach for selection of `tau`. As you can see from the curves, if we compared the period 0 to 6 months, vs 0 to 18 months, we would get very different results for the treatment comparison.
 
 ```{sas}
-#| eval: false
 proc lifetest data=adcibc  conftype=log;
     time time*cnsr(1);
     strata trt01pn;
@@ -82,6 +85,7 @@ Run;
 ```
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 50%
@@ -93,7 +97,6 @@ knitr::include_graphics("../images/rmst/kmplot.png")
 The code below calculates `tau` as the minimum time of the last event observed in each treatment group. This will be the period of time, our AUC will be calculated over. As cnsr=0 are events, we only select these observations. Below, the maximum event in treatment 1 = 883 days and in treatment 2 = 350 days. We therefore set `tau` = 350. This method avoids including in the AUC a period of time where events are no longer occurring in both treatments. You can see why setting `tau` is very important as we are likely to get very different AUCs calculating over the 350 day as opposed to the 883 day period!
 
 ```{sas}
-#| eval: false
 proc sort data=lung_cancer (where=(cnsr=0)) out=tau1;
     by  trt01pn time;
 run;
@@ -131,7 +134,6 @@ In the output, its important to check that your event/censoring flag is the righ
 ### Linear link model - provides estimates of treatment differences
 
 ```{sas}
-#| eval: false
 proc rmstreg data=adcibc tau=&_tau;
     class trt01pn sex;
     model time*cnsr(1) =trt01pn sex age /link=linear method=ipcw (strata=trt01pn);
@@ -141,6 +143,7 @@ run;
 ```
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 50%
@@ -150,6 +153,7 @@ knitr::include_graphics("../images/rmst/rmstreg_output1.png")
 The above model results in a `restricted mean survival time` estimate of 257.16 days on treatment 1 vs 267.04 days on treatment 2. The difference (Active-Placebo) is -9.88 days (95% CI: -39.0 to 19.25, p=0.5061). Hence, there is no evidence of a difference between the treatments with respect to RMST when we look over the Kaplan-Meier plot from 0 to 350 days.
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 50%
@@ -163,7 +167,6 @@ The code is similar to above. We include the option `exp` on the lsmeans row, si
 Similar to the linear model, we obtain results of a `restricted mean survival time` estimate of 255.21 days on treatment 1 vs 264.75 days on treatment 2. The difference (Active-Placebo) on the log scale is -0.03667 (95% CI: -0.1493 to 0.07596, p=0.5234) but this is hard to interpret. Hence, once back transformed, the treatment ratio (Active/Placebo) is 0.9640 (95% CI: 0.8613 to 1.0789, p=0.5234).
 
 ```{sas}
-#| eval: false
 proc rmstreg data=adcibc tau=&_tau;
     class trt01pn sex;
     model time*cnsr(1) =trt01pn sex age /link=log method=ipcw (strata=trt01pn);
@@ -173,6 +176,7 @@ run;
 ```
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 50%
@@ -184,7 +188,6 @@ knitr::include_graphics("../images/rmst/rmstreg_output3.png")
 The pseudo-observations method [Andersen, Hansen and Klein 2004](https://pubmed.ncbi.nlm.nih.gov/15690989/), is available in SAS using the method=pv option. You use the link=linear or link=log options and output is similarly interpreted as described for Method 1 IPCW method.
 
 ```{sas}
-#| eval: false
 proc rmstreg data=adcibc tau=&_tau;
     class trt01pn sex ;
     model time*cnsr(1) =trt01pn sex age /link=linear  method=pv;
@@ -198,7 +201,6 @@ run;
 A non-parametric method to calculate the RMST is available using the AUC Kaplan-Meier curves.
 
 ```{sas}
-#| eval: false
 proc lifetest data=adcibc plots=(rmst  s) rmst  (tau=&_tau);
     time time*cnsr(1) ;
     strata trt01pn / diff=control('2') ;
@@ -233,6 +235,7 @@ knitr::include_graphics("../images/rmst/rmstreg_output4.png")
 ### Version
 
 ```{r}
+#| eval: true
 #| echo: false
 si <- sessioninfo::session_info("rmst", dependencies = FALSE)
 si$external <- structure(

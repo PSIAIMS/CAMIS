@@ -1,9 +1,12 @@
 ---
 title: "SAS Tipping Point (Delta Adjustment): Continuous Data"
+execute: 
+    eval: false
 ---
 
 ```{r}
 #| include: false
+#| eval: true
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -44,8 +47,6 @@ The same publicly available [dataset](https://r-packages.io/datasets/antidepress
 The relevant endpoint for the antidepressant trial was assessed using the Hamilton 17-item depression rating scale (HAMD17), which was measured at baseline and subsequently at weeks 1, 2, 3, 4 and 6 (visits 4-7). Study drug discontinuation occurred in 24% (20/84) of subjects in the active drug group, compared to 26% (23/88) of subjects in the placebo group. Importantly, all data after study drug discontinuation are missing and there is a single intermittent missing observation.
 
 ```{sas}
-#| label: data_exploration_1
-#| eval: false
 proc print data=dat (obs=10);
     var PATIENT GENDER THERAPY RELDAYS VISIT BASVAL HAMDTL17 CHANGE;
 run;
@@ -54,6 +55,7 @@ run;
 ```{r}
 #| label: data_exploration_1_png
 #| echo: false
+#| eval: true
 #| fig-align: center
 #| out-width: 80%
 knitr::include_graphics("../images/tipping_point/SAS_data_exploration_1.PNG")
@@ -62,8 +64,6 @@ knitr::include_graphics("../images/tipping_point/SAS_data_exploration_1.PNG")
 The number of patients per visit and treatment group are:
 
 ```{sas}
-#| label: data_exploration_2
-#| eval: false
 proc freq data=dat;
     table VISIT*THERAPY / norow nocol nopercent nocum;
 run;
@@ -72,6 +72,7 @@ run;
 ```{r}
 #| label: data_exploration_2_png
 #| echo: false
+#| eval : true
 #| fig-align: center
 #| out-width: 80%
 knitr::include_graphics("../images/tipping_point/SAS_data_exploration_2.PNG")
@@ -80,8 +81,6 @@ knitr::include_graphics("../images/tipping_point/SAS_data_exploration_2.PNG")
 The mean change from baseline of the HAMD17 endpoint per visit and treatment group using only the complete cases are:
 
 ```{sas}
-#| label: data_exploration_3
-#| eval: false
 proc means data=dat n mean nonobs;
     class VISIT THERAPY;
     var CHANGE;
@@ -91,6 +90,7 @@ run;
 ```{r}
 #| label: data_exploration_3_png
 #| echo: false
+#| eval : true
 #| fig-align: center
 #| out-width: 80%
 knitr::include_graphics("../images/tipping_point/SAS_data_exploration_3.PNG")
@@ -99,8 +99,6 @@ knitr::include_graphics("../images/tipping_point/SAS_data_exploration_3.PNG")
 The missingness pattern is:
 
 ```{sas}
-#| label: data_exploration_4
-#| eval: false
 proc transpose data=dat out=HAMD_wide(drop=_NAME_) prefix=CHG;
     by PATIENT THERAPY BASVAL;
     id VISIT;
@@ -115,6 +113,7 @@ run;
 ```{r}
 #| label: data_exploration_4_png
 #| echo: false
+#| eval: true
 #| fig-align: center
 #| out-width: 80%
 knitr::include_graphics("../images/tipping_point/SAS_data_exploration_4.PNG")
@@ -143,8 +142,6 @@ As mentioned, we will illustrate the use of the so-called `five macros` in SAS f
 To conduct a tipping point analysis under the MAR assumption, we simply specify `method = MAR` under `Part2A()` of the `five macros`. Generally, the rest of `Part1` and `Part2` are the same as in the scenario without any delta adjustment.
 
 ```{sas}
-#| label: part_1_2
-#| eval: false
 %part1A(jobname = HAMD, 
         Data=dat,
         Subject=PATIENT,
@@ -171,15 +168,13 @@ Then, in `Part3()`, we create a series of delta values that increases sequential
 
 A clear description of these arguments is given in the documentation:
 
--   `Delta`: A vector of Delta values from visit 1 up to the final visit  (default is not applying a delta adjustment)
+-   `Delta`: A vector of Delta values from visit 1 up to the final visit (default is not applying a delta adjustment)
 -   `Dlag`: A vector of multipliers for each Lag after withdrawal for the Delta values (default is all values of 1)
 -   `Dgroups`: The treatment groups to which Delta should be applied (default is all treatment groups)
 
 To automate the tipping point analysis, you can create a new macro like shown below. The first part of this macro prints all results, while the second part prints the non-significant and significant results separately by filtering on `Probt`.
 
 ```{sas}
-#| label: MAR_all_results
-#| eval: false
 data all_results;
     length DELTA 8 VISIT $10 THERAPY $20 _THERAPY $20 Diff SE_Diff df Probt LCL_Diff UCL_Diff 8;
     stop;
@@ -214,9 +209,7 @@ run;
 knitr::include_graphics("../images/tipping_point/SAS_MAR_all_results.png")
 ```
 
-```{r}
-#| label: MAR_non_sig_results
-#| eval: false
+```{sas}
 
 proc sql noprint;
     create table delta_ge_05 as
@@ -256,6 +249,7 @@ run;
 ```{r}
 #| label: MAR_non_sig_results_png
 #| echo: false
+#| eval: true
 #| fig-align: center
 #| out-width: 80%
 knitr::include_graphics("../images/tipping_point/SAS_MAR_non_sig_results.png")
@@ -264,6 +258,7 @@ knitr::include_graphics("../images/tipping_point/SAS_MAR_non_sig_results.png")
 ```{r}
 #| label: MAR_sig_results_png
 #| echo: false
+#| eval: true
 #| fig-align: center
 #| out-width: 80%
 knitr::include_graphics("../images/tipping_point/SAS_MAR_sig_results.png")
@@ -274,6 +269,7 @@ To determine the **exact** tipping point between the last "significant" delta an
 ```{r}
 #| label: MAR_TP_png
 #| echo: false
+#| eval: true
 #| fig-align: center
 #| out-width: 80%
 knitr::include_graphics("../images/tipping_point/SAS_MAR_TP.png")
@@ -288,6 +284,7 @@ A nice visualization of this tipping point analysis for the MAR approach is show
 ```{r}
 #| label: MAR_est_pval_plot_png
 #| echo: false
+#| eval: true
 #| fig-align: center
 #| out-width: 80%
 knitr::include_graphics("../images/tipping_point/SAS_MAR_est_pval.png")
@@ -319,6 +316,7 @@ Of all considered approaches, the MAR approach yields the largest delta adjustme
 ```{r}
 #| label: comparison_est_plot_png
 #| echo: false
+#| eval: true
 #| fig-align: 'center'
 #| out-width: '80%'
 knitr::include_graphics("../images/tipping_point/SAS_comparison_est.png")
@@ -327,6 +325,7 @@ knitr::include_graphics("../images/tipping_point/SAS_comparison_est.png")
 ```{r}
 #| label: comparison_pval_plot_png
 #| echo: false
+#| eval: true
 #| fig-align: 'center'
 #| out-width: '80%'
 knitr::include_graphics("../images/tipping_point/SAS_comparison_pval.png")
@@ -378,8 +377,6 @@ Let's now consider the antidepressant data again. Suppose we apply a delta adjus
 To program this, we would define `Delta`, `DLag` and `DGroups` in `Part3()` of the `five macros` as follows:
 
 ```{sas}
-#| eval: false
-#| label: flexible_delta
 %part3(Jobname = HAMD_MAR, 
         anref=PLACEBO, 
         Delta = 2 2 2 2, 
@@ -404,8 +401,6 @@ As already illustrated in the tipping point analysis assuming MAR above, you may
 To apply this delta = 5 to both groups we leave `DGroups` unspecified.
 
 ```{sas}
-#| eval: false
-#| label: fixed_delta
 %part3(Jobname = HAMD_MAR, 
         anref=PLACEBO, 
         Delta = 5 5 5 5, 
