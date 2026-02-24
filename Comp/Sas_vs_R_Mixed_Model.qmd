@@ -1,0 +1,123 @@
+---
+title: "R vs SAS: Linear Mixed Models"
+format: html
+editor: visual
+---
+
+# Introduction
+
+Linear mixed models are applied in clinical trials to analyse longitudinal outcomes where repeated observations within subjects induce correlation. In this setting, the statistical objective is to estimate treatment effects while accounting for within-subject dependence through a likelihood-based specification of the model’s mean structure and covariance components.
+
+Both SAS and R provide valid likelihood-based implementations of linear mixed models. When the same fixed-effect structure, covariance model, and estimation method are specified, the two systems target the same statistical model. Nevertheless, exact numerical equality of all reported quantities should not be expected. This is because SAS and R do not solve the likelihood optimisation problem in the same parameter space, nor do they apply identical profiling strategies, optimisation algorithms, or convergence criteria.
+
+This document therefore focuses explicitly on the numerical computation underlying linear mixed model estimation. It explains why fixed-effect estimates typically agree closely once model specification is aligned, while differences may arise in covariance parameter estimates and convergence diagnostics as a direct consequence of differences in numerical representation and optimisation behaviour.
+
+## Model Implementations
+
+### Mean Model Representation
+
+In both SAS and R, the fixed-effect component of the linear mixed-effects model is defined through a linear predictor of the form
+
+$$
+\eta = X \beta,
+$$
+
+where ( X ) denotes the fixed-effect design matrix and $( \beta )$ is the corresponding vector of regression coefficients.\
+The structure of ( X ) is determined by the chosen factor coding scheme, reference levels, and any specified interaction terms. Provided that factor parameterisation and contrasts are aligned, both systems construct equivalent fixed-effect design matrices and therefore target the same estimand.
+
+Any disagreement in fixed-effect estimates almost always indicates misalignment in factor coding rather than numerical instability.
+
+### Covariance Model Representation
+
+The primary distinction between SAS and R implementations lies in how the covariance structure is represented internally.
+
+-   SAS PROC MIXED parameterises covariance structures directly in terms of variance and correlation parameters associated with the residuals and/or random effects.
+
+-   R lme4::lmer parameterises the random-effects covariance matrix via its Cholesky factor, ensuring positive definiteness by construction.
+
+Although these representations are mathematically equivalent at the model level, they are not numerically equivalent. The parameters optimised by the algorithm differ, and the mapping from internal parameters to reported standard deviations and correlations is nonlinear.
+
+As a result, covariance parameter estimates may differ at the level of numerical tolerance even when the fitted likelihood values are effectively identical.
+
+## Numerical Optimisation and Computation
+
+### Optimisation Strategy in SAS
+
+PROC MIXED formulates the Gaussian log-likelihood explicitly and proceeds by profiling out the fixed effects, and in some configurations the residual variance, thereby reducing the optimisation problem to the covariance parameters. Estimation of these covariance parameters is carried out using an iterative hybrid strategy combining Expectation–Maximisation (EM) steps with Newton–Raphson updates.
+
+The EM steps provide stable updates of variance and covariance parameters by exploiting closed-form expectations under the current parameter values, ensuring monotonic increases in the likelihood and robustness when parameters are near the boundary of the parameter space. Once the algorithm is sufficiently close to the optimum, Newton–Raphson iterations are used to accelerate convergence, updating covariance parameters using first and second derivatives of the profiled likelihood.
+
+This optimisation is performed directly in the variance–correlation parameter space, rather than in a transformed factor space. As a result, the numerical behaviour of PROC MIXED is closely tied to the curvature of the likelihood with respect to variance components, and convergence properties depend on the strength of information supporting each covariance parameter.
+
+### Optimisation Strategy in R (lme4)
+
+In lme4, the likelihood is re-expressed using a penalised least squares formulation derived from the Cholesky factorisation of the random-effects covariance matrix. For fixed covariance parameters, the conditional modes of the random effects are obtained by solving a penalised least squares system.
+
+The likelihood is then evaluated using quantities derived from this representation, including residual sums of squares and log-determinants of the Cholesky factors. An outer optimiser updates the Cholesky parameters rather than the variance components themselves.
+
+Because optimisation occurs in this transformed parameter space, the geometry of the objective function differs from that used by PROC MIXED, even though both correspond to the same likelihood.
+
+### Consequences for Numerical Output
+
+These differences imply that:
+
+-   The optimisation paths taken by SAS and R are not the same.
+
+-   The stopping points may differ slightly on flat regions of the likelihood surface.
+
+-   Small differences in reported covariance parameters are expected, particularly near parameter boundaries.
+
+Importantly, these effects arise from numerical computation, not from differences in the underlying statistical model.
+
+## Convergence Behaviour
+
+### Boundary and Near-Boundary Parameters
+
+In linear mixed models, variance components can be weakly identified when the contribution of a random slope to the marginal covariance structure is negligible relative to a random intercept, when the design provides limited information for estimating specific covariance components, or when imbalance and missing observations reduce effective replication at later time points.
+
+Under these conditions, the log-likelihood exhibits low curvature with respect to one or more covariance parameters. Consequently, a range of parameter values yields nearly indistinguishable likelihood values, making numerical optimisation sensitive to parameterisation, optimisation strategy, and convergence tolerances.
+
+### Diagnostic Philosophy
+
+lme4 applies explicit checks on the rank and conditioning of the estimated covariance structure under the Cholesky parameterisation. When one or more components are estimated effectively at zero, lme4 reports a singular fit warning.
+
+PROC MIXED may converge to a likelihood-equivalent solution while reporting a small non-zero variance estimate and no explicit warning. This reflects a difference in diagnostic thresholds and reporting conventions, not a substantive difference in model fit.
+
+### Interpretation of Convergence Differences
+
+A convergence warning in R does not imply model failure, nor does the absence of a warning in SAS imply strong identification of all covariance parameters. In both cases, the relevant question is whether inferential quantities, treatment effects, standard errors, and test statistics, are stable under reasonable sensitivity analyses.
+
+## Comparison of Outputs
+
+**Table 1.** Summary Table: SAS vs R (Linear Mixed Models)
+
+| Statistic | R Result | SAS Result | Match | Interpretation |
+|---------------|---------------|---------------|---------------|---------------|
+| Fixed-effect estimates | Typically very close (when contrasts/reference levels match) | Typically very close (when contrasts/reference levels match) | Yes (in practice, once aligned) | Same mean model $(X\beta)$ once factor coding/contrasts are aligned; differences usually indicate coding mismatch rather than numerical instability. |
+| Fixed-effect standard errors / Wald tests | Typically very close | Typically very close | Yes (usually) | With the same likelihood target and mean model, inference on fixed effects is generally stable across implementations; residual differences can occur due to optimisation tolerances and covariance estimation details. |
+| Log-likelihood / REML criterion | Very close (often effectively identical to tolerance) | Very close (often effectively identical to tolerance) | Yes (to numerical tolerance) | Both target the same (RE)ML objective under aligned specification, but evaluate/optimise it via different internal representations. |
+| Covariance parameter estimates (variance components, correlations) | Close but not identical; may land nearer boundary (e.g., \~0) | Close but not identical; may report small non-zero values | No (exact equality not expected) | Different internal parameter spaces (Cholesky in lme4 vs variance/correlation in PROC MIXED) and different optimisation paths can yield small differences, especially on flat likelihood regions or near boundaries. |
+| Random-effect standard deviations | Close but not identical | Close but not identical | No | Reported SDs are nonlinear functions of internally optimised parameters; small numerical differences are expected even when the likelihood is essentially the same. |
+| Convergence / diagnostics | May warn about singular fit or near-boundary components | May converge without an explicit singularity warning | No (diagnostics differ) | lme4 applies explicit singularity/rank checks under the Cholesky parameterisation; PROC MIXED may report convergence with small non-zero estimates depending on its diagnostic thresholds and reporting conventions. |
+
+## Conclusion
+
+SAS and R implement linear mixed models under the same statistical framework but solve the likelihood optimisation problem using different numerical representations. Fixed-effect estimates typically agree closely once model specification is aligned. Differences arise primarily in covariance parameters and convergence diagnostics due to differences in parameterisation, optimisation geometry, and diagnostic thresholds.
+
+These differences are intrinsic to numerical computation and should be interpreted accordingly in clinical trial analyses.
+
+## References
+
+**R Documentation and Methodology:**
+
+-   Bates, D., Mächler, M., Bolker, B., & Walker, S. (2015). Fitting Linear Mixed-Effects Models Using lme4. Journal of Statistical Software, 67(1), 1–48. https://doi.org/10.18637/jss.v067.i01
+
+-   Bates, D. (2014). lmer for SAS PROC MIXED Users. Vignette for the R package SASmixed (version 1.0-4). The Comprehensive R Archive Network (CRAN). Available at: https://cran.r-project.org/web/packages/SASmixed/vignettes/Usinglmer.pdf
+
+**SAS Documentation and Methodology:**
+
+-   Edupganti, S. & Nisal, S. (2011). Proc Mixed – Right Options to Get Right Output. NESUG 2011 Proceedings: Statistics & Analysis. Available at: https://www.lexjansen.com/nesug/nesug11/sa/sa03.pdf
+
+-   SAS Institute Inc. (2021). SAS/STAT® User’s Guide, The MIXED Procedure (Version 2021.1.5). Cary, NC: SAS Institute Inc. https://documentation.sas.com/api/collections/pgmsascdc/v_017/docsets/statug/content/mixed.pdf?locale=ja#nameddest=statug_mixed_details58
+
+-   SAS Institute Inc. (n.d.). SAS PROC MIXED: Numerical Optimisation and Computational Details. Technical documentation. Available at: http://gauss.stat.su.se/gu/mm/SAS_PROC_MIXED.pdf
