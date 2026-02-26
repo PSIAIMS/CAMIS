@@ -4,9 +4,9 @@ title: "Confidence intervals for a Proportion in SAS"
 
 ## Introduction
 
-\[See separate page for general introductory information on confidence intervals for proportions.\]
+See separate page for general introductory information on confidence intervals for proportions.
 
-## Data used
+## Data Used
 
 The adcibc data stored [here](../data/adcibc.csv) was used in this example, creating a binary treatment variable `trt` taking the values of `Act` or `PBO` and a binary response variable `resp` taking the values of `Yes` or `No`. For this example, a response is defined as a score greater than 4.
 
@@ -21,7 +21,7 @@ data adcibc2 (keep=trt resp) ;
 run;
 ```
 
-The below shows that for the Actual Treatment, there are 36 responders out of 154 subjects = 0.2338 (23.38% responders).
+The below shows that for the Active Treatment, there are 36 responders out of 154 subjects = 0.2338 (23.38% responders).
 
 ```{sas}
 #| eval: false 
@@ -37,29 +37,29 @@ run;
 knitr::include_graphics("../images/ci_for_prop/2by2crosstab.png")
 ```
 
-## Methods for Calculating Confidence Intervals for a single proportion
+## Methods for Calculating Confidence Intervals for a Single Proportion
 
-Here we are calculating a 95% confidence interval for the proportion of responders in the active treatment group.
+Here we are calculating a $100(1-\alpha)\%$ (usually 95%) confidence interval for the proportion $p$ of responders in the active treatment group, estimated from the sample proportion $\hat p = x / n$.
 
 SAS PROC FREQ in Version 9.4 can compute 11 methods to calculate CIs for a single proportion, an explanation of most of these methods and the code is shown below. See [BINOMIAL](https://support.sas.com/documentation/cdl/en/procstat/63104/HTML/default/viewer.htm#procstat_freq_sect010.htm)^1^ for more information on SAS parameterization. It is recommended to always sort your data prior to doing a PROC FREQ.
 
 For more information about some of these methods in R & SAS, including which performs better in different scenarios see [Five Confidence Intervals for Proportions That You Should Know about](https://towardsdatascience.com/five-confidence-intervals-for-proportions-that-you-should-know-about-7ff5484c024f)^2^ and [Confidence Intervals for Binomial Proportion Using SAS](https://www.lexjansen.com/sesug/2015/103_Final_PDF.pdf)^3^. Key literature on the subject includes papers by [Brown et al.](https://www.jstor.org/stable/2676784?seq=1)^4^ and [Newcombe](https://pubmed.ncbi.nlm.nih.gov/9595616/)^5^.
 
-### Clopper-Pearson (Exact or binomial CI) method
+### Clopper-Pearson (Exact or binomial CI) Method
 
-With binary endpoint data (response/non-response), we make the assumption that the proportion of responders has been derived from a series of Bernoulli trials. Trials (Subjects) are independent and we have a fixed number of repeated trials with an outcome of respond or not respond. This type of data follows the discrete binomial probability distribution, and the Clopper-Pearson^6^ (Exact) method uses this distribution to calculate the CIs.
+With binary endpoint data (response/non-response), we make the assumption that the proportion of responders has been derived from a series of Bernoulli trials. Trials (Subjects) are independent and we have a fixed number of repeated trials with an outcome of respond or not respond. This type of data follows the discrete binomial probability distribution, and the Clopper-Pearson^6^ ('exact') method uses this distribution to calculate the CIs.
 
 This method guarantees strictly conservative coverage, but has been noted to be excessively conservative, as for any given proportion, the actual coverage probability can be much larger than $(1-\alpha)$.
 
 The Clopper-Pearson method is output by SAS as one of the default methods (labelled as "Exact Conf Limits" in the "Proportion" ODS output object), but you can also specify it using `BINOMIAL(LEVEL="Yes" CL=CLOPPERPEARSON);` which creates a separate output object "ProportionCLs".
 
-### Normal Approximation method (Also known as the Wald or asymptotic CI method)
+### Normal Approximation Method (Also known as the Wald Method)
 
-The traditional alternative to the Clopper-Pearson (Exact) method is the asymptotic Normal Approximation (Wald) CI. The poor performance of this method is well documented - it can fail to achieve the nominal confidence level even with large sample sizes, and there is a consensus in the literature that it should be avoided^4, p128^. Nevertheless, it remains a default output component in SAS, so is included here for reference.
+The traditional alternative to the Clopper-Pearson ('Exact') method is the asymptotic Normal Approximation (Wald) CI. The poor performance of this method is well documented - it can fail to achieve the nominal confidence level even with large sample sizes, and there is a consensus in the literature that it should be avoided^4, p128^. Nevertheless, it remains a default output component in SAS, so is included here for reference.
 
 In large random samples from independent trials, the sampling distribution of proportions approximately follows the normal distribution. The expectation of a sample proportion is the corresponding population proportion. Therefore, based on a sample of size $n$, a $(1-\alpha)\%$ confidence interval for population proportion can be calculated using the normal approximation as follows:
 
-$p\approx \hat p \pm z_{\alpha/2} \sqrt{\hat p(1-\hat p)/n}$, where $\hat p$ is the sample proportion, $z_{\alpha/2}$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to the confidence level $(1-\alpha)$, and $\sqrt{\hat p(1-\hat p)/n}$ is the estimated standard error.
+$p\approx \hat p \pm z_{\alpha/2} \sqrt{\hat p(1-\hat p)/n}$, where $\hat p=x/n$ is the sample proportion, $z_{\alpha/2}$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to the confidence level $(1-\alpha)$, and $\sqrt{\hat p(1-\hat p)/n}$ is the estimated standard error.
 
 One should note that the approximation can become increasingly unreliable as the proportion of responders gets closer to 0 or 1 (e.g. 0 or 100% responding). In this scenario, common issues consist of:
 
@@ -83,12 +83,13 @@ The Wilson (Score) method is also based on an asymptotic normal approximation, b
 
 The method can be derived with or without a Yates continuity correction. The corrected interval closely approximates the coverage of the Clopper-Pearson method, but only in terms of overall two-sided coverage - due to the asymmetric coverage, it does not guarantee that the non-coverage probability is less than $\alpha/2$.
 
-Let p=r/n, where r= number of responses, and n=number of subjects, q=1-p, and z= the appropriate value from standard normal distribution:\
-$$ z{_{1-\alpha/2}} $$For example, for 95% confidence intervals, $\alpha=0.05$, using standard normal tables, z in the equations below will take the value =1.96. Calculate 3 quantities
+Let $\hat p$ =r/n, where r= number of responses, and n=number of subjects, $\hat q = 1- \hat p$, and z= the appropriate value from standard normal distribution: $z_{1-\alpha/2}$.
+
+For example, for 95% confidence intervals, $\alpha=0.05$, using standard normal tables, z in the equations below will take the value =1.96. Calculate 3 quantities
 
 $$ A= 2r+z^2$$
 
-$$ B=z\sqrt(z^2 + 4rq) $$ $$ C=2(n+z^2) $$The method calculates the confidence interval \[Lower, Upper\] as: \[(A-B)/C, (A+B)/C\]
+$$ B=z\sqrt(z^2 + 4r \hat q) $$ $$ C=2(n+z^2) $$The method calculates the confidence interval \[Lower, Upper\] as: \[(A-B)/C, (A+B)/C\]
 
 A = 2 \* 36 + 1.96\^2 = 75.8416
 
@@ -110,21 +111,25 @@ The only differences in the equations to calculate the Wilson score with continu
 
 $$ A= 2r+z^2 -1$$
 
-$$ B=z\sqrt(z^2 - 2 -\frac{1}{n} + 4rq) $$
+$$ B=z\sqrt(z^2 - 2 -\frac{1}{n} + 4r \hat q) $$
 
 ### Agresti-Coull method
 
-The Agresti-Coull method is a 'simple solution' designed to improve coverage compared to the Wald method and still perform better (i.e. less conservative) than Clopper-Pearson particularly when the probability isn't in the mid-range (0.5). It is less conservative whilst still having good coverage. The only difference compared to the Wald method is that it adds two successes and two failures to the original observations (increasing the sample by 4 observations). In practice it is not often used *\[Ed: what is the basis for this statement?\]*.
+The Agresti-Coull method is a 'simple solution' designed to improve coverage compared to the Wald method and still perform better (i.e. less conservative) than Clopper-Pearson particularly when the probability isn't in the mid-range (0.5). It is less conservative whilst still having good coverage. The only difference compared to the Wald method is that it adds $z^2/2$ successes and failures to the original observations (when $\alpha=0.05$ this increases the sample by approximately 4 observations).
 
 The Agresti-Coull method is output by SAS using `BINOMIAL(LEVEL="Yes" CL=AGRESTICOULL);`
 
 ### Jeffreys method
 
-The Jeffreys method is a particular type of Bayesian Highest Probability Density (HPD) method. For binomial proportions, the beta distribution is generally used for the conjugate prior, which consists of two parameters $\alpha$ and $\beta$. Setting $\alpha=\beta=0.5$ is called the Jeffreys prior. This is considered as non-informative for a binomial proportion.
+The Jeffreys method is a particular type of Bayesian Highest Probability Density (HPD) method. For binomial proportions, the beta distribution is generally used for the conjugate prior, which consists of two parameters $\alpha'$ and $\beta'$. Setting $\alpha'=\beta'=0.5$ is called the Jeffreys prior. This is considered as non-informative for a binomial proportion. The resulting posterior density gives the CI as
 
 $$
-(Beta (^k/_2 + ^1/_{2}, ^{(n-k)}/_2+^1/_2)_{\alpha}, Beta (^k/_2 + ^1/_{2}, ^{(n-k)}/_2+^1/_2)_{1-\alpha})
-$$The coverage probabilities of the Jeffreys method are centred around the nominal confidence level on average, with symmetric "equal-tailed" 1-sided coverage^8 Appx S3.5^. This interval is output by SAS using `BINOMIAL(LEVEL="Yes" CL=Jeffreys);`
+(Beta (x + 0.5, n - x + 0.5)_{\alpha/2}, Beta (x + 0.5, n - x + 0.5)_{1-\alpha/2})
+$$
+
+Boundary modifications are applied to force the lower limit to 0 if x=0 and the upper limit to 1 if x=n.
+
+The coverage probabilities of the Jeffreys method are centred around the nominal confidence level on average, with symmetric "equal-tailed" 1-sided coverage^8 Appx S3.5^. This interval is output by SAS using `BINOMIAL(LEVEL="Yes" CL=Jeffreys);`
 
 ### Binomial based Mid-P method
 
@@ -146,7 +151,7 @@ SAS offers the 'CORRECT' option for producing more conservative versions of the 
 
 ## Consistency with hypothesis tests
 
-Within SAS for the asymptotic methods, consistency with the binomial test is provided by the Wilson CI, because the asymptotic test uses the standard error estimated under the null hypothesis (i.e. the value specified in the `BINOMIAL(P=...)` option of the `TABLES` statement.
+Within SAS PROC FREQ for the asymptotic methods, consistency with the binomial test is provided by the Wilson CI, because the asymptotic test uses the standard error estimated under the null hypothesis (i.e. the value specified in the `BINOMIAL(P=...)` option of the `TABLES` statement.
 
 If an `EXACT BINOMIAL;` statement is used, the resulting test is consistent with the Clopper-Pearson CI.
 
@@ -154,13 +159,13 @@ An exact hypothesis test with mid-P adjustment (consistent with the mid-P CI) is
 
 ## Example Code using PROC FREQ
 
-By adding the option `BINOMIAL(LEVEL="Yes")` to your 'PROC FREQ', SAS outputs the Normal Approximation (Wald) and Clopper-Pearson (Exact) confidence intervals as two default methods, derived for the `Responders` = `Yes`. If you do not specify the `LEVEL` you want to model, then SAS assumes you want to model the first level that appears in the output (alphabetically).
+By adding the option `BINOMIAL(LEVEL="Yes")` to your 'PROC FREQ' TABLES statement, SAS outputs the Normal Approximation (Wald) and Clopper-Pearson (Exact) confidence intervals as two default methods, derived for the `Responders` = `Yes`. If you do not specify the `LEVEL` you want to model, then SAS assumes you want to model the first level that appears in the output (alphabetically).
 
 **It is very important to ensure you are calculating the CI for the correct level! Check your output to confirm, you will see below it states `resp=Yes` !**
 
-Caution is required if there are no responders in a group (aside from any issues with the choice of confidence interval method), as SAS FREQ (as of v9.4) does not output any confidence intervals in this case. If the `LEVEL` option has been specified, an error is produced, otherwise the procedure by default generates CIs for the proportion of non-responders. Note that valid CIs can be obtained for both p = 0/n and p = n/n. If needed, the interval for 0/n can be derived as 1 minus the transposed interval for n/n.
+Caution is required if there are no responders in a group (aside from any issues with the choice of confidence interval method), as SAS FREQ (as of v9.4) does not output any confidence intervals in this case. If the `LEVEL` option has been specified, an error is produced, otherwise the procedure by default generates CIs for the proportion of non-responders. Note that valid CIs can (and should) be obtained for both p = 0/n and p = n/n. If needed, the interval for 0/n can be derived as 1 minus the transposed interval for n/n.
 
-The output consists of the proportion of resp=Yes, the Asymptotic SE, 95% CIs using normal-approximation method, 95% CI using the Clopper-Pearson method (Exact), and then a Binomial test statistic and p-value for the null hypothesis of H0: Proportion = 0.5.
+The output consists of the proportion of resp=Yes, the Asymptotic SE, 95% CIs using normal-approximation method, 95% CI using the Clopper-Pearson method, and then a Binomial test statistic and p-value for the null hypothesis of H0: Proportion = 0.5.
 
 ```{sas}
 #| eval: false
@@ -185,13 +190,11 @@ By adding the option `BINOMIAL(LEVEL="Yes" CL=<name of CI method>)`, the other C
 
 -   `BINOMIAL(LEVEL="Yes" CL=CLOPPERPEARSON WALD WILSON AGRESTICOULL JEFFREYS MIDP LIKELIHOODRATIO LOGIT BLAKER)` will return Agresti-Coull, Blaker, Clopper-Pearson(Exact), Wald(without continuity correction) Wilson(without continuity correction), Jeffreys, Mid-P, Likelihood Ratio, and Logit
 
--   `BINOMIAL(LEVEL="Yes" CL=ALL);` will return Agresti-Coull, Clopper-Pearson (Exact), Jeffreys, Wald(without continuity correction), Wilson (without continuity correction). *\[If the developers of SAS are reading this, it would seem more natural/logical for Mid-P to be included here instead of Clopper-Pearson!\]*
+-   `BINOMIAL(LEVEL="Yes" CL=ALL);` will return Agresti-Coull, Clopper-Pearson (Exact), Jeffreys, Wald(without continuity correction), Wilson (without continuity correction). *\[If the developers of SAS are reading this, it would seem more natural/logical for Mid-P to be included here instead of Clopper-Pearson! However, note that the ALL option is not mentioned in the current PROC FREQ documentation.\]*
 
--   `BINOMIALc(LEVEL="Yes" CL=ALL);`will return Agresti-Coull, Clopper-Pearson (Exact), Jeffreys, Wald (with continuity correction), Wilson(with continuity correction). *\[... following the above comment, it is also not logical for Jeffreys and Agresti-Coull to be included here\]*
+-   `BINOMIAL(LEVEL="Yes" CL=ALL CORRECT);`will return Agresti-Coull, Clopper-Pearson (Exact), Jeffreys, Wald (with continuity correction), Wilson(with continuity correction). In previous versions of SAS this was coded as `BINOMIALc(...)`, but that is no longer documented. *\[... following the above comment, it is also not logical for Jeffreys and Agresti-Coull to be included here alongside methods designed to achieve conservative coverage\]*
 
-    -   Note that this option does not appear in current SAS/STAT documentation, but appears to still work.
-
--   `BINOMIALc(LEVEL="Yes" CL=WILSON(CORRECT)  WALD(CORRECT));`will return Wilson(with continuity correction) and Wald (with continuity correction)
+-   `BINOMIAL(LEVEL="Yes" CL=WILSON(CORRECT)  WALD(CORRECT));`will return Wilson (with continuity correction) and Wald (with continuity correction)
 
 ```{sas}
 #| eval: false
