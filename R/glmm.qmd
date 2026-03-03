@@ -1,0 +1,370 @@
+---
+title: "Generalized Linear Mixed Models (GLMM)"
+---
+
+# INTRODUCTION
+
+Generalized Linear Mixed Models (GLMM) method combines the characteristics of the Generalized Linear Model (GLM), with mixed models (such a repeated measures over time). It extends the GLM framework using link functions that relate the predictors to transformed outcome variable.
+
+$$
+E(Y)=\mu
+$$
+
+$$
+g(\mu) = X\beta + Zb, \qquad b \sim N(0, G)
+$$
+
+Where:
+
+n: number of observations, p: number of fixed effects, q: number of random effects (subjects).
+
+Y: vector of observed response variable (n x 1)
+
+g: Link function that transforms Y to the linear scale (eg: logit)
+
+X: matrix for fixed effects (n x p), Z: matrix of random effects, G: covariance matrix of the random effects.
+
+B: vector of fixed effects coefficients (p x 1)., b: vector of random effects.
+
+**Link Function:**
+
+-   Dichotomous response variable: probit (in case of rare events complementary log-log may be preferable).
+
+-   Outcomes with more than two categories:
+
+    -   Ordinal variable: cumulative
+
+    -   Nominal variable: generalized logit
+
+**Random Effects**
+
+GLMM are conditional models and estimate subject-average effects, and the intra-subject correlation is modelled via random effects. Unlike GEE models, GLMM models allow individual-level inference.
+
+**Estimation Methods**
+
+Maximum likelihood, based on approximations:
+
+-   Gauss Hermite Quadrature (GHQ): Integral split in a given number of points.
+
+-   Laplace: A specific case of GHQ, using 1 point.
+
+Penalized Likelihood can be used too, but it is known that in binary data it underestimates variance components and biased results.
+
+# EXAMPLE DATA
+
+A SAS data of clinical trial data comparing two treatments for a respiratory disorder available in ["Gee Model for Binary Data"](https://documentation.sas.com/doc/en/statug/15.2/statug_code_genmex5.htm) \[1\] in the SAS/STAT Sample Program Library \[1\] is used to create these examples.
+
+To uniquely identify subjects, a new variable USUBJID was created by concatenating SITE and ID. Variables TREATMENT, BASELINE, and VISIT were renamed to TRTP, BASE, and AVISITN.
+
+Additionally, two variables were created using randomly generated values to simulate variables with more than two categories. One was an ordinal variable with values 1, 2, and 3; the other was a nominal variable with categories 'liver', 'lung', and 'bone'. Data were created in SAS (See SAS section), and imported in R.
+
+The variables OUTCOME, TRTP, RESPORD, USUBJID and AVISITN were converted to factors. Since the modeling functions use the first (alphabetically) level as the reference category, TRT levels are ordered as 'P' (placebo) and 'A' (active), to ensure that placebo is used as the reference category in the models:
+
+```{r}
+library(readxl)
+resp <- read_excel("../data/resp_gee.xlsx")
+resp$trtp<-factor(resp$trtp, levels=c('P', 'A')) 
+resp$avisitn<-factor(resp$avisitn) 
+resp$outcome<-factor(resp$outcome)
+resp$usubjid<-factor(resp$usubjid)
+resp$respord<-factor(resp$respord)
+```
+
+# PACKAGES
+
+```{r}
+library(lme4)
+library(GLMMadaptive)
+library(merDeriv)
+library(parameters)
+library(glmmTMB)
+library(clubSandwich)
+library(MASS)
+library(emmeans)
+library(ordinal)
+```
+
+# GLMM WITH GHQ
+
+GLMM with GHQ approximation can be fitted using `lme4::glmer` and`GLMMadaptative::mixed_model`R functions.
+
+In GLMMs, intra‑subject (within‑cluster) correlation is captured through the inclusion of random effects. Both functions estimate this correlation by assuming normally distributed random effects with infinite degrees of freedom and, by default, model the random‑effects covariance matrix GGG using a Variance Components (VC) structure.
+
+### lme::glmer
+
+The syntax to fit a GLMM using GHQ with `lme4::glme` is displayed below, the random effects are specified as `1|usubjid` , where the number 1 denotes a random intercept (different baseline for each individual). By specifying `nAQG=<n>` the GHQ method is applied with the specified number of points (in this example n=5).
+
+```{r}
+model <- lme4::glmer(outcome ~ trtp + avisitn + trtp*avisitn + (1 | usubjid), 
+               data = resp,
+               family = binomial(link ="logit"),
+               nAGQ=5)
+
+summary(model)
+```
+
+### GLMMadapive::mixed_model
+
+The syntax using `GLMMadaptative::mixed_model` is similar, but the random effects are specified by using the `random` argument.
+
+```{r}
+model <- GLMMadaptive::mixed_model(fixed = outcome ~ trtp + avisitn  + trtp*avisitn,
+             random = ~1|usubjid,
+             data = resp,
+             family = binomial(link = "logit"),
+             nAGQ=5)
+summary(model)
+```
+
+Results produced by the mixed_model function show slight deviations when compared to glmer, suggesting differences in the model implementation or estimation.
+
+Even with Gauss–Hermite quadrature in both, **lme4::glmer** and **GLMMadaptive::mixed_model** use **different likelihood parameterizations, adaptive quadrature implementations, and optimization routines**, so they don’t evaluate the exact same objective and can yield different estimates (especially for non-Gaussian outcomes or sparse data). In practice, `mixed_model()` tends to provide **more accurate marginal likelihood integration** (subject-specific adaptive scaling), while `glmer()` is **faster but more approximate**, which can bias variance components and slightly shift fixed effects \[2\].
+
+# GLMM WITH LAPLACE
+
+Laplace is a particular GHQ where only one point is used. In R, `lme4::glmer` can also be used to compute Laplace approximation, but not `GLMMadaptative::mixed_model`. The `glmmTMB::glmmTMB`function is also a viable alternative.
+
+### lme::glmer
+
+The syntax using `lme4::glmer` is the same as in GHQ, but without specifying the number of points:
+
+```{r}
+model <- lme4::glmer(formula =outcome ~ trtp + avisitn + trtp*avisitn + (1 | usubjid),
+               data = resp,
+                family = binomial(link ="logit"))
+
+summary(model)
+```
+
+This initial attempt using `lme4::glmer`resulted in a convergence warning, which can be addressed by switching the optimizer to "bobyqa" and extending the maximum number of iterations, as shown in the code below. These adjustments not only suppress the warning but provides closer results to SAS \[3\].
+
+```{r}
+model <- lme4::glmer(formula =outcome ~ trtp + avisitn + trtp*avisitn + (1 | usubjid),
+               data = resp,
+                family = binomial(link ="logit"),
+                nAGQ=1,
+                control=lme4::glmerControl(optimizer="bobyqa",                    
+                        optCtrl=list(maxfun=100000)))
+summary(model)
+
+```
+
+```{r}
+model <- glmer(formula =outcome ~ trtp + avisitn + trtp*avisitn + (1 | usubjid),
+               data = resp,
+                family = binomial(link ="logit"),
+                nAGQ=1,
+                control=glmerControl(optimizer="bobyqa",                    
+                        optCtrl=list(maxfun=100000)))
+```
+
+### glmmTMB::glmmTMB
+
+The `glmmTMB::glmmTMB` function is also a viable alternative for Laplace approximation, with similar syntax to `lme4::glmer`.
+
+```{r}
+model<- glmmTMB::glmmTMB(outcome ~ trtp + avisitn + trtp*avisitn + (1 | usubjid),
+                data = resp,
+                family = binomial(link = "logit"))
+summary(model)
+```
+
+Although both `glmmTMB` and `lme4::glmer` implement the Laplace approximation for fitting GLMMs, they rely on different numerical frameworks and optimization strategies. `glmmTMB` uses TMB with automatic differentiation and its own Laplace implementation, whereas `glmer` uses lme4’s custom penalized deviance formulation and derivative‑free optimizers. As a result, the approximated likelihoods, gradients, and optimization paths differ, leading to non‑identical parameter estimates even under the same model specification. \[2\]
+
+# PENALIZED QUASI-LIKELIHOOD (PQL)
+
+The PQL approach uses linear approximations instead of likelihood, making it **less accurate for binary outcomes compared to the GHQ or Laplace** methods described above. PQL computation can be obtained using the `glmmPQL` function form the MASS package, using the random argument to specify the random factors.
+
+```{r}
+model <- MASS::glmmPQL(outcome ~ trtp + avisitn + trtp*avisitn,
+                 random=list(~1|usubjid),
+                 data = resp,
+                 family = binomial(link = "logit"))
+summary(model)
+```
+
+**Note:** `glmmPQL` is widely recognized as **less reliable for binary outcomes**, more robust approaches such as Laplace or GHQ discussed in previous sections are generally preferred.
+
+# SANDWICH SE AND DEGREES OF FREEDOM (DDFF)
+
+Previous results are computed using default outputs, so naive SE and infinite ddff are used. However, Li. P. and Redden, D.T. (2015) \[4\], suggested using the Between-Within denominator degrees of freedom approximation method when using GLMMs in randomized trials with binary outcomes and small sample size.
+
+Additionally, FDA \[5\] advises "sponsors to consider using of robust SE method such as the Huber-White "sandwich" SE, particularly when the model does not include treatment by covariate interaction.
+
+In R, the functions described above do not include these options. Function parameters::dof_betwithin can be used to use between-withing ddff, does it would not return exactly the same results as shown in Li and Redden 2015 \[4\], but similar results are obtained \[6\].
+
+The Sandwich S.E. can be obtained from different functions too: merDeriv::sandwich function can be used for glmer objects, and clubSandwich::vovHC for glmmTMB objects (recent versions of the package R (\>= 3.6.0) support the computation of Sandwich S.E. using the using clubSandwich::vcovHC function \[7\].
+
+A function 'new_mode' is created below, where results obtained from a glmer model can be modified to use the sandwich SE and the between-within approximated ddff:
+
+### lme::glmer
+
+```{r}
+new_model <- function(model, est_fix , se , df){
+#Re-calculate (2-sided) p-values using estimated parameters and its SE
+t <- est_fix /se
+pvalue <-2*pt(q=abs(t), df=df, lower.tail=FALSE)
+#Combine results in a data frame and add row names
+new_model <- round(cbind(est_fix, se, df, t, pvalue), digits=4)
+colnames(new_model) <- c("Estimate", "Std. Error", "df", "tvalue", "P-value")
+rownames(new_model) <- rownames(summary(model)$coefficients)
+new_model
+}
+```
+
+```{r}
+#Run the model
+model <- lme4::glmer(outcome ~ trtp + avisitn + trtp*avisitn + (1 | usubjid), 
+               data = resp,
+               family = binomial(link ="logit"),
+               nAGQ=5)
+
+
+#Get parameter estimation
+est<-lme4::fixef(model)
+
+#Get Sandwich covariance matrix
+library(merDeriv)
+vcov<-sandwich(model)
+
+#Get S.E. (the diagonal from the covariance matrix), remove last value as it corresponds to random effects
+se_sw0<- sqrt(diag(vcov)) 
+se_sw <-head(se_sw0, -1)
+```
+
+```{r}
+#Re-calculate p-values using Sandwich SE and Inf ddff
+new_model(model, est_fix=est, se=se_sw , df=Inf )
+
+```
+
+```{r}
+#Re-calculate p-values using Sandwich SE and between-within ddff
+new_model(model, est_fix=est, se=se_sw , df=parameters::dof_betwithin(model))
+
+```
+
+### glmmTMB::glmmTMB
+
+```{r}
+new_model <- function(model, est_fix , se , df){
+#Re-calculate (2-sided) p-values using estimated parameters and its SE
+t <- est_fix /se
+pvalue <-2*pt(q=abs(t), df=df, lower.tail=FALSE)
+#Combine results in a data frame and add row names
+new_model <- round(cbind(est_fix, se, df, t, pvalue), digits=4)
+colnames(new_model) <- c("Estimate", "Std. Error", "df", "tvalue", "P-value")
+rownames(new_model) <- rownames(summary(model)$coefficients$cond)
+new_model
+}
+
+```
+
+```{r}
+#Run the model
+model<- glmmTMB::glmmTMB(outcome ~ trtp + avisitn + trtp*avisitn + (1 | usubjid),
+data = resp,
+family = binomial(link = "logit"))
+
+#Get estimator
+est<-glmmTMB::fixef(model)$cond
+
+#Get Sandwich S.E.
+se_sw<- sqrt(diag(vcovHC(model)))
+
+```
+
+```{r}
+#Re-calculate p-values with Sandwich SE and Ininite df
+new_model(model, est_fix=est, se=se_sw , df=Inf )
+
+```
+
+```{r}
+#Re-calculate p-values with Sandwich SE between-withing aprox. df
+new_model(model, est_fix=est, se=se_sw , df=parameters::dof_betwithin(model))
+
+```
+
+# PREDICTED PROBABILITIES AND ODDS RATIO (OR)
+
+Estimated probabilities and ORs, obtained by using the `emmeans` and `contrast` functions. In the example below, the probabilities and OR are estimated for GLMM using GHQ approximation.
+
+To obtain robust (sandwich) standard errors, the `emmeans` function allows specifying a sandwich covariance estimator using `vcov.method = sandwich(model)`, as illustrated in the example below. To instead use the model‑based (naive) standard errors, simply supply the model’s own covariance matrix by specifying `vcov.method = vcov(model)`.
+
+```{r}
+#Run the model
+model <- lme4::glmer(outcome ~ trtp + avisitn + trtp*avisitn + (1 | usubjid), 
+               data = resp,
+               family = binomial(link ="logit"),
+               nAGQ=5)
+
+
+```
+
+```{r}
+library(emmeans)
+#Get predicted probabilities for each treatment, using the Sandwich matrix covariance
+prob <- emmeans(model, ~ trtp*avisitn, data=resp, vcov.method=sandwich(model), type='response')
+prob
+#Get differences between treatments by visit (option "revpairwise" is used to compare A vs P)
+diffs_mean<-emmeans(model, ~ trtp*avisitn, data=resp, vcov.method=sandwich(model))
+diffs <- contrast(diffs_mean,"revpairwise", simple="trtp")
+diffs <- as.data.frame(diffs)
+
+#Calculate CI (alpha=0.05)
+alpha<-0.05
+z_crit <- qnorm(1 - alpha / 2)
+diffs$low<-diffs$estimate - (z_crit*diffs$SE)
+diffs$upp<-diffs$estimate + (z_crit*diffs$SE)
+
+#Get OR applying exponential transformation;
+or<-exp(diffs$estimate)
+or_low<-exp(diffs$low)
+or_upp<-exp(diffs$up)
+
+#Get two-sided p-value
+z <- diffs$estimate/diffs$SE
+pvalue <- 2 * (1 - pnorm(z))
+
+#Create a dataset with all the results
+OR<-as.data.frame(cbind(diffs$avisitn, or,or_low, or_upp, z, round(pvalue, digits=4)))
+colnames(OR)<-c('avisit', 'OR', 'lower.CL', 'upper.CL', 'Z', 'p-value')
+OR
+```
+
+# OUTCOME WITH MORE THAN TWO CATEGORIES
+
+Although less common than binary outcomes, endpoints with more than two categories may be the outcome of interest, which can be either ordinal or nominal. In those case, the multinomial distribution is used selecting the appropriated link function depending on the type of response variable.
+
+### Ordinal variable
+
+The function `ordinal::clmm` can be used to fit a GLMM model when the outcome is an ordinal variable.
+
+```{r}
+model<- ordinal::clmm(respord ~ trtp + avisitn + trtp*avisitn + (1 | usubjid), 
+             data = resp)
+summary(model)
+```
+
+### Nominal variable
+
+No R functions have been identified for handling multinomial distributions for a nominal variable in a frequentist framework.
+
+# REFERENCES
+
+\[1\] [SAS Institute Inc.. SAS Help Center. The GEE procedure.](https://documentation.sas.com/doc/en/statug/15.2/statug_gee_examples01.htm)
+
+\[2\] Conceptual explanations were assisted using Microsoft Copilot (M365 Copilot, GPT‑5‑based model).
+
+\[3\] [Stack Overflow \[Internet\]. 2008 \[Last visited: 2025 Sep 30\]](https://stackoverflow.com/questions/33670628/solution-to-the-warning-message-using-glmer)
+
+\[4\] [Li, P., & Redden, D. T. (2015). Comparing denominator degrees of freedom approximations for the generalized linear mixed model in analyzing binary outcome in small sample cluster-randomized trials. BMC Medical Research Methodology, 15, 38.](https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-015-0026-x)
+
+\[5\] [U.S. Food and Drug Administration. (2023). Adjusting for Covariates in Randomized Clinical Trials for Drugs and Biological Products: Guidance for Industry. Center for Drug Evaluation and Research (CDER), Center for Biologics Evaluation and Research (CBER).](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/adjusting-covariates-randomized-clinical-trials-drugs-and-biological-products)
+
+\[6\] [Documentation of package parameters. dof_betwithin](https://search.r-project.org/CRAN/refmans/parameters/html/p_value_betwithin.html)
+
+\[7\] Brooks, M. E., et al. (2025). glmmTMB: Generalized Linear Mixed Models using Template Model Builder (Version 1.1.12) \[R package manual\]. The Comprehensive R Archive Network (CRAN). <https://cran.r-project.org/web/packages/glmmTMB/glmmTMB.pdf>
+
+\[8\] [Ordinal: Regression Models for Ordinal Data.](https://cran.r-project.org/web/packages/ordinal/index.html)
