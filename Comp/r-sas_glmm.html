@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>R: Kolmogorov-Smirnov test</title>
+<title>Generalized Linear Mixed Models (GLMM)</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,41 +19,6 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -205,15 +170,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
-  <li><a href="#libraries-or-extensions-needed" id="toc-libraries-or-extensions-needed" class="nav-link" data-scroll-target="#libraries-or-extensions-needed">Libraries or Extensions Needed</a></li>
-  <li><a href="#data-sources-for-the-analysis" id="toc-data-sources-for-the-analysis" class="nav-link" data-scroll-target="#data-sources-for-the-analysis">Data Sources for the Analysis</a></li>
-  <li><a href="#statistical-method" id="toc-statistical-method" class="nav-link" data-scroll-target="#statistical-method">Statistical Method</a>
+  <li><a href="#summary" id="toc-summary" class="nav-link active" data-scroll-target="#summary">SUMMARY</a>
   <ul class="collapse">
-  <li><a href="#one-sample-k-s-test" id="toc-one-sample-k-s-test" class="nav-link" data-scroll-target="#one-sample-k-s-test">One-sample K-S test</a></li>
-  <li><a href="#two-sample-k-s-test" id="toc-two-sample-k-s-test" class="nav-link" data-scroll-target="#two-sample-k-s-test">Two-sample K-S test</a></li>
+  <li><a href="#gauss-hermite-quadrature-ghq-approximation" id="toc-gauss-hermite-quadrature-ghq-approximation" class="nav-link" data-scroll-target="#gauss-hermite-quadrature-ghq-approximation">Gauss-Hermite Quadrature (GHQ) approximation</a></li>
+  <li><a href="#laplace-approximation" id="toc-laplace-approximation" class="nav-link" data-scroll-target="#laplace-approximation">Laplace approximation</a></li>
+  <li><a href="#pql" id="toc-pql" class="nav-link" data-scroll-target="#pql">PQL</a></li>
   </ul></li>
-  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  <li><a href="#ghq" id="toc-ghq" class="nav-link" data-scroll-target="#ghq">GHQ</a>
+  <ul class="collapse">
+  <li><a href="#model-based-se-and-infinite-ddff" id="toc-model-based-se-and-infinite-ddff" class="nav-link" data-scroll-target="#model-based-se-and-infinite-ddff">Model Based SE and Infinite ddff</a></li>
+  <li><a href="#sandwich-se" id="toc-sandwich-se" class="nav-link" data-scroll-target="#sandwich-se">Sandwich SE</a></li>
+  </ul></li>
+  <li><a href="#laplace" id="toc-laplace" class="nav-link" data-scroll-target="#laplace">Laplace</a>
+  <ul class="collapse">
+  <li><a href="#model-based-se-and-infinite-ddff-1" id="toc-model-based-se-and-infinite-ddff-1" class="nav-link" data-scroll-target="#model-based-se-and-infinite-ddff-1">Model Based SE and Infinite ddff</a></li>
+  <li><a href="#sandwich-se-1" id="toc-sandwich-se-1" class="nav-link" data-scroll-target="#sandwich-se-1">Sandwich SE</a></li>
+  </ul></li>
+  <li><a href="#pql-1" id="toc-pql-1" class="nav-link" data-scroll-target="#pql-1">PQL</a></li>
+  <li><a href="#outcome-with-more-than-2-categories" id="toc-outcome-with-more-than-2-categories" class="nav-link" data-scroll-target="#outcome-with-more-than-2-categories">OUTCOME WITH MORE THAN 2 CATEGORIES</a>
+  <ul class="collapse">
+  <li><a href="#ordinal-variables" id="toc-ordinal-variables" class="nav-link" data-scroll-target="#ordinal-variables">Ordinal variables</a></li>
+  <li><a href="#nominal-variables" id="toc-nominal-variables" class="nav-link" data-scroll-target="#nominal-variables">Nominal variables</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">REFERENCES</a></li>
   </ul>
 </nav>
     </div>
@@ -222,7 +201,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">R: Kolmogorov-Smirnov test</h1>
+<h1 class="title">Generalized Linear Mixed Models (GLMM)</h1>
 </div>
 
 
@@ -239,99 +218,272 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Kolmogorov-Smirnov (K-S) test is a non-parametric test employed to check whether the probability distributions of a sample and a control distribution, or two samples are equal. It is constructed based on the cumulative distribution function (CDF) and calculates the greatest difference between the empirical distribution function (EDF) of the sample and the theoretical or empirical distribution of the control sample.</p>
-<p>The Kolmogorov-Smirnov test is mostly used for two purposes:</p>
+<section id="summary" class="level1">
+<h1>SUMMARY</h1>
+<p>Differences between SAS and R, (and even between different functions/procedures within same software) can lead to different results. These differences do not imply that one tool is more reliable than another but rather reflect variations in default settings and computational methods.</p>
+<p>The following section summarizes the comparisons conducted using the dataset from <a href="https://documentation.sas.com/doc/en/statug/15.2/statug_code_genmex5.htm">“Gee Model for Binary Data”</a> in the SAS/STAT Sample Program Library [1]. Each subsection corresponds to a different GLMM estimation method: <strong>Gaussian–Hermite Quadrature (GHQ), Laplace approximation, or Penalized Quasi‑Likelihood (PQL)</strong>, and outlines the specific options and functions required to obtain consistent or comparable results across software platforms.</p>
+<p>In general, different R functions were able to reproduce SAS GLMM results (using either GHQ or the Laplace approximation) when applying naïve or sandwich standard errors and assuming infinite degrees of freedom (ddff). However, only approximate agreement was achieved when comparing estimates based on the Between‑Within ddf. When using PQL, additional discrepancies emerged due to differences in the underlying estimation methods across software (i.e., PQL in R versus RSPL in SAS).</p>
+<section id="gauss-hermite-quadrature-ghq-approximation" class="level3">
+<h3 class="anchored" data-anchor-id="gauss-hermite-quadrature-ghq-approximation">Gauss-Hermite Quadrature (GHQ) approximation</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 23%">
+<col style="width: 23%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>S.E.</th>
+<th>Ddff</th>
+<th>SAS</th>
+<th>R</th>
+<th>Match?</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Naive</td>
+<td>Inf</td>
+<td>GLIMMIX with ddff=none</td>
+<td>lme4::glmer</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>Naive</td>
+<td>Inf</td>
+<td>GLIMMIX with ddff=none</td>
+<td>GLMMadaptive::mixed_model</td>
+<td>Aprox.</td>
+</tr>
+<tr class="odd">
+<td>Naive</td>
+<td>BW</td>
+<td>GLIMMIX with ddff=BW (default)</td>
+<td>lme4::glmer &amp; parameters::dof_betwithin [1]</td>
+<td>Aprox <sup>(1)</sup></td>
+</tr>
+<tr class="even">
+<td>Sandwich</td>
+<td>Inf</td>
+<td>GLIMMIX with empirical option &amp; ddff=none</td>
+<td>lme4::glmer &amp; merDeriv::sandwich</td>
+<td>Aprox <sup>(2)</sup></td>
+</tr>
+<tr class="odd">
+<td>Sandwich</td>
+<td>BW</td>
+<td>GLIMMIX with empirical option &amp; ddff=BW(default)</td>
+<td>lme4::glmer, merDeriv::sandwich &amp; parameters::dof_betwithin [1]</td>
+<td>Aprox <sup>(1)</sup></td>
+</tr>
+</tbody>
+</table>
+<p>BW: Between-Within, Inf: Infinite.</p>
 <ol type="1">
-<li><p><strong>One-sample K-S test</strong>:&nbsp;To compare the sample distribution&nbsp;to&nbsp;a known reference distribution.</p></li>
-<li><p><strong>Two-sample K-S test</strong>: To compare the two independent samples’ distributions.</p></li>
+<li><p>In R, the function <code>parameters::dof_betwithin</code> uses a heuristic implementation of the between‑within method and therefore does not reproduce the exact results reported in Li and Redden (2015); instead, it yields values that are similar but not identical. In contrast, SAS computes the exact between‑within degrees of freedom.</p></li>
+<li><p>As <code>glmer</code>does not provide cluster-level scores, the <code>sandwich</code> function cannot compute clustered robust estimatator, so it does not correspond to SAS’s emprical covariance [2].</p></li>
 </ol>
-<p>The K-S test is formulated on the basis of the maximum difference between the observed and expected cumulative distribution functions (CDFs). The test is non-parametric, as it does not assume any specific distribution for the sample data. This makes it especially helpful in testing the goodness-of-fit for continuous distributions.</p>
 </section>
-<section id="libraries-or-extensions-needed" class="level1">
-<h1>Libraries or Extensions Needed</h1>
-<p>To perform the Kolmogorov-Smirnov test in R, we will use the <code>ks.test()</code> function from the <code>dgof</code> package.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dgof)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="laplace-approximation" class="level3">
+<h3 class="anchored" data-anchor-id="laplace-approximation">Laplace approximation</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 23%">
+<col style="width: 23%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>S.E.</th>
+<th>Ddff</th>
+<th>SAS</th>
+<th>R</th>
+<th>Match?</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Naive</td>
+<td>Inf</td>
+<td>GLIMMIX with ddff=none</td>
+<td>lme4::glmer</td>
+<td>Aprox. <sup>(2)</sup></td>
+</tr>
+<tr class="even">
+<td>Naive</td>
+<td>Inf</td>
+<td>GLIMMIX with ddff=none</td>
+<td>glmmTMB::glmmTMB</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>Naive</td>
+<td>BW</td>
+<td>GLIMMIX with ddff=BW (default)</td>
+<td>lglmmTMB::glmmTMB &amp; parameters::dof_betwithin [1]</td>
+<td>Aprox. <sup>(1)</sup></td>
+</tr>
+<tr class="even">
+<td>Sandwich</td>
+<td>Inf</td>
+<td>GLIMMIX with empirical option &amp; ddff=none</td>
+<td>glmmTMB::glmmTMB &amp; clubSandwich::vcovHC</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>Sandwich</td>
+<td>BW</td>
+<td>GLIMMIX with empirical option &amp; ddff=BW(default)</td>
+<td>lme4::glmer, merDeriv::sandwich &amp; parameters::dof_betwithin [1]</td>
+<td>Aprox <sup>(1)</sup></td>
+</tr>
+</tbody>
+</table>
+<p>BW: Between-Within, Inf: Infinite.</p>
+<p>(1): In R, the function <code>parameters::dof_betwithin</code> uses a heuristic implementation of the between‑within method and therefore does not reproduce the exact results reported in Li and Redden (2015); instead, it yields values that are similar but not identical. In contrast, SAS computes the exact between‑within degrees of freedom.</p>
+<p>(2): Although <code>lme4::glmer</code> produced estimates consistent with SAS when using GHQ, it exhibited convergence issues that were not present in either SAS or <code>glmmTMB::glmmTMB</code>. After adjusting the optimization settings (see R section), only approximate agreement with the SAS results was achieved.</p>
+</section>
+<section id="pql" class="level3">
+<h3 class="anchored" data-anchor-id="pql">PQL</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 23%">
+<col style="width: 23%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>S.E.</th>
+<th>Ddff</th>
+<th>SAS</th>
+<th>R</th>
+<th>Match?</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Naive</td>
+<td>Residual</td>
+<td>GLIMMIX with method=RSPL &amp; ddfm=residual</td>
+<td>MASS::glmmPQL</td>
+<td>Aprox. <sup>(1)</sup></td>
+</tr>
+</tbody>
+</table>
+<p>(1): Results differ because of the different computation methods (PQL vs.&nbsp;RSPL)</p>
+</section>
+</section>
+<section id="ghq" class="level1">
+<h1>GHQ</h1>
+<p>In this section, SAS and R results obtained under the GHQ approach are compared, after adjusting the necessary settings or applying additional functions to ensure alignment across software (See summary table above and respective R and SAS sections).</p>
+<section id="model-based-se-and-infinite-ddff" class="level3">
+<h3 class="anchored" data-anchor-id="model-based-se-and-infinite-ddff">Model Based SE and Infinite ddff</h3>
+<p>Similar results in the estimate were obtained in SAS and R (using <code>lme4::glmer</code>), and approximated results were obtained with mixed_model (See R section for difference details between R functions).</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/glmm/R_vs_SAS_Image_1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
 </div>
 </section>
-<section id="data-sources-for-the-analysis" class="level1">
-<h1>Data Sources for the Analysis</h1>
-<p>We will use the <code>lung</code> dataset from the <code>survival</code> package.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survival)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">attach</span>(lung)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="sandwich-se" class="level3">
+<h3 class="anchored" data-anchor-id="sandwich-se">Sandwich SE</h3>
+<p>Sandwich standard errors were computed using the <code>EMPIRICAL</code> option in SAS and the <code>merDeriv::sandwich</code> function in R (See corresponding SAS and R sections for details). This approach yielded comparable,though not identical results. The slight discrepancies arise because the base <code>sandwich</code> method cannot compute a fully cluster‑robust estimator for <code>glmer</code> models, and therefore does not reproduce the exact empirical covariance structure used by SAS [2].</p>
+<p>Between-Within ddff were obtained in R using <code>parameters::dof_betwithin</code> function, which computes an approximation, instead of the exact dff as in SAS.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/glmm/R_vs_SAS_Image_2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
 </div>
-<p>Details about the lung dataset can be found in the documentation for the <code>survival</code> package, which is available at <a href="https://cran.r-project.org/web/packages/survival/survival.pdf" class="uri">https://cran.r-project.org/web/packages/survival/survival.pdf</a>.</p>
-</section>
-<section id="statistical-method" class="level1">
-<h1>Statistical Method</h1>
-<section id="one-sample-k-s-test" class="level2">
-<h2 class="anchored" data-anchor-id="one-sample-k-s-test">One-sample K-S test</h2>
-<p>For this example, we will test whether the Karnofsky performance score rated by physician (<code>ph.karno</code>), and Karnofsky performance score rated by patient (<code>pat.karno</code>) follow a normal distribution.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ks.test</span>(ph.karno, <span class="st">"pnorm"</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ks.test</span>(pat.karno, <span class="st">"pnorm"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Both tests have p-values &lt; 2.2e-16, which indicates that the distributions of <code>ph.karno</code> and <code>pat.karno</code> are significantly different from a normal distribution.</p>
-</section>
-<section id="two-sample-k-s-test" class="level2">
-<h2 class="anchored" data-anchor-id="two-sample-k-s-test">Two-sample K-S test</h2>
-<p>Next, we will compare the distributions of <code>ph.karno</code> and <code>pat.karno</code> using the two-sample K-S test.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ks.test</span>(ph.karno, pat.karno)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The p-value of 0.2084 suggests that there is no significant difference between the distributions of <code>ph.karno</code> and <code>pat.karno</code>. This indicates that the Karnofsky performance scores rated by physicians and patients are not significantly different in terms of their distribution.</p>
 </section>
 </section>
-<section id="conclusion" class="level1">
-<h1>Conclusion</h1>
-<p>We demonstrated the use of the Kolmogorov-Smirnov test in R using the ks.test() function from the dgof package, which is straightforward and handy to use. As far as we are aware of, this is the most widely used function in R to perform the Kolmogorov-Smirnov test.</p>
-<div class="callout callout-style-default callout-note callout-titled" title="Session Info">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Session Info
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-1" class="callout-1-contents callout-collapse collapse">
-<div class="callout-body-container callout-body">
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>─ Session info ───────────────────────────────────────────────────────────────
- setting  value
- version  R version 4.5.2 (2025-10-31)
- os       macOS Tahoe 26.3
- system   aarch64, darwin20
- ui       X11
- language (EN)
- collate  en_US.UTF-8
- ctype    en_US.UTF-8
- tz       Europe/London
- date     2026-02-26
- pandoc   3.6.3 @ /Applications/Positron.app/Contents/Resources/app/quarto/bin/tools/aarch64/ (via rmarkdown)
- quarto   1.8.27 @ /Applications/Positron.app/Contents/Resources/app/quarto/bin/quarto
-
-─ Packages ───────────────────────────────────────────────────────────────────
- ! package  * version date (UTC) lib source
- R dgof       &lt;NA&gt;    &lt;NA&gt;       [?] &lt;NA&gt;
-   survival   3.8-3   2024-12-17 [2] CRAN (R 4.5.2)
-
- [1] /Users/christinafillmore/Documents/GitHub/CAMIS/renv/library/macos/R-4.5/aarch64-apple-darwin20
- [2] /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library
-
- R ── Package was removed from disk.
-
-──────────────────────────────────────────────────────────────────────────────</code></pre>
+<section id="laplace" class="level1">
+<h1>Laplace</h1>
+<section id="model-based-se-and-infinite-ddff-1" class="level3">
+<h3 class="anchored" data-anchor-id="model-based-se-and-infinite-ddff-1">Model Based SE and Infinite ddff</h3>
+<p>Results obtained with SAS and <code>glmmTMB::glmmTMB</code> matched, with minor differences in the latest decimal, attributable to different rounding between software.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/glmm/R_vs_SAS_Image_3.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
 </div>
 </div>
 </div>
+</section>
+<section id="sandwich-se-1" class="level3">
+<h3 class="anchored" data-anchor-id="sandwich-se-1">Sandwich SE</h3>
+<p>Sandwich SE were obtained using <code>clubSandwich::vovHC</code> R function, obtainng similar SE to SAS. However, there are differences in the between-within ddff, because the R function is based on a heuristic.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/glmm/R_vs_SAS_Image_4.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
 </div>
 </div>
+</div>
+</section>
+</section>
+<section id="pql-1" class="level1">
+<h1>PQL</h1>
+<p>The PQL approach uses linear approximations instead of likelihood, making it less accurate for binary outcomes compared to the GHQ or Laplace methods described above. In SAS, this is implemented by default using the Residual Pseudo-Likelihood method (method=RSPL), which is a refinement of PQL which incorporates residual adjustments to better approximate the marginal likelihood, in the GLIMMIX procedure. In R the PQL computation can be obtained using the glmmPQL function form the MASS package.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/glmm/R_vs_SAS_Image_5.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Results differ because of the different computation methods (PQL vs.&nbsp;RSPL) across software. Since glmmPQL is widely recognized as less reliable for binary outcomes, more robust approaches such as Laplace or GHQ are generally preferred. Consequently, further investigation using glmmPQL is not pursued.</p>
+</section>
+<section id="outcome-with-more-than-2-categories" class="level1">
+<h1>OUTCOME WITH MORE THAN 2 CATEGORIES</h1>
+<section id="ordinal-variables" class="level3">
+<h3 class="anchored" data-anchor-id="ordinal-variables">Ordinal variables</h3>
+<p>A GLMM with ordinal outcome is fit in SAS using PROC CLIMMIX and function <code>ordinal::clmm,</code> (See corresponding SAS and R section for details), obtaining some differences in the results, because <code>clmm</code> applies different optimization algorithms (Newton, BFGS, NR methods) and its own parameterization of random effects [2].</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/glmm/R_vs_SAS_Image_6.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="nominal-variables" class="level3">
+<h3 class="anchored" data-anchor-id="nominal-variables">Nominal variables</h3>
+<p>GLMM with nominal outcome is created with GLIMMIX (See corresponding SAS section), However, no R functions equivalent to SAS’s GLIMMIX procedure have been identified for handling multinomial distributions in a frequentist framwork.</p>
+</section>
+</section>
+<section id="references" class="level1">
+<h1>REFERENCES</h1>
+<p>[1] <a href="https://documentation.sas.com/doc/en/statug/15.2/statug_gee_examples01.htm">SAS Institute Inc.. SAS Help Center. The GEE procedure.</a></p>
+<p>[2] Conceptual explanations were assisted using Microsoft Copilot (M365 Copilot, GPT‑5‑based model).</p>
+<p>[3] <a href="https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-015-0026-x">Li, P., &amp; Redden, D. T. (2015). Comparing denominator degrees of freedom approximations for the generalized linear mixed model in analyzing binary outcome in small sample cluster-randomized trials. BMC Medical Research Methodology, 15, 38.</a></p>
+<p>[4] <a href="https://www.fda.gov/regulatory-information/search-fda-guidance-documents/adjusting-covariates-randomized-clinical-trials-drugs-and-biological-products">U.S. Food and Drug Administration. (2023). Adjusting for Covariates in Randomized Clinical Trials for Drugs and Biological Products: Guidance for Industry. Center for Drug Evaluation and Research (CDER), Center for Biologics Evaluation and Research (CBER).</a></p>
+<p>[5] <a href="https://search.r-project.org/CRAN/refmans/parameters/html/p_value_betwithin.html">Documentation of package parameters. dof_betwithin</a></p>
+<p>[6] Brooks, M. E., et al.&nbsp;(2025). glmmTMB: Generalized Linear Mixed Models using Template Model Builder (Version 1.1.12) [R package manual]. The Comprehensive R Archive Network (CRAN). <a href="https://cran.r-project.org/web/packages/glmmTMB/glmmTMB.pdf" class="uri">https://cran.r-project.org/web/packages/glmmTMB/glmmTMB.pdf</a></p>
+<p>[7] <a href="https://cran.r-project.org/web/packages/ordinal/index.html">Ordinal: Regression Models for Ordinal Data.</a></p>
+<p>[8] <a href="https://support.sas.com/documentation/onlinedoc/stat/131/glimmix.pdf">SAS/STAT® 13.1 User’s Guide The GLIMMIX Procedure</a></p>
+<p>[9] <a href="https://www.jstatsoft.org/article/view/v064i08">Touloumis A. (2015). “R Package multgee: A Generalized Estimating Equations Solver for Multinomial Responses.” Journal of Statistical Software.</a></p>
 
 
 </section>
