@@ -4,7 +4,7 @@ title: "Generalized Linear Mixed Models (GLMM)"
 
 # INTRODUCTION
 
-Generalized Linear Mixed Models (GLMM) method combines the characteristics of the Generalized Linear Model (GLM), with mixed models (such a repeated measures over time).  It extends the GLM framework using link functions that relate the predictors to transformed outcome variable. 
+Generalized Linear Mixed Models (GLMM) method combines the characteristics of the Generalized Linear Model (GLM), with mixed models (such a repeated measures over time). It extends the GLM framework using link functions that relate the predictors to transformed outcome variable.
 
 $$
 E(Y)=\mu
@@ -52,7 +52,7 @@ Penalized Likelihood can be used too, but it is known that in binary data it und
 
 # EXAMPLE DATA
 
-A SAS data of clinical trial data comparing two treatments for a respiratory disorder available in ["Gee Model for Binary Data"](https://documentation.sas.com/doc/en/statug/15.2/statug_code_genmex5.htm) [1] in the SAS/STAT Sample Program Library [1] is used to create these examples.
+A SAS data of clinical trial data comparing two treatments for a respiratory disorder available in ["Gee Model for Binary Data"](https://documentation.sas.com/doc/en/statug/15.2/statug_code_genmex5.htm) \[1\] in the SAS/STAT Sample Program Library \[1\] is used to create these examples.
 
 To uniquely identify subjects, a new variable USUBJID was created by concatenating SITE and ID. Variables TREATMENT, BASELINE, and VISIT were renamed to TRTP, BASE, and AVISITN.
 
@@ -61,7 +61,6 @@ Additionally, two variables were created using randomly generated values to simu
 The variables OUTCOME, TRTP, RESPORD, USUBJID and AVISITN were converted to factors. Since the modeling functions use the first (alphabetically) level as the reference category, TRT levels are ordered as 'P' (placebo) and 'A' (active), to ensure that placebo is used as the reference category in the models:
 
 ```{r}
-#install.packages("readxl")
 library(readxl)
 resp <- read_excel("../data/resp_gee.xlsx")
 resp$trtp<-factor(resp$trtp, levels=c('P', 'A')) 
@@ -74,15 +73,6 @@ resp$respord<-factor(resp$respord)
 # PACKAGES
 
 ```{r}
-# install.packages("lme4")
-# install.packages("GLMMadaptive")
-# install.packages("merDeriv")
-# install.packages("parameters")
-# install.packages("glmmTMB")
-# install.packages("clubSandwich")
-# install.packages("MASS")
-# install.packages("emmeans")
-# install.packages("ordinal")
 library(lme4)
 library(GLMMadaptive)
 library(merDeriv)
@@ -179,7 +169,7 @@ model<- glmmTMB::glmmTMB(outcome ~ trtp + avisitn + trtp*avisitn + (1 | usubjid)
 summary(model)
 ```
 
-Although both `glmmTMB` and `lme4::glmer` implement the Laplace approximation for fitting GLMMs, they rely on different numerical frameworks and optimization strategies. `glmmTMB` uses TMB with automatic differentiation and its own Laplace implementation, whereas `glmer` uses lme4’s custom penalized deviance formulation and derivative‑free optimizers. As a result, the approximated likelihoods, gradients, and optimization paths differ, leading to non‑identical parameter estimates even under the same model specification. [2]
+Although both `glmmTMB` and `lme4::glmer` implement the Laplace approximation for fitting GLMMs, they rely on different numerical frameworks and optimization strategies. `glmmTMB` uses TMB with automatic differentiation and its own Laplace implementation, whereas `glmer` uses lme4’s custom penalized deviance formulation and derivative‑free optimizers. As a result, the approximated likelihoods, gradients, and optimization paths differ, leading to non‑identical parameter estimates even under the same model specification. \[2\]
 
 # PENALIZED QUASI-LIKELIHOOD (PQL)
 
@@ -197,13 +187,13 @@ summary(model)
 
 # SANDWICH SE AND DEGREES OF FREEDOM (DDFF)
 
-Previous results are computed using default outputs, so naive SE and infinite ddff are used. However, Li. P. and Redden, D.T. (2015) [4], suggested using the Between-Within denominator degrees of freedom approximation method when using GLMMs in randomized trials with binary outcomes and small sample size.
+Previous results are computed using default outputs, so naive SE and infinite ddff are used. However, Li. P. and Redden, D.T. (2015) \[4\], suggested using the Between-Within denominator degrees of freedom approximation method when using GLMMs in randomized trials with binary outcomes and small sample size.
 
-Additionally, FDA [5] advises "sponsors to consider using of robust SE method such as the Huber-White "sandwich" SE, particularly when the model does not include treatment by covariate interaction.
+Additionally, FDA \[5\] advises "sponsors to consider using of robust SE method such as the Huber-White "sandwich" SE, particularly when the model does not include treatment by covariate interaction.
 
-In R, the functions described above do not include these options. Function parameters::dof_betwithin can be used to use between-withing ddff, does it would not return exactly the same results as shown in Li and Redden 2015 [4], but similar results are obtained [6].
+In R, the functions described above do not include these options. Function parameters::dof_betwithin can be used to use between-withing ddff, does it would not return exactly the same results as shown in Li and Redden 2015 \[4\], but similar results are obtained \[6\].
 
-The Sandwich S.E. can be obtained from different functions too: merDeriv::sandwich function can be used for glmer objects, and clubSandwich::vovHC for glmmTMB objects (recent versions of the package R (>= 3.6.0) support the computation of Sandwich S.E. using the using clubSandwich::vcovHC function [7].
+The Sandwich S.E. can be obtained from different functions too: merDeriv::sandwich function can be used for glmer objects, and clubSandwich::vovHC for glmmTMB objects (recent versions of the package R (\>= 3.6.0) support the computation of Sandwich S.E. using the using clubSandwich::vcovHC function \[7\].
 
 A function 'new_mode' is created below, where results obtained from a glmer model can be modified to use the sandwich SE and the between-within approximated ddff:
 
@@ -238,7 +228,7 @@ library(merDeriv)
 vcov<-sandwich(model)
 
 #Get S.E. (the diagonal from the covariance matrix), remove last value as it corresponds to random effects
-se_sw0<- sqrt(diag(V_robust)) 
+se_sw0<- sqrt(diag(vcov)) 
 se_sw <-head(se_sw0, -1)
 ```
 
@@ -363,18 +353,18 @@ No R functions have been identified for handling multinomial distributions for a
 
 # REFERENCES
 
-[1] [SAS Institute Inc.. SAS Help Center. The GEE procedure.](https://documentation.sas.com/doc/en/statug/15.2/statug_gee_examples01.htm)
+\[1\] [SAS Institute Inc.. SAS Help Center. The GEE procedure.](https://documentation.sas.com/doc/en/statug/15.2/statug_gee_examples01.htm)
 
-[2] Conceptual explanations were assisted using Microsoft Copilot (M365 Copilot, GPT‑5‑based model).
+\[2\] Conceptual explanations were assisted using Microsoft Copilot (M365 Copilot, GPT‑5‑based model).
 
-[3] [Stack Overflow \[Internet\]. 2008 \[Last visited: 2025 Sep 30\]](https://stackoverflow.com/questions/33670628/solution-to-the-warning-message-using-glmer)
+\[3\] [Stack Overflow \[Internet\]. 2008 \[Last visited: 2025 Sep 30\]](https://stackoverflow.com/questions/33670628/solution-to-the-warning-message-using-glmer)
 
-[4] [Li, P., & Redden, D. T. (2015). Comparing denominator degrees of freedom approximations for the generalized linear mixed model in analyzing binary outcome in small sample cluster-randomized trials. BMC Medical Research Methodology, 15, 38.](https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-015-0026-x)
+\[4\] [Li, P., & Redden, D. T. (2015). Comparing denominator degrees of freedom approximations for the generalized linear mixed model in analyzing binary outcome in small sample cluster-randomized trials. BMC Medical Research Methodology, 15, 38.](https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-015-0026-x)
 
-[5] [U.S. Food and Drug Administration. (2023). Adjusting for Covariates in Randomized Clinical Trials for Drugs and Biological Products: Guidance for Industry. Center for Drug Evaluation and Research (CDER), Center for Biologics Evaluation and Research (CBER).](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/adjusting-covariates-randomized-clinical-trials-drugs-and-biological-products)
+\[5\] [U.S. Food and Drug Administration. (2023). Adjusting for Covariates in Randomized Clinical Trials for Drugs and Biological Products: Guidance for Industry. Center for Drug Evaluation and Research (CDER), Center for Biologics Evaluation and Research (CBER).](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/adjusting-covariates-randomized-clinical-trials-drugs-and-biological-products)
 
-[6] [Documentation of package parameters. dof_betwithin](https://search.r-project.org/CRAN/refmans/parameters/html/p_value_betwithin.html)
+\[6\] [Documentation of package parameters. dof_betwithin](https://search.r-project.org/CRAN/refmans/parameters/html/p_value_betwithin.html)
 
-[7] Brooks, M. E., et al. (2025). glmmTMB: Generalized Linear Mixed Models using Template Model Builder (Version 1.1.12) [R package manual]. The Comprehensive R Archive Network (CRAN). <https://cran.r-project.org/web/packages/glmmTMB/glmmTMB.pdf>
+\[7\] Brooks, M. E., et al. (2025). glmmTMB: Generalized Linear Mixed Models using Template Model Builder (Version 1.1.12) \[R package manual\]. The Comprehensive R Archive Network (CRAN). <https://cran.r-project.org/web/packages/glmmTMB/glmmTMB.pdf>
 
-[8] [Ordinal: Regression Models for Ordinal Data.](https://cran.r-project.org/web/packages/ordinal/index.html)
+\[8\] [Ordinal: Regression Models for Ordinal Data.](https://cran.r-project.org/web/packages/ordinal/index.html)
