@@ -59,70 +59,10 @@ knitr::include_graphics("../images/ci_for_prop/2by2crosstab.png")
 
 ## Methods for Calculating Confidence Intervals for Proportion Difference from 2 independent samples
 
-This [paper](https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf) describes many methods for the calculation of confidence intervals for 2 independent proportions. The 2-sided and 1-sided performance of many of the same methods have been compared graphically[@laud2014]. According to a recent paper[@bai2021], the most commonly reported method in non-inferiority clinical trials for antibiotics is the Wald asymptotic normal approximation (despite its well-documented poor performance), followed by the Miettinen-Nurminen (asymptotic score) method. More recently, an improved variant of the Miettinen-Nurminen method (SCAS) was developed, by including a skewness correction designed to optimise the performance in terms of one-sided coverage for NI testing. SCAS corrects the slightly asymmetrical coverage of the Miettinen-Nurminen interval (note the skewness is more pronounced when analysing the RR contrast).
+This [paper](https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf) describes many methods for the calculation of confidence intervals for 2 independent proportions. The 2-sided and 1-sided performance of many of the same methods have been compared graphically[@laud2014]. According to a recent paper[@bai2021], the most commonly reported method in non-inferiority clinical trials for antibiotics is the Wald asymptotic normal approximation (despite its well-documented poor performance), followed by the Miettinen-Nurminen (asymptotic score) method. More recently, an improved variant of the Miettinen-Nurminen method (SCAS) was developed, by including a skewness correction designed to optimise the performance in terms of one-sided coverage for NI testing. SCAS corrects the slightly asymmetrical coverage of the Miettinen-Nurminen interval (note the skewness is more pronounced when analysing the RR contrast, and/or when group sizes are imbalanced).
 
-SAS PROC FREQ is able to calculate CIs using the following methods: Agresti/Caffo (AC), Miettinen and Nurminen (MN or SCORE), Mee (MN(Mee)), Newcombe Hybrid Score, and Wald. For conservative coverage, there is the 'Exact' method, or continuity-adjusted versions of the Wald and Newcombe methods, and also the Hauck-Anderson (HA) continuity-adjustment. Example code is shown below.
+SAS PROC FREQ is able to calculate CIs for RD using the following methods: Agresti/Caffo (AC), Miettinen and Nurminen (MN or SCORE), Mee (MN(Mee)), Newcombe Hybrid Score, and Wald. For conservative coverage, there is the 'Exact' method, or continuity-adjusted versions of the Wald and Newcombe methods, and also the Hauck-Anderson (HA) continuity-adjustment.
 
-The SCAS method is not available in PROC FREQ, but can be produced using a SAS macro (%SCORECI) which can be downloaded from <https://github.com/petelaud/ratesci-sas>.
-
-```{sas}
-#| eval: false 
-*** Wald, Wilson, Agresti/Caffo, Hauck-Anderson, and Miettinen and Nurminen methods; 
-proc freq data=adcibc2 order=data;     
-   table trt*resp /riskdiff(CL=(wald newcombe ac mn); 
-run;  
-
-*** Mee score method;
-proc freq data=adcibc2 order=data;     
-   table trt*resp /riskdiff(CL=(mn(mee)); 
-run;  
-
-*** exact (Chan-Zhang) and continuity-adjusted methods for conservative coverage; 
-proc freq data=adcibc2 order=data;
-   exact riskdiff (method=noscore);     
-   table trt*resp/riskdiff(CL=(exact ha wald(correct) newcombe(correct)));  
-run;
-
-*** exact (Santner-Snell) method; 
-proc freq data=adcibc2 order=data;
-   exact riskdiff (method=noscore);     
-   table trt*resp/riskdiff(CL=exact);  
-run;
-
-*** 2-sided exact (Agresti-Min) method; 
-proc freq data=adcibc2 order=data;
-   exact riskdiff (method=score2);     
-   table trt*resp/riskdiff(CL=exact);  
-run;
-
-*** MN and SCAS methods from %SCORECI macro;
-proc tabulate data=adcibc2 out=tab2;
- class trt resp;
- table (resp all),trt;
-run;
-
-data ds(keep = n1 n0 e1 e0);
- set tab2;
- by _page_;
- retain n1 n0 e1 e0;
- if trt = "ACT" then do;
-  if _type_ = "11" then e1 = n;
-  if _type_ = "10" then n1 = n;
- end;
- else if trt = "PBO" then do;
-  if _type_ = "11" then e0 = n;
-  if _type_ = "10" then n0 = n;
- end;
- if last._page_ then output;
-run;
-
-*** Miettinen-Nurminen CI;
-%scoreci(ds, skew=FALSE);
-
-*** SCAS CI;
-%scoreci(ds);
-
-```
 
 ### Normal Approximation Method (Also known as the Wald or asymptotic CI Method)
 
@@ -208,26 +148,139 @@ Options for riskdiff(CL=XXX) consist of AC: Agresti-Caffo, EXACT: exact, HA: Hau
 
 ```{sas}
 #| eval: false 
-proc sort data=adcibc2; 
-by  trt descending resp; 
+
+****************************;
+*** Risk Difference examples;
+****************************;
+
+*** Wald, Newcombe, Agresti/Caffo, and Miettinen-Nurminen methods; 
+proc freq data=adcibc2 order=data;     
+   table trt*resp /riskdiff(CL=(wald newcombe ac mn); 
 run;  
 
-# without continuity correction 
-proc freq data=adcibc2 order=data; 
-table trt*resp/riskdiff(CL=(wald wilson)); 
+*** Mee score method;
+proc freq data=adcibc2 order=data;     
+   table trt*resp /riskdiff(CL=(mn(mee)); 
 run;  
 
-# with continuity correction 
+*** exact (Chan-Zhang) and continuity-adjusted methods for conservative coverage; 
 proc freq data=adcibc2 order=data;
-table trt*resp/riskdiff(CORRECT CL=(wald wilson));
+   exact riskdiff (method=noscore);     
+   table trt*resp/riskdiff(CL=(exact ha wald(correct) newcombe(correct)));  
 run;
-```
 
-```{r}
-#| echo: false  
-#| fig-align: center  
-#| out-width: 50%  
- knitr::include_graphics("../images/ci_for_prop/binomial_2sampleCI_noCC.png")
+*** exact (Santner-Snell) method; 
+proc freq data=adcibc2 order=data;
+   exact riskdiff (method=noscore);     
+   table trt*resp/riskdiff(CL=exact);  
+run;
+
+*** 2-sided exact (Agresti-Min) method; 
+proc freq data=adcibc2 order=data;
+   exact riskdiff (method=score2);     
+   table trt*resp/riskdiff(CL=exact);  
+run;
+
+*** MN and SCAS methods from %SCORECI macro;
+*** First manipulate the data to a form for input to the macro;
+proc tabulate data=adcibc2 out=tab2;
+ class trt resp;
+ table (resp all),trt;
+run;
+data ds(keep = n1 n0 e1 e0);
+ set tab2;
+ by _page_;
+ retain n1 n0 e1 e0;
+ * Initialise counts in case there are none in the observed data;
+ if first._page_ then do;
+  e1 = 0;
+  e0 = 0;
+ end;
+ if upcase(trt) = "ACT" then do;
+  if _type_ = "11" and resp = "Yes" then e1 = n;
+  if _type_ = "10" then n1 = n;
+ end;
+ else if upcase(trt) = "PBO" then do;
+  if _type_ = "11" and resp = "Yes" then e0 = n;
+  if _type_ = "10" then n0 = n;
+ end;
+ if last._page_ then output;
+run;
+
+*** Miettinen-Nurminen CI;
+%scoreci(ds, stratify=FALSE, skew=FALSE);
+
+*** SCAS CI;
+%scoreci(ds, stratify=FALSE);
+
+*** Farrington-Manning NI test (p=0.0248) contradicts MN interval (LCL < -0.036);
+*** (Arbitrary NI margin of -0.036 used for illustration)
+proc freq data=adcibc2 order=data;
+   table trt*resp / riskdiff(CL=mn noninf margin=0.036 method=score);  
+run;
+
+*** Miettinen-Nurminen CI with consistent NI test: PVAL_R > 0.025; 
+%scoreci(ds, stratify=FALSE, skew=FALSE, delta=-0.036);
+
+
+****************************;
+*** Relative risk examples;
+****************************;
+
+*** Wald, LR, and Miettinen and Nurminen methods; 
+proc freq data=adcibc2 order=data;     
+   table trt*resp /relrisk(CL=(wald waldmodified lr score)); 
+run;  
+*** MN without the correction;
+proc freq data=adcibc2 order=data;     
+   table trt*resp /relrisk(CL=(score(correct=no))); 
+run;  
+*** exact method; 
+proc freq data=adcibc2 order=data;
+   exact relrisk;     
+   table trt*resp/relrisk(CL=(exact));  
+run;
+*** santner-snell;
+proc freq data=adcibc2 order=data;
+   exact relrisk (method=noscore);     
+   table trt*resp / relrisk(CL=exact);  
+run;
+
+*** Agresti-Min;
+proc freq data=adcibc2 order=data;
+   exact relrisk (method=score2);     
+   table trt*resp / relrisk(CL=exact);  
+run;
+
+*** Miettinen-Nurminen CI;
+%scoreci(ds, stratify=FALSE, skew=FALSE, contrast=RR);
+*** SCAS CI;
+%scoreci(ds, stratify=FALSE, contrast=RR);
+
+
+****************************;
+*** Odds Ratio examples;
+****************************;
+
+
+* Wald, LR, mid-P and Miettinen and Nurminen methods; 
+proc freq data=adcibc2 order=data;     
+   table trt*resp /or(CL=(wald waldmodified lr score midp)); 
+run;  
+* MN without the correction;
+proc freq data=adcibc2 order=data;     
+   table trt*resp /or(CL=(score(correct=no))); 
+run;  
+*** 'exact' method; 
+proc freq data=adcibc2 order=data;
+   exact or;     
+   table trt*resp/or(CL=(exact));  
+run;
+
+*** Miettinen-Nurminen CI;
+%scoreci(ds, stratify=FALSE, skew=FALSE, orbias=FALSE, contrast=OR);
+*** SCAS CI;
+%scoreci(ds, stratify=FALSE, contrast=OR);
 ```
 
 ```{r}
