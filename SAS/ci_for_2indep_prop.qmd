@@ -118,43 +118,51 @@ run;
 
 ### Normal Approximation Method (Also known as the Wald or asymptotic CI Method)
 
-In large random samples from independent trials, the sampling distribution of the difference between two proportions approximately follows the normal distribution.
+The difference between two independent sample proportions is calculated as: $\hat \theta_{RD} = \hat p_1 - \hat p_2 = x_1 / n_1 - x_2 / n_2$
 
-The difference between two independent sample proportions is calculated as: $D= \hat p_1-\hat p_2$
+The Wald CI for $\theta_{RD}$ is calculated using:
 
-A confidence interval for the difference between two independent proportions $D$ can be calculated using:
+$\hat \theta_{RD} \pm z_{\alpha/2} \times SE(\hat \theta_{RD})$,
 
-$D\approx \hat D \pm z_\alpha * SE(\hat p)$,
-
-where $z_\alpha$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to level $\alpha$, and
-
-$SE (\hat p) = sqrt{( \frac{\hat p_1 (1-\hat p_1)}{n_1} + \frac{\hat p_2 (1-\hat p_2)}{n_2})}$
+where $SE (\hat \theta_{RD}) = \sqrt{( \frac{\hat p_1 (1-\hat p_1)}{n_1} + \frac{\hat p_2 (1-\hat p_2)}{n_2})}$
 
 With continuity correction, the equation becomes
 
-$D\approx \hat D \pm (CC + z_\alpha * SE(\hat p))$,
+$\hat \theta_{RD} \pm (CC + z_{\alpha/2} \times SE(\hat \theta_{RD}))$,
 
-where $z_\alpha$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to level $\alpha$,\
-and $SE (\hat p)$ = $sqrt{( \frac{\hat p_1 (1-\hat p_1)}{n_1} + \frac{\hat p_2 (1-\hat p_2)}{n_2})}$\
-and
+where $CC = \frac{1}{2} (\frac{1}{n_1} + \frac{1}{n_2})$
 
-$CC = \frac{1}{2} (\frac{1}{n_1} + \frac{1}{n_2})$
+### Newcombe Method (Also known as the Hybrid Score method, Square-and-Add, or the Method of Variance Estimates Recovery (MOVER) )
 
-### Newcombe Method (Also known as the Hybrid Score method or the Method of Variance Estimates Recovery (MOVER) )
+Derive the confidence intervals for the separate proportions in each group, $p_1$ and $p_2$, using the Wilson Score Method equations as described [here](ci_for_prop.html).
 
-Derive the confidence intervals for the separate proportions in each group, p1 and p2, using the Wilson Method equations \***above**.
+Let $l_1$ = Lower CI for sample 1, and $u_1$ be the upper CI for sample 1.
 
-Let l1 = Lower CI for sample 1, and u1 be the upper CI for sample 1.
+Let $l_2$ = Lower CI for sample 2, and $u_2$ be the upper CI for sample 2.
 
-Let l2 = Lower CI for sample 2, and u2 be the upper CI for sample 2.
+Let D = $\hat p_1 - \hat p_2$ (the difference between the observed proportions)
 
-Let D = p1-p2 (the difference between the observed proportions)
+The CI for $\theta_{RD}$ the difference between two proportions is: $$ D - sqrt((\hat p_1 - l_1)^2+(u_2 - \hat p_2)^2) \quad, \quad D + sqrt((\hat p_2 - l_2)^2 + (u_1 - \hat p_1)^2 )   $$
 
-The CI for the difference between two proportions is: $$ D - sqrt((p_1-l_1)^2+(u_2-p_2)^2) \quad to\quad D + sqrt((p_2-l_2)^2+(u_1-p_1)^2 )   $$
+Note that earlier versions of SAS PROC FREQ (before implementation of the MN method) allowed the option CL=WILSON or CL=SCORE to produce this method, but it is not really a score method. As of SAS/STAT 15.4, the CL=WILSON option (undocumented) still gives the Newcombe interval, but CL=SCORE gives the Miettinen-Nurminen score method.
 
-### Miettinen-Nurminen Asymptotic Score Method
+### Miettinen-Nurminen, Mee and other Asymptotic Score Methods
 
-\[Details to be added, noting options for skewness correction offered by the %SCORECI macro\]
+These truly are score methods, as they are based on an extension of the score methodology applied to two independent proportions, using the contrast function $S(\theta) = \hat p_1 - \hat p_2 - \theta$, which for any given value of $\theta$ has expectation zero, and variance $\{\tilde p_1 (1 - \tilde p_1)/n_1 + \tilde p_2 (1 - \tilde p_2)/n_2\} \times N/(N+1)$ where $N = n_1 + n_2$.
+
+The Mee variant of the method omits the $N/(N-1)$ variance bias correction factor.
+
+Gart and Nam derived a similar method, arrived at from a different underlying 'efficient score' methodology, so the formulae look different but are essentially equivalent to the Mee interval. They added a correction for skewness to improve one-sided coverage. The skewness correction was applied to the Miettinen-Nurminen formula for all contrast parameters by Laud, to give the SCAS method[@laud2017]. The SCAS method is available for SAS via the %SCORECI macro.
+
+### Agresti-Caffo Method
+
+Similar to the Agresti-Coull method for a single proportion, the Agresti-Caffo interval is designed to be an easily taught method to enable the CI to be calculated by hand. The formula involves simply adding one success and one failure to each sample, and then using the Wald formula.
+
+### 'Exact' Methods
+
+The current default 'exact' method produced by PROC FREQ is the Chan-Zhang variant. This is undoubtedly an improvement on the extremely over-conservative Santner-Snell method, but is more computationally intensive, and can result in a Warning in the SAS log about long computation times.
+
+The third alternative 'exact' method by Agresti & Min is less conservative, but is only guaranteed to achieve strictly conservative two-sided coverage, so is not appropriate for use in one-sided hypothesis testing.
 
 ## Methods for Calculating Confidence Intervals for Relative Risk from 2 independent samples
 
