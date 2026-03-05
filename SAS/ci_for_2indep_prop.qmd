@@ -53,19 +53,67 @@ knitr::include_graphics("../images/ci_for_prop/2by2crosstab.png")
 
 This [paper](https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf)^12^ describes many methods for the calculation of confidence intervals for 2 independent proportions. The 2-sided and 1-sided performance of many of the same methods have been compared graphically[@laud2014]. According to a recent paper[@bai2021], the most commonly reported method in non-inferiority clinical trials for antibiotics is the Wald asymptotic normal approximation (despite its well-documented poor performance), followed by the Miettinen-Nurminen (asymptotic score) method. More recently, an improved variant of the Miettinen-Nurminen method (SCAS) was developed, by including a skewness correction designed to optimise the performance in terms of one-sided coverage for NI testing. SCAS corrects the slightly asymmetrical coverage of the Miettinen-Nurminen interval (note the skewness is more pronounced when analysing the RR contrast).
 
-SAS PROC FREQ is able to calculate CIs using the following methods: Exact, Agresti/Caffo (AC), Wald, Wald with Continuity correction, Newcombe Score, Newcombe score with continuity correction, Miettinen and Nurminen (MN or SCORE), Mee (MN(correct=Mee)), and Hauck-Anderson (HA). The SCAS method is not available in PROC FREQ, but a SAS macro is available in a GitHub repository\[\], which also provides an optional continuity correction for both SCAS and MN. Example code is shown below, before provision of a much more detailed analysis using Wald and Wilson with and without continuity correction.
+SAS PROC FREQ is able to calculate CIs using the following methods: Agresti/Caffo (AC), Miettinen and Nurminen (MN or SCORE), Mee (MN(Mee)), Newcombe Hybrid Score, and Wald. For conservative coverage, there is the 'Exact' method, or continuity-adjusted versions of the Wald and Newcombe methods, and also the Hauck-Anderson (HA) continuity-adjustment. Example code is shown below.
+
+The SCAS method is not available in PROC FREQ, but can be produced using a SAS macro (%SCORECI) which can be downloaded from <https://github.com/petelaud/ratesci-sas>.
 
 ```{sas}
 #| eval: false 
-# Wald, Wilson, Agresti/Caffo, Hauck-Anderson, and Miettinen and Nurminen methods 
+*** Wald, Wilson, Agresti/Caffo, Hauck-Anderson, and Miettinen and Nurminen methods; 
 proc freq data=adcibc2 order=data;     
-   table trt*resp /riskdiff(CL=(wald newcombe ac ha mn)); 
+   table trt*resp /riskdiff(CL=(wald newcombe ac mn); 
 run;  
-# exact method 
+
+*** Mee score method;
+proc freq data=adcibc2 order=data;     
+   table trt*resp /riskdiff(CL=(mn(mee)); 
+run;  
+
+*** exact (Chan-Zhang) and continuity-adjusted methods for conservative coverage; 
 proc freq data=adcibc2 order=data;
    exact riskdiff (method=noscore);     
-   table trt*resp/riskdiff(CL=(exact));  
+   table trt*resp/riskdiff(CL=(exact ha wald(correct) newcombe(correct)));  
 run;
+
+*** exact (Santner-Snell) method; 
+proc freq data=adcibc2 order=data;
+   exact riskdiff (method=noscore);     
+   table trt*resp/riskdiff(CL=exact);  
+run;
+
+*** 2-sided exact (Agresti-Min) method; 
+proc freq data=adcibc2 order=data;
+   exact riskdiff (method=score2);     
+   table trt*resp/riskdiff(CL=exact);  
+run;
+
+*** MN and SCAS methods from %SCORECI macro;
+proc tabulate data=adcibc2 out=tab2;
+ class trt resp;
+ table (resp all),trt;
+run;
+
+data ds(keep = n1 n0 e1 e0);
+ set tab2;
+ by _page_;
+ retain n1 n0 e1 e0;
+ if trt = "ACT" then do;
+  if _type_ = "11" then e1 = n;
+  if _type_ = "10" then n1 = n;
+ end;
+ else if trt = "PBO" then do;
+  if _type_ = "11" then e0 = n;
+  if _type_ = "10" then n0 = n;
+ end;
+ if last._page_ then output;
+run;
+
+*** Miettinen-Nurminen CI;
+%scoreci(ds, skew=FALSE);
+
+*** SCAS CI;
+%scoreci(ds);
+
 ```
 
 ### Normal Approximation Method (Also known as the Wald or asymptotic CI Method)
