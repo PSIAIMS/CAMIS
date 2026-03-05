@@ -1,5 +1,7 @@
 ---
 title: "Generalized Estimating Equations (GEE) methods"
+execute: 
+  eval: false
 ---
 
 # Comparison of SAS vs R
@@ -53,8 +55,7 @@ SAS results were stored in a dataset and reformatted to align with R output in t
 
 ### Ordinal variable - Example
 
-```{r}
-#| eval: false
+```{sas}
 proc genmod data=resp ;
 class trtp(ref="P") avisitn(ref='1') usubjid ;  
 model respord=trtp avisitn trtp*avisitn / dist=multinomial link=cumlogit ; 
@@ -66,6 +67,7 @@ run;
 
 ```{r}
 #| echo: false
+#| eval: true
 #| fig-align: center
 #| out-width: 50%
 knitr::include_graphics("../images/gee/r_sas_1_ordinal_variable.png")
@@ -73,6 +75,7 @@ knitr::include_graphics("../images/gee/r_sas_1_ordinal_variable.png")
 
 ```{r}
 #| echo: false
+#| eval: true
 #| include: false
 library(geepack)
 library(gee)
@@ -89,6 +92,7 @@ resp$respnom<-factor(resp$respnom)
 ```
 
 ```{r}
+#| eval: true
 model <- multgee::ordLORgee(formula = respord ~  trtp + avisitn  + trtp*avisitn,
                    data = resp,
                    id = usubjid,
@@ -100,8 +104,7 @@ summary(model)
 
 ### Nominal variable - Example
 
-```{r}
-#| eval: false
+```{sas}
 proc gee data=resp ;
 class trtp(ref="P") avisitn(ref='1') usubjid respnom(ref='Lung');  
 model respnom=trtp avisitn trtp*avisitn/ dist=multinomial link=glogit ; 
@@ -113,12 +116,14 @@ run;
 
 ```{r}
 #| echo: false
+#| eval: true
 #| fig-align: center
 #| out-width: 50%
 knitr::include_graphics("../images/gee/r_sas_2_nominal_variable.png")
 ```
 
 ```{r}
+#| eval: true
 model <- multgee::nomLORgee(formula = respnom ~  trtp + avisitn  + trtp*avisitn,
                    data = resp,
                    id = usubjid,

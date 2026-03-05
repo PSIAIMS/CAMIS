@@ -1,5 +1,7 @@
 ---
 title: "R vs SAS - Kaplan Meier and Cox-proportion hazards modelling"
+execute: 
+  eval: false
 ---
 
 # Comparison of SAS vs R
@@ -27,6 +29,7 @@ Results from the examples shown for R [here](https://psiaims.github.io/CAMIS/R/s
 Comparing the non-stratified model results side-by-side, the CIs for the quartile estimates and landmark estimates are different between R and SAS. HR and CI also have slight differences.
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 75%
@@ -54,7 +57,6 @@ fit.cox <- survival::coxph(
 -   SAS: change method for ties to use "efron"
 
 ```{sas}
-#| eval: false
 proc phreg data=dat;
     class afb;
     model lenfol*fstat(0) = afb/rl ties = efron;
@@ -87,7 +89,6 @@ fit.km <- survival::survfit(
 -   SAS: change to "log"
 
 ```{sas}
-#| eval: false
 proc lifetest data=dat conftype=log;
     time lenfoly*fstat(0);
     strata afb;
@@ -101,6 +102,7 @@ From a [reference](https://myweb.uiowa.edu/pbreheny/7210/f15/notes/9-10.pdf): Th
 Now if we change the confidence interval type in SAS to "log" and tie handling to "efron", the results will be identical to the results in R.
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 75%
@@ -110,6 +112,7 @@ knitr::include_graphics("../images/survival/r_sas_chg_default.png")
 Below is the side-by-side comparison for stratified analysis with default methods in SAS matched to R's, the results are also identical.
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 75%
@@ -134,7 +137,6 @@ fit.cox <- survival::coxph(survival::Surv(LENFOLY, FSTAT) ~ AFB, data = dat)
 -   SAS: adjust convergence criterion
 
 ```{sas}
-#| eval: false
 proc phreg data=dat;
     class afb;
     model lenfol*fstat(0) = afb / rl fconv = 1e-9;
@@ -154,6 +156,7 @@ The convergence criterion details are described in their documentation:
 Now we look at other cases when the data has some special type which causes a mismatch between SAS and R. Suppose a dataset has 10 observations, and the first 5 are all events, and the last 5 are all censored.
 
 ```{r}
+#| eval: true
 test <- tibble(
   time = c(54, 75, 77, 84, 87, 92, 103, 105, 112, 118),
   status = c(1, 1, 1, 1, 1, 0, 0, 0, 0, 0)
@@ -186,7 +189,6 @@ summary(fit.km, times = c(80, 100, 120), extend = T)
 Below is the SAS code:
 
 ```{sas}
-#| eval: false
 proc lifetest data=dat outsurv=_SurvEst timelist= 80 100 120 reduceout stderr; 
     time lenfoly*fstat(0);
 run;
@@ -195,6 +197,7 @@ run;
 Below is the side-by-side comparison:
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 75%
@@ -212,6 +215,7 @@ The kth quantile for a survival curve S(t) is the location at which a horizontal
 For example, using the data above, the survival probability is exactly 0.5 at time=87 and remains at 0.5 until the last censored observation at 118.
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 75%
@@ -236,6 +240,7 @@ For the 120-day event-free estimate, SAS considers that 120 days is beyond the m
 If we change the last observation in the dataset to be an event (instead of censored), R and SAS will both give 0 for the event-free survival estimate, because it is for sure that all subjects did not survive beyond 120 days.
 
 ```{r}
+#| eval: true
 test <- tibble(
   time = c(54, 75, 77, 84, 87, 92, 103, 105, 112, 118),
   status = c(1, 1, 1, 1, 1, 0, 0, 0, 0, 1)
@@ -245,6 +250,7 @@ test
 ```
 
 ```{r}
+#| eval: true
 #| echo: false
 #| fig-align: center
 #| out-width: 75%
