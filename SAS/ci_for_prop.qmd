@@ -1,24 +1,14 @@
 ---
-title: "Confidence intervals for Proportions in SAS"
+title: "Confidence intervals for a Proportion in SAS"
 execute: 
-    eval: false
+  eval: false
 ---
 
 ## Introduction
 
-The methods to use for calculating a confidence interval (CI) for a proportion depend on the type of situation you have.
+See separate page for general introductory information on confidence intervals for proportions.
 
--   1 sample proportion (1 proportion calculated from 1 group of subjects)
-
--   2 sample proportions and you want a CI for the difference in the 2 proportions (or the ratio, or an odds ratio) e.g. for estimating the magnitude of a treatment effect.
-
-    -   If the 2 samples come from 2 independent samples (different subjects in each of the 2 treatment groups)
-
-    -   If the 2 samples are matched (i.e. the same subject has 2 results, one from each treatment \[paired data\]).
-
-Some sources suggest selecting a different method depending on whether your proportion is close to 0 or 1 (or near to the 0.5 midpoint), and your sample size. Seemingly this advice stems from a preference to use the Wald method when the normal approximation assumptions are adequately satisfied. However, options are available for CI methods that have appropriate coverage properties across the whole parameter space, which with modern computing software are easily obtained, so there is no need for such a data-driven approach to method selection.
-
-## Data used
+## Data Used
 
 The adcibc data stored [here](../data/adcibc.csv) was used in this example, creating a binary treatment variable `trt` taking the values of `Act` or `PBO` and a binary response variable `resp` taking the values of `Yes` or `No`. For this example, a response is defined as a score greater than 4.
 
@@ -32,7 +22,7 @@ data adcibc2 (keep=trt resp) ;
 run;
 ```
 
-The below shows that for the Actual Treatment, there are 36 responders out of 154 subjects = 0.2338 (23.38% responders).
+The below shows that for the Active Treatment, there are 36 responders out of 154 subjects = 0.2338 (23.38% responders).
 
 ```{sas}
 proc freq data=adcibc2;
@@ -48,37 +38,29 @@ run;
 knitr::include_graphics("../images/ci_for_prop/2by2crosstab.png")
 ```
 
-## Methods for Calculating Confidence Intervals for a single proportion
+## Methods for Calculating Confidence Intervals for a Single Proportion
 
-Here we are calculating a 95% confidence interval for the proportion of responders in the active treatment group.
+Here we are calculating a $100(1-\alpha)\%$ (usually 95%) confidence interval for the proportion $p$ of responders in the active treatment group, estimated from the sample proportion $\hat p = x / n$.
 
 SAS PROC FREQ in Version 9.4 can compute 11 methods to calculate CIs for a single proportion, an explanation of most of these methods and the code is shown below. See [BINOMIAL](https://support.sas.com/documentation/cdl/en/procstat/63104/HTML/default/viewer.htm#procstat_freq_sect010.htm)^1^ for more information on SAS parameterization. It is recommended to always sort your data prior to doing a PROC FREQ.
 
 For more information about some of these methods in R & SAS, including which performs better in different scenarios see [Five Confidence Intervals for Proportions That You Should Know about](https://towardsdatascience.com/five-confidence-intervals-for-proportions-that-you-should-know-about-7ff5484c024f)^2^ and [Confidence Intervals for Binomial Proportion Using SAS](https://www.lexjansen.com/sesug/2015/103_Final_PDF.pdf)^3^. Key literature on the subject includes papers by [Brown et al.](https://www.jstor.org/stable/2676784?seq=1)^4^ and [Newcombe](https://pubmed.ncbi.nlm.nih.gov/9595616/)^5^.
 
-### Strictly conservative vs proximate coverage
+### Clopper-Pearson (Exact or binomial CI) Method
 
-Because of the discrete nature of binomial data, it is impossible for any CI to cover the true value of the estimated proportion precisely 95% of the time for all values of p. CI methods may be designed to achieve the nominal confidence level **as a minimum**, but many researchers find such a criterion to be excessive, producing CIs that are unnecessarily wide. The alternative position is to aim for coverage probability that is close to the nominal confidence level **on average.** These two opposing positions are described by Newcombe^5^ as "aiming to align either the minimum or the mean coverage with the nominal $(1-\alpha)$", or in other words aiming for coverage to be either "strictly conservative" or "proximate". Many alternative CI methods are designed to meet the latter criterion, but some include an optional adjustment ("continuity correction") to achieve the former.
-
-### Consistency with hypothesis tests
-
-Depending on the analysis plan, it may be desirable for a reported confidence interval to be consistent with the result of a hypothesis test, so that for example the 95% CI will exclude the null hypothesis value if and only if the test p-value is less than 0.05 (or 0.025 one-sided). Within SAS for the asymptotic methods, such consistency is provided by the Wilson CI, because the asymptotic test uses the standard error estimated under the null hypothesis (i.e. the value specified in the `BINOMIAL(P=...)` option of the `TABLES` statement. If an `EXACT BINOMIAL;` statement is used, the resulting test is consistent with the Clopper-Pearson CI. An exact hypothesis test with mid-P adjustment (consistent with the mid-P CI) is available via `EXACT BINOMIAL / MIDP;` but the output only gives the one-sided p-value, so if a 2-sided test is required it needs to be manually calculated by doubling the one-sided mid p-value.
-
-### Clopper-Pearson (Exact or binomial CI) method
-
-With binary endpoint data (response/non-response), we make the assumption that the proportion of responders has been derived from a series of Bernoulli trials. Trials (Subjects) are independent and we have a fixed number of repeated trials with an outcome of respond or not respond. This type of data follows the discrete binomial probability distribution, and the Clopper-Pearson^6^ (Exact) method uses this distribution to calculate the CIs.
+With binary endpoint data (response/non-response), we make the assumption that the proportion of responders has been derived from a series of Bernoulli trials. Trials (Subjects) are independent and we have a fixed number of repeated trials with an outcome of respond or not respond. This type of data follows the discrete binomial probability distribution, and the Clopper-Pearson^6^ ('exact') method uses this distribution to calculate the CIs.
 
 This method guarantees strictly conservative coverage, but has been noted to be excessively conservative, as for any given proportion, the actual coverage probability can be much larger than $(1-\alpha)$.
 
 The Clopper-Pearson method is output by SAS as one of the default methods (labelled as "Exact Conf Limits" in the "Proportion" ODS output object), but you can also specify it using `BINOMIAL(LEVEL="Yes" CL=CLOPPERPEARSON);` which creates a separate output object "ProportionCLs".
 
-### Normal Approximation method (Also known as the Wald or asymptotic CI method)
+### Normal Approximation Method (Also known as the Wald Method)
 
-The traditional alternative to the Clopper-Pearson (Exact) method is the asymptotic Normal Approximation (Wald) CI. The poor performance of this method is well documented - it can fail to achieve the nominal confidence level even with large sample sizes, and there is a consensus in the literature that it should be avoided^4, p128^. Nevertheless, it remains a default output component in SAS, so is included here for reference.
+The traditional alternative to the Clopper-Pearson ('Exact') method is the asymptotic Normal Approximation (Wald) CI. The poor performance of this method is well documented - it can fail to achieve the nominal confidence level even with large sample sizes, and there is a consensus in the literature that it should be avoided^4, p128^. Nevertheless, it remains a default output component in SAS, so is included here for reference.
 
 In large random samples from independent trials, the sampling distribution of proportions approximately follows the normal distribution. The expectation of a sample proportion is the corresponding population proportion. Therefore, based on a sample of size $n$, a $(1-\alpha)\%$ confidence interval for population proportion can be calculated using the normal approximation as follows:
 
-$p\approx \hat p \pm z_{\alpha/2} \sqrt{\hat p(1-\hat p)/n}$, where $\hat p$ is the sample proportion, $z_{\alpha/2}$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to the confidence level $(1-\alpha)$, and $\sqrt{\hat p(1-\hat p)/n}$ is the estimated standard error.
+$p\approx \hat p \pm z_{\alpha/2} \sqrt{\hat p(1-\hat p)/n}$, where $\hat p=x/n$ is the sample proportion, $z_{\alpha/2}$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to the confidence level $(1-\alpha)$, and $\sqrt{\hat p(1-\hat p)/n}$ is the estimated standard error.
 
 One should note that the approximation can become increasingly unreliable as the proportion of responders gets closer to 0 or 1 (e.g. 0 or 100% responding). In this scenario, common issues consist of:
 
@@ -102,12 +84,13 @@ The Wilson (Score) method is also based on an asymptotic normal approximation, b
 
 The method can be derived with or without a Yates continuity correction. The corrected interval closely approximates the coverage of the Clopper-Pearson method, but only in terms of overall two-sided coverage - due to the asymmetric coverage, it does not guarantee that the non-coverage probability is less than $\alpha/2$.
 
-Let p=r/n, where r= number of responses, and n=number of subjects, q=1-p, and z= the appropriate value from standard normal distribution:\
-$$ z{_{1-\alpha/2}} $$For example, for 95% confidence intervals, $\alpha=0.05$, using standard normal tables, z in the equations below will take the value =1.96. Calculate 3 quantities
+Let $\hat p$ =r/n, where r= number of responses, and n=number of subjects, $\hat q = 1- \hat p$, and z= the appropriate value from standard normal distribution: $z_{1-\alpha/2}$.
+
+For example, for 95% confidence intervals, $\alpha=0.05$, using standard normal tables, z in the equations below will take the value =1.96. Calculate 3 quantities
 
 $$ A= 2r+z^2$$
 
-$$ B=z\sqrt(z^2 + 4rq) $$ $$ C=2(n+z^2) $$The method calculates the confidence interval \[Lower, Upper\] as: \[(A-B)/C, (A+B)/C\]
+$$ B=z\sqrt(z^2 + 4r \hat q) $$ $$ C=2(n+z^2) $$The method calculates the confidence interval \[Lower, Upper\] as: \[(A-B)/C, (A+B)/C\]
 
 A = 2 \* 36 + 1.96\^2 = 75.8416
 
@@ -129,25 +112,29 @@ The only differences in the equations to calculate the Wilson score with continu
 
 $$ A= 2r+z^2 -1$$
 
-$$ B=z\sqrt(z^2 - 2 -\frac{1}{n} + 4rq) $$
+$$ B=z\sqrt(z^2 - 2 -\frac{1}{n} + 4r \hat q) $$
 
 ### Agresti-Coull method
 
-The Agresti-Coull method is a 'simple solution' designed to improve coverage compared to the Wald method and still perform better (i.e. less conservative) than Clopper-Pearson particularly when the probability isn't in the mid-range (0.5). It is less conservative whilst still having good coverage. The only difference compared to the Wald method is that it adds two successes and two failures to the original observations (increasing the sample by 4 observations). In practice it is not often used *\[Ed: what is the basis for this statement?\]*.
+The Agresti-Coull method is a 'simple solution' designed to improve coverage compared to the Wald method and still perform better (i.e. less conservative) than Clopper-Pearson particularly when the probability isn't in the mid-range (0.5). It is less conservative whilst still having good coverage. The only difference compared to the Wald method is that it adds $z^2/2$ successes and failures to the original observations (when $\alpha=0.05$ this increases the sample by approximately 4 observations).
 
 The Agresti-Coull method is output by SAS using `BINOMIAL(LEVEL="Yes" CL=AGRESTICOULL);`
 
 ### Jeffreys method
 
-The Jeffreys method is a particular type of Bayesian Highest Probability Density (HPD) method. For binomial proportions, the beta distribution is generally used for the conjugate prior, which consists of two parameters $\alpha$ and $\beta$. Setting $\alpha=\beta=0.5$ is called the Jeffreys prior. This is considered as non-informative for a binomial proportion.
+The Jeffreys method is a particular type of Bayesian Highest Probability Density (HPD) method. For binomial proportions, the beta distribution is generally used for the conjugate prior, which consists of two parameters $\alpha'$ and $\beta'$. Setting $\alpha'=\beta'=0.5$ is called the Jeffreys prior. This is considered as non-informative for a binomial proportion. The resulting posterior density gives the CI as
 
 $$
-(Beta (^k/_2 + ^1/_{2}, ^{(n-k)}/_2+^1/_2)_{\alpha}, Beta (^k/_2 + ^1/_{2}, ^{(n-k)}/_2+^1/_2)_{1-\alpha})
-$$The coverage probabilities of the Jeffreys method are centred around the nominal confidence level on average, with symmetric "equal-tailed" 1-sided coverage^8 Appx S3.5^. This interval is output by SAS using `BINOMIAL(LEVEL="Yes" CL=Jeffreys);`
+(Beta (x + 0.5, n - x + 0.5)_{\alpha/2}, Beta (x + 0.5, n - x + 0.5)_{1-\alpha/2})
+$$
+
+Boundary modifications are applied to force the lower limit to 0 if x=0 and the upper limit to 1 if x=n.
+
+The coverage probabilities of the Jeffreys method are centred around the nominal confidence level on average, with symmetric "equal-tailed" 1-sided coverage^8 Appx S3.5^. This interval is output by SAS using `BINOMIAL(LEVEL="Yes" CL=Jeffreys);`
 
 ### Binomial based Mid-P method
 
-The Mid-P method is similar to the Clopper-Pearson method, in the sense that it is based on exact calculations from the binomial probability distribution, but it aims to reduce the conservatism. It's quite a complex method to compute compared to the methods above and rarely used in practice *\[Ed: what source is there for this statement?\]*. However, like the Jeffreys interval, it has excellent 1-sided and 2-sided coverage properties for those seeking to align mean coverage with the nominal confidence level^9^.
+The mid-P method is similar to the Clopper-Pearson method, in the sense that it is based on exact calculations from the binomial probability distribution, but it aims to reduce the conservatism. It's quite a complex method to compute compared to the methods above and rarely used in practice *\[Ed: what source is there for this statement?\]*. However, like the Jeffreys interval, it has excellent 1-sided and 2-sided coverage properties for those seeking to align mean coverage with the nominal confidence level^9^.
 
 The mid-P method is output by SAS using `BINOMIAL(LEVEL="Yes" CL=MIDP);`
 
@@ -159,15 +146,27 @@ The Clopper-Pearson CI's are always wider and contain the Blaker CI limits. It's
 
 The Blaker method is output by SAS using `BINOMIAL(LEVEL="Yes" CL=BLAKER);`
 
+## Continuity Adjusted Methods
+
+SAS offers the 'CORRECT' option for producing more conservative versions of the Wald and Wilson Score intervals.
+
+## Consistency with hypothesis tests
+
+Within SAS PROC FREQ for the asymptotic methods, consistency with the binomial test is provided by the Wilson CI, because the asymptotic test uses the standard error estimated under the null hypothesis (i.e. the value specified in the `BINOMIAL(P=...)` option of the `TABLES` statement.
+
+If an `EXACT BINOMIAL;` statement is used, the resulting test is consistent with the Clopper-Pearson CI.
+
+An exact hypothesis test with mid-P adjustment (consistent with the mid-P CI) is available via `EXACT BINOMIAL / MIDP;` but the output only gives the one-sided p-value, so if a 2-sided test is required it needs to be manually calculated by doubling the one-sided mid p-value.
+
 ## Example Code using PROC FREQ
 
-By adding the option `BINOMIAL(LEVEL="Yes")` to your 'PROC FREQ', SAS outputs the Normal Approximation (Wald) and Clopper-Pearson (Exact) confidence intervals as two default methods, derived for the `Responders` = `Yes`. If you do not specify the `LEVEL` you want to model, then SAS assumes you want to model the first level that appears in the output (alphabetically).
+By adding the option `BINOMIAL(LEVEL="Yes")` to your 'PROC FREQ' TABLES statement, SAS outputs the Normal Approximation (Wald) and Clopper-Pearson (Exact) confidence intervals as two default methods, derived for the `Responders` = `Yes`. If you do not specify the `LEVEL` you want to model, then SAS assumes you want to model the first level that appears in the output (alphabetically).
 
 **It is very important to ensure you are calculating the CI for the correct level! Check your output to confirm, you will see below it states `resp=Yes` !**
 
-Caution is required if there are no responders in a group (aside from any issues with the choice of confidence interval method), as SAS FREQ (as of v9.4) does not output any confidence intervals in this case. If the `LEVEL` option has been specified, an error is produced, otherwise the procedure by default generates CIs for the proportion of non-responders. Note that valid CIs can be obtained for both p = 0/n and p = n/n. If needed, the interval for 0/n can be derived as 1 minus the transposed interval for n/n.
+Caution is required if there are no responders in a group (aside from any issues with the choice of confidence interval method), as SAS PROC FREQ (as of v9.4) does not output any confidence intervals in this case. If the `LEVEL` option has been specified, an error is produced, otherwise the procedure by default generates CIs for the proportion of non-responders. Note that valid CIs can (and should) be obtained for both p = 0/n and p = n/n. If needed, the interval for 0/n can be derived as 1 minus the transposed interval for n/n.
 
-The output consists of the proportion of resp=Yes, the Asymptotic SE, 95% CIs using normal-approximation method, 95% CI using the Clopper-Pearson method (Exact), and then a Binomial test statistic and p-value for the null hypothesis of H0: Proportion = 0.5.
+The output consists of the proportion of resp=Yes, the Asymptotic SE, 95% CIs using normal-approximation method, 95% CI using the Clopper-Pearson method, and then a Binomial test statistic and p-value for the null hypothesis of H0: Proportion = 0.5.
 
 ```{sas}
 proc sort data=adcibc2;
@@ -192,11 +191,11 @@ By adding the option `BINOMIAL(LEVEL="Yes" CL=<name of CI method>)`, the other C
 
 -   `BINOMIAL(LEVEL="Yes" CL=CLOPPERPEARSON WALD WILSON AGRESTICOULL JEFFREYS MIDP LIKELIHOODRATIO LOGIT BLAKER)` will return Agresti-Coull, Blaker, Clopper-Pearson(Exact), Wald(without continuity correction) Wilson(without continuity correction), Jeffreys, Mid-P, Likelihood Ratio, and Logit
 
--   `BINOMIAL(LEVEL="Yes" CL=ALL);` will return Agresti-Coull, Clopper-Pearson (Exact), Jeffreys, Wald(without continuity correction), Wilson (without continuity correction). *\[If the developers of SAS are reading this, it would seem more natural for Mid-P to be included here instead of Clopper-Pearson!\]*
+-   `BINOMIAL(LEVEL="Yes" CL=ALL);` will return Agresti-Coull, Clopper-Pearson (Exact), Jeffreys, Wald(without continuity correction), Wilson (without continuity correction). *\[If the developers of SAS are reading this, it would seem more natural/logical for Mid-P to be included here instead of Clopper-Pearson! However, note that the ALL option is not mentioned in the current PROC FREQ documentation.\]*
 
--   `BINOMIALc(LEVEL="Yes" CL=ALL);`will return Agresti-Coull, Clopper-Pearson (Exact), Jeffreys, Wald (with continuity correction), Wilson(with continuity correction)
+-   `BINOMIAL(LEVEL="Yes" CL=ALL CORRECT);`will return Agresti-Coull, Clopper-Pearson (Exact), Jeffreys, Wald (with continuity correction), Wilson(with continuity correction). In previous versions of SAS this was coded as `BINOMIALc(...)`, but that is no longer documented. *\[... following the above comment, it is also not logical for Jeffreys and Agresti-Coull to be included here alongside methods designed to achieve conservative coverage\]*
 
--   `BINOMIALc(LEVEL="Yes" CL=WILSON(CORRECT)  WALD(CORRECT));`will return Wilson(with continuity correction) and Wald (with continuity correction)
+-   `BINOMIAL(LEVEL="Yes" CL=WILSON(CORRECT)  WALD(CORRECT));`will return Wilson (with continuity correction) and Wald (with continuity correction)
 
 ```{sas}
 proc freq data=adcibc2;
@@ -238,345 +237,7 @@ knitr::include_graphics("../images/ci_for_prop/binomial_prop_cc_act.png")
 SAS output often rounds to 3 or 4 decimal places in the output window, however the full values can be obtained using SAS ODS statements. `ods output binomialcls=bcl;` and then using the bcl dataset, in a data step to put the variable out to the number of decimal places we require.\
 10 decimal places shown here ! `lowercl2=put(lowercl,12.10);`
 
-## Methods for Calculating Confidence Intervals for 2 independent samples proportion difference
-
-This [paper](https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf)^12^ describes many methods for the calculation of confidence intervals for 2 independent proportions. The most commonly used are: Wald with continuity correction and Wilson with continuity correction. The Wilson method may be more applicable when sample sizes are smaller and/or the proportion is closer to 0 or 1, since reliance on a normal distribution may be inappropriate.
-
-SAS is able to calculate CIs using the following methods: Exact, Agresti/Caffo, Wald, Wald with Continuity correction, Wilson/Newcombe Score, Wilson/Newcombe score with continuity correction, Miettinen and Nurminen, and Hauck-Anderson. Example code is shown below, before provision of a much more detailed analysis using Wald and Wilson with and without continuity correction.
-
-```{sas}
-# Wald, Wilson, Agresti/Caffo, Hauck-Anderson, and Miettinen and Nurminen methods 
-proc freq data=adcibc2 order=data;
-     table trt*resp /riskdiff(CL=(wald wilson ac ha mn)); 
-run;  # exact method 
-
-proc freq data=adcibc2 order=data;     
-    exact riskdiff (method=noscore);
-    table trt*resp/riskdiff(CL=(exact));  
-run;
-```
-
-### Normal Approximation Method (Also known as the Wald or asymptotic CI Method)
-
-In large random samples from independent trials, the sampling distribution of the difference between two proportions approximately follows the normal distribution.
-
-The difference between two independent sample proportions is calculated as: $D= \hat p_1-\hat p_2$
-
-A confidence interval for the difference between two independent proportions $D$ can be calculated using:
-
-$D\approx \hat D \pm z_\alpha * SE(\hat p)$,
-
-where $z_\alpha$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to level $\alpha$, and
-
-$SE (\hat p) = sqrt{( \frac{\hat p_1 (1-\hat p_1)}{n_1} + \frac{\hat p_2 (1-\hat p_2)}{n_2})}$
-
-With continuity correction, the equation becomes
-
-$D\approx \hat D \pm (CC + z_\alpha * SE(\hat p))$,
-
-where $z_\alpha$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to level $\alpha$,\
-and $SE (\hat p)$ = $sqrt{( \frac{\hat p_1 (1-\hat p_1)}{n_1} + \frac{\hat p_2 (1-\hat p_2)}{n_2})}$\
-and
-
-$CC = \frac{1}{2} (\frac{1}{n_1} + \frac{1}{n_2})$
-
-### Wilson Method (Also known as the Score method or the Altman, Newcombe method^7^ )
-
-Derive the confidence intervals using the Wilson Method equations above for each of the individual single samples 1 and 2.
-
-Let l1 = Lower CI for sample 1, and u1 be the upper CI for sample 1.
-
-Let l2 = Lower CI for sample 2, and u2 be the upper CI for sample 2.
-
-Let D = p1-p2 (the difference between the observed proportions)
-
-The Confidence interval for the difference between two population proportions is: $$ D - sqrt((p_1-l_1)^2+(u_2-p_2)^2) \quad to\quad D + sqrt((p_2-l_2)^2+(u_1-p_1)^2 )   $$
-
-## Example Code using PROC FREQ
-
-It is important to check the output to ensure that you are modelling Active - Placebo, and response = Yes (not Response=No). By default SAS sorts alphabetically and calculates CI's for the first column. You can change this by using the `COLUMN= Option` on riskdiff or by sorting the dataset (here by trt, then descending resp), and then using `order=data` in the proc freq. This tells SAS to use the order you have sorted the data by. SAS confirms this by saying "Difference is (Row 1 - Row 2)" and "Column 1 (resp=Yes)". Note how in the SAS output, it calls the requested 'wilson' method 'Newcombe' in the output.
-
-Options for riskdiff(CL=XXX) consist of AC:Agresti-Caffo, EXACT=exact, HA:Hauck-Anderson, MN or SCORE:Miettinen-Nurminen (another type of Score CI), WILSON or NEWCOMBE: Wilson method described above, and WALD: normal approximation wald method described above. Examples using Wald and Wilson are shown below with and without continuity correction.
-
-```{sas}
-proc sort data=adcibc2; 
-    by  trt descending resp; 
-run;  
-
-# without continuity correction 
-proc freq data=adcibc2 order=data; 
-    table trt*resp/riskdiff(CL=(wald wilson)); 
-run;  
-
-# with continuity correction 
-proc freq data=adcibc2 order=data;
-    table trt*resp/riskdiff(CORRECT CL=(wald wilson));
-run;
-```
-
-```{r}
-#| eval: true
-#| echo: false
-#| fig-align: center 
-#| out-width: 50% 
-knitr::include_graphics("../images/ci_for_prop/binomial_2sampleCI_CC.png")
-```
-
-## Methods for Calculating Confidence Intervals for a matched pair proportion difference
-
-You may experience paired data in any of the following types of situation:
-
--   Tumour assesssments classified as Progressive Disease or Not Progressive Disease performed by an Investigator and separately by an independent panel.
-
--   A paired case-control study (each subject taking active treatment is matched to a patient taking control)
-
--   A cross-over trial where the same subjects take both medications
-
-In all these cases, the calculated proportions for the 2 groups are not independent.
-
-Using a cross over study as our example, a 2 x 2 table can be formed as follows:
-
-+-----------------------+---------------+---------------+---------------+
-|                       | Placebo\      | Placebo\      | Total         |
-|                       | Response= Yes | Response = No |               |
-+=======================+===============+===============+===============+
-| Active Response = Yes | r             | s             | r+s           |
-+-----------------------+---------------+---------------+---------------+
-| Active Response = No  | t             | u             | t+u           |
-+-----------------------+---------------+---------------+---------------+
-| Total                 | r+t           | s+u           | N = r+s+t+u   |
-+-----------------------+---------------+---------------+---------------+
-
-The proportions of subjects responding on each treatment are:
-
-Active: $\hat p_1 = (r+s)/n$ and Placebo: $\hat p_2= (r+t)/n$
-
-Difference between the proportions for each treatment are: $D=p1-p2=(s-t)/n$
-
-Suppose :
-
-+-----------------------+---------------+---------------+------------------+
-|                       | Placebo\      | Placebo\      | Total            |
-|                       | Response= Yes | Response = No |                  |
-+=======================+===============+===============+==================+
-| Active Response = Yes | r = 20        | s = 15        | r+s = 35         |
-+-----------------------+---------------+---------------+------------------+
-| Active Response = No  | t = 6         | u = 5         | t+u = 11         |
-+-----------------------+---------------+---------------+------------------+
-| Total                 | r+t = 26      | s+u = 20      | N = r+s+t+u = 46 |
-+-----------------------+---------------+---------------+------------------+
-
-### Normal Approximation Method (Also known as the Wald or asymptotic CI Method)
-
-In large random samples from independent trials, the sampling distribution of the difference between two proportions approximately follows the normal distribution. Hence the SE for the difference and 95% confidence interval can be calculated using the following equations.
-
-$SE(D)=\frac{1}{n} * sqrt(s+t-\frac{(s-t)^2}{n})$
-
-$D-z_\alpha * SE(D)$ to $D+z_\alpha * SE(D)$
-
-where $z_\alpha$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to level $\alpha$,
-
-D=(15-6) /46 = 0.196
-
-SE(D) = 1/ 46 \* sqrt (15+6- (((15+6)\^2)/46) ) = 0.0956
-
-Lower CI= 0.196 - 1.96 \*0.0956 = 0.009108
-
-Upper CI = 0.196 + 1.96 \* 0.0956 = 0.382892
-
-### Wilson Method (Also known as the Score method or the Altman, Newcombe method^7^ )
-
-Derive the confidence intervals using the Wilson Method equations above for each of the individual single samples 1 and 2.
-
-Let l1 = Lower CI for sample 1, and u1 be the upper CI for sample 1.
-
-Let l2 = Lower CI for sample 2, and u2 be the upper CI for sample 2.
-
-We then define $\phi$ which is used to correct for $\hat p_1$ and $\hat p_2$ not being independent. As the samples are related, $\phi$ is usually positive and thus makes the confidence interval smaller (narrower).
-
-If any of r+s, t+u, r+t, s+u are zero, then set $\phi$ to be 0.
-
-Otherwise we calculate A, B and C, and $\phi=C / sqrt A$
-
-In the above: $A=(r+s)(t+u)(r+t)(s+u)$ and $B=(ru-st)$
-
-To calculate C follow the table below. n=sample size.
-
-| Condition of B            | Set C equal to |
-|---------------------------|----------------|
-| If B is greater than n/2  | B - n/2        |
-| If B is between 0 and n/2 | 0              |
-| If B is less than 0       | B              |
-
-Let D = p1-p2 (the difference between the observed proportions of responders)
-
-The Confidence interval for the difference between two population proportions is: $D - sqrt((p_1-l_1)^2-2\phi(p_1-l_1)(u_2-p_2)+(u_2-p_2)^2 )$ to
-
-$D + sqrt((p_2-l_2)^2-2\phi(p_2-l_2)(u_1-p_1)+(u_1-p_1)^2 )$
-
-First using the Wilson Method equations for each of the individual single samples 1 and 2.
-
-|          | Active     | Placebo    |
-|----------|------------|------------|
-| a        | 73.842     | 55.842     |
-| b        | 13.728     | 11.974     |
-| c        | 99.683     | 99.683     |
-| Lower CI | 0.603 = L1 | 0.440 = L2 |
-| Upper CI | 0.878 = U1 | 0.680 = U2 |
-
-$A=(r+s)(t+u)(r+t)(s+u)$ = 9450000
-
-B=10
-
-C= 0 (as B is between 0 and n/2)
-
-$\phi$ = 0.
-
-Hence the middle part of the equation simplies to 0, and becomes simply:
-
-Lower CI = $D - sqrt((p_1-l_1)^2+(u_2-p_2)^2 )$ = 0.196 - sqrt \[ (0.761-0.603)\^2 + (0.680-0.565) \^2 \]
-
-Upper CI = $D + sqrt((p_2-l_2)^2+(u_1-p_1)^2 )$ = 0.196 + sqrt \[ (0.565-0.440)\^2 + (0.878-0.761) \^2 \]
-
-CI= 0.00032 to 0.367389
-
-## Example Code using PROC FREQ
-
-Unfortunately, SAS does not have a procedure which outputs the confidence intervals for matched proportions.
-
-Instead it calculates the risk difference = (r / (r+s) - t / (t+u) )
-
-Which in the example above is: 20/ (20+15) - 6 / (6+5) = 0.0296
-
-This is more applicable when you have exposed / non-exposed groups looking at who has experienced the outcome. SAS Proc Freq has 3 methods for analysis of paired data using a Common risk difference.
-
-The default method is Mantel-Haenszel confidence limits. SAS can also Score (Miettinen-Nurminen) CIs and Stratified Newcombe CIs (constructed from stratified Wilson Score CIs). See [here](https://support.sas.com/documentation/cdl/en/procstat/67528/HTML/default/viewer.htm#procstat_freq_details63.htm) for equations.
-
-As you can see below, this is not a CI for difference in proportions of 0.196, it is a CI for the risk difference of 0.0260. So must be interpreted with much consideration.
-
-```{sas}
-data dat_used;
-    input ID$ PBO ACT @@;
-    datalines;
-  001 0 0   002 0 0   003 0 0   004 0 0   005 0 0
-  006 1 0   007 1 0   008 1 0   009 1 0   010 1 0
-  011 1 0   012 0 1   013 0 1   014 0 1   015 0 1
-  016 0 1   017 0 1   018 0 1   019 0 1   020 0 1
-  021 0 1   022 0 1   023 0 1   024 0 1   025 0 1
-  026 0 1   027 1 1   028 1 1   029 1 1   030 1 1
-  031 1 1   032 1 1   033 1 1   034 1 1   035 1 1
-  036 1 1   037 1 1   038 1 1   039 1 1   040 1 1
-  041 1 1   042 1 1   043 1 1   044 1 1   045 1 1
-  046 1 1
-    ;
-run;
-
-proc freq data=dat_used; 
-    table ACT*PBO/commonriskdiff(cl=MH); 
-run;
-```
-
-```{r}
-
-#| echo: false
-#| fig-align: center
-#| out-width: 50%
-knitr::include_graphics("../images/ci_for_prop/riskdiff_matched.png")
-```
-
-## Methods for Calculating Confidence Intervals for 2 independent samples proportion
-
-This [paper](https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf)^8^ describes many methods for the calculation of confidence intervals for 2 independent proportions. The most commonly used are: Wald with continuity correction and Wilson with continuity correction. The Wilson method may be more applicable when sample sizes are smaller and/or the proportion is closer to 0 or 1, since reliance on a normal distribution may be inappropriate.
-
-SAS is able to calculate CIs using the following methods: Exact, Agresti/Caffo, Wald, Wald with Continuity correction, Wilson/Newcombe Score, Wilson/Newcombe score with continuity correction, Miettinen and Nurminen, and Hauck-Anderson. Example code is shown below, before provision of a much more detailed analysis using Wald and Wilson with and without continuity correction.
-
-```{sas}
-# Wald, Wilson, Agresti/Caffo, Hauck-Anderson, and Miettinen and Nurminen methods
-proc freq data=adcibc2 order=data;
-    table trt*resp /riskdiff(CL=(wald wilson ac ha mn));
-run;
-
-# exact method
-proc freq data=adcibc2 order=data;
-    exact riskdiff (method=noscore);
-    table trt*resp/riskdiff(CL=(exact)); 
-run;
-```
-
-### Normal Approximation Method (Also known as the Wald or asymptotic CI Method)
-
-In large random samples from independent trials, the sampling distribution of the difference between two proportions approximately follows the normal distribution.
-
-The difference between two independent sample proportions is calculated as: $D= \hat p_1-\hat p_2$
-
-A confidence interval for the difference between two independent proportions $D$ can be calculated using:
-
-$D\approx \hat D \pm z_\alpha * SE(\hat p)$,
-
-where $z_\alpha$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to level $\alpha$, and
-
-$SE (\hat p) = sqrt{( \frac{\hat p_1 (1-\hat p_1)}{n_1} + \frac{\hat p_2 (1-\hat p_2)}{n_2})}$
-
-With continuity correction, the equation becomes
-
-$D\approx \hat D \pm (CC + z_\alpha * SE(\hat p))$,
-
-where $z_\alpha$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to level $\alpha$,\
-and $SE (\hat p)$ = $sqrt{( \frac{\hat p_1 (1-\hat p_1)}{n_1} + \frac{\hat p_2 (1-\hat p_2)}{n_2})}$\
-and
-
-$CC = \frac{1}{2} (\frac{1}{n_1} + \frac{1}{n_2})$
-
-### Wilson Method (Also known as the Score method or the Altman, Newcombe method^7^ )
-
-Derive the confidence intervals using the Wilson Method equations above for each of the individual single samples 1 and 2.
-
-Let l1 = Lower CI for sample 1, and u1 be the upper CI for sample 1.
-
-Let l2 = Lower CI for sample 2, and u2 be the upper CI for sample 2.
-
-Let D = p1-p2 (the difference between the observed proportions)
-
-The Confidence interval for the difference between two population proportions is: $$ D - sqrt((p_1-l_1)^2+(u_2-p_2)^2) \quad to\quad D + sqrt((p_2-l_2)^2+(u_1-p_1)^2 )   $$
-
-## Example Code using PROC FREQ
-
-It is important to check the output to ensure that you are modelling Active - Placebo, and response = Yes (not Response=No). By default SAS sorts alphabetically and calculates CI's for the first column. You can change this by using the `COLUMN= Option` on riskdiff or by sorting the dataset (here by trt, then descending resp), and then using `order=data` in the proc freq. This tells SAS to use the order you have sorted the data by. SAS confirms this by saying "Difference is (Row 1 - Row 2)" and "Column 1 (resp=Yes)". Note how in the SAS output, it calls the requested 'wilson' method 'Newcombe' in the output.
-
-Options for riskdiff(CL=XXX) consist of AC:Agresti-Caffo, EXACT=exact, HA:Hauck-Anderson, MN or SCORE:Miettinen-Nurminen (another type of Score CI), WILSON or NEWCOMBE: Wilson method described above, and WALD: normal approximation wald method described above. Examples using Wald and Wilson are shown below with and without continuity correction.
-
-```{sas}
-proc sort data=adcibc2;
-    by  trt descending resp;
-run;
-
-# without continuity correction
-proc freq data=adcibc2 order=data;
-    table trt*resp/riskdiff(CL=(wald wilson)); 
-run;
-
-# with continuity correction
-proc freq data=adcibc2 order=data;
-    table trt*resp/riskdiff(CORRECT CL=(wald wilson)); 
-run;
-```
-
-```{r}
-#| echo: false
-#| eval: true
-#| fig-align: center
-#| out-width: 50%
-knitr::include_graphics("../images/ci_for_prop/binomial_2sampleCI_noCC.png")
-```
-
-```{r}
-#| echo: false
-#| fig-align: center
-#| out-width: 50%
-knitr::include_graphics("../images/ci_for_prop/binomial_2sampleCI_CC.png")
-```
-
-## Reference
+## References
 
 1.  [SAS PROC FREQ here](https://support.sas.com/documentation/cdl/en/procstat/63104/HTML/default/viewer.htm#procstat_freq_sect010.htm) and [here](https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_freq_sect028.htm)
 
@@ -592,4 +253,10 @@ knitr::include_graphics("../images/ci_for_prop/binomial_2sampleCI_CC.png")
 
 7.  D. Altman, D. Machin, T. Bryant, M. Gardner (eds). Statistics with Confidence: Confidence Intervals and Statistical Guidelines, 2nd edition. John Wiley and Sons 2000.
 
-8.  <https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf>
+8.  Laud PJ (2017) Equal-tailed confidence intervals for comparison of rates. Pharmaceutical Statistics 16: 334-348
+
+9.  Laud PJ (2018) Corrigendum: Equal-tailed confidence intervals for comparison of rates. Pharmaceutical Statistics 17: 290-293
+
+10. Blaker, H. (2000). Confidence curves and improved exact confidence intervals for discrete distributions, Canadian Journal of Statistics 28 (4), 783--798
+
+11. Klaschka, J. and Reiczigel, J. (2021). "On matching confidence intervals and tests for some discrete distributions: Methodological and computational aspects," Computational Statistics, 36, 1775--1790.
