@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Confidence Intervals for a Proportion in R</title>
+<title>Confidence Intervals for Independent Proportions in R</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -105,35 +105,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
-
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -237,14 +208,16 @@ window.Quarto = {
   <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
   <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data used</a></li>
   <li><a href="#packages" id="toc-packages" class="nav-link" data-scroll-target="#packages">Packages</a></li>
-  <li><a href="#methods-for-calculating-confidence-intervals-for-a-single-proportion-using-cardx" id="toc-methods-for-calculating-confidence-intervals-for-a-single-proportion-using-cardx" class="nav-link" data-scroll-target="#methods-for-calculating-confidence-intervals-for-a-single-proportion-using-cardx">Methods for Calculating Confidence Intervals for a single proportion using cardx</a>
+  <li><a href="#methods-for-calculating-confidence-intervals-for-proportion-difference-from-2-independent-samples" id="toc-methods-for-calculating-confidence-intervals-for-proportion-difference-from-2-independent-samples" class="nav-link" data-scroll-target="#methods-for-calculating-confidence-intervals-for-proportion-difference-from-2-independent-samples">Methods for Calculating Confidence Intervals for Proportion Difference from 2 independent samples</a>
   <ul class="collapse">
-  <li><a href="#clopper-pearson-exact-or-binomial-ci-method" id="toc-clopper-pearson-exact-or-binomial-ci-method" class="nav-link" data-scroll-target="#clopper-pearson-exact-or-binomial-ci-method">Clopper-Pearson (Exact or binomial CI) Method</a></li>
-  <li><a href="#normal-approximation-method-also-known-as-the-wald-method" id="toc-normal-approximation-method-also-known-as-the-wald-method" class="nav-link" data-scroll-target="#normal-approximation-method-also-known-as-the-wald-method">Normal Approximation Method (Also known as the Wald Method)</a></li>
-  <li><a href="#wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method3" id="toc-wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method3" class="nav-link" data-scroll-target="#wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method3">Wilson Method (Also known as the Score method or the Altman, Newcombe method<sup>3</sup> )</a></li>
-  <li><a href="#agresti-coull-method" id="toc-agresti-coull-method" class="nav-link" data-scroll-target="#agresti-coull-method">Agresti-Coull Method</a></li>
-  <li><a href="#jeffreys-method" id="toc-jeffreys-method" class="nav-link" data-scroll-target="#jeffreys-method">Jeffreys Method</a></li>
+  <li><a href="#normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method-using-cardx" id="toc-normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method-using-cardx" class="nav-link" data-scroll-target="#normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method-using-cardx">Normal Approximation Method (Also known as the Wald or asymptotic CI Method) using {cardx}</a></li>
+  <li><a href="#normal-approximation-wald-and-other-methods-for-2-independent-samples-using-desctools" id="toc-normal-approximation-wald-and-other-methods-for-2-independent-samples-using-desctools" class="nav-link" data-scroll-target="#normal-approximation-wald-and-other-methods-for-2-independent-samples-using-desctools">Normal Approximation (Wald) and Other Methods for 2 independent samples using {DescTools}</a></li>
   </ul></li>
+  <li><a href="#methods-for-calculating-confidence-intervals-for-relative-risk-from-2-independent-samples" id="toc-methods-for-calculating-confidence-intervals-for-relative-risk-from-2-independent-samples" class="nav-link" data-scroll-target="#methods-for-calculating-confidence-intervals-for-relative-risk-from-2-independent-samples">Methods for Calculating Confidence Intervals for Relative Risk from 2 independent samples</a>
+  <ul class="collapse">
+  <li><a href="#section" id="toc-section" class="nav-link" data-scroll-target="#section"></a></li>
+  </ul></li>
+  <li><a href="#methods-for-calculating-confidence-intervals-for-odds-ratio-from-2-independent-samples" id="toc-methods-for-calculating-confidence-intervals-for-odds-ratio-from-2-independent-samples" class="nav-link" data-scroll-target="#methods-for-calculating-confidence-intervals-for-odds-ratio-from-2-independent-samples">Methods for Calculating Confidence Intervals for Odds Ratio from 2 independent samples</a></li>
   <li><a href="#continuity-adjusted-methods" id="toc-continuity-adjusted-methods" class="nav-link" data-scroll-target="#continuity-adjusted-methods">Continuity Adjusted Methods</a></li>
   <li><a href="#consistency-with-hypothesis-tests" id="toc-consistency-with-hypothesis-tests" class="nav-link" data-scroll-target="#consistency-with-hypothesis-tests">Consistency with hypothesis tests</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
@@ -256,7 +229,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Confidence Intervals for a Proportion in R</h1>
+<h1 class="title">Confidence Intervals for Independent Proportions in R</h1>
 </div>
 
 
@@ -300,160 +273,173 @@ window.Quarto = {
 <p><strong>The {cardx} package</strong> is an extension of the {cards} package, providing additional functions to create Analysis Results Data Objects (ARDs)<sup>1</sup>. It was developed as part of {NEST} and pharmaverse. This package requires the binary endpoint to be a logical (TRUE/FALSE) vector or a numeric/integer coded as (0, 1) with 1 (TRUE) being the success you want to calculate the confidence interval for.</p>
 <p>See <a href="R:%20Functions%20for%20Calculating%20Proportion%20Confidence%20Intervals">here</a> for full description of the {cardx} proportions equations.</p>
 <p>If calculating the CI for a difference in proportions, the package requires both the response and the treatment variable to be numeric/integer coded as (0, 1) (or logical vector).</p>
-<p>Instead of the code presented below, you can use <code>ard_categorical_ci(data, variables=resp, method ='wilson')</code> for example. This invokes the code below but returns an analysis results dataset (ARD) format as the output. Methods included are waldcc, wald, clopper-pearson, wilson, wilsoncc, strat_wilson, strat_wilsoncc, agresti-coull and jeffreys for one-sample proportions and methods for 2 independent samples, however currently does not have a method for 2 matched proportions.</p>
-<p><strong>The {ratesci} package</strong> is … [TBC] - note, current development version at <a href="https://github.com/petelaud/ratesci" class="uri">https://github.com/petelaud/ratesci</a> has new features in the rateci() function (including more of the CI methods described below) compared to the CRAN release.</p>
-<p><strong>The {PropCIs} package</strong> produces CIs for methods such as Blaker’s exact method and Midp which aren’t available in {cardx} but are available in SAS. We found results agreed with SAS to the 5th decimal place. The package also calculates CIs for Clopper-Pearson, Wald, Wilson, Agresti-Coull and these align to results obtained in cardx to at least the 7th decimal place. The {PropsCIs} package requires just the number of events (numerator number of successes) &amp; total number of subjects (denominator) as an input dataset. Given Blaker and Midp are rarely used in practice, and {PropsCIs} isn’t a package commonly downloaded from CRAN, further details are not provided here.</p>
-<p><strong>The {Hmisc} package</strong> produces CIs using the Clopper-Pearson method. In this example (x=36 and n=154), the results match the cardx package. Documentation reports that the method uses F distribution to compute exact intervals based on the binomial cdf. However, if the percentage of responders is 100% then the upper limit is set to 1. Similarly if the percentage of responders is 0%, then the lower limit is set to 0. Hence, in extreme cases there may be differences between this package and the standard implementation of Clopper-Pearson method.</p>
-<p><strong>The {RBesT} package (Prior to Version 1.8-0)</strong> produces CIs using the Clopper-Pearson method. In this example (x=36 and n=154), the results match the cardx package. However, as described below, there are 2 cases where the results using RBesT package do not match cardx or Hmisc.</p>
-<ol type="1">
-<li>x = 0 (0% responders), in which case the lower limit does not match.</li>
-<li>x = n (100% responders), in which case the upper limit does not match.</li>
-</ol>
-<p>Because of the relationship between the binomial distribution and the beta distribution. This package uses quantiles of the beta distribution to derive exact confidence intervals.</p>
-<p><span class="math display">\[ B(\alpha/2;x, n-x+1) &lt; p &lt; B(1-\alpha/2; x+1, n-x)\]</span></p>
-<p>RBesT equations are:<br>
-pLow &lt;- qbeta(Low, r + (r == 0), n - r + 1)<br>
-pHigh &lt;- qbeta(High, r + 1, n - r + ((n - r) == 0))</p>
-<p>In Version 1.8-0 onwards the equations were updated as follows, which then match the Hmisc intervals:<br>
-pLow &lt;- qbeta(Low, r, n - r + 1)<br>
-pHigh &lt;- qbeta(High, r + 1, n - r)</p>
-<p><strong>The {ExactCIdiff} package</strong> produces exact CIs for two dependent proportions (matched pairs).</p>
+<p>Instead of the code presented below, you can use <code>ard_categorical_ci(data, variables=resp, method ='wilson')</code> for example. This invokes the code below but returns an analysis results dataset (ARD) format as the output.</p>
+<p>Methods included are [TBC] methods for 2 independent samples.</p>
+<p><strong>The {ratesci} package</strong> is … [TBC]</p>
 <p><strong>The {DescTools} package</strong> has a function BinomDiffCI which produces CIs for two independent proportions (unmatched pairs) including methods for Agresti/Caffo, Wald, Wald with Continuity correction, Newcombe Score, Newcombe score with continuity correction, and more computationally intensive methods such as Miettinen and Nurminen, Mee, Brown Li’s Jeffreys, Hauck-Anderson and Haldane. See <a href="https://search.r-project.org/CRAN/refmans/DescTools/html/BinomDiffCI.html">here</a> for more detail.</p>
 <p><strong>The {presize} package</strong> has a function prec_prop() which also calculates CIs for 2 independent samples using the Wilson, Agresti-Coull, Exact or Wald approaches. The package is not described in further detail here since in most cases <strong>{DescTools}</strong> will be able to compute what is needed. However, it’s mentioned due to other functionality it has available such as sample size and precision calculations for AUC, correlations, cronbach’s alpha, intraclass correlation, Cohen’s kappa, likelihood ratios, means, mean differences, odds ratios, rates, rate ratios, risk differences and risk ratios.</p>
 </section>
-<section id="methods-for-calculating-confidence-intervals-for-a-single-proportion-using-cardx" class="level2">
-<h2 class="anchored" data-anchor-id="methods-for-calculating-confidence-intervals-for-a-single-proportion-using-cardx">Methods for Calculating Confidence Intervals for a single proportion using cardx</h2>
-<p>For more technical derivation and reasons for use of each of the methods listed below, see the corresponding <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html">SAS page</a>.</p>
-<p>Let’s start by calculating a Confidence interval for the proportion of successes observed in the Active Treatment group (a single sample).</p>
-<section id="clopper-pearson-exact-or-binomial-ci-method" class="level3">
-<h3 class="anchored" data-anchor-id="clopper-pearson-exact-or-binomial-ci-method">Clopper-Pearson (Exact or binomial CI) Method</h3>
-<p>Clopper-Pearson Exact CI is one of the most popular methods, it is often good for small sample sizes when the proportion is not close to the tails (0,1), but it can be too conservative (too wide an interval compared to the interval containing the true population proportion 95% of the time).</p>
-<p>The cardx package calculates the Clopper-Pearson score by calling stats::binom.test() function.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_clopper_pearson</span>(act2, <span class="at">conf.level =</span> <span class="fl">0.95</span>) <span class="sc">|&gt;</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 11
-      N     n conf.level estimate statistic  p.value parameter conf.low
-  &lt;int&gt; &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
-1   154    36       0.95    0.234        36 2.21e-11       154    0.169
-# ℹ 3 more variables: conf.high &lt;dbl&gt;, method &lt;chr&gt;, alternative &lt;chr&gt;</code></pre>
-</div>
-</div>
-</section>
-<section id="normal-approximation-method-also-known-as-the-wald-method" class="level3">
-<h3 class="anchored" data-anchor-id="normal-approximation-method-also-known-as-the-wald-method">Normal Approximation Method (Also known as the Wald Method)</h3>
-<p>In large random samples from independent trials, the sampling distribution of proportions approximately follows the normal distribution. The expectation of a sample proportion is the corresponding population proportion. Therefore, based on a sample of size <span class="math inline">\(n\)</span>, a <span class="math inline">\((1-\alpha)\%\)</span> confidence interval for population proportion can be calculated using normal approximation as follows:</p>
-<p><span class="math inline">\(p\approx \hat p \pm z_\alpha \sqrt{\hat p(1-\hat p)}/{n}\)</span>, where <span class="math inline">\(\hat p\)</span> is the sample proportion, <span class="math inline">\(z_\alpha\)</span> is the <span class="math inline">\(1-\alpha/2\)</span> quantile of a standard normal distribution corresponding to level <span class="math inline">\(\alpha\)</span>, and <span class="math inline">\(\sqrt{\hat p(1-\hat p)}/{n}\)</span> is the standard error.</p>
-<p>For more technical information see the corresponding <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html">SAS page</a>.</p>
+<section id="methods-for-calculating-confidence-intervals-for-proportion-difference-from-2-independent-samples" class="level2">
+<h2 class="anchored" data-anchor-id="methods-for-calculating-confidence-intervals-for-proportion-difference-from-2-independent-samples">Methods for Calculating Confidence Intervals for Proportion Difference from 2 independent samples</h2>
+<p>This <a href="https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf">paper</a><sup>4</sup> describes many methods for the calculation of confidence intervals for 2 independent proportions.</p>
+<section id="normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method-using-cardx" class="level3">
+<h3 class="anchored" data-anchor-id="normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method-using-cardx">Normal Approximation Method (Also known as the Wald or asymptotic CI Method) using {cardx}</h3>
+<p>For more technical information regarding the Wald method see the corresponding <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html">SAS page</a>.</p>
 <section id="example-code" class="level4">
 <h4 class="anchored" data-anchor-id="example-code">Example code</h4>
-<p>The following code calculates a confidence interval for a binomial proportion using normal approximation equation manually. This is replicated exactly using the <code>cardx::proportion_ci_wald function</code> which also allows the continuity correction to be applied.</p>
+<p><code>cardx::ard_stats_prop_test function</code> uses <code>stats::prop.test</code> which also allows a continuity correction to be applied.</p>
+<p>Although this website <a href="https://rdrr.io/r/stats/prop.test.html">here</a> and this one <a href="https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/prop.test">here</a> both reference Newcombe for the CI that this function uses, replication of the results by hand and compared to SAS show that the results below match the Normal Approximation (Wald method).</p>
+<p>Both the Treatment variable (ACT,PBO) and the Response variable (Yes,No) have to be numeric (0,1) or Logit (TRUE,FALSE) variables.</p>
+<p>The prop.test default with 2 groups, is the null hypothesis that the proportions in each group are the same and a 2-sided CI.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># sample proportion by trt</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>summary <span class="ot">&lt;-</span> adcibc <span class="sc">|&gt;</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(trt <span class="sc">==</span> <span class="st">"ACT"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(resp) <span class="sc">|&gt;</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tally</span>() <span class="sc">|&gt;</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">total =</span> <span class="fu">sum</span>(n),</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">p =</span> n <span class="sc">/</span> total</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate standard error and 95% wald confidence intervals for population proportion</span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>waldci <span class="ot">&lt;-</span> summary <span class="sc">|&gt;</span></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(resp <span class="sc">==</span> <span class="st">"Yes"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">se =</span> <span class="fu">sqrt</span>(p <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> p) <span class="sc">/</span> total),</span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">lower_ci =</span> (p <span class="sc">-</span> <span class="fu">qnorm</span>(<span class="dv">1</span> <span class="sc">-</span> <span class="fl">0.05</span> <span class="sc">/</span> <span class="dv">2</span>) <span class="sc">*</span> se),</span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">upper_ci =</span> (p <span class="sc">+</span> <span class="fu">qnorm</span>(<span class="dv">1</span> <span class="sc">-</span> <span class="fl">0.05</span> <span class="sc">/</span> <span class="dv">2</span>) <span class="sc">*</span> se)</span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>waldci</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 7
-  resp      n total     p     se lower_ci upper_ci
-  &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
-1 Yes      36   154 0.234 0.0341    0.167    0.301</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>indat1 <span class="ot">&lt;-</span> adcibc2 <span class="sc">|&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(AVAL, TRTP) <span class="sc">|&gt;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">resp =</span> <span class="fu">if_else</span>(AVAL <span class="sc">&gt;</span> <span class="dv">4</span>, <span class="st">"Yes"</span>, <span class="st">"No"</span>),</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">respn =</span> <span class="fu">if_else</span>(AVAL <span class="sc">&gt;</span> <span class="dv">4</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">trt =</span> <span class="fu">if_else</span>(TRTP <span class="sc">==</span> <span class="st">"Placebo"</span>, <span class="st">"PBO"</span>, <span class="st">"ACT"</span>),</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">trtn =</span> <span class="fu">if_else</span>(TRTP <span class="sc">==</span> <span class="st">"Placebo"</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(trt, trtn, resp, respn)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co"># cardx package required a vector with 0 and 1s for a single proportion CI</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co"># To get the comparison the correct way around Placebo must be 1, and Active 0</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>indat <span class="ot">&lt;-</span> <span class="fu">select</span>(indat1, trtn, respn)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">ard_stats_prop_test</span>(</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> indat,</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">by =</span> trtn,</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">variables =</span> respn,</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">conf.level =</span> <span class="fl">0.95</span>,</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">correct =</span> <span class="cn">FALSE</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>{cards} data frame: 13 x 9</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># cardx package Wald method without continuity correction</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_wald</span>(act2, <span class="at">conf.level =</span> <span class="fl">0.95</span>, <span class="at">correct =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 7
-      N     n estimate conf.low conf.high conf.level method                     
-  &lt;int&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;glue&gt;                     
-1   154    36    0.234    0.167     0.301       0.95 Wald Confidence Interval w…</code></pre>
+<pre><code>   group1 variable   context   stat_name stat_label      stat
+1    trtn    respn stats_pr…    estimate  Rate Dif…     0.078
+2    trtn    respn stats_pr…   estimate1  Group 1 …     0.234
+3    trtn    respn stats_pr…   estimate2  Group 2 …     0.156
+4    trtn    respn stats_pr…   statistic  X-square…     1.893
+5    trtn    respn stats_pr…     p.value    p-value     0.169
+6    trtn    respn stats_pr…   parameter  Degrees …         1
+7    trtn    respn stats_pr…    conf.low  CI Lower…    -0.027
+8    trtn    respn stats_pr…   conf.high  CI Upper…     0.183
+9    trtn    respn stats_pr…      method     method 2-sample…
+10   trtn    respn stats_pr… alternative  alternat… two.sided
+11   trtn    respn stats_pr…           p          p          
+12   trtn    respn stats_pr…  conf.level  CI Confi…      0.95
+13   trtn    respn stats_pr…     correct  Yates' c…     FALSE</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># cardx package Wald method with continuity correction</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_wald</span>(act2, <span class="at">conf.level =</span> <span class="fl">0.95</span>, <span class="at">correct =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>ℹ 3 more variables: fmt_fun, warning, error</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">ard_stats_prop_test</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> indat,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">by =</span> trtn,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">variables =</span> respn,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">conf.level =</span> <span class="fl">0.95</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">correct =</span> <span class="cn">TRUE</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>{cards} data frame: 13 x 9</code></pre>
+</div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 7
-      N     n estimate conf.low conf.high conf.level method                     
-  &lt;int&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;glue&gt;                     
-1   154    36    0.234    0.164     0.304       0.95 Wald Confidence Interval w…</code></pre>
+<pre><code>   group1 variable   context   stat_name stat_label      stat
+1    trtn    respn stats_pr…    estimate  Rate Dif…     0.078
+2    trtn    respn stats_pr…   estimate1  Group 1 …     0.234
+3    trtn    respn stats_pr…   estimate2  Group 2 …     0.156
+4    trtn    respn stats_pr…   statistic  X-square…      1.45
+5    trtn    respn stats_pr…     p.value    p-value     0.229
+6    trtn    respn stats_pr…   parameter  Degrees …         1
+7    trtn    respn stats_pr…    conf.low  CI Lower…    -0.037
+8    trtn    respn stats_pr…   conf.high  CI Upper…     0.193
+9    trtn    respn stats_pr…      method     method 2-sample…
+10   trtn    respn stats_pr… alternative  alternat… two.sided
+11   trtn    respn stats_pr…           p          p          
+12   trtn    respn stats_pr…  conf.level  CI Confi…      0.95
+13   trtn    respn stats_pr…     correct  Yates' c…      TRUE</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>ℹ 3 more variables: fmt_fun, warning, error</code></pre>
 </div>
 </div>
 </section>
 </section>
-<section id="wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method3" class="level3">
-<h3 class="anchored" data-anchor-id="wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method3">Wilson Method (Also known as the Score method or the Altman, Newcombe method<sup>3</sup> )</h3>
-<p>The cardx package calculates the Wilson (score) method by calling stats::prop.test() function. This method is often used as a compromise between the Clopper-Pearson and the Wald given it was found to be accurate for most parameter values (even those close to 0 and 1), and it does not suffer from being over-conservative. For more technical information see the corresponding <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html">SAS page</a>.</p>
-<p>The package also contains a function for proportion_ci_strat_wilson() which calculates the stratified Wilson CIs for unequal proportions as described on page 47 <a href="https://cran.r-universe.dev/cardx/cardx.pdf">here</a>.</p>
+<section id="normal-approximation-wald-and-other-methods-for-2-independent-samples-using-desctools" class="level3">
+<h3 class="anchored" data-anchor-id="normal-approximation-wald-and-other-methods-for-2-independent-samples-using-desctools">Normal Approximation (Wald) and Other Methods for 2 independent samples using {DescTools}</h3>
+<p>For more technical information regarding the derivations of these methods see the corresponding <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html">SAS page</a> or {DescTools} package documentation <a href="https://search.r-project.org/CRAN/refmans/DescTools/html/BinomDiffCI.html">here</a>. <strong>The {DescTools} package</strong> has a function BinomDiffCI which produces CIs for two independent proportions (unmatched pairs) including methods for Agresti/Caffo, Wald, Wald with Continuity correction, Newcombe Score, Newcombe score with continuity correction, and more computationally intensive (less commonly used) methods such as Miettinen and Nurminen, Mee, Brown Li’s Jeffreys, Hauck-Anderson, Haldane and Jeffreys-Perks.</p>
+<section id="example-code-1" class="level4">
+<h4 class="anchored" data-anchor-id="example-code-1">Example code</h4>
+<p>With 2 groups, the null hypothesis that the proportions in each group are the same and a 2-sided CI.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># cardx package Wilson method without continuity correction</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_wilson</span>(act2, <span class="at">conf.level =</span> <span class="fl">0.95</span>, <span class="at">correct =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>count_dat <span class="ot">&lt;-</span> indat <span class="sc">|&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(trtn, respn)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>count_dat</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 11
-      N     n conf.level estimate statistic  p.value parameter conf.low
-  &lt;int&gt; &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;int&gt;    &lt;dbl&gt;
-1   154    36       0.95    0.234      43.7 3.90e-11         1    0.174
-# ℹ 3 more variables: conf.high &lt;dbl&gt;, method &lt;glue&gt;, alternative &lt;chr&gt;</code></pre>
+<pre><code># A tibble: 4 × 3
+   trtn respn     n
+  &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt;
+1     0     0   118
+2     0     1    36
+3     1     0    65
+4     1     1    12</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># cardx package Wilson method with continuity correction</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_wilson</span>(act2, <span class="at">conf.level =</span> <span class="fl">0.95</span>, <span class="at">correct =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># BinomDiffCI requires</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co"># x1 = successes in active,  n1 = total subjects in active,</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co"># x2 = successes in placebo, n2 = total subjects in placebo</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>DescTools<span class="sc">::</span><span class="fu">BinomDiffCI</span>(</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">x1 =</span> <span class="dv">36</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">n1 =</span> <span class="dv">154</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">x2 =</span> <span class="dv">12</span>,</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">n2 =</span> <span class="dv">77</span>,</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">conf.level =</span> <span class="fl">0.95</span>,</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">sides =</span> <span class="fu">c</span>(<span class="st">"two.sided"</span>),</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">method =</span> <span class="fu">c</span>(</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"wald"</span>,</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"waldcc"</span>,</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"score"</span>,</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"scorecc"</span>,</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">"ac"</span>,</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">"mn"</span>,</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">"mee"</span>,</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">"blj"</span>,</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">"ha"</span>,</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">"hal"</span>,</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">"jp"</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 11
-      N     n conf.level estimate statistic  p.value parameter conf.low
-  &lt;int&gt; &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;int&gt;    &lt;dbl&gt;
-1   154    36       0.95    0.234      42.6 6.70e-11         1    0.171
-# ℹ 3 more variables: conf.high &lt;dbl&gt;, method &lt;glue&gt;, alternative &lt;chr&gt;</code></pre>
+<pre><code>               est      lwr.ci    upr.ci
+wald    0.07792208 -0.02710792 0.1829521
+waldcc  0.07792208 -0.03684818 0.1926923
+score   0.07792208 -0.03614191 0.1751254
+scorecc 0.07792208 -0.04396244 0.1809901
+ac      0.07792208 -0.03292487 0.1781699
+mn      0.07792208 -0.03606525 0.1774952
+mee     0.07792208 -0.03580439 0.1772849
+blj     0.07792208 -0.03062424 0.1810792
+ha      0.07792208 -0.03415013 0.1899943
+hal     0.07792208 -0.03143484 0.1769438
+jp      0.07792208 -0.03207751 0.1776615</code></pre>
 </div>
 </div>
 </section>
-<section id="agresti-coull-method" class="level3">
-<h3 class="anchored" data-anchor-id="agresti-coull-method">Agresti-Coull Method</h3>
-<p>The cardx package calculates the Agresti-Coull method using the equation from the published method by Alan Agresti &amp; Brent Coull based on adding 2 successes and 2 failures before computing the wald CI. The CI is truncated, when it overshoots the boundary (&lt;0 or &gt;1).</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># cardx package agresti_coull method</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_agresti_coull</span>(act2, <span class="at">conf.level =</span> <span class="fl">0.95</span>) <span class="sc">|&gt;</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 7
-      N     n estimate conf.low conf.high conf.level method                     
-  &lt;int&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;chr&gt;                      
-1   154    36    0.234    0.174     0.307       0.95 Agresti-Coull Confidence I…</code></pre>
-</div>
-</div>
 </section>
-<section id="jeffreys-method" class="level3">
-<h3 class="anchored" data-anchor-id="jeffreys-method">Jeffreys Method</h3>
-<p>Jeffreys method is a particular type of Bayesian Highest Probability Density (HPD) Method. For proportions, the beta distribution is generally used for the prior, which consists of two parameters alpha and beta. Setting alpha=beta=0.5 is called Jeffrey’s prior. NOTE: if you want to use any other priors, you can use <code>binom.bayes</code> which estimates a credible interval for proportions.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># cardx package jeffreys method</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_jeffreys</span>(act2, <span class="at">conf.level =</span> <span class="fl">0.95</span>) <span class="sc">|&gt;</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 7
-      N     n estimate conf.low conf.high conf.level method           
-  &lt;int&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;glue&gt;           
-1   154    36    0.234    0.172     0.305       0.95 Jeffreys Interval</code></pre>
-</div>
-</div>
 </section>
+<section id="methods-for-calculating-confidence-intervals-for-relative-risk-from-2-independent-samples" class="level2">
+<h2 class="anchored" data-anchor-id="methods-for-calculating-confidence-intervals-for-relative-risk-from-2-independent-samples">Methods for Calculating Confidence Intervals for Relative Risk from 2 independent samples</h2>
+<p>[TBC]</p>
+<section id="section" class="level3">
+<h3 class="anchored" data-anchor-id="section"></h3>
+</section>
+</section>
+<section id="methods-for-calculating-confidence-intervals-for-odds-ratio-from-2-independent-samples" class="level2">
+<h2 class="anchored" data-anchor-id="methods-for-calculating-confidence-intervals-for-odds-ratio-from-2-independent-samples">Methods for Calculating Confidence Intervals for Odds Ratio from 2 independent samples</h2>
+<p>[TBC]</p>
 </section>
 <section id="continuity-adjusted-methods" class="level2">
 <h2 class="anchored" data-anchor-id="continuity-adjusted-methods">Continuity Adjusted Methods</h2>
@@ -461,7 +447,7 @@ pHigh &lt;- qbeta(High, r + 1, n - r)</p>
 </section>
 <section id="consistency-with-hypothesis-tests" class="level2">
 <h2 class="anchored" data-anchor-id="consistency-with-hypothesis-tests">Consistency with hypothesis tests</h2>
-<p>[TBC]</p>
+<p>[TBC] - cf.&nbsp;chi-squared tests</p>
 </section>
 <section id="references" class="level2">
 <h2 class="anchored" data-anchor-id="references">References</h2>

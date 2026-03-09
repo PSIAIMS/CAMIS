@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>CMH Test</title>
+<title>Confidence intervals for Paired Proportions in SAS</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -70,6 +70,35 @@ ul.task-list li input[type="checkbox"] {
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -170,22 +199,17 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#cochran-mantel-haenszel-test" id="toc-cochran-mantel-haenszel-test" class="nav-link active" data-scroll-target="#cochran-mantel-haenszel-test">Cochran-Mantel-Haenszel Test</a>
-  <ul class="collapse">
-  <li><a href="#cmh-in-sas" id="toc-cmh-in-sas" class="nav-link" data-scroll-target="#cmh-in-sas">CMH in SAS</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
   <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data used</a></li>
-  <li><a href="#code-used" id="toc-code-used" class="nav-link" data-scroll-target="#code-used">Code used</a></li>
-  <li><a href="#example-1-2-x-2-x-2-i.e-x-2-trt-levels-y-2-sex-levels-k-2-age-levels" id="toc-example-1-2-x-2-x-2-i.e-x-2-trt-levels-y-2-sex-levels-k-2-age-levels" class="nav-link" data-scroll-target="#example-1-2-x-2-x-2-i.e-x-2-trt-levels-y-2-sex-levels-k-2-age-levels">Example 1: 2 x 2 x 2 (i.e, X = 2 TRT levels, Y = 2 SEX levels, K = 2 AGE levels)</a></li>
-  <li><a href="#example-2-2-x-3-x-k-i.e-x-2-levels-y-3-levels-k-2-levels" id="toc-example-2-2-x-3-x-k-i.e-x-2-levels-y-3-levels-k-2-levels" class="nav-link" data-scroll-target="#example-2-2-x-3-x-k-i.e-x-2-levels-y-3-levels-k-2-levels">Example 2: 2 x 3 x K (i.e, X = 2 levels, Y = 3 levels, K &gt;= 2 levels)</a></li>
-  <li><a href="#example-3-risk-differences---comparing-treatment-differences-within-strata-and-combined-across-strata" id="toc-example-3-risk-differences---comparing-treatment-differences-within-strata-and-combined-across-strata" class="nav-link" data-scroll-target="#example-3-risk-differences---comparing-treatment-differences-within-strata-and-combined-across-strata">Example 3: Risk Differences - Comparing treatment differences within strata and combined across strata</a>
+  <li><a href="#methods-for-calculating-confidence-intervals-for-proportion-difference-from-matched-pairs" id="toc-methods-for-calculating-confidence-intervals-for-proportion-difference-from-matched-pairs" class="nav-link" data-scroll-target="#methods-for-calculating-confidence-intervals-for-proportion-difference-from-matched-pairs">Methods for Calculating Confidence Intervals for Proportion Difference from matched pairs</a>
   <ul class="collapse">
-  <li><a href="#risk-differences-within-each-strata" id="toc-risk-differences-within-each-strata" class="nav-link" data-scroll-target="#risk-differences-within-each-strata">Risk Differences Within each Strata</a></li>
-  <li><a href="#sas-common-error-sas-v9.4-cannot-do-a-stratified-miettinen-nurminen-score-method" id="toc-sas-common-error-sas-v9.4-cannot-do-a-stratified-miettinen-nurminen-score-method" class="nav-link" data-scroll-target="#sas-common-error-sas-v9.4-cannot-do-a-stratified-miettinen-nurminen-score-method">SAS Common error: SAS v9.4 cannot do a stratified Miettinen-Nurminen (score) method!</a></li>
-  <li><a href="#sas-common-error-make-sure-you-output-the-risk-difference-for-the-correct-level" id="toc-sas-common-error-make-sure-you-output-the-risk-difference-for-the-correct-level" class="nav-link" data-scroll-target="#sas-common-error-make-sure-you-output-the-risk-difference-for-the-correct-level">SAS Common error: Make sure you output the risk difference for the correct level!</a></li>
-  <li><a href="#common-risk-differences-across-strata" id="toc-common-risk-differences-across-strata" class="nav-link" data-scroll-target="#common-risk-differences-across-strata">Common Risk Differences across Strata</a></li>
+  <li><a href="#normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method" id="toc-normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method" class="nav-link" data-scroll-target="#normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method">Normal Approximation Method (Also known as the Wald or asymptotic CI Method)</a></li>
+  <li><a href="#wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method7" id="toc-wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method7" class="nav-link" data-scroll-target="#wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method7">Wilson Method (Also known as the Score method or the Altman, Newcombe method<sup>7</sup> )</a></li>
   </ul></li>
-  </ul></li>
-  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  <li><a href="#continuity-adjusted-methods" id="toc-continuity-adjusted-methods" class="nav-link" data-scroll-target="#continuity-adjusted-methods">Continuity Adjusted Methods</a></li>
+  <li><a href="#consistency-with-hypothesis-tests" id="toc-consistency-with-hypothesis-tests" class="nav-link" data-scroll-target="#consistency-with-hypothesis-tests">Consistency with Hypothesis Tests</a></li>
+  <li><a href="#example-code-using-proc-freq" id="toc-example-code-using-proc-freq" class="nav-link" data-scroll-target="#example-code-using-proc-freq">Example Code using PROC FREQ</a></li>
+  <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">Reference</a></li>
   </ul>
 </nav>
     </div>
@@ -194,7 +218,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">CMH Test</h1>
+<h1 class="title">Confidence intervals for Paired Proportions in SAS</h1>
 </div>
 
 
@@ -211,155 +235,266 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="cochran-mantel-haenszel-test" class="level1">
-<h1>Cochran-Mantel-Haenszel Test</h1>
-<p>The CMH procedure tests for conditional independence in partial contingency tables for a 2 x 2 x K design. However, it can be generalized to tables of X x Y x K dimensions. This page also details derivation of risk differences and their confidence intervals which often accompany a CMH test.</p>
-<section id="cmh-in-sas" class="level2">
-<h2 class="anchored" data-anchor-id="cmh-in-sas">CMH in SAS</h2>
-<p>The CMH test is calculated in SAS using the PROC FREQ procedure. By default, it outputs the chi square statistic, degrees of freedom and p-value for each of the three alternative hypothesis: <code>general association</code>, <code>row means differ</code>, and <code>nonzero correlation</code>. It is up to the statistical analyst or statistician to know which result is appropriate for their analysis.</p>
-<p>When the design of the contingency table is 2 x 2 x K (i.e, X == 2 levels, Y == 2 levels, K &gt;= 2 levels), the Mantel-Haenszel Common Odds Ratio (odds ratio estimate, 95% CI, P-value) and the Breslow-Day Test for Homogeneity of the Odds Ratios (chi-square statistic, degrees of freedom, P-value) are also output.</p>
-<p>Below is the syntax to conduct a CMH analysis in SAS:</p>
-<div class="cell">
-<pre class="sas cell-code"><code>proc freq data = filtered_data; 
-    tables K * X * Y / cmh; 
-    * the order of K, X, and Y appearing on the line is important!;
-run; </code></pre>
-</div>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>[See separate page for general introductory information on confidence intervals for proportions.]</p>
 </section>
 <section id="data-used" class="level2">
 <h2 class="anchored" data-anchor-id="data-used">Data used</h2>
-<p>The adcibc data described <a href="https://psiaims.github.io/CAMIS/R/cmh.html">here</a> is used for this example.</p>
-</section>
-<section id="code-used" class="level2">
-<h2 class="anchored" data-anchor-id="code-used">Code used</h2>
-<p>The code used is always the same, however, we can limit the number of levels in each example to show a 2x2x2 case, 2x3xK case etc.</p>
+<p>The adcibc data stored <a href="../data/adcibc.csv">here</a> was used in this example, creating a binary treatment variable <code>trt</code> taking the values of <code>Act</code> or <code>PBO</code> and a binary response variable <code>resp</code> taking the values of <code>Yes</code> or <code>No</code>. For this example, a response is defined as a score greater than 4.</p>
 <div class="cell">
-<pre class="sas cell-code"><code>proc freq data = adcibc; 
-    tables agegr1 * trtp *  sex / cmh;  
+<pre class="sas cell-code"><code>data adcibc2 (keep=trt resp) ;
+    set adcibc;     
+    if aval gt 4 then resp="Yes";
+    else resp="No";     
+    if trtp="Placebo" then trt="PBO";
+    else trt="Act"; 
+run;</code></pre>
+</div>
+<p>The below shows that for the Active Treatment, there are 36 responders out of 154 subjects = 0.2338 (23.38% responders).</p>
+<div class="cell">
+<pre class="sas cell-code"><code>proc freq data=adcibc2;
+    table trt*resp/ nopct nocol;
 run;</code></pre>
 </div>
 </section>
-<section id="example-1-2-x-2-x-2-i.e-x-2-trt-levels-y-2-sex-levels-k-2-age-levels" class="level2">
-<h2 class="anchored" data-anchor-id="example-1-2-x-2-x-2-i.e-x-2-trt-levels-y-2-sex-levels-k-2-age-levels">Example 1: 2 x 2 x 2 (i.e, X = 2 TRT levels, Y = 2 SEX levels, K = 2 AGE levels)</h2>
-<p>Let’s test if there is a difference between 2 treatments (Placebo, and high dose), in the number of males and females, whilst adjusting for 2 levels of Age group (&lt;65 and 65-&lt;80). NOTE: prior to the proc freq, we have removed data in the low dose and &gt;80 categories.</p>
+<section id="methods-for-calculating-confidence-intervals-for-proportion-difference-from-matched-pairs" class="level2">
+<h2 class="anchored" data-anchor-id="methods-for-calculating-confidence-intervals-for-proportion-difference-from-matched-pairs">Methods for Calculating Confidence Intervals for Proportion Difference from matched pairs</h2>
+<p>You may experience paired data in any of the following types of situation:</p>
+<ul>
+<li><p>Tumour assesssments classified as Progressive Disease or Not Progressive Disease performed by an Investigator and separately by an independent panel.</p></li>
+<li><p>A paired case-control study (each subject taking active treatment is matched to a patient taking control)</p></li>
+<li><p>A cross-over trial where the same subjects take both medications</p></li>
+</ul>
+<p>In all these cases, the calculated proportions for the 2 groups are not independent.</p>
+<p>Using a cross over study as our example, a 2 x 2 table can be formed as follows:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 21%">
+<col style="width: 21%">
+<col style="width: 21%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Placebo<br>
+Response= Yes</th>
+<th>Placebo<br>
+Response = No</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Active Response = Yes</td>
+<td>r</td>
+<td>s</td>
+<td>r+s</td>
+</tr>
+<tr class="even">
+<td>Active Response = No</td>
+<td>t</td>
+<td>u</td>
+<td>t+u</td>
+</tr>
+<tr class="odd">
+<td>Total</td>
+<td>r+t</td>
+<td>s+u</td>
+<td>N = r+s+t+u</td>
+</tr>
+</tbody>
+</table>
+<p>The proportions of subjects responding on each treatment are:</p>
+<p>Active: <span class="math inline">\(\hat p_1 = (r+s)/n\)</span> and Placebo: <span class="math inline">\(\hat p_2= (r+t)/n\)</span></p>
+<p>Difference between the proportions for each treatment are: <span class="math inline">\(D=p1-p2=(s-t)/n\)</span></p>
+<p>Suppose :</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 31%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 24%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Placebo<br>
+Response= Yes</th>
+<th>Placebo<br>
+Response = No</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Active Response = Yes</td>
+<td>r = 20</td>
+<td>s = 15</td>
+<td>r+s = 35</td>
+</tr>
+<tr class="even">
+<td>Active Response = No</td>
+<td>t = 6</td>
+<td>u = 5</td>
+<td>t+u = 11</td>
+</tr>
+<tr class="odd">
+<td>Total</td>
+<td>r+t = 26</td>
+<td>s+u = 20</td>
+<td>N = r+s+t+u = 46</td>
+</tr>
+</tbody>
+</table>
+<section id="normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method" class="level3">
+<h3 class="anchored" data-anchor-id="normal-approximation-method-also-known-as-the-wald-or-asymptotic-ci-method">Normal Approximation Method (Also known as the Wald or asymptotic CI Method)</h3>
+<p>In large random samples from independent trials, the sampling distribution of the difference between two proportions approximately follows the normal distribution. Hence the SE for the difference and 95% confidence interval can be calculated using the following equations.</p>
+<p><span class="math inline">\(SE(D)=\frac{1}{n} * sqrt(s+t-\frac{(s-t)^2}{n})\)</span></p>
+<p><span class="math inline">\(D-z_\alpha * SE(D)\)</span> to <span class="math inline">\(D+z_\alpha * SE(D)\)</span></p>
+<p>where <span class="math inline">\(z_\alpha\)</span> is the <span class="math inline">\(1-\alpha/2\)</span> quantile of a standard normal distribution corresponding to level <span class="math inline">\(\alpha\)</span>,</p>
+<p>D=(15-6) /46 = 0.196</p>
+<p>SE(D) = 1/ 46 * sqrt (15+6- (((15+6)^2)/46) ) = 0.0956</p>
+<p>Lower CI= 0.196 - 1.96 *0.0956 = 0.009108</p>
+<p>Upper CI = 0.196 + 1.96 * 0.0956 = 0.382892</p>
 </section>
-<section id="example-2-2-x-3-x-k-i.e-x-2-levels-y-3-levels-k-2-levels" class="level2">
-<h2 class="anchored" data-anchor-id="example-2-2-x-3-x-k-i.e-x-2-levels-y-3-levels-k-2-levels">Example 2: 2 x 3 x K (i.e, X = 2 levels, Y = 3 levels, K &gt;= 2 levels)</h2>
-<p>Let’s test if there is a difference between 3 treatments (Placebo, Xanomeline low dose and high dose), in the number of males and females, whilst adjusting for 3 levels of Age group (&lt;65, 65-&lt;80 and &gt;=80). Here K=Agegrp1 the variable we are controlling for, X=Treatment -what we want to compare, and Y=Sex the variable we want to see if it’s different between treatments (often this would be response/ non-response!).</p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/cmh/saspage_output2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
-</div>
-</div>
-</div>
+<section id="wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method7" class="level3">
+<h3 class="anchored" data-anchor-id="wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method7">Wilson Method (Also known as the Score method or the Altman, Newcombe method<sup>7</sup> )</h3>
+<p>Derive the confidence intervals using the Wilson Method equations above for each of the individual single samples 1 and 2.</p>
+<p>Let l1 = Lower CI for sample 1, and u1 be the upper CI for sample 1.</p>
+<p>Let l2 = Lower CI for sample 2, and u2 be the upper CI for sample 2.</p>
+<p>We then define <span class="math inline">\(\phi\)</span> which is used to correct for <span class="math inline">\(\hat p_1\)</span> and <span class="math inline">\(\hat p_2\)</span> not being independent. As the samples are related, <span class="math inline">\(\phi\)</span> is usually positive and thus makes the confidence interval smaller (narrower).</p>
+<p>If any of r+s, t+u, r+t, s+u are zero, then set <span class="math inline">\(\phi\)</span> to be 0.</p>
+<p>Otherwise we calculate A, B and C, and <span class="math inline">\(\phi=C / sqrt A\)</span></p>
+<p>In the above: <span class="math inline">\(A=(r+s)(t+u)(r+t)(s+u)\)</span> and <span class="math inline">\(B=(ru-st)\)</span></p>
+<p>To calculate C follow the table below. n=sample size.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Condition of B</th>
+<th>Set C equal to</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>If B is greater than n/2</td>
+<td>B - n/2</td>
+</tr>
+<tr class="even">
+<td>If B is between 0 and n/2</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>If B is less than 0</td>
+<td>B</td>
+</tr>
+</tbody>
+</table>
+<p>Let D = p1-p2 (the difference between the observed proportions of responders)</p>
+<p>The Confidence interval for the difference between two population proportions is: <span class="math inline">\(D - sqrt((p_1-l_1)^2-2\phi(p_1-l_1)(u_2-p_2)+(u_2-p_2)^2 )\)</span> to</p>
+<p><span class="math inline">\(D + sqrt((p_2-l_2)^2-2\phi(p_2-l_2)(u_1-p_1)+(u_1-p_1)^2 )\)</span></p>
+<p>First using the Wilson Method equations for each of the individual single samples 1 and 2.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th></th>
+<th>Active</th>
+<th>Placebo</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>a</td>
+<td>73.842</td>
+<td>55.842</td>
+</tr>
+<tr class="even">
+<td>b</td>
+<td>13.728</td>
+<td>11.974</td>
+</tr>
+<tr class="odd">
+<td>c</td>
+<td>99.683</td>
+<td>99.683</td>
+</tr>
+<tr class="even">
+<td>Lower CI</td>
+<td>0.603 = L1</td>
+<td>0.440 = L2</td>
+</tr>
+<tr class="odd">
+<td>Upper CI</td>
+<td>0.878 = U1</td>
+<td>0.680 = U2</td>
+</tr>
+</tbody>
+</table>
+<p><span class="math inline">\(A=(r+s)(t+u)(r+t)(s+u)\)</span> = 9450000</p>
+<p>B=10</p>
+<p>C= 0 (as B is between 0 and n/2)</p>
+<p><span class="math inline">\(\phi\)</span> = 0.</p>
+<p>Hence the middle part of the equation simplies to 0, and becomes simply:</p>
+<p>Lower CI = <span class="math inline">\(D - sqrt((p_1-l_1)^2+(u_2-p_2)^2 )\)</span> = 0.196 - sqrt [ (0.761-0.603)^2 + (0.680-0.565) ^2 ]</p>
+<p>Upper CI = <span class="math inline">\(D + sqrt((p_2-l_2)^2+(u_1-p_1)^2 )\)</span> = 0.196 + sqrt [ (0.565-0.440)^2 + (0.878-0.761) ^2 ]</p>
+<p>CI= 0.00032 to 0.367389</p>
 </section>
-<section id="example-3-risk-differences---comparing-treatment-differences-within-strata-and-combined-across-strata" class="level2">
-<h2 class="anchored" data-anchor-id="example-3-risk-differences---comparing-treatment-differences-within-strata-and-combined-across-strata">Example 3: Risk Differences - Comparing treatment differences within strata and combined across strata</h2>
-<p>The above examples are a test for general association or if the row means scores differ across the strata controlling for another factor, however we may want to get an estimate of the direction and size of treatment effect (with CI), either within each strata or combined across strata.</p>
-<section id="risk-differences-within-each-strata" class="level3">
-<h3 class="anchored" data-anchor-id="risk-differences-within-each-strata">Risk Differences Within each Strata</h3>
-<p>Risk differences within each strata (for 2 x 2 x K tables) can be obtained by adding the riskdiff option in SAS. The exact same output is obtained as per example 1 above, with the addition of 2 tables (1 for each age strata), showing the proportion of Female patients within each treatment (including 95% CIs), and the difference between the treatment proportions (including 95% CIs). By default, the CI’s are calculated using Wald asymptotic confidence limits and in addition, the <code>exact</code> Clopper-Pearson confidence intervals for the risks. See SAS userguide <a href="https://support.sas.com/documentation/cdl/en/procstat/67528/HTML/default/viewer.htm#procstat_freq_details53.htm">here</a> and <a href="https://support.sas.com/documentation/cdl/en/procstat/67528/HTML/default/viewer.htm#procstat_freq_details53.htm">here</a> for more detail on the range of CI’s SAS can calculate for the risk differences such as: Agresti-Caffo, exact unconditional, Hauck-Anderson, Miettinen-Nurminen (score), Newcombe (hybrid-score), Wald confidence limits, continuity-corrected Newcombe and continuity corrected Wald CIs.</p>
-<p>The individual treatment comparisons within strata can be useful to explore if the treatment effect is in the same direction and size for each strata, such as to determine if pooling them is in fact sensible.</p>
-<div class="cell">
-<pre class="sas cell-code"><code># Default method is: Wald asymptotic confidence limits 
-proc freq data = adcibc (where=(trtpn ne 54 and agegr1 ne "&gt;80")); 
-    tables  agegr1 * trtp *  sex / cmh riskdiff; 
-run; </code></pre>
-</div>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/cmh/saspage_output3.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>Note above that exact CI’s are not output for the difference betweeen the treatments. You can request SAS output other CI methods as shown below. This outputs the risk difference between the treatments and 95% CI, calculated for each age group strata separately using the Miettinen-Nurminen (score) (MN) method.</p>
-<div class="cell">
-<pre class="sas cell-code"><code># You can change the confidence limits derivation using (cl=xxx) option
-proc freq data = adcibc (where=(trtpn ne 54 and agegr1 ne "\&gt;80")); 
-    tables agegr1 * trtp * sex / cmh riskdiff(cl=mn);
-run;</code></pre>
-</div>
 </section>
-<section id="sas-common-error-sas-v9.4-cannot-do-a-stratified-miettinen-nurminen-score-method" class="level3">
-<h3 class="anchored" data-anchor-id="sas-common-error-sas-v9.4-cannot-do-a-stratified-miettinen-nurminen-score-method">SAS Common error: SAS v9.4 cannot do a stratified Miettinen-Nurminen (score) method!</h3>
-<p>Note: you may think by running the following code, that you would be creating a common risk difference using the stratified Miettinen-Nurminen method. However, this is actually performing an unstratified Miettinen-Nurminen (Score) method. The output contains the same risk differences calculated for each strata separately and then a common risk difference using the ‘summary score estimate’ approach (however this is NOT a stratified approach !!). See <a href="https://support.sas.com/documentation/cdl/en/procstat/67528/HTML/default/viewer.htm#procstat_freq_details63.htm">SAS guide</a> for more detail.</p>
-<p>PROC FREQ in the SAS Viya platform has introduced a new COMMONRISKDIFF(CL=MN/MNMH) option for the TABLES statement that does use the stratified MN method.</p>
-<p>See the next section on Common risk differences available in SAS.</p>
-<div class="cell">
-<pre class="sas cell-code"><code># Specifying the Miettinen-Nurminen (score) method 
-proc freq data = adcibc (where=(trtpn ne 54 and agegr1 ne "&gt;80")); 
-    tables  agegr1 * trtp *  sex / cmh riskdiff (common cl=mn); 
-run; </code></pre>
-</div>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/cmh/saspage_output3c.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
-</div>
-</div>
-</div>
+<section id="continuity-adjusted-methods" class="level2">
+<h2 class="anchored" data-anchor-id="continuity-adjusted-methods">Continuity Adjusted Methods</h2>
+<p>[TBC]</p>
 </section>
-<section id="sas-common-error-make-sure-you-output-the-risk-difference-for-the-correct-level" class="level3">
-<h3 class="anchored" data-anchor-id="sas-common-error-make-sure-you-output-the-risk-difference-for-the-correct-level">SAS Common error: Make sure you output the risk difference for the correct level!</h3>
-<p>Including either column=1 or column=2 tells SAS which is your outcome of interest (ie, often that you want to compare treatment responders and not treatment non-responders!) By default it takes the 1st column sorted alphabetically but you can change this as shown below.</p>
-<p>Note that if the data are such that there are no responses in either treatment group, the cross-tabulation will only have 1 column, and SAS PROC FREQ will fail to produce a confidence interval. In this unusual situation however, a valid confidence interval can (and should) still be produced, which may be obtained using the %SCORECI macro available at <a href="#0">https://github.com/petelaud/ratesci-sas/tree/main</a>.</p>
+<section id="consistency-with-hypothesis-tests" class="level2">
+<h2 class="anchored" data-anchor-id="consistency-with-hypothesis-tests">Consistency with Hypothesis Tests</h2>
+<p>[TBC]</p>
+</section>
+<section id="example-code-using-proc-freq" class="level2">
+<h2 class="anchored" data-anchor-id="example-code-using-proc-freq">Example Code using PROC FREQ</h2>
+<p>Unfortunately, SAS does not have a procedure which outputs the confidence intervals for matched proportions. A macro is available at [] which provides the asymptotic score method by Tango, and a skewness corrected version (paper under review).</p>
+<p>Instead it calculates the risk difference = (r / (r+s) - t / (t+u) )</p>
+<p>Which in the example above is: 20/ (20+15) - 6 / (6+5) = 0.0296</p>
+<p>This is more applicable when you have exposed / non-exposed groups looking at who has experienced the outcome. SAS Proc Freq has 3 methods for analysis of paired data using a Common risk difference.</p>
+<p>The default method is Mantel-Haenszel confidence limits. SAS can also Score (Miettinen-Nurminen) CIs and Stratified Newcombe CIs (constructed from stratified Wilson Score CIs). See <a href="https://support.sas.com/documentation/cdl/en/procstat/67528/HTML/default/viewer.htm#procstat_freq_details63.htm">here</a> for equations.</p>
+<p>As you can see below, this is not a CI for difference in proportions of 0.196, it is a CI for the risk difference of 0.0260. So must be interpreted with much consideration.</p>
 <div class="cell">
-<pre class="sas cell-code"><code>proc freq data = adcibc (where=(trtpn ne 54 and agegr1 ne "\&gt;80")); 
-    tables agegr1 * trtp * sex / cmh riskdiff(common column=2);
+<pre class="sas cell-code"><code>data dat_used;
+    input ID$ PBO ACT @@;
+    datalines;
+  001 0 0   002 0 0   003 0 0   004 0 0   005 0 0
+  006 1 0   007 1 0   008 1 0   009 1 0   010 1 0
+  011 1 0   012 0 1   013 0 1   014 0 1   015 0 1
+  016 0 1   017 0 1   018 0 1   019 0 1   020 0 1
+  021 0 1   022 0 1   023 0 1   024 0 1   025 0 1
+  026 0 1   027 1 1   028 1 1   029 1 1   030 1 1
+  031 1 1   032 1 1   033 1 1   034 1 1   035 1 1
+  036 1 1   037 1 1   038 1 1   039 1 1   040 1 1
+  041 1 1   042 1 1   043 1 1   044 1 1   045 1 1
+  046 1 1
+    ;
 run;
-</code></pre>
-</div>
-</section>
-<section id="common-risk-differences-across-strata" class="level3">
-<h3 class="anchored" data-anchor-id="common-risk-differences-across-strata">Common Risk Differences across Strata</h3>
-<p>Proc freq can calculate estimates of the common risk difference with 95% CIs, calculated using the Mantel-Haenszel and summary score (Miettinen-Nurminen) methods for multiway 2x2 tables. It can also provide stratified Newcombe confidence intervals using the method by Yan and Su (2010). The stratified Newcombe CIs are constructed from stratified Wilson CIs for the common (overall) row proportions. See <a href="https://support.sas.com/documentation/cdl/en/procstat/67528/HTML/default/viewer.htm#procstat_freq_details63.htm">SAS help</a> for more detail.</p>
-<p>Note that SAS (since v9.3M2 / STAT 12.1) PROC FREQ will produce the Miettinen-Nurminen (‘MN’) score interval for unstratified datasets only. The ‘commonriskdiff’ option added in SAS/STAT 14.3 requests risks (binomial proportions) and risk differences for 2x2 tables. But doesn’t extend to stratified analysis.</p>
-<p>Stratified Miettinen-Nurminen CIs have more recently been added to PROC FREQ, but only within the SAS Viya platform (using CL=MN or CL=MNMH in the COMMONRISKDIFF option). The only other known way to have SAS produce these CIs is to use this publicly available macro: <a href="#0">https://github.com/petelaud/ratesci-sas/tree/main</a>. Note that the macro (currently) does not implement Miettinen &amp; Nurminen’s proposed iterative weights, but instead the simpler (and similar) MH weights are used.</p>
-<div class="cell">
-<pre class="sas cell-code"><code>proc freq data = adcibc (where=(trtpn ne 54 and agegr1 ne "&gt;80")); 
-    tables  agegr1 * trtp *  sex / cmh commonriskdiff(CL=SCORE TEST=SCORE); 
-run; 
-</code></pre>
-</div>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/cmh/saspage_output4.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-<div class="cell">
-<pre class="sas cell-code"><code>proc freq data = adcibc (where=(trtpn ne 54 and agegr1 ne "&gt;80")); 
-    tables  agegr1 * trtp *  sex / cmh commonriskdiff(CL= newcombe); 
+
+proc freq data=dat_used; 
+    table ACT*PBO/commonriskdiff(cl=MH); 
 run;</code></pre>
 </div>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/cmh/saspage_output4b.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
-</div>
-</div>
-</div>
 </section>
-</section>
-</section>
-<section id="references" class="level1">
-<h1>References</h1>
-<p>SAS documentation (Specification): https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.3/statug/statug_freq_examples07.htm</p>
-<p>SAS documentation (Theoretical Basis + Formulas): https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.5/procstat/procstat_freq_details92.htm</p>
-<p>Created using : SAS release:9.04.01M7P08062020”</p>
+<section id="reference" class="level2">
+<h2 class="anchored" data-anchor-id="reference">Reference</h2>
+<ol type="1">
+<li><p><a href="https://support.sas.com/documentation/cdl/en/procstat/63104/HTML/default/viewer.htm#procstat_freq_sect010.htm">SAS PROC FREQ here</a> and <a href="https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_freq_sect028.htm">here</a></p></li>
+<li><p><a href="https://towardsdatascience.com/five-confidence-intervals-for-proportions-that-you-should-know-about-7ff5484c024f">Five Confidence Intervals for Proportions That You Should Know about</a></p></li>
+<li><p><a href="https://www.lexjansen.com/sesug/2015/103_Final_PDF.pdf">Confidence intervals for Binomial Proportion Using SAS</a></p></li>
+<li><p>Brown LD, Cai TT, DasGupta A (2001). “Interval estimation for a binomial proportion”, Statistical Science 16(2):101-133</p></li>
+<li><p>Newcombe RG (1998). “Two-sided confidence intervals for the single proportion: comparison of seven methods”, Statistics in Medicine 17(8):857-872</p></li>
+<li><p>Clopper,C.J.,and Pearson,E.S.(1934),“The Use of Confidence or Fiducial Limits Illustrated in the Case of the Binomial”, Biometrika 26, 404–413.</p></li>
+<li><p>D. Altman, D. Machin, T. Bryant, M. Gardner (eds). Statistics with Confidence: Confidence Intervals and Statistical Guidelines, 2nd edition. John Wiley and Sons 2000.</p></li>
+<li><p>Laud PJ (2017) Equal-tailed confidence intervals for comparison of rates. Pharmaceutical Statistics 16: 334-348</p></li>
+<li><p>Laud PJ (2018) Corrigendum: Equal-tailed confidence intervals for comparison of rates. Pharmaceutical Statistics 17: 290-293</p></li>
+<li><p>Blaker, H. (2000). Confidence curves and improved exact confidence intervals for discrete distributions, Canadian Journal of Statistics 28 (4), 783–798</p></li>
+<li><p>Klaschka, J. and Reiczigel, J. (2021). “On matching confidence intervals and tests for some discrete distributions: Methodological and computational aspects,”&nbsp;Computational Statistics, 36, 1775–1790.</p></li>
+<li><p><a href="https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf" class="uri">https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf</a></p></li>
+</ol>
 
 
 </section>
