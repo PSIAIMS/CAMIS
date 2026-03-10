@@ -75,7 +75,6 @@ In the following sections, the parameterisation of logistic regression implement
 ## R packages
 
 ```{r}
-#| eval: true
 #| output: false
 #| message: false
 library(tidyverse)
@@ -91,7 +90,6 @@ library(beeca) # for covariate adjustment
 We use the `lung` dataset provided with {survival} R package. Initial data preparation involves generating a new binary outcome based on the weight change.
 
 ```{r}
-#| eval: true
 # the lung dataset is available in ./data/lung_cancer.csv
 lung2 <- survival::lung |>
   mutate(
@@ -105,7 +103,6 @@ glimpse(lung2)
 We use the `trial01` dataset provided with {beeca} R package. Initial data preparation involves setting the treatment indicator as a categorical variable and removing any incomplete cases.
 
 ```{r}
-#| eval: true
 data("trial01")
 
 trial01$trtp <- factor(trial01$trtp) ## set treatment to a factor
@@ -145,7 +142,6 @@ Note, the default fitting method in `glm` is consistent with the default fitting
 -   Default fitting method for `PROC LOGISTIC` procedure is Fisher's scoring method, which is reported as part of the SAS default output, and it is equivalent to "Iteratively reweighted least squares" method as reported in this [documentation](https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_logistic_sect033.htm).
 
 ```{r}
-#| eval: true
 m1 <- stats::glm(
   wt_grp ~ age + sex + ph.ecog + meal.cal,
   data = lung2,
@@ -159,7 +155,6 @@ summary(m1)$coefficients
 Note, function `confint.default` gives the Wald confidence limits, which is the default option in SAS `PROC LOGISTIC` procedure; whereas `confint` gives the profile-likelihood limits. Conditional odds ratio is calculated by taking the exponential of the model parameters.
 
 ```{r}
-#| eval: true
 cbind(est = coef(m1), confint.default(m1))
 ```
 
@@ -219,7 +214,6 @@ Note that while Firth logistic regression is not required for our example datase
 -   By default, `logistf` function in R computes the confidence interval estimates and hypothesis tests (including p-value) for each parameter based on profile likelihood, which is also reported in the output below. However, Wald method (confidence interval and tests) can be specified by specifying the `control` argument with [`pl = FALSE`](https://cran.r-project.org/web/packages/logistf/logistf.pdf).
 
 ```{r}
-#| eval: true
 firth_mod <- logistf(
   wt_grp ~ age + sex + ph.ecog + meal.cal,
   data = lung2,
@@ -239,7 +233,6 @@ summary(firth_mod)$coefficients
 Note, function `confint` gives the profile-likelihood limits. Given the parameters from Firth's bias-reduced logistic regression is estimated using penalized maximum likelihood, `confint` function is used. Conditional odds ratio is calculated by taking the exponential of the model parameters.
 
 ```{r}
-#| eval: true
 cbind(est = coef(firth_mod), confint(firth_mod))
 ```
 
@@ -286,7 +279,6 @@ We compare two implementions of g-computation in SAS:
 We fit a logistic regression model with covariate adjustment to estimate the marginal treatment effect using the delta method for variance estimation: as outlined in Ge et al (2011).
 
 ```{r}
-#| eval: true
 #| label: glm
 ## fit the model including model based variance estimation with delta method
 fit1 <- stats::glm(aval ~ trtp + bl_cov, family = "binomial", data = trial01) |>
