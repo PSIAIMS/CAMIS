@@ -164,27 +164,70 @@ run;
 
 *** Mee score method;
 proc freq data=adcibc2 order=data;     
-   table trt*resp /riskdiff(CL=(mn(mee)); 
+   table trt*resp /riskdiff(CL=(mn(mee) norisks); 
 run;  
+```
 
+```{r}
+#| echo: false
+#| fig-align: center 
+#| out-width: 75% 
+knitr::include_graphics("../images/ci_for_prop/binomial_2sampleRDCI_noCC.png")
+```
+
+```{r}
+#| echo: false
+#| fig-align: center 
+#| out-width: 50% 
+knitr::include_graphics("../images/ci_for_prop/binomial_2sampleRDCI_Mee.png")
+```
+
+``` sas
 *** exact (Chan-Zhang) and continuity-adjusted methods for conservative coverage; 
 proc freq data=adcibc2 order=data;
    exact riskdiff (method=noscore);     
-   table trt*resp/riskdiff(CL=(exact ha wald(correct) newcombe(correct)));  
+   table trt*resp/riskdiff(CL=(exact ha wald(correct) newcombe(correct)) norisks);  
 run;
+```
 
+```{r}
+#| echo: false
+#| fig-align: center 
+#| out-width: 50% 
+knitr::include_graphics("../images/ci_for_prop/binomial_2sampleRDCI_CC.png")
+```
+
+``` sas
 *** exact (Santner-Snell) method; 
 proc freq data=adcibc2 order=data;
    exact riskdiff (method=noscore);     
-   table trt*resp/riskdiff(CL=exact);  
+   table trt*resp/riskdiff(CL=exact norisks);  
 run;
+```
 
+```{r}
+#| echo: false
+#| fig-align: center 
+#| out-width: 50% 
+knitr::include_graphics("../images/ci_for_prop/binomial_2sampleRDCI_ExactSS.png")
+```
+
+``` sas
 *** 2-sided exact (Agresti-Min) method; 
 proc freq data=adcibc2 order=data;
    exact riskdiff (method=score2);     
-   table trt*resp/riskdiff(CL=exact);  
+   table trt*resp/riskdiff(CL=exact norisks);  
 run;
+```
 
+```{r}
+#| echo: false
+#| fig-align: center 
+#| out-width: 50% 
+knitr::include_graphics("../images/ci_for_prop/binomial_2sampleRDCI_ExactAM.png")
+```
+
+``` sas
 *** MN and SCAS methods from %SCORECI macro;
 *** First manipulate the data to a form for input to the macro;
 proc tabulate data=adcibc2 out=tab2;
@@ -211,10 +254,13 @@ data ds(keep = n1 n0 e1 e0);
  if last._page_ then output;
 run;
 
-*** Miettinen-Nurminen CI;
+*** Miettinen-Nurminen CI - macro from https://github.com/petelaud/ratesci-sas;
 %scoreci(ds, stratify=FALSE, skew=FALSE);
 
-*** SCAS CI;
+*** Mee Asymptotic Score CI - macro from https://github.com/petelaud/ratesci-sas;
+%scoreci(ds, stratify=FALSE, skew=FALSE, bcf=FALSE);
+
+*** SCAS CI - macro from https://github.com/petelaud/ratesci-sas;
 %scoreci(ds, stratify=FALSE);
 
 *** Farrington-Manning NI test (p=0.0248) contradicts MN interval (LCL < -0.036);
@@ -225,7 +271,16 @@ run;
 
 *** Miettinen-Nurminen CI with consistent NI test: PVAL_R > 0.025; 
 %scoreci(ds, stratify=FALSE, skew=FALSE, delta=-0.036);
+```
 
+```{r}
+#| echo: false
+#| fig-align: center 
+#| out-width: 50% 
+knitr::include_graphics("../images/ci_for_prop/binomial_2sampleRDNonInf.png")
+```
+
+``` sas
 
 ****************************;
 *** Relative risk examples;
@@ -235,65 +290,122 @@ run;
 proc freq data=adcibc2 order=data;     
    table trt*resp /relrisk(CL=(wald waldmodified lr score)); 
 run;  
-*** MN without the correction;
+*** Koopman Asymptotic Score method without the 'N-1' correction;
 proc freq data=adcibc2 order=data;     
    table trt*resp /relrisk(CL=(score(correct=no))); 
 run;  
-*** exact method; 
-proc freq data=adcibc2 order=data;
-   exact relrisk;     
-   table trt*resp/relrisk(CL=(exact));  
-run;
-*** santner-snell;
-proc freq data=adcibc2 order=data;
-   exact relrisk (method=noscore);     
-   table trt*resp / relrisk(CL=exact);  
-run;
-
-*** Agresti-Min;
-proc freq data=adcibc2 order=data;
-   exact relrisk (method=score2);     
-   table trt*resp / relrisk(CL=exact);  
-run;
-
-*** Miettinen-Nurminen CI;
-%scoreci(ds, stratify=FALSE, skew=FALSE, contrast=RR);
-*** SCAS CI;
-%scoreci(ds, stratify=FALSE, contrast=RR);
-
-
-****************************;
-*** Odds Ratio examples;
-****************************;
-
-
-* Wald, LR, mid-P and Miettinen and Nurminen methods; 
-proc freq data=adcibc2 order=data;     
-   table trt*resp /or(CL=(wald waldmodified lr score midp)); 
-run;  
-* MN without the correction;
-proc freq data=adcibc2 order=data;     
-   table trt*resp /or(CL=(score(correct=no))); 
-run;  
-*** 'exact' method; 
-proc freq data=adcibc2 order=data;
-   exact or;     
-   table trt*resp/or(CL=(exact));  
-run;
-
-*** Miettinen-Nurminen CI;
-%scoreci(ds, stratify=FALSE, skew=FALSE, orbias=FALSE, contrast=OR);
-*** SCAS CI;
-%scoreci(ds, stratify=FALSE, contrast=OR);
 ```
-
-\[Selected output screenshots to be added to the below\]
 
 ```{r}
 #| echo: false
 #| fig-align: center 
 #| out-width: 50% 
-knitr::include_graphics("../images/ci_for_prop/binomial_2sampleCI_noCC.png")
+knitr::include_graphics("../images/ci_for_prop/binomial_2sampleRRCI.png")
+knitr::include_graphics("../images/ci_for_prop/binomial_2sampleRRCI_Koopman.png")
+```
+
+``` sas
+
+*** Exact method (Chan-Zhang); 
+proc freq data=adcibc2 order=data;
+   exact relrisk;     
+   table trt*resp/relrisk(CL=(exact));  
+run;
+```
+
+```{r}
+#| echo: false
+#| fig-align: center 
+#| out-width: 50% 
+knitr::include_graphics("../images/ci_for_prop/binomial_2sampleRRCI_ExactCZ.png")
+```
+
+``` sas
+*** Exact (Santner-Snell);
+proc freq data=adcibc2 order=data;
+   exact relrisk (method=noscore);     
+   table trt*resp / relrisk(CL=exact);  
+run;
+```
+
+```{r}
+#| echo: false
+#| fig-align: center 
+#| out-width: 50% 
+knitr::include_graphics("../images/ci_for_prop/binomial_2sampleRRCI_ExactSS.png")
+```
+
+``` sas
+
+*** 2-sided exact (Agresti-Min) method; 
+proc freq data=adcibc2 order=data;
+   exact relrisk (method=score2);     
+   table trt*resp / relrisk(CL=exact);  
+run;
+```
+
+```{r}
+#| echo: false
+#| fig-align: center 
+#| out-width: 50% 
+knitr::include_graphics("../images/ci_for_prop/binomial_2sampleRRCI_ExactAM.png")
+```
+
+``` sas
+
+*** Miettinen-Nurminen Asymptotic Score CI - macro from https://github.com/petelaud/ratesci-sas;
+%scoreci(ds, stratify=FALSE, skew=FALSE, contrast=RR);
+*** Koopman Asymptotic Score CI - macro from https://github.com/petelaud/ratesci-sas;
+%scoreci(ds, stratify=FALSE, skew=FALSE, bcf=FALSE, contrast=RR);
+*** SCAS CI - macro from https://github.com/petelaud/ratesci-sas;
+%scoreci(ds, stratify=FALSE, contrast=RR);
+```
+
+``` sas
+****************************;
+*** Odds Ratio examples;
+****************************;
+
+* Wald, LR, mid-P and Miettinen and Nurminen methods; 
+proc freq data=adcibc2 order=data;     
+   table trt*resp /or(CL=(wald waldmodified lr score midp)); 
+run;  
+* Asymptotic Score method without 'N-1' correction;
+proc freq data=adcibc2 order=data;     
+   table trt*resp /or(CL=(score(correct=no))); 
+run;  
+```
+
+```{r}
+#| echo: false
+#| fig-align: center 
+#| out-width: 50% 
+knitr::include_graphics("../images/ci_for_prop/binomial_2sampleORCI.png")
+knitr::include_graphics("../images/ci_for_prop/binomial_2sampleORCI_ScoreN.png")
+```
+
+``` sas
+
+*** 'exact' method; 
+proc freq data=adcibc2 order=data;
+   exact or;     
+   table trt*resp/or(CL=(exact));  
+run;
+```
+
+```{r}
+#| echo: false
+#| fig-align: center 
+#| out-width: 50% 
+knitr::include_graphics("../images/ci_for_prop/binomial_2sampleORCI_Exact.png")
+```
+
+``` sas
+
+*** Miettinen-Nurminen CI;
+%scoreci(ds, stratify=FALSE, skew=FALSE, orbias=FALSE, contrast=OR);
+*** SCAS CI - macro from https://github.com/petelaud/ratesci-sas;
+%scoreci(ds, stratify=FALSE, contrast=OR);
 ```
 
 # References
