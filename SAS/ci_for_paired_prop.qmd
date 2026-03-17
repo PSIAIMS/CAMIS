@@ -4,7 +4,7 @@ bibliography: references.bib
 csl: nature.csl 
 ---
 
-## Introduction
+# Introduction
 
 This page covers confidence intervals for comparisons of two paired proportions in SAS. Note that PROC FREQ will give a McNemar test for such an analysis (via the `AGREE` option), but with no corresponding confidence interval. Some methods are described below to facilitate computing them programmatically. A SAS macro (`%PAIRBINCI`) can be downloaded from <https://github.com/petelaud/ratesci-sas> to obtain the Asymptotic Score methods, which have superior coverage properties.
 
@@ -24,29 +24,29 @@ In all these cases, the calculated proportions for the 2 groups are not independ
 
 Using a cross-over study as our example, a 2 x 2 table can be formed as follows:
 
-+-----------------------+---------------+---------------+-------------+
-|                       | Placebo\      | Placebo\      | Total       |
-|                       | Response= Yes | Response = No |             |
-+=======================+===============+===============+=============+
-| Active Response = Yes | r             | s             | r+s         |
-+-----------------------+---------------+---------------+-------------+
-| Active Response = No  | t             | u             | t+u         |
-+-----------------------+---------------+---------------+-------------+
-| Total                 | r+t           | s+u           | N = r+s+t+u |
-+-----------------------+---------------+---------------+-------------+
++-----------------------+---------------+---------------+--------------+
+|                       | Placebo\      | Placebo\      | Total        |
+|                       | Response= Yes | Response = No |              |
++=======================+===============+===============+==============+
+| Active Response = Yes | r             | s             | r+s          |
++-----------------------+---------------+---------------+--------------+
+| Active Response = No  | t             | u             | t+u          |
++-----------------------+---------------+---------------+--------------+
+| Total                 | r+t           | s+u           | N = r+s+t+u  |
++-----------------------+---------------+---------------+--------------+
 
 The table below indicates the proportions that are estimated from the data (note the difference in structure compared to the usual 2x2 table for independent proportions).
 
-+-----------------------+---------------+---------------+-----------+
-|                       | Placebo\      | Placebo\      | Total     |
-|                       | Response= Yes | Response = No |           |
-+=======================+===============+===============+===========+
-| Active Response = Yes | $p_{11}$      | $p_{12}$      | $p_1$     |
-+-----------------------+---------------+---------------+-----------+
-| Active Response = No  | $p_{21}$      | $p_{22}$      | $(1-p_1)$ |
-+-----------------------+---------------+---------------+-----------+
-| Total                 | $p_2$         | $(1-p_2)$     |           |
-+-----------------------+---------------+---------------+-----------+
++-----------------------+---------------+---------------+--------------+
+|                       | Placebo\      | Placebo\      | Total        |
+|                       | Response= Yes | Response = No |              |
++=======================+===============+===============+==============+
+| Active Response = Yes | $p_{11}$      | $p_{12}$      | $p_1$        |
++-----------------------+---------------+---------------+--------------+
+| Active Response = No  | $p_{21}$      | $p_{22}$      | $(1-p_1)$    |
++-----------------------+---------------+---------------+--------------+
+| Total                 | $p_2$         | $(1-p_2)$     |              |
++-----------------------+---------------+---------------+--------------+
 
 The proportions of subjects responding on each treatment are:
 
@@ -58,24 +58,24 @@ The estimated relative risk is $(r+s)/(r+t)$.
 
 The estimated conditional odds ratio is $s/t$.
 
-## Data used
+# Data used
 
 Worked examples below use the following artificial dataset:
 
-+-----------------------+---------------+---------------+----------+
-|                       | Placebo\      | Placebo\      | Total    |
-|                       | Response= Yes | Response = No |          |
-+=======================+===============+===============+==========+
-| Active Response = Yes | r = 20        | s = 15        | r+s = 35 |
-+-----------------------+---------------+---------------+----------+
-| Active Response = No  | t = 6         | u = 5         | t+u = 11 |
-+-----------------------+---------------+---------------+----------+
-| Total                 | r+t = 26      | s+u = 20      | N = 46   |
-+-----------------------+---------------+---------------+----------+
++-----------------------+---------------+---------------+--------------+
+|                       | Placebo\      | Placebo\      | Total        |
+|                       | Response= Yes | Response = No |              |
++=======================+===============+===============+==============+
+| Active Response = Yes | r = 20        | s = 15        | r+s = 35     |
++-----------------------+---------------+---------------+--------------+
+| Active Response = No  | t = 6         | u = 5         | t+u = 11     |
++-----------------------+---------------+---------------+--------------+
+| Total                 | r+t = 26      | s+u = 20      | N = 46       |
++-----------------------+---------------+---------------+--------------+
 
-## Methods for Calculating Confidence Intervals for Proportion Difference from matched pairs
+# Methods for Calculating Confidence Intervals for Proportion Difference from matched pairs
 
-### Normal Approximation Method (Also known as the Wald Method)
+## Normal Approximation Method (Also known as the Wald Method)
 
 In large random samples from paired data, the sampling distribution of the difference between two proportions is assumed to follow the normal distribution. The estimated SE for the difference and 95% confidence interval can be calculated using the following equations.
 
@@ -95,7 +95,7 @@ Upper CI = 0.196 + 1.96 \* 0.0954 = 0.382541
 
 Like other Wald methods, this approach has been found to perform poorly, failing to achieve the nominal confidence level[@newcombe1998][@fagerland2014]. An adjustment was suggested by Bonett & Price, similar to Agresti-Caffo for independent proportions, using $N'=N+2$ instead of $N$, and $\tilde p_{12} = (s+1)/N'$ and $\tilde p_{21} = (r+1)/N'$, instead of $\hat p_{12}$ and $\hat p_{21}$.
 
-### Newcombe Method (Also known as the Hybrid Score method, Square-and-Add, or the Method of Variance Estimates Recovery (MOVER) )
+## Newcombe Method (Also known as the Hybrid Score method, Square-and-Add, or the Method of Variance Estimates Recovery (MOVER) )
 
 Note that Newcombe described this as a 'Score' method in his 1998 paper, but his later work labelled it as 'Square-and-add' - it is not really a score method, but a hybrid method obtained by combining Wilson Score intervals calculated separately for the two proportions.
 
@@ -155,7 +155,7 @@ CI= 0.002602 to 0.369943
 
 Other variants of the MOVER method are possible, and achieve improved coverage properties, by replacing the Wilson method with a more centrally-located interval for the single proportions. For example, using the Jeffreys method gives a CI of (0.003161, 0.373479).
 
-### Asymptotic Score Methods
+## Asymptotic Score Methods
 
 A genuine score method for paired $\theta_{RD}$, analogous to the Miettinen-Nurminen method for the unpaired difference, was developed in 1998[@tango1998], using the contrast function $S(\theta) = \hat p_1 - \hat p_2 - \theta$, together with its variance (accounting for the correlation) estimated at the constrained maximum likelihood estimates of the cell probabilities for each given value of $\theta$. Generally this is not a method that would be hand-calculated - originally the approach involved an iterative process of evaluating the score function over the range of $\theta$, but closed-form expressions are now available.
 
@@ -165,9 +165,9 @@ The Tango and SCAS methods are available for SAS via the `%PAIRBINCI` macro.
 
 For the example dataset, the Tango CI is (0.000419, 0.377185), the SCASu version is (0.000423, 0.380312), and the SCAS CI is (-0.001869, 0.382194).
 
-## Methods for Calculating Confidence Intervals for Relative Risk from matched pairs
+# Methods for Calculating Confidence Intervals for Relative Risk from matched pairs
 
-### Normal Approximation Method (Also known as the Wald Method)
+## Normal Approximation Method (Also known as the Wald Method)
 
 The normal approximation for $\theta_{RR}$ involves the logged estimate $ln(\hat \theta_{RR})$ and its SE which is estimated as: $\sqrt{\frac{(s + t)}{(r+s)(r+t)}}$, with the resulting confidence limits being back-transformed to the ratio scale.
 
@@ -179,7 +179,7 @@ Lower CI= exp(0.297 - 1.96 \* 0.152) = 0.99908
 
 Upper CI = exp(0.297 + 1.96 \* 0.152) = 1.81289
 
-### MOVER Method (Also known as the Hybrid Score method or Square-and-Add)
+## MOVER-R Method (Also known as the Hybrid Score method or Square-and-Add)
 
 Extending the methodology for the Newcombe method for RD, this hybrid method combines CIs for the two single proportions (using either the Wilson or Jeffreys method), together with an estimate of their correlation coefficient.
 
@@ -187,25 +187,25 @@ Extending the methodology for the Newcombe method for RD, this hybrid method com
 
 MOVER-Wilson CI: (1.003963, 1.84443). MOVER-Jeffreys CI: (1.004783, 1.851871)
 
-### Asymptotic Score Methods
+## Asymptotic Score Methods
 
 Two score methods have also been developed for paired relative risk, which have been shown to be algebraically equivalent[@nam2002][@tang2003]. A proposed skewness-corrected version (SCASu) and another with an added 'N-1' variance bias correction (SCAS) is currently under review for publication.
 
 These methods are available for SAS via the `%PAIRBINCI` macro. The Tang interval is (1.000639, 1.85982), the SCASu version is (1.00064, 1.867063) and the SCAS CI is (0.997176, 1.874279).
 
-## Methods for Calculating Confidence Intervals for Odds Ratio from matched pairs
+# Methods for Calculating Confidence Intervals for Odds Ratio from matched pairs
 
 Most methods for the paired conditional odds ratio are based on calculating an interval $(L^*, U^*)$ for the single proportion $s/(s+t)$, using any of the methods described [here](ci_for_prop.html), and then transforming it as $(\frac{L^*}{1-L^*}, \frac{U^*}{1-U^*})$. Generally, the CIs for $\theta_{OR}$ inherit the properties of the interval method selected for the single proportion.
 
-## Continuity Adjusted Methods
+# Continuity Adjusted Methods
 
 Continuity adjustments can be incorporated into the formulae for most (if not all) of the above methods. These have been implemented for Tango/Tang, SCAS and MOVER methods in the ratesci package for R, but not yet added to the `%PAIRBINCI` macro.
 
-## Consistency with Hypothesis Tests
+# Consistency with Hypothesis Tests
 
 The Asymptotic Score methods without 'N-1' correction (Tango and SCASu methods for RD, and Tang/Nam-Blackwelder and SCASu methods for RR) are guaranteed to be consistent with the result of the McNemar test. The SCAS method comes with a corresponding test (as yet unpublished), which is a modified version of the McNemar test.
 
-## Example Code using PROC FREQ
+# Example Code using PROC FREQ
 
 As mentioned in the introduction, PROC FREQ does not currently have a procedure which outputs the above confidence intervals for matched proportions\*. A macro (`%PAIRBINCI`) is available [here](https://github.com/petelaud/ratesci-sas){.uri} which provides the asymptotic score method by Tango, and a skewness corrected version (paper under review).
 
@@ -253,4 +253,4 @@ run;
  knitr::include_graphics("../images/ci_for_prop/riskdiff_stratified.png")
 ```
 
-## References
+# References
