@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>R vs SAS: Linear Mixed Models</title>
+<title>Random Effects Models in SAS</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -70,35 +70,6 @@ ul.task-list li input[type="checkbox"] {
   }
 }</script>
 
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
-
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -199,28 +170,11 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a>
+  <li><a href="#fitting-random-effects-models-in-sas" id="toc-fitting-random-effects-models-in-sas" class="nav-link active" data-scroll-target="#fitting-random-effects-models-in-sas">Fitting Random Effects Models in SAS</a>
   <ul class="collapse">
-  <li><a href="#model-implementations" id="toc-model-implementations" class="nav-link" data-scroll-target="#model-implementations">Model Implementations</a>
-  <ul class="collapse">
-  <li><a href="#mean-model-representation" id="toc-mean-model-representation" class="nav-link" data-scroll-target="#mean-model-representation">Mean Model Representation</a></li>
-  <li><a href="#covariance-model-representation" id="toc-covariance-model-representation" class="nav-link" data-scroll-target="#covariance-model-representation">Covariance Model Representation</a></li>
-  </ul></li>
-  <li><a href="#numerical-optimisation-and-computation" id="toc-numerical-optimisation-and-computation" class="nav-link" data-scroll-target="#numerical-optimisation-and-computation">Numerical Optimisation and Computation</a>
-  <ul class="collapse">
-  <li><a href="#optimisation-strategy-in-sas" id="toc-optimisation-strategy-in-sas" class="nav-link" data-scroll-target="#optimisation-strategy-in-sas">Optimisation Strategy in SAS</a></li>
-  <li><a href="#optimisation-strategy-in-r-lme4" id="toc-optimisation-strategy-in-r-lme4" class="nav-link" data-scroll-target="#optimisation-strategy-in-r-lme4">Optimisation Strategy in R (lme4)</a></li>
-  <li><a href="#consequences-for-numerical-output" id="toc-consequences-for-numerical-output" class="nav-link" data-scroll-target="#consequences-for-numerical-output">Consequences for Numerical Output</a></li>
-  </ul></li>
-  <li><a href="#convergence-behaviour" id="toc-convergence-behaviour" class="nav-link" data-scroll-target="#convergence-behaviour">Convergence Behaviour</a>
-  <ul class="collapse">
-  <li><a href="#boundary-and-near-boundary-parameters" id="toc-boundary-and-near-boundary-parameters" class="nav-link" data-scroll-target="#boundary-and-near-boundary-parameters">Boundary and Near-Boundary Parameters</a></li>
-  <li><a href="#diagnostic-philosophy" id="toc-diagnostic-philosophy" class="nav-link" data-scroll-target="#diagnostic-philosophy">Diagnostic Philosophy</a></li>
-  <li><a href="#interpretation-of-convergence-differences" id="toc-interpretation-of-convergence-differences" class="nav-link" data-scroll-target="#interpretation-of-convergence-differences">Interpretation of Convergence Differences</a></li>
-  </ul></li>
-  <li><a href="#comparison-of-outputs" id="toc-comparison-of-outputs" class="nav-link" data-scroll-target="#comparison-of-outputs">Comparison of Outputs</a></li>
-  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
-  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  <li><a href="#setting-up-the-model" id="toc-setting-up-the-model" class="nav-link" data-scroll-target="#setting-up-the-model">Setting up the model</a></li>
+  <li><a href="#inference-on-a-single-coefficient" id="toc-inference-on-a-single-coefficient" class="nav-link" data-scroll-target="#inference-on-a-single-coefficient">Inference on a single coefficient</a></li>
+  <li><a href="#inference-on-a-contrast" id="toc-inference-on-a-contrast" class="nav-link" data-scroll-target="#inference-on-a-contrast">Inference on a contrast</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -230,7 +184,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">R vs SAS: Linear Mixed Models</h1>
+<h1 class="title">Random Effects Models in SAS</h1>
 </div>
 
 
@@ -247,160 +201,35 @@ window.Quarto = {
 </header>
 
 
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Linear mixed models are applied in clinical trials to analyse longitudinal outcomes where repeated observations within subjects induce correlation. In this setting, the statistical objective is to estimate treatment effects while accounting for within-subject dependence through a likelihood-based specification of the model’s mean structure and covariance components.</p>
-<p>Both SAS and R provide valid likelihood-based implementations of linear mixed models. When the same fixed-effect structure, covariance model, and estimation method are specified, the two systems target the same statistical model. Nevertheless, exact numerical equality of all reported quantities should not be expected. This is because SAS and R do not solve the likelihood optimisation problem in the same parameter space, nor do they apply identical profiling strategies, optimisation algorithms, or convergence criteria.</p>
-<p>This document therefore focuses explicitly on the numerical computation underlying linear mixed model estimation. It explains why fixed-effect estimates typically agree closely once model specification is aligned, while differences may arise in covariance parameter estimates and convergence diagnostics as a direct consequence of differences in numerical representation and optimisation behaviour.</p>
-<section id="model-implementations" class="level2">
-<h2 class="anchored" data-anchor-id="model-implementations">Model Implementations</h2>
-<section id="mean-model-representation" class="level3">
-<h3 class="anchored" data-anchor-id="mean-model-representation">Mean Model Representation</h3>
-<p>In both SAS and R, the fixed-effect component of the linear mixed-effects model is defined through a linear predictor of the form</p>
-<p><span class="math display">\[
-\eta = X \beta,
-\]</span></p>
-<p>where ( X ) denotes the fixed-effect design matrix and <span class="math inline">\(( \beta )\)</span> is the corresponding vector of regression coefficients.<br>
-The structure of ( X ) is determined by the chosen factor coding scheme, reference levels, and any specified interaction terms. Provided that factor parameterisation and contrasts are aligned, both systems construct equivalent fixed-effect design matrices and therefore target the same estimand.</p>
-<p>Any disagreement in fixed-effect estimates almost always indicates misalignment in factor coding rather than numerical instability.</p>
+<section id="fitting-random-effects-models-in-sas" class="level2">
+<h2 class="anchored" data-anchor-id="fitting-random-effects-models-in-sas">Fitting Random Effects Models in SAS</h2>
+<p>In a classical regression model, coefficients in the model are fixed across all observations and observations are assumed to be independent. Mixed effects models introduce random coefficients to the model, called random effects, which vary randomly between different groups of observations. The introduction of random effects leads to observations within a group being correlated.</p>
+<section id="setting-up-the-model" class="level3">
+<h3 class="anchored" data-anchor-id="setting-up-the-model">Setting up the model</h3>
+<p>PROC MIXED can be used to used to implement random effects models. Random effects are added to the model through the random statement.</p>
+<p>As an example, suppose that we want the intercept in the model to vary randomly between participants, in other words, a random constant is included in the model which is different for each participant.</p>
+<p>This is achieved by random intercept / subject=USUBJID.</p>
+<div class="cell">
+<pre class="sas cell-code"><code>proc mixed data=data; 
+class USUBJID TRTP; 
+model AVAL = TRTP / ddfm = kenwardroger solution;
+random intercept / subject = USUBJID;
+run;</code></pre>
+</div>
+<p>The estimated variance of the random effect(s) can be found in the model results.</p>
+<p>If you want the coefficient of TRTP to vary randomly by participant, include it in the random statement.</p>
+<div class="cell">
+<pre class="sas cell-code"><code>random intercept TRTP / subject = USUBJID type=vc;</code></pre>
+</div>
+<p>The type option allows for the covariance structure between the random effects to be specified. The default is vc (variance components) which means that random effects are not correlated.</p>
 </section>
-<section id="covariance-model-representation" class="level3">
-<h3 class="anchored" data-anchor-id="covariance-model-representation">Covariance Model Representation</h3>
-<p>The primary distinction between SAS and R implementations lies in how the covariance structure is represented internally.</p>
-<ul>
-<li><p>SAS PROC MIXED parameterises covariance structures directly in terms of variance and correlation parameters associated with the residuals and/or random effects.</p></li>
-<li><p>R lme4::lmer parameterises the random-effects covariance matrix via its Cholesky factor, ensuring positive definiteness by construction.</p></li>
-</ul>
-<p>Although these representations are mathematically equivalent at the model level, they are not numerically equivalent. The parameters optimised by the algorithm differ, and the mapping from internal parameters to reported standard deviations and correlations is nonlinear.</p>
-<p>As a result, covariance parameter estimates may differ at the level of numerical tolerance even when the fitted likelihood values are effectively identical.</p>
+<section id="inference-on-a-single-coefficient" class="level3">
+<h3 class="anchored" data-anchor-id="inference-on-a-single-coefficient">Inference on a single coefficient</h3>
+<p>Degrees of freedom, p-values and confidence intervals for model coefficients are provided when the solution option is used in the model statement. The degrees of freedom method is specified using the ddfm option in the model statement.</p>
 </section>
-</section>
-<section id="numerical-optimisation-and-computation" class="level2">
-<h2 class="anchored" data-anchor-id="numerical-optimisation-and-computation">Numerical Optimisation and Computation</h2>
-<section id="optimisation-strategy-in-sas" class="level3">
-<h3 class="anchored" data-anchor-id="optimisation-strategy-in-sas">Optimisation Strategy in SAS</h3>
-<p>PROC MIXED formulates the Gaussian log-likelihood explicitly and proceeds by profiling out the fixed effects, and in some configurations the residual variance, thereby reducing the optimisation problem to the covariance parameters. Estimation of these covariance parameters is carried out using an iterative hybrid strategy combining Expectation–Maximisation (EM) steps with Newton–Raphson updates.</p>
-<p>The EM steps provide stable updates of variance and covariance parameters by exploiting closed-form expectations under the current parameter values, ensuring monotonic increases in the likelihood and robustness when parameters are near the boundary of the parameter space. Once the algorithm is sufficiently close to the optimum, Newton–Raphson iterations are used to accelerate convergence, updating covariance parameters using first and second derivatives of the profiled likelihood.</p>
-<p>This optimisation is performed directly in the variance–correlation parameter space, rather than in a transformed factor space. As a result, the numerical behaviour of PROC MIXED is closely tied to the curvature of the likelihood with respect to variance components, and convergence properties depend on the strength of information supporting each covariance parameter.</p>
-</section>
-<section id="optimisation-strategy-in-r-lme4" class="level3">
-<h3 class="anchored" data-anchor-id="optimisation-strategy-in-r-lme4">Optimisation Strategy in R (lme4)</h3>
-<p>In lme4, the likelihood is re-expressed using a penalised least squares formulation derived from the Cholesky factorisation of the random-effects covariance matrix. For fixed covariance parameters, the conditional modes of the random effects are obtained by solving a penalised least squares system.</p>
-<p>The likelihood is then evaluated using quantities derived from this representation, including residual sums of squares and log-determinants of the Cholesky factors. An outer optimiser updates the Cholesky parameters rather than the variance components themselves.</p>
-<p>Because optimisation occurs in this transformed parameter space, the geometry of the objective function differs from that used by PROC MIXED, even though both correspond to the same likelihood.</p>
-</section>
-<section id="consequences-for-numerical-output" class="level3">
-<h3 class="anchored" data-anchor-id="consequences-for-numerical-output">Consequences for Numerical Output</h3>
-<p>These differences imply that:</p>
-<ul>
-<li><p>The optimisation paths taken by SAS and R are not the same.</p></li>
-<li><p>The stopping points may differ slightly on flat regions of the likelihood surface.</p></li>
-<li><p>Small differences in reported covariance parameters are expected, particularly near parameter boundaries.</p></li>
-</ul>
-<p>Importantly, these effects arise from numerical computation, not from differences in the underlying statistical model.</p>
-</section>
-</section>
-<section id="convergence-behaviour" class="level2">
-<h2 class="anchored" data-anchor-id="convergence-behaviour">Convergence Behaviour</h2>
-<section id="boundary-and-near-boundary-parameters" class="level3">
-<h3 class="anchored" data-anchor-id="boundary-and-near-boundary-parameters">Boundary and Near-Boundary Parameters</h3>
-<p>In linear mixed models, variance components can be weakly identified when the contribution of a random slope to the marginal covariance structure is negligible relative to a random intercept, when the design provides limited information for estimating specific covariance components, or when imbalance and missing observations reduce effective replication at later time points.</p>
-<p>Under these conditions, the log-likelihood exhibits low curvature with respect to one or more covariance parameters. Consequently, a range of parameter values yields nearly indistinguishable likelihood values, making numerical optimisation sensitive to parameterisation, optimisation strategy, and convergence tolerances.</p>
-</section>
-<section id="diagnostic-philosophy" class="level3">
-<h3 class="anchored" data-anchor-id="diagnostic-philosophy">Diagnostic Philosophy</h3>
-<p>lme4 applies explicit checks on the rank and conditioning of the estimated covariance structure under the Cholesky parameterisation. When one or more components are estimated effectively at zero, lme4 reports a singular fit warning.</p>
-<p>PROC MIXED may converge to a likelihood-equivalent solution while reporting a small non-zero variance estimate and no explicit warning. This reflects a difference in diagnostic thresholds and reporting conventions, not a substantive difference in model fit.</p>
-</section>
-<section id="interpretation-of-convergence-differences" class="level3">
-<h3 class="anchored" data-anchor-id="interpretation-of-convergence-differences">Interpretation of Convergence Differences</h3>
-<p>A convergence warning in R does not imply model failure, nor does the absence of a warning in SAS imply strong identification of all covariance parameters. In both cases, the relevant question is whether inferential quantities, treatment effects, standard errors, and test statistics, are stable under reasonable sensitivity analyses.</p>
-</section>
-</section>
-<section id="comparison-of-outputs" class="level2">
-<h2 class="anchored" data-anchor-id="comparison-of-outputs">Comparison of Outputs</h2>
-<p><strong>Table 1.</strong> Summary Table: SAS vs R (Linear Mixed Models)</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Statistic</th>
-<th>R Result</th>
-<th>SAS Result</th>
-<th>Match</th>
-<th>Interpretation</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Fixed-effect estimates</td>
-<td>Typically very close (when contrasts/reference levels match)</td>
-<td>Typically very close (when contrasts/reference levels match)</td>
-<td>Yes (in practice, once aligned)</td>
-<td>Same mean model <span class="math inline">\((X\beta)\)</span> once factor coding/contrasts are aligned; differences usually indicate coding mismatch rather than numerical instability.</td>
-</tr>
-<tr class="even">
-<td>Fixed-effect standard errors / Wald tests</td>
-<td>Typically very close</td>
-<td>Typically very close</td>
-<td>Yes (usually)</td>
-<td>With the same likelihood target and mean model, inference on fixed effects is generally stable across implementations; residual differences can occur due to optimisation tolerances and covariance estimation details.</td>
-</tr>
-<tr class="odd">
-<td>Log-likelihood / REML criterion</td>
-<td>Very close (often effectively identical to tolerance)</td>
-<td>Very close (often effectively identical to tolerance)</td>
-<td>Yes (to numerical tolerance)</td>
-<td>Both target the same (RE)ML objective under aligned specification, but evaluate/optimise it via different internal representations.</td>
-</tr>
-<tr class="even">
-<td>Covariance parameter estimates (variance components, correlations)</td>
-<td>Close but not identical; may land nearer boundary (e.g., ~0)</td>
-<td>Close but not identical; may report small non-zero values</td>
-<td>No (exact equality not expected)</td>
-<td>Different internal parameter spaces (Cholesky in lme4 vs variance/correlation in PROC MIXED) and different optimisation paths can yield small differences, especially on flat likelihood regions or near boundaries.</td>
-</tr>
-<tr class="odd">
-<td>Random-effect standard deviations</td>
-<td>Close but not identical</td>
-<td>Close but not identical</td>
-<td>No</td>
-<td>Reported SDs are nonlinear functions of internally optimised parameters; small numerical differences are expected even when the likelihood is essentially the same.</td>
-</tr>
-<tr class="even">
-<td>Convergence / diagnostics</td>
-<td>May warn about singular fit or near-boundary components</td>
-<td>May converge without an explicit singularity warning</td>
-<td>No (diagnostics differ)</td>
-<td>lme4 applies explicit singularity/rank checks under the Cholesky parameterisation; PROC MIXED may report convergence with small non-zero estimates depending on its diagnostic thresholds and reporting conventions.</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="conclusion" class="level2">
-<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
-<p>SAS and R implement linear mixed models under the same statistical framework but solve the likelihood optimisation problem using different numerical representations. Fixed-effect estimates typically agree closely once model specification is aligned. Differences arise primarily in covariance parameters and convergence diagnostics due to differences in parameterisation, optimisation geometry, and diagnostic thresholds.</p>
-<p>These differences are intrinsic to numerical computation and should be interpreted accordingly in clinical trial analyses.</p>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<p><strong>R Documentation and Methodology:</strong></p>
-<ul>
-<li><p>Bates, D., Mächler, M., Bolker, B., &amp; Walker, S. (2015). Fitting Linear Mixed-Effects Models Using lme4. Journal of Statistical Software, 67(1), 1–48. https://doi.org/10.18637/jss.v067.i01</p></li>
-<li><p>Bates, D. (2014). lmer for SAS PROC MIXED Users. Vignette for the R package SASmixed (version 1.0-4). The Comprehensive R Archive Network (CRAN). Available at: https://cran.r-project.org/web/packages/SASmixed/vignettes/Usinglmer.pdf</p></li>
-</ul>
-<p><strong>SAS Documentation and Methodology:</strong></p>
-<ul>
-<li><p>Edupganti, S. &amp; Nisal, S. (2011). Proc Mixed – Right Options to Get Right Output. NESUG 2011 Proceedings: Statistics &amp; Analysis. Available at: https://www.lexjansen.com/nesug/nesug11/sa/sa03.pdf</p></li>
-<li><p>SAS Institute Inc.&nbsp;(2021). SAS/STAT® User’s Guide, The MIXED Procedure (Version 2021.1.5). Cary, NC: SAS Institute Inc.&nbsp;https://documentation.sas.com/api/collections/pgmsascdc/v_017/docsets/statug/content/mixed.pdf?locale=ja#nameddest=statug_mixed_details58</p></li>
-<li><p>SAS Institute Inc.&nbsp;(n.d.). SAS PROC MIXED: Numerical Optimisation and Computational Details. Technical documentation. Available at: http://gauss.stat.su.se/gu/mm/SAS_PROC_MIXED.pdf</p></li>
-</ul>
+<section id="inference-on-a-contrast" class="level3">
+<h3 class="anchored" data-anchor-id="inference-on-a-contrast">Inference on a contrast</h3>
+<p>The estimate statement can be used to construct contrasts. An alternative is to use the lsmestimate statement, which allows for contrasts to be constructed in terms of least square means. Least square means can be calculated using the lsmeans statement. For all of these methods, the output gives degrees of freedom, p-values and confidence intervals.</p>
 
 
 </section>

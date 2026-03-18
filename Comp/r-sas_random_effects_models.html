@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Sample Size for Equivalence Trials in SAS</title>
+<title>R vs SAS Random Effect Models</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -200,26 +200,29 @@ window.Quarto = {
    
   <ul>
   <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
-  <li><a href="#one-sample-equivalence-test-of-a-mean" id="toc-one-sample-equivalence-test-of-a-mean" class="nav-link" data-scroll-target="#one-sample-equivalence-test-of-a-mean"><strong>One Sample Equivalence Test of a Mean</strong></a></li>
-  <li><a href="#two-sample-equivalence-test-of-means" id="toc-two-sample-equivalence-test-of-means" class="nav-link" data-scroll-target="#two-sample-equivalence-test-of-means"><strong>Two Sample Equivalence Test of Means</strong></a>
+  <li><a href="#model-implementations" id="toc-model-implementations" class="nav-link" data-scroll-target="#model-implementations">Model Implementations</a>
   <ul class="collapse">
-  <li><a href="#comparing-two-independent-sample-means-for-parallel-design-unpaired-samples-where-true-difference-between-treatments-is-believed-to-be-zero-and-within-a-tolerance" id="toc-comparing-two-independent-sample-means-for-parallel-design-unpaired-samples-where-true-difference-between-treatments-is-believed-to-be-zero-and-within-a-tolerance" class="nav-link" data-scroll-target="#comparing-two-independent-sample-means-for-parallel-design-unpaired-samples-where-true-difference-between-treatments-is-believed-to-be-zero-and-within-a-tolerance"><strong>Comparing two independent sample means for parallel design (unpaired samples) where true difference between treatments is believed to be zero and within a tolerance</strong></a>
+  <li><a href="#mean-model-representation" id="toc-mean-model-representation" class="nav-link" data-scroll-target="#mean-model-representation">Mean Model Representation</a>
   <ul class="collapse">
-  <li><a href="#example-where-theta-0" id="toc-example-where-theta-0" class="nav-link" data-scroll-target="#example-where-theta-0">Example where <span class="math inline">\(\theta = 0\)</span></a></li>
+  <li><a href="#covariance-model-representation" id="toc-covariance-model-representation" class="nav-link" data-scroll-target="#covariance-model-representation">Covariance Model Representation</a></li>
   </ul></li>
-  <li><a href="#comparing-two-independent-sample-means-for-parallel-design-unpaired-samples-where-true-difference-between-treatments-is-believed-not-to-be-zero-and-within-a-tolerance" id="toc-comparing-two-independent-sample-means-for-parallel-design-unpaired-samples-where-true-difference-between-treatments-is-believed-not-to-be-zero-and-within-a-tolerance" class="nav-link" data-scroll-target="#comparing-two-independent-sample-means-for-parallel-design-unpaired-samples-where-true-difference-between-treatments-is-believed-not-to-be-zero-and-within-a-tolerance"><strong>Comparing two independent sample means for parallel design (unpaired samples) where true difference between treatments is believed NOT to be zero and within a tolerance</strong></a>
+  <li><a href="#numerical-optimisation-and-computation" id="toc-numerical-optimisation-and-computation" class="nav-link" data-scroll-target="#numerical-optimisation-and-computation">Numerical Optimisation and Computation</a>
   <ul class="collapse">
-  <li><a href="#example-where-theta-neq-0" id="toc-example-where-theta-neq-0" class="nav-link" data-scroll-target="#example-where-theta-neq-0">Example where <span class="math inline">\(\theta \neq 0\)</span></a></li>
+  <li><a href="#optimisation-strategy-in-sas" id="toc-optimisation-strategy-in-sas" class="nav-link" data-scroll-target="#optimisation-strategy-in-sas">Optimisation Strategy in SAS</a></li>
+  <li><a href="#optimisation-strategy-in-r-lme4" id="toc-optimisation-strategy-in-r-lme4" class="nav-link" data-scroll-target="#optimisation-strategy-in-r-lme4">Optimisation Strategy in R (lme4)</a></li>
+  <li><a href="#consequences-for-numerical-output" id="toc-consequences-for-numerical-output" class="nav-link" data-scroll-target="#consequences-for-numerical-output">Consequences for Numerical Output</a></li>
   </ul></li>
+  <li><a href="#convergence-behaviour" id="toc-convergence-behaviour" class="nav-link" data-scroll-target="#convergence-behaviour">Convergence Behaviour</a>
+  <ul class="collapse">
+  <li><a href="#boundary-and-near-boundary-parameters" id="toc-boundary-and-near-boundary-parameters" class="nav-link" data-scroll-target="#boundary-and-near-boundary-parameters">Boundary and Near-Boundary Parameters</a></li>
+  <li><a href="#diagnostic-philosophy" id="toc-diagnostic-philosophy" class="nav-link" data-scroll-target="#diagnostic-philosophy">Diagnostic Philosophy</a></li>
+  <li><a href="#interpretation-of-convergence-differences" id="toc-interpretation-of-convergence-differences" class="nav-link" data-scroll-target="#interpretation-of-convergence-differences">Interpretation of Convergence Differences</a></li>
   </ul></li>
-  <li><a href="#comparing-means-for-crossover-design-paired" id="toc-comparing-means-for-crossover-design-paired" class="nav-link" data-scroll-target="#comparing-means-for-crossover-design-paired"><strong>Comparing means for crossover design (paired)</strong></a>
-  <ul class="collapse">
-  <li><a href="#estimating-the-within-patient-variance-and-correlation." id="toc-estimating-the-within-patient-variance-and-correlation." class="nav-link" data-scroll-target="#estimating-the-within-patient-variance-and-correlation."><strong>Estimating the within patient variance and correlation.</strong></a>
-  <ul class="collapse">
-  <li><a href="#example" id="toc-example" class="nav-link" data-scroll-target="#example">Example</a></li>
+  <li><a href="#comparison-of-outputs" id="toc-comparison-of-outputs" class="nav-link" data-scroll-target="#comparison-of-outputs">Comparison of Outputs</a></li>
+  <li><a href="#degrees-of-freedom-and-kenward-rodger-adjusted-standard-errors" id="toc-degrees-of-freedom-and-kenward-rodger-adjusted-standard-errors" class="nav-link" data-scroll-target="#degrees-of-freedom-and-kenward-rodger-adjusted-standard-errors">Degrees of freedom and Kenward-Rodger adjusted standard errors</a></li>
+  <li><a href="#confidence-intervals-for-model-coefficients" id="toc-confidence-intervals-for-model-coefficients" class="nav-link" data-scroll-target="#confidence-intervals-for-model-coefficients">Confidence intervals for model coefficients</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
-  <li><a href="#version" id="toc-version" class="nav-link" data-scroll-target="#version">Version</a></li>
-  </ul></li>
   </ul></li>
   </ul>
 </nav>
@@ -229,7 +232,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Sample Size for Equivalence Trials in SAS</h1>
+<h1 class="title">R vs SAS Random Effect Models</h1>
 </div>
 
 
@@ -237,12 +240,6 @@ window.Quarto = {
 <div class="quarto-title-meta">
 
     
-    <div>
-    <div class="quarto-title-meta-heading">Published</div>
-    <div class="quarto-title-meta-contents">
-      <p class="date">18 March, 2026</p>
-    </div>
-  </div>
   
     
   </div>
@@ -254,198 +251,181 @@ window.Quarto = {
 
 <section id="introduction" class="level1">
 <h1>Introduction</h1>
-<p>PROC POWER<sup>1</sup> can be used for sample size calculations for equivalence testing<sup>2</sup>. Note that equivalence testing is different to bioequivalence testing. For bioequivalence see <a href="Sample Size Calculation for Average Bioequivalence">TOST page</a>. SAS can calculate equivalence testing sample size for:</p>
+<p>Linear mixed models are applied in clinical trials to analyse longitudinal outcomes where repeated observations within subjects induce correlation. In this setting, the statistical objective is to estimate treatment effects while accounting for within-subject dependence through a likelihood-based specification of the model’s mean structure and covariance components.</p>
+<p>Both SAS and R provide valid likelihood-based implementations of linear mixed models. When the same fixed-effect structure, covariance model, and estimation method are specified, the two systems target the same statistical model. Nevertheless, exact numerical equality of all reported quantities should not be expected. This is because SAS and R do not solve the likelihood optimisation problem in the same parameter space, nor do they apply identical profiling strategies, optimisation algorithms, or convergence criteria.</p>
+<p>This document therefore focuses explicitly on the numerical computation underlying linear mixed model estimation. It explains why fixed-effect estimates typically agree closely once model specification is aligned, while differences may arise in covariance parameter estimates and convergence diagnostics as a direct consequence of differences in numerical representation and optimisation behaviour.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>As fixed effect estimates are entirely determined by the estimated V matrix which is a function of the estimated variance parameters, the agreement of fixed effect estimates depends on the agreement of covariance parameter estimates.</p>
+</div>
+</div>
+</section>
+<section id="model-implementations" class="level1">
+<h1>Model Implementations</h1>
+<section id="mean-model-representation" class="level2">
+<h2 class="anchored" data-anchor-id="mean-model-representation">Mean Model Representation</h2>
+<p>In both SAS and R, the fixed-effect component of the linear mixed-effects model is defined through a linear predictor of the form <span class="math display">\[
+\eta = X \beta,
+\]</span> where <span class="math inline">\(X\)</span> denotes the fixed-effect design matrix and <span class="math inline">\(\beta\)</span> is the corresponding vector of regression coefficients.</p>
+<p>The structure of <span class="math inline">\(X\)</span> is determined by the chosen factor coding scheme, reference levels, and any specified interaction terms. Provided that factor parameterisation and contrasts are aligned, both systems construct equivalent fixed-effect design matrices and therefore target the same estimand.</p>
+<p>Any disagreement in fixed-effect estimates almost always indicates misalignment in factor coding rather than numerical instability.</p>
+<section id="covariance-model-representation" class="level3">
+<h3 class="anchored" data-anchor-id="covariance-model-representation">Covariance Model Representation</h3>
+<p>The primary distinction between SAS and R implementations lies in how the covariance structure is represented internally.</p>
 <ul>
-<li><p>One sample test: Is a mean equivalent to a target value, within a set tolerance</p></li>
-<li><p>Two independent sample test: Comparison of means for equivalence, when the true mean difference is zero, but within a set tolerance.</p></li>
-<li><p>One sample test: Is a proportion equivalent to a target value, within a set tolerance</p></li>
-<li><p>Paired-sample test: Comparison of means for equivalence, within a set tolerance</p></li>
+<li><p>SAS PROC MIXED parameterises covariance structures directly in terms of variance and correlation parameters associated with the residuals and/or random effects.</p></li>
+<li><p>R lme4::lmer parameterises the random-effects covariance matrix via its Cholesky factor, ensuring positive definiteness by construction.</p></li>
 </ul>
-<p><strong>PROC POWER CANNOT CALCULATE SAMPLE SIZE FOR:</strong></p>
+<p>Although these representations are mathematically equivalent at the model level, they are not numerically equivalent. The parameters optimised by the algorithm differ, and the mapping from internal parameters to reported standard deviations and correlations is nonlinear.</p>
+<p>As a result, covariance parameter estimates may differ at the level of numerical tolerance even when the fitted likelihood values are effectively identical.</p>
+</section>
+</section>
+<section id="numerical-optimisation-and-computation" class="level2">
+<h2 class="anchored" data-anchor-id="numerical-optimisation-and-computation">Numerical Optimisation and Computation</h2>
+<section id="optimisation-strategy-in-sas" class="level3">
+<h3 class="anchored" data-anchor-id="optimisation-strategy-in-sas">Optimisation Strategy in SAS</h3>
+<p>PROC MIXED formulates the Gaussian log-likelihood explicitly and proceeds by profiling out the fixed effects, and in some configurations the residual variance, thereby reducing the optimisation problem to the covariance parameters. Estimation of these covariance parameters is carried out using an iterative hybrid strategy combining Expectation–Maximisation (EM) steps with Newton–Raphson updates.</p>
+<p>The EM steps provide stable updates of variance and covariance parameters by exploiting closed-form expectations under the current parameter values, ensuring monotonic increases in the likelihood and robustness when parameters are near the boundary of the parameter space. Once the algorithm is sufficiently close to the optimum, Newton–Raphson iterations are used to accelerate convergence, updating covariance parameters using first and second derivatives of the profiled likelihood.</p>
+<p>This optimisation is performed directly in the variance–correlation parameter space, rather than in a transformed factor space. As a result, the numerical behaviour of PROC MIXED is closely tied to the curvature of the likelihood with respect to variance components, and convergence properties depend on the strength of information supporting each covariance parameter.</p>
+</section>
+<section id="optimisation-strategy-in-r-lme4" class="level3">
+<h3 class="anchored" data-anchor-id="optimisation-strategy-in-r-lme4">Optimisation Strategy in R (lme4)</h3>
+<p>In lme4, the likelihood is re-expressed using a penalised least squares formulation derived from the Cholesky factorisation of the random-effects covariance matrix. For fixed covariance parameters, the conditional modes of the random effects are obtained by solving a penalised least squares system.</p>
+<p>The likelihood is then evaluated using quantities derived from this representation, including residual sums of squares and log-determinants of the Cholesky factors. An outer optimiser updates the Cholesky parameters rather than the variance components themselves.</p>
+<p>Because optimisation occurs in this transformed parameter space, the geometry of the objective function differs from that used by PROC MIXED, even though both correspond to the same likelihood.</p>
+<p>It is possible to change the optimisation method used by lme4. The lme4::allFit function can be used to check whether the different optimisation methods give the same results.</p>
+</section>
+<section id="consequences-for-numerical-output" class="level3">
+<h3 class="anchored" data-anchor-id="consequences-for-numerical-output">Consequences for Numerical Output</h3>
+<p>These differences imply that:</p>
 <ul>
-<li><p>Two independent sample test: Comparison of means for equivalence, when the true mean difference is non-zero, and within a set tolerance. (It will give you a result, but this doesn’t align to other software/books calculations)</p></li>
-<li><p>Two independent sample test: Comparison of proportions for equivalence, when the true mean difference is zero or non-zero, and within a set tolerance</p></li>
+<li>The optimisation paths taken by SAS and R are not the same.</li>
+<li>The stopping points may differ slightly on flat regions of the likelihood surface.</li>
+<li>Small differences in reported covariance parameters are expected, particularly near parameter boundaries.</li>
 </ul>
-</section>
-<section id="one-sample-equivalence-test-of-a-mean" class="level1">
-<h1><strong>One Sample Equivalence Test of a Mean</strong></h1>
-<p>For a mean <span class="math inline">\(\mu_1\)</span>, we are testing if <span class="math inline">\(\mu_1\)</span> is equivalent to some value <span class="math inline">\(\theta\)</span> within a tolerance of <span class="math inline">\(\delta\)</span>, in other words: <span class="math inline">\(H_0: |\mu_1| \leq \theta+\delta\)</span> versus <span class="math inline">\(H_1: |\mu1|&gt;\theta+\delta\)</span></p>
-<p>A reformulation of a treatment pill, needs to have a weight equivalent to a target value of <span class="math inline">\(\theta\)</span> =130 mg. Weight is assumed normally distributed and an acceptable weight is between 110 mg and 150 mg, hence <span class="math inline">\(\delta=20mg\)</span>. The standard deviation of the weight is 50 mg. What sample size is needed assuming an alpha level of 5% with 80% power to conclude the weight is within the margin <span class="math inline">\(\delta\)</span> (the tablet weight is equivalent to 130 milligram). The below shows a sample size of 55 pills is required.</p>
-<div class="cell">
-<pre class="sas cell-code"><code>PROC POWER  ;
-    onesamplemeans test=equiv   
-    lower  = 110          
-    upper  = 150         
-    mean   = 130     
-    stddev = 50      
-    ntotal = .       
-    power  = 0.8      
-    alpha  = 0.05;    
-RUN;</code></pre>
-</div>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/sample_s_equivalence/SAS1mean.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
-</div>
-</div>
-</div>
-</section>
-<section id="two-sample-equivalence-test-of-means" class="level1">
-<h1><strong>Two Sample Equivalence Test of Means</strong></h1>
-<section id="comparing-two-independent-sample-means-for-parallel-design-unpaired-samples-where-true-difference-between-treatments-is-believed-to-be-zero-and-within-a-tolerance" class="level2">
-<h2 class="anchored" data-anchor-id="comparing-two-independent-sample-means-for-parallel-design-unpaired-samples-where-true-difference-between-treatments-is-believed-to-be-zero-and-within-a-tolerance"><strong>Comparing two independent sample means for parallel design (unpaired samples) where true difference between treatments is believed to be zero and within a tolerance</strong></h2>
-<p>In the most common scenario, SDs are assumed known and the same in both treatment groups.</p>
-<p>For a mean in group 1 of <span class="math inline">\(\mu_1\)</span>, and a mean in group 2 of <span class="math inline">\(\mu_2\)</span>, we are testing if the absolute difference between the treatments, <span class="math inline">\(|\mu_2-\mu_1|\)</span> is equivalent to some value <span class="math inline">\(\theta\)</span>, within a tolerance of <span class="math inline">\(\delta\)</span>. In this example <span class="math inline">\(\theta =0\)</span>, in other words:</p>
-<p><span class="math inline">\(H_0:|\mu_2-\mu_1| \le \theta+\delta\)</span> versus <span class="math inline">\(H_1: |\mu_2-\mu_1|\gt \theta+\delta\)</span> (where <span class="math inline">\(\theta=0\)</span> ) or</p>
-<p><span class="math inline">\(H_0:|\mu_2-\mu_1| \le \delta\)</span> versus <span class="math inline">\(H_1: |\mu_2-\mu_1|\gt \delta\)</span></p>
-<section id="example-where-theta-0" class="level3">
-<h3 class="anchored" data-anchor-id="example-where-theta-0">Example where <span class="math inline">\(\theta = 0\)</span></h3>
-<p>It is anticipated that patients will have the same mean diastolic BP of 96 mmHg on both the new drug and the active comparator, hence <span class="math inline">\(\theta=0\)</span>. It is also anticipated that the SD (<span class="math inline">\(\sigma\)</span>) of the diastolic BP is approximately 8 mmHg. The decision is made by clinical to accept equivalence if the difference found between the treatments is less than 5 mmHg, hence <span class="math inline">\(\delta\)</span>=5. How many patients are required for an 80% power and an overall significance level of 5%?</p>
-<p>A total sample size of 90 is recommended, which equates to a sample size of 45 patients per treatment group. Notice how SAS asks for the <code>lower</code> and <code>upper</code> bounds, these are derived by using the meandiff <span class="math inline">\(\theta\)</span>+/- the acceptable equivalence limit <span class="math inline">\(\delta\)</span> (which is stated as 5 mmHg above).</p>
-<div class="cell">
-<pre class="sas cell-code"><code>PROC POWER  ;
-    twosamplemeans test=equiv_diff   
-    lower  = -5          
-    upper  = 5   
-    meandiff=0 
-    stddev = 8      
-    ntotal = .       
-    power  = 0.8      
-    alpha  = 0.05;    
-RUN;</code></pre>
-</div>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/sample_s_equivalence/SAS2mean_independant.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
-</div>
-</div>
-</div>
+<p>Importantly, these effects arise from numerical computation, not from differences in the underlying statistical model.</p>
 </section>
 </section>
-<section id="comparing-two-independent-sample-means-for-parallel-design-unpaired-samples-where-true-difference-between-treatments-is-believed-not-to-be-zero-and-within-a-tolerance" class="level2">
-<h2 class="anchored" data-anchor-id="comparing-two-independent-sample-means-for-parallel-design-unpaired-samples-where-true-difference-between-treatments-is-believed-not-to-be-zero-and-within-a-tolerance"><strong>Comparing two independent sample means for parallel design (unpaired samples) where true difference between treatments is believed NOT to be zero and within a tolerance</strong></h2>
-<p>In the most common scenario, SDs are assumed known and the same in both treatment groups.</p>
-<p>For a mean in group 1 of <span class="math inline">\(\mu_1\)</span>, and a mean in group 2 of <span class="math inline">\(\mu_2\)</span>, we are testing if the absolute difference between the treatments, <span class="math inline">\(|\mu_2-\mu_1|\)</span> is equivalent to some value <span class="math inline">\(\theta\)</span> within a tolerance of <span class="math inline">\(\delta\)</span>, in other words:<br>
-<span class="math inline">\(H_0:|\mu_2-\mu_1| \le \theta+\delta\)</span> versus <span class="math inline">\(H_1: |\mu_2-\mu_1|\gt \theta+\delta\)</span>.</p>
-<section id="example-where-theta-neq-0" class="level3">
-<h3 class="anchored" data-anchor-id="example-where-theta-neq-0">Example where <span class="math inline">\(\theta \neq 0\)</span></h3>
-<p>In this example, you would expect that you could apply similar code to above, but with <code>lower</code> &amp; <code>upper</code> not equidistant from the mean difference, however, doing so does not give the right answer. If you consult SAS literature, it states that the below code is doing Two One-Sided Tests (TOST) Bioequivalence testing. To date, we have not been able to program equivalence with <span class="math inline">\(\theta \neq 0\)</span> in SAS and get a sample size that matches the literature.</p>
-<p>Instead of the hypothesis: <span class="math inline">\(H_0:|\mu_2-\mu_1| \le \theta+\delta\)</span> versus <span class="math inline">\(H_1: |\mu_2-\mu_1|\gt \theta+\delta\)</span>.</p>
-<p>The sample size calculation in this example is aligned to TOST hypotheses:</p>
-<p><span class="math inline">\(H_01: \mu_2 - \mu_1 \ge -\theta\)</span> vs <span class="math inline">\(H_11:\mu_2-\mu_1 \lt -\theta\)</span></p>
-<p>AND <span class="math inline">\(H_02: \mu_2 - \mu_1 \le \theta\)</span> vs <span class="math inline">\(H_12:\mu_2-\mu_1 \gt \theta\)</span></p>
-<p>See <a href="Sample Size Calculation for Average Bioequivalence">TOST page</a> for more detail.</p>
-<p>A client is interested in conducting a clinical trial to compare two cholesterol lowering agents for treatment of hypercholesterolemic patients through a parallel design. The primary efficacy parameter is a low-density lipidprotein cholesterol (LDL-C). For establishing equivalence, suppose the true mean difference is 0.01 (1%) and the equivalence limit is 0.05 (5%). Assuming SD = 0.1 (10%), how many patients are required for an 80% power and an overall significance level of 5%?</p>
-<p>Below shows a sample size of 140 patients in Total (70 per treatment group).</p>
-<div class="cell">
-<pre class="sas cell-code"><code>PROC POWER  ;
-    twosamplemeans test=equiv_diff  
-    lower  = -0.04         
-    upper  = 0.06  
-    meandiff = 0.01 
-    stddev = 0.1     
-    ntotal = .       
-    power  = 0.8      
-    alpha  = 0.05;    
-RUN;</code></pre>
-</div>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/sample_s_equivalence/SAS2mean_tost1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
-</div>
-</div>
-</div>
+<section id="convergence-behaviour" class="level2">
+<h2 class="anchored" data-anchor-id="convergence-behaviour">Convergence Behaviour</h2>
+<section id="boundary-and-near-boundary-parameters" class="level3">
+<h3 class="anchored" data-anchor-id="boundary-and-near-boundary-parameters">Boundary and Near-Boundary Parameters</h3>
+<p>In linear mixed models, variance components can be weakly identified when the contribution of a random slope to the marginal covariance structure is negligible relative to a random intercept, when the design provides limited information for estimating specific covariance components, or when imbalance and missing observations reduce effective replication at later time points.</p>
+<p>Under these conditions, the log-likelihood exhibits low curvature with respect to one or more covariance parameters. Consequently, a range of parameter values yields nearly indistinguishable likelihood values, making numerical optimisation sensitive to parameterisation, optimisation strategy, and convergence tolerances.</p>
+</section>
+<section id="diagnostic-philosophy" class="level3">
+<h3 class="anchored" data-anchor-id="diagnostic-philosophy">Diagnostic Philosophy</h3>
+<p>lme4 applies explicit checks on the rank and conditioning of the estimated covariance structure under the Cholesky parameterisation. When one or more components are estimated effectively at zero, lme4 reports a singular fit warning.</p>
+<p>PROC MIXED may converge to a likelihood-equivalent solution while reporting a small non-zero variance estimate and no explicit warning. This reflects a difference in diagnostic thresholds and reporting conventions, not a substantive difference in model fit.</p>
+</section>
+<section id="interpretation-of-convergence-differences" class="level3">
+<h3 class="anchored" data-anchor-id="interpretation-of-convergence-differences">Interpretation of Convergence Differences</h3>
+<p>A convergence warning in R does not imply model failure, nor does the absence of a warning in SAS imply strong identification of all covariance parameters. In both cases, the relevant question is whether inferential quantities, treatment effects, standard errors, and test statistics, are stable under reasonable sensitivity analyses.</p>
 </section>
 </section>
+<section id="comparison-of-outputs" class="level2">
+<h2 class="anchored" data-anchor-id="comparison-of-outputs">Comparison of Outputs</h2>
+<p><strong>Table 1.</strong> Summary Table: SAS vs R (Linear Mixed Models)</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 19%">
+<col style="width: 19%">
+<col style="width: 19%">
+<col style="width: 19%">
+<col style="width: 21%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Statistic</th>
+<th>R Result</th>
+<th>SAS Result</th>
+<th>Match</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Fixed-effect estimates</td>
+<td>Typically very close (when contrasts/reference levels match)</td>
+<td>Typically very close (when contrasts/reference levels match)</td>
+<td>Yes (in practice, once aligned)</td>
+<td>Same mean model <span class="math inline">\((X\beta)\)</span> once factor coding/contrasts are aligned; differences usually indicate coding mismatch rather than numerical instability.</td>
+</tr>
+<tr class="even">
+<td>Fixed-effect standard errors / Wald tests</td>
+<td>Typically very close</td>
+<td>Typically very close</td>
+<td>Yes (usually)</td>
+<td>With the same likelihood target and mean model, inference on fixed effects is generally stable across implementations; residual differences can occur due to optimisation tolerances and covariance estimation details.</td>
+</tr>
+<tr class="odd">
+<td>Log-likelihood / REML criterion</td>
+<td>Very close (often effectively identical to tolerance)</td>
+<td>Very close (often effectively identical to tolerance)</td>
+<td>Yes (to numerical tolerance)</td>
+<td>Both target the same (RE)ML objective under aligned specification, but evaluate/optimise it via different internal representations.</td>
+</tr>
+<tr class="even">
+<td>Covariance parameter estimates (variance components, correlations)</td>
+<td>Close but not identical; may land nearer boundary (e.g., ~0)</td>
+<td>Close but not identical; may report small non-zero values</td>
+<td>No (exact equality not expected)</td>
+<td>Different internal parameter spaces (Cholesky in lme4 vs variance/correlation in PROC MIXED) and different optimisation paths can yield small differences, especially on flat likelihood regions or near boundaries.</td>
+</tr>
+<tr class="odd">
+<td>Random-effect standard deviations</td>
+<td>Close but not identical</td>
+<td>Close but not identical</td>
+<td>No</td>
+<td>Reported SDs are nonlinear functions of internally optimised parameters; small numerical differences are expected even when the likelihood is essentially the same.</td>
+</tr>
+<tr class="even">
+<td>Convergence / diagnostics</td>
+<td>May warn about singular fit or near-boundary components</td>
+<td>May converge without an explicit singularity warning</td>
+<td>No (diagnostics differ)</td>
+<td>lme4 applies explicit singularity/rank checks under the Cholesky parameterisation; PROC MIXED may report convergence with small non-zero estimates depending on its diagnostic thresholds and reporting conventions.</td>
+</tr>
+</tbody>
+</table>
 </section>
-<section id="comparing-means-for-crossover-design-paired" class="level1">
-<h1><strong>Comparing means for crossover design (paired)</strong></h1>
-<p>Here we assume there is no carry-over effect and that the variance is known.</p>
-<section id="estimating-the-within-patient-variance-and-correlation." class="level2">
-<h2 class="anchored" data-anchor-id="estimating-the-within-patient-variance-and-correlation."><strong>Estimating the within patient variance and correlation.</strong></h2>
-<p>It is important to differentiate here between the within patient SD and the SD of the difference. We may need to recalculate one to the other, depending on the case.</p>
-<p>With no carry-over, then an approximation could be: Variance of the difference = 2x Within Patient Variance. The variance within a patient can be estimated from the within subject residual mean square after fitting the model including visit, period and treatment. For example, using Proc mixed <code>repeated visit / r  sub=usubjid</code>, and <code>ods select r</code>, gives you blocks of the estimate R matrix (covariances between residuals).</p>
-<p>SAS cannot do sample size in this scenario without also having the within subject correlation. It’s common in this scenario to set this equivalent to 0.5. More investigation is required to determine why this is also need to be specified as in this scenario, the correlation should not be required.</p>
-<section id="example" class="level3">
-<h3 class="anchored" data-anchor-id="example">Example</h3>
-<p>Let’s consider a standard standard two-sequence, two period crossover design for trials to establish therapeutic equivalence between a test drug and a standard therapy. The sponsor is interested in having an 80% power for establishing equivalence. Based on the results from previous trials, it is estimated that the variance (of the difference) is 0.2 (20%). Suppose that the true mean difference is -0.1 (-10%) and the equivalence limit is 0.25 (25%). What is the required sample size, assuming significance level of 5%?</p>
-<p>The below shows a sample size of 8 patients is required.</p>
-<div class="cell">
-<pre class="sas cell-code"><code>PROC POWER;
-    pairedmeans test=equiv_diff   
-    lower  = -35          
-    upper  = 15   
-    meandiff=-10 
-    stddev = 20      
-    npairs = .  
-    corr=0.5
-    power  = 0.8      
-    alpha  = 0.05; 
-RUN;</code></pre>
-</div>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../images/sample_s_equivalence/SAS2crossovermeans.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
-</figure>
-</div>
-</div>
-</div>
+<section id="degrees-of-freedom-and-kenward-rodger-adjusted-standard-errors" class="level2">
+<h2 class="anchored" data-anchor-id="degrees-of-freedom-and-kenward-rodger-adjusted-standard-errors">Degrees of freedom and Kenward-Rodger adjusted standard errors</h2>
+<p>There is generally very close agreement between PROC MIXED and lme4/lmerTest for Satterthwaite degrees of freedom and Kenward-Rodger degrees of freedom and adjusted standard errors. Some differences may arise in the Kenward-Rodger results, particularly for small samples sizes, because of the information matrix which is used in the calculations.</p>
+<p>By default PROC MIXED uses the observed information matrix in the Kenward-Rodger calculations, whereas lmerTest uses the expected information matrix. It is possible to force PROC MIXED to use the expected information matrix by using the SCORING option. When SCORING = n is specified, the procedure will use Fisher scoring for the first n iterations. If the model converges when the Fisher scoring method is still being used, SAS will use the expected information to implement the Kenward-Roger method.</p>
 </section>
-<section id="references" class="level3">
-<h3 class="anchored" data-anchor-id="references">References</h3>
-<ol type="1">
-<li><a href="https://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_power_sect010.html">PROC POWER SAS online help</a></li>
-<li><a href="https://support.sas.com/kb/50/700.html#:~:text=Power%20analysis%20and%20sample%20size%20determination%20for%20equivalence,be%20conducted%20using%20PROC%20FREQ%20or%20PROC%20TTEST.">Sample Size Calculation Using SAS® for equivalence</a></li>
-</ol>
+<section id="confidence-intervals-for-model-coefficients" class="level2">
+<h2 class="anchored" data-anchor-id="confidence-intervals-for-model-coefficients">Confidence intervals for model coefficients</h2>
+<p>The confint function applied directly to the lme4 model in R will use the Wald method (method = “Wald”) or profile likelihood (method = “profile”) method to calculate confidence intervals for model coefficients. The Wald method uses the normal distribution (infinite degrees of freedom). If you would like to use the Kenward-Rodger or Satterthwaite degrees of freedom, either calculate the confidence interval manually using the degrees of freedom provided or construct a contrast using emmeans and then calculate the confidence interval for the contrast.</p>
 </section>
-<section id="version" class="level3">
-<h3 class="anchored" data-anchor-id="version">Version</h3>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>─ Session info ───────────────────────────────────────────────────────────────
- setting  value
- version  R version 4.5.2 (2025-10-31)
- os       macOS Tahoe 26.3
- system   aarch64, darwin20
- ui       X11
- language (EN)
- collate  en_US.UTF-8
- ctype    en_US.UTF-8
- tz       Europe/London
- date     2026-02-23
- pandoc   3.6.3 @ /Applications/Positron.app/Contents/Resources/app/quarto/bin/tools/aarch64/ (via rmarkdown)
- quarto   1.8.27 @ /Applications/Positron.app/Contents/Resources/app/quarto/bin/quarto
-
-─ Packages ───────────────────────────────────────────────────────────────────
- ! package              * version date (UTC) lib source
- R sample_s_equivalence   &lt;NA&gt;    &lt;NA&gt;       [?] &lt;NA&gt;
-
- [1] /Users/christinafillmore/Documents/GitHub/CAMIS/renv/library/macos/R-4.5/aarch64-apple-darwin20
- [2] /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library
-
- R ── Package was removed from disk.
-
-─ External software ──────────────────────────────────────────────────────────
- setting value
- SAS     9.04.01M7P08062020
-
-──────────────────────────────────────────────────────────────────────────────</code></pre>
-</div>
-</div>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>SAS and R implement linear mixed models under the same statistical framework but solve the likelihood optimisation problem using different numerical representations. Fixed-effect estimates typically agree closely once model specification is aligned. Differences arise primarily in covariance parameters and convergence diagnostics due to differences in parameterisation, optimisation geometry, and diagnostic thresholds. These differences are intrinsic to numerical computation and should be interpreted accordingly in clinical trial analyses.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p><strong>R Documentation and Methodology:</strong></p>
+<ul>
+<li><p>Bates, D., Mächler, M., Bolker, B., &amp; Walker, S. (2015). Fitting Linear Mixed-Effects Models Using lme4. Journal of Statistical Software, 67(1), 1–48. https://doi.org/10.18637/jss.v067.i01</p></li>
+<li><p>Bates, D. (2014). lmer for SAS PROC MIXED Users. Vignette for the R package SASmixed (version 1.0-4). The Comprehensive R Archive Network (CRAN). Available at: https://cran.r-project.org/web/packages/SASmixed/vignettes/Usinglmer.pdf</p></li>
+</ul>
+<p><strong>SAS Documentation and Methodology:</strong></p>
+<ul>
+<li><p>Edupganti, S. &amp; Nisal, S. (2011). Proc Mixed – Right Options to Get Right Output. NESUG 2011 Proceedings: Statistics &amp; Analysis. Available at: https://www.lexjansen.com/nesug/nesug11/sa/sa03.pdf</p></li>
+<li><p>SAS Institute Inc.&nbsp;(2021). SAS/STAT® User’s Guide, The MIXED Procedure (Version 2021.1.5). Cary, NC: SAS Institute Inc.&nbsp;https://documentation.sas.com/api/collections/pgmsascdc/v_017/docsets/statug/content/mixed.pdf?locale=ja#nameddest=statug_mixed_details58</p></li>
+<li><p>SAS Institute Inc.&nbsp;(n.d.). SAS PROC MIXED: Numerical Optimisation and Computational Details. Technical documentation. Available at: http://gauss.stat.su.se/gu/mm/SAS_PROC_MIXED.pdf</p></li>
+</ul>
+<p> </p>
 
 
-</section>
 </section>
 </section>
 
