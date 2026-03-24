@@ -207,7 +207,7 @@ window.Quarto = {
   <ul class="collapse">
   <li><a href="#clopper-pearson-exact-or-binomial-ci-method" id="toc-clopper-pearson-exact-or-binomial-ci-method" class="nav-link" data-scroll-target="#clopper-pearson-exact-or-binomial-ci-method">Clopper-Pearson (Exact or binomial CI) Method</a></li>
   <li><a href="#normal-approximation-method-also-known-as-the-wald-method" id="toc-normal-approximation-method-also-known-as-the-wald-method" class="nav-link" data-scroll-target="#normal-approximation-method-also-known-as-the-wald-method">Normal Approximation Method (Also known as the Wald Method)</a></li>
-  <li><a href="#wilson-method-also-known-as-the-score-method7" id="toc-wilson-method-also-known-as-the-score-method7" class="nav-link" data-scroll-target="#wilson-method-also-known-as-the-score-method7">Wilson method (Also known as the Score method)<sup>7</sup></a></li>
+  <li><a href="#wilson-method-also-known-as-the-asymptotic-score-method7" id="toc-wilson-method-also-known-as-the-asymptotic-score-method7" class="nav-link" data-scroll-target="#wilson-method-also-known-as-the-asymptotic-score-method7">Wilson method (Also known as the (Asymptotic) Score method)<sup>7</sup></a></li>
   <li><a href="#agresti-coull-method" id="toc-agresti-coull-method" class="nav-link" data-scroll-target="#agresti-coull-method">Agresti-Coull method</a></li>
   <li><a href="#jeffreys-method" id="toc-jeffreys-method" class="nav-link" data-scroll-target="#jeffreys-method">Jeffreys method</a></li>
   <li><a href="#binomial-based-mid-p-method" id="toc-binomial-based-mid-p-method" class="nav-link" data-scroll-target="#binomial-based-mid-p-method">Binomial based Mid-P method</a></li>
@@ -244,26 +244,22 @@ window.Quarto = {
 
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>See separate page for general introductory information on confidence intervals for proportions.</p>
+<p>See the <a href="../method_summary/ci_for_prop_intro.html">summary page</a> for general introductory information on confidence intervals for proportions, including the principles underlying the most common methods.</p>
 </section>
 <section id="data-used" class="level2">
 <h2 class="anchored" data-anchor-id="data-used">Data Used</h2>
 <p>The adcibc data stored <a href="../data/adcibc.csv">here</a> was used in this example, creating a binary treatment variable <code>trt</code> taking the values of <code>Act</code> or <code>PBO</code> and a binary response variable <code>resp</code> taking the values of <code>Yes</code> or <code>No</code>. For this example, a response is defined as a score greater than 4.</p>
-<div class="cell">
-<pre class="sas cell-code"><code>data adcibc2 (keep=trt resp) ;
+<pre class="sas"><code>data adcibc2 (keep=trt resp) ;
     set adcibc;     
     if aval gt 4 then resp="Yes";
     else resp="No";     
     if trtp="Placebo" then trt="PBO";
     else trt="Act"; 
 run;</code></pre>
-</div>
 <p>The below shows that for the Active Treatment, there are 36 responders out of 154 subjects = 0.2338 (23.38% responders).</p>
-<div class="cell">
-<pre class="sas cell-code"><code>proc freq data=adcibc2;
+<pre class="sas"><code>proc freq data=adcibc2;
     table trt*resp/ nopct nocol;
 run;</code></pre>
-</div>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
@@ -301,8 +297,8 @@ run;</code></pre>
 <p>The Wald normal approximation method is output by SAS as a default method, but you can also specify it using <code>BINOMIAL(LEVEL="Yes" CL=WALD);</code></p>
 <p>The “continuity corrected” version is obtained using <code>BINOMIAL(LEVEL="Yes" CL=WALD(CORRECT));</code></p>
 </section>
-<section id="wilson-method-also-known-as-the-score-method7" class="level3">
-<h3 class="anchored" data-anchor-id="wilson-method-also-known-as-the-score-method7">Wilson method (Also known as the Score method)<sup>7</sup></h3>
+<section id="wilson-method-also-known-as-the-asymptotic-score-method7" class="level3">
+<h3 class="anchored" data-anchor-id="wilson-method-also-known-as-the-asymptotic-score-method7">Wilson method (Also known as the (Asymptotic) Score method)<sup>7</sup></h3>
 <p>The Wilson (Score) method is also based on an asymptotic normal approximation, but uses a score statistic that replaces the estimated variance <span class="math inline">\(\hat V(\hat p)=\hat p(1-\hat p)/n\)</span> with the true variance <span class="math inline">\(V(\hat p)=p(1-p)/n\)</span>. The resulting score is then rearranged to a quadratic equation and solved for p for a given <span class="math inline">\(\alpha\)</span>. This method resolves many of the issues affecting the Wald method - it avoids boundary violations, and achieves coverage probabilities close to the nominal level (on average). However, it over-corrects the asymmetric coverage of Wald - the location of the Wilson interval is shifted too far towards 0.5.</p>
 <p>The method can be derived with or without a Yates continuity correction. The corrected interval closely approximates the coverage of the Clopper-Pearson method, but only in terms of overall two-sided coverage - due to the asymmetric coverage, it does not guarantee that the non-coverage probability is less than <span class="math inline">\(\alpha/2\)</span>.</p>
 <p>Let <span class="math inline">\(\hat p\)</span> =r/n, where r= number of responses, and n=number of subjects, <span class="math inline">\(\hat q = 1- \hat p\)</span>, and z= the appropriate value from standard normal distribution: <span class="math inline">\(z_{1-\alpha/2}\)</span>.</p>
@@ -328,7 +324,7 @@ run;</code></pre>
 </section>
 <section id="jeffreys-method" class="level3">
 <h3 class="anchored" data-anchor-id="jeffreys-method">Jeffreys method</h3>
-<p>The Jeffreys method is a particular type of Bayesian Highest Probability Density (HPD) method. For binomial proportions, the beta distribution is generally used for the conjugate prior, which consists of two parameters <span class="math inline">\(\alpha'\)</span> and <span class="math inline">\(\beta'\)</span>. Setting <span class="math inline">\(\alpha'=\beta'=0.5\)</span> is called the Jeffreys prior. This is considered as non-informative for a binomial proportion. The resulting posterior density gives the CI as</p>
+<p>The Jeffreys ‘equal-tailed’ method is a particular type of Bayesian method, which optimises central location instead of Highest Probability Density (HPD). For binomial proportions, the beta distribution is generally used for the conjugate prior, which consists of two parameters <span class="math inline">\(\alpha'\)</span> and <span class="math inline">\(\beta'\)</span>. Setting <span class="math inline">\(\alpha'=\beta'=0.5\)</span> is called the Jeffreys prior. This is considered as non-informative for a binomial proportion. The resulting posterior density gives the CI as</p>
 <p><span class="math display">\[
 (Beta (x + 0.5, n - x + 0.5)_{\alpha/2}, Beta (x + 0.5, n - x + 0.5)_{1-\alpha/2})
 \]</span></p>
@@ -349,7 +345,7 @@ run;</code></pre>
 </section>
 <section id="continuity-adjusted-methods" class="level2">
 <h2 class="anchored" data-anchor-id="continuity-adjusted-methods">Continuity Adjusted Methods</h2>
-<p>SAS offers the ‘CORRECT’ option for producing more conservative versions of the Wald and Wilson Score intervals.</p>
+<p>SAS offers the ‘CORRECT’ option for producing more conservative versions of the Wald and Wilson Score intervals. These are intended to emulate the strictly conservative coverage of the ‘exact’ method, but often fail to do so. In particular, due to the skewed coverage of the Wilson interval, the ‘corrected’ version has one-sided coverage that exceeds the nominal <span class="math inline">\(\alpha/2\)</span> for extreme values of p.</p>
 </section>
 <section id="consistency-with-hypothesis-tests" class="level2">
 <h2 class="anchored" data-anchor-id="consistency-with-hypothesis-tests">Consistency with hypothesis tests</h2>
@@ -363,8 +359,7 @@ run;</code></pre>
 <p><strong>It is very important to ensure you are calculating the CI for the correct level! Check your output to confirm, you will see below it states <code>resp=Yes</code> !</strong></p>
 <p>Caution is required if there are no responders in a group (aside from any issues with the choice of confidence interval method), as SAS PROC FREQ (as of v9.4) does not output any confidence intervals in this case. If the <code>LEVEL</code> option has been specified, an error is produced, otherwise the procedure by default generates CIs for the proportion of non-responders. Note that valid CIs can (and should) be obtained for both p = 0/n and p = n/n.&nbsp;If needed, the interval for 0/n can be derived as 1 minus the transposed interval for n/n.</p>
 <p>The output consists of the proportion of resp=Yes, the Asymptotic SE, 95% CIs using normal-approximation method, 95% CI using the Clopper-Pearson method, and then a Binomial test statistic and p-value for the null hypothesis of H0: Proportion = 0.5.</p>
-<div class="cell">
-<pre class="sas cell-code"><code>proc sort data=adcibc2;
+<pre class="sas"><code>proc sort data=adcibc2;
     by trt; 
 run; 
 
@@ -372,7 +367,6 @@ proc freq data=adcibc2;
     table resp/ nopct nocol BINOMIAL(LEVEL="Yes");
     by trt;
 run;</code></pre>
-</div>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
@@ -389,16 +383,14 @@ run;</code></pre>
 <li><p><code>BINOMIAL(LEVEL="Yes" CL=ALL CORRECT);</code>will return Agresti-Coull, Clopper-Pearson (Exact), Jeffreys, Wald (with continuity correction), Wilson(with continuity correction). In previous versions of SAS this was coded as <code>BINOMIALc(...)</code>, but that is no longer documented. <em>[… following the above comment, it is also not logical for Jeffreys and Agresti-Coull to be included here alongside methods designed to achieve conservative coverage]</em></p></li>
 <li><p><code>BINOMIAL(LEVEL="Yes" CL=WILSON(CORRECT)  WALD(CORRECT));</code>will return Wilson (with continuity correction) and Wald (with continuity correction)</p></li>
 </ul>
-<div class="cell">
-<pre class="sas cell-code"><code>proc freq data=adcibc2;
+<pre class="sas"><code>proc freq data=adcibc2;
     table resp/ nopct nocol 
-    BINOMIAL(LEVEL="Yes" 
-            CL= CLOPPERPEARSON WALD WILSON 
+    BINOMIAL(LEVEL = "Yes" 
+            CL = WALD WILSON 
             AGRESTICOULL JEFFREYS MIDP 
-            LIKELIHOODRATIO LOGIT BLAKER);
+            LIKELIHOODRATIO LOGIT);
     by trt;
 run;</code></pre>
-</div>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
@@ -408,15 +400,14 @@ run;</code></pre>
 </div>
 </div>
 </div>
-<div class="cell">
-<pre class="sas cell-code"><code>proc freq data=adcibc2;
+<pre class="sas"><code>proc freq data=adcibc2;
     table resp/ nopct nocol 
         BINOMIAL(LEVEL="Yes" 
-        CL= WILSON(CORRECT)  WALD(CORRECT));
+        CORRECT
+        CL= WALD WILSON 
+            CLOPPERPEARSON BLAKER);
     by trt; 
-run;
-</code></pre>
-</div>
+run;</code></pre>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
@@ -427,7 +418,7 @@ run;
 </div>
 </div>
 <p>SAS output often rounds to 3 or 4 decimal places in the output window, however the full values can be obtained using SAS ODS statements. <code>ods output binomialcls=bcl;</code> and then using the bcl dataset, in a data step to put the variable out to the number of decimal places we require.<br>
-10 decimal places shown here ! <code>lowercl2=put(lowercl,12.10);</code></p>
+10 decimal places shown here: <code>lowercl2 = put(lowercl, 12.10);</code></p>
 </section>
 <section id="references" class="level2">
 <h2 class="anchored" data-anchor-id="references">References</h2>

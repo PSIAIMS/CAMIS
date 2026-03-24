@@ -58,7 +58,27 @@ div.sourceCode
 @media screen {
 pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
-</style>
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
 
 
 <script src="../site_libs/quarto-nav/quarto-nav.js"></script>
@@ -239,16 +259,19 @@ window.Quarto = {
   <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
   <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data used</a></li>
   <li><a href="#packages" id="toc-packages" class="nav-link" data-scroll-target="#packages">Packages</a></li>
-  <li><a href="#methods-for-calculating-confidence-intervals-for-a-single-proportion-using-cardx" id="toc-methods-for-calculating-confidence-intervals-for-a-single-proportion-using-cardx" class="nav-link" data-scroll-target="#methods-for-calculating-confidence-intervals-for-a-single-proportion-using-cardx">Methods for Calculating Confidence Intervals for a single proportion using cardx</a>
+  <li><a href="#methods-for-calculating-confidence-intervals-for-a-single-proportion-using-r" id="toc-methods-for-calculating-confidence-intervals-for-a-single-proportion-using-r" class="nav-link" data-scroll-target="#methods-for-calculating-confidence-intervals-for-a-single-proportion-using-r">Methods for Calculating Confidence Intervals for a single proportion using R</a>
   <ul class="collapse">
   <li><a href="#clopper-pearson-exact-or-binomial-ci-method" id="toc-clopper-pearson-exact-or-binomial-ci-method" class="nav-link" data-scroll-target="#clopper-pearson-exact-or-binomial-ci-method">Clopper-Pearson (Exact or binomial CI) Method</a></li>
   <li><a href="#normal-approximation-method-also-known-as-the-wald-method" id="toc-normal-approximation-method-also-known-as-the-wald-method" class="nav-link" data-scroll-target="#normal-approximation-method-also-known-as-the-wald-method">Normal Approximation Method (Also known as the Wald Method)</a></li>
-  <li><a href="#wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method3" id="toc-wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method3" class="nav-link" data-scroll-target="#wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method3">Wilson Method (Also known as the Score method or the Altman, Newcombe method<sup>3</sup> )</a></li>
+  <li><a href="#wilson-method-also-known-as-the-asymptotic-score-method" id="toc-wilson-method-also-known-as-the-asymptotic-score-method" class="nav-link" data-scroll-target="#wilson-method-also-known-as-the-asymptotic-score-method">Wilson Method (Also known as the (Asymptotic) Score method)</a></li>
   <li><a href="#agresti-coull-method" id="toc-agresti-coull-method" class="nav-link" data-scroll-target="#agresti-coull-method">Agresti-Coull Method</a></li>
   <li><a href="#jeffreys-method" id="toc-jeffreys-method" class="nav-link" data-scroll-target="#jeffreys-method">Jeffreys Method</a></li>
+  <li><a href="#binomial-based-mid-p-method" id="toc-binomial-based-mid-p-method" class="nav-link" data-scroll-target="#binomial-based-mid-p-method">Binomial based mid-P Method</a></li>
+  <li><a href="#blaker-method" id="toc-blaker-method" class="nav-link" data-scroll-target="#blaker-method">Blaker Method</a></li>
   </ul></li>
   <li><a href="#continuity-adjusted-methods" id="toc-continuity-adjusted-methods" class="nav-link" data-scroll-target="#continuity-adjusted-methods">Continuity Adjusted Methods</a></li>
   <li><a href="#consistency-with-hypothesis-tests" id="toc-consistency-with-hypothesis-tests" class="nav-link" data-scroll-target="#consistency-with-hypothesis-tests">Consistency with hypothesis tests</a></li>
+  <li><a href="#stratified-score-methods" id="toc-stratified-score-methods" class="nav-link" data-scroll-target="#stratified-score-methods">Stratified Score methods</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 </nav>
@@ -275,15 +298,15 @@ window.Quarto = {
 </header>
 
 
-<section id="introduction" class="level2">
-<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>[See separate page for general introductory information on confidence intervals for proportions.]</p>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>See the <a href="../method_summary/ci_for_prop_intro.html">summary page</a> for general introductory information on confidence intervals for proportions, including the principles underlying the most common methods, and a summary of R packages available.</p>
 <p>[Note: information about cicalc package will be added to this page soon.]</p>
 </section>
-<section id="data-used" class="level2">
-<h2 class="anchored" data-anchor-id="data-used">Data used</h2>
+<section id="data-used" class="level1">
+<h1>Data used</h1>
 <p>The adcibc data stored <a href="../data/adcibc.csv">here</a> was used in this example, creating a binary treatment variable <code>trt</code> taking the values of <code>ACT</code> or <code>PBO</code> and a binary response variable <code>resp</code> taking the values of <code>Yes</code> or <code>No</code>. For this example, a response is defined as a score greater than 4.</p>
-<p>The below shows that for the Actual Treatment, there are 36 responders out of 154 subjects = 0.234 (23.4% responders).</p>
+<p>The below shows that for the Active Treatment, there are 36 responders out of 154 subjects = 0.234 (23.4% responders).</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 4 × 3
@@ -297,60 +320,213 @@ window.Quarto = {
 </div>
 </div>
 </section>
-<section id="packages" class="level2">
-<h2 class="anchored" data-anchor-id="packages">Packages</h2>
-<p><strong>The {cardx} package</strong> is an extension of the {cards} package, providing additional functions to create Analysis Results Data Objects (ARDs)<sup>1</sup>. It was developed as part of {NEST} and pharmaverse. This package requires the binary endpoint to be a logical (TRUE/FALSE) vector or a numeric/integer coded as (0, 1) with 1 (TRUE) being the success you want to calculate the confidence interval for.</p>
-<p>See <a href="R:%20Functions%20for%20Calculating%20Proportion%20Confidence%20Intervals">here</a> for full description of the {cardx} proportions equations.</p>
-<p>If calculating the CI for a difference in proportions, the package requires both the response and the treatment variable to be numeric/integer coded as (0, 1) (or logical vector).</p>
-<p>Instead of the code presented below, you can use <code>ard_categorical_ci(data, variables=resp, method ='wilson')</code> for example. This invokes the code below but returns an analysis results dataset (ARD) format as the output. Methods included are waldcc, wald, clopper-pearson, wilson, wilsoncc, strat_wilson, strat_wilsoncc, agresti-coull and jeffreys for one-sample proportions and methods for 2 independent samples, however currently does not have a method for 2 matched proportions.</p>
-<p><strong>The {ratesci} package</strong> is … [TBC] - note, current development version at <a href="https://github.com/petelaud/ratesci" class="uri">https://github.com/petelaud/ratesci</a> has new features in the rateci() function (including more of the CI methods described below) compared to the CRAN release.</p>
-<p><strong>The {PropCIs} package</strong> produces CIs for methods such as Blaker’s exact method and Midp which aren’t available in {cardx} but are available in SAS. We found results agreed with SAS to the 5th decimal place. The package also calculates CIs for Clopper-Pearson, Wald, Wilson, Agresti-Coull and these align to results obtained in cardx to at least the 7th decimal place. The {PropsCIs} package requires just the number of events (numerator number of successes) &amp; total number of subjects (denominator) as an input dataset. Given Blaker and Midp are rarely used in practice, and {PropsCIs} isn’t a package commonly downloaded from CRAN, further details are not provided here.</p>
-<p><strong>The {Hmisc} package</strong> produces CIs using the Clopper-Pearson method. In this example (x=36 and n=154), the results match the cardx package. Documentation reports that the method uses F distribution to compute exact intervals based on the binomial cdf. However, if the percentage of responders is 100% then the upper limit is set to 1. Similarly if the percentage of responders is 0%, then the lower limit is set to 0. Hence, in extreme cases there may be differences between this package and the standard implementation of Clopper-Pearson method.</p>
-<p><strong>The {RBesT} package (Prior to Version 1.8-0)</strong> produces CIs using the Clopper-Pearson method. In this example (x=36 and n=154), the results match the cardx package. However, as described below, there are 2 cases where the results using RBesT package do not match cardx or Hmisc.</p>
-<ol type="1">
-<li>x = 0 (0% responders), in which case the lower limit does not match.</li>
-<li>x = n (100% responders), in which case the upper limit does not match.</li>
-</ol>
-<p>Because of the relationship between the binomial distribution and the beta distribution. This package uses quantiles of the beta distribution to derive exact confidence intervals.</p>
-<p><span class="math display">\[ B(\alpha/2;x, n-x+1) &lt; p &lt; B(1-\alpha/2; x+1, n-x)\]</span></p>
-<p>RBesT equations are:<br>
-pLow &lt;- qbeta(Low, r + (r == 0), n - r + 1)<br>
-pHigh &lt;- qbeta(High, r + 1, n - r + ((n - r) == 0))</p>
-<p>In Version 1.8-0 onwards the equations were updated as follows, which then match the Hmisc intervals:<br>
-pLow &lt;- qbeta(Low, r, n - r + 1)<br>
-pHigh &lt;- qbeta(High, r + 1, n - r)</p>
-<p><strong>The {ExactCIdiff} package</strong> produces exact CIs for two dependent proportions (matched pairs).</p>
-<p><strong>The {DescTools} package</strong> has a function BinomDiffCI which produces CIs for two independent proportions (unmatched pairs) including methods for Agresti/Caffo, Wald, Wald with Continuity correction, Newcombe Score, Newcombe score with continuity correction, and more computationally intensive methods such as Miettinen and Nurminen, Mee, Brown Li’s Jeffreys, Hauck-Anderson and Haldane. See <a href="https://search.r-project.org/CRAN/refmans/DescTools/html/BinomDiffCI.html">here</a> for more detail.</p>
-<p><strong>The {presize} package</strong> has a function prec_prop() which also calculates CIs for 2 independent samples using the Wilson, Agresti-Coull, Exact or Wald approaches. The package is not described in further detail here since in most cases <strong>{DescTools}</strong> will be able to compute what is needed. However, it’s mentioned due to other functionality it has available such as sample size and precision calculations for AUC, correlations, cronbach’s alpha, intraclass correlation, Cohen’s kappa, likelihood ratios, means, mean differences, odds ratios, rates, rate ratios, risk differences and risk ratios.</p>
+<section id="packages" class="level1">
+<h1>Packages</h1>
+<p>The table below indicates which methods can be produced using each package. Methods are grouped by those that aim to achieve the nominal confidence interval on average, then the ‘exact’ and continuity adjusted methods that aim to achieve the nominal confidence level as a minimum.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 8%">
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 12%">
+<col style="width: 9%">
+<col style="width: 8%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>cardx</th>
+<th>PropCIs</th>
+<th>ratesci</th>
+<th>DescTools</th>
+<th>cicalc</th>
+<th>Hmisc</th>
+<th>RBesT</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>For proximate coverage:</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><strong>Wald</strong></td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>-</td>
+</tr>
+<tr class="odd">
+<td><strong>Agresti-Coull</strong></td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr class="even">
+<td><strong>Jeffreys</strong></td>
+<td>Y</td>
+<td>-</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr class="odd">
+<td><strong>Mid-P</strong></td>
+<td>-</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr class="even">
+<td><strong>Wilson</strong></td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>-</td>
+</tr>
+<tr class="odd">
+<td><strong>SCAS</strong></td>
+<td>-</td>
+<td>-</td>
+<td>Y</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr class="even">
+<td>For conservative coverage:</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>Wald-cc</strong></td>
+<td>Y</td>
+<td>-</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr class="even">
+<td><strong>Jeffreys-cc</strong></td>
+<td>-</td>
+<td>-</td>
+<td>Y</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr class="odd">
+<td><strong>Clopper-Pearson</strong></td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+</tr>
+<tr class="even">
+<td><strong>Wilson-cc</strong></td>
+<td>Y</td>
+<td>-</td>
+<td>Y</td>
+<td>-</td>
+<td>Y</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr class="odd">
+<td><strong>SCAS-cc</strong></td>
+<td>-</td>
+<td>-</td>
+<td>Y</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr class="even">
+<td><strong>Blaker</strong></td>
+<td>-</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<p>Most of these packages require just the number of events (numerator number of successes) &amp; total number of subjects (denominator) as an input dataset. The exception is {cardx}, which takes input data as one row per individual.</p>
+<p><strong>The {cardx} package</strong> includes a separate function for each method. Alternatively, you can use <code>cardx::ard_categorical_ci(data = act, variables = respn, method ='wilson')</code> for example. This invokes the code for the selected method but returns an analysis results dataset (ARD) format as the output.</p>
+<p><strong>The {PropCIs} package</strong> contains separate functions to produce CIs for various methods, including Blaker’s ‘exact’ method and Mid-P which aren’t available in {cardx} but are produced by SAS PROC FREQ. We found results agreed with SAS to the 5th decimal place. For methods given by both {PropCIs} and {cardx}, the results generally aligned to at least the 7th decimal place, but some methods (Wilson &amp; mid-P) are only output with 4 dps.</p>
+<p><strong>The {ratesci} package</strong> (<code>rateci()</code> function) produces a variety of CIs for a proportion - note, the current development version at <a href="https://github.com/petelaud/ratesci" class="uri">https://github.com/petelaud/ratesci</a> has added more methods compared to the CRAN release (v1.0.0). A CRAN update will be released in due course.</p>
+<p><strong>The {DescTools} package</strong> has a function <code>BinomCI()</code> that produces a wide selection of methods. It has</p>
+<p><strong>The {cicalc} package</strong> … [TBC]</p>
+<p><strong>In the {Hmisc} package,</strong> <code>binconf()</code> produces CIs using either the Clopper-Pearson, Wilson or Wald method. In this example (x=36 and n=154), the results match the cardx package.</p>
+<!--#
+Note for previous contributor: the following text is removed because there is no contradiction between 'setting the lower limit to 0' when x=0, and 'the standard implementation of the Clopper-Pearson method'. Please explain further (with example) if there are specific cases that lead to a difference.
+
+Documentation reports that the method uses F distribution to compute exact intervals based on the binomial cdf. However, if the percentage of responders is 100% then the upper limit is set to 1. Similarly if the percentage of responders is 0%, then the lower limit is set to 0. Hence, in extreme cases there may be differences between this package and the standard implementation of Clopper-Pearson method. 
+-->
+<p><strong>The {RBesT} package</strong> produces CIs using the Clopper-Pearson method with the <code>BinaryExactCI()</code> function. (Prior to version 1.8-0, the function produced erroneous results for boundary cases where x = 0 or x = N).</p>
+<p>Another package producing many of the above intervals is <strong>{contingencytables}</strong>, but the format of its output objects is not very easy to work with.</p>
 </section>
-<section id="methods-for-calculating-confidence-intervals-for-a-single-proportion-using-cardx" class="level2">
-<h2 class="anchored" data-anchor-id="methods-for-calculating-confidence-intervals-for-a-single-proportion-using-cardx">Methods for Calculating Confidence Intervals for a single proportion using cardx</h2>
-<p>For more technical derivation and reasons for use of each of the methods listed below, see the corresponding <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html">SAS page</a>.</p>
-<p>Let’s start by calculating a Confidence interval for the proportion of successes observed in the Active Treatment group (a single sample).</p>
-<section id="clopper-pearson-exact-or-binomial-ci-method" class="level3">
-<h3 class="anchored" data-anchor-id="clopper-pearson-exact-or-binomial-ci-method">Clopper-Pearson (Exact or binomial CI) Method</h3>
-<p>Clopper-Pearson Exact CI is one of the most popular methods, it is often good for small sample sizes when the proportion is not close to the tails (0,1), but it can be too conservative (too wide an interval compared to the interval containing the true population proportion 95% of the time).</p>
-<p>The cardx package calculates the Clopper-Pearson score by calling stats::binom.test() function.</p>
+<section id="methods-for-calculating-confidence-intervals-for-a-single-proportion-using-r" class="level1">
+<h1>Methods for Calculating Confidence Intervals for a single proportion using R</h1>
+<p>For more technical derivation and characteristics of each of the methods listed below, see the corresponding <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html">SAS page</a>.</p>
+<p>Most of the methods are demonstrated below using the {cardx} package.</p>
+<section id="clopper-pearson-exact-or-binomial-ci-method" class="level2">
+<h2 class="anchored" data-anchor-id="clopper-pearson-exact-or-binomial-ci-method">Clopper-Pearson (Exact or binomial CI) Method</h2>
+<p>The Clopper-Pearson ‘Exact’ CI is one of the most popular methods - it is often a preferred ‘safe option’ to avoid the known deficiencies of the Wald method and guarantee coverage of at least the nominal confidence level, but it can be excessively conservative (too wide an interval compared to the interval containing the true population proportion 95% of the time).</p>
+<p>The {cardx} package calculates the Clopper-Pearson interval by calling the <code>stats::binom.test()</code> function.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_clopper_pearson</span>(act2, <span class="at">conf.level =</span> <span class="fl">0.95</span>) <span class="sc">|&gt;</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>() <span class="sc">|&gt;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>(statistic<span class="sc">:</span>parameter))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 11
-      N     n conf.level estimate statistic  p.value parameter conf.low
-  &lt;int&gt; &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
-1   154    36       0.95    0.234        36 2.21e-11       154    0.169
-# ℹ 3 more variables: conf.high &lt;dbl&gt;, method &lt;chr&gt;, alternative &lt;chr&gt;</code></pre>
+<pre><code># A tibble: 1 × 8
+      N     n conf.level estimate conf.low conf.high method          alternative
+  &lt;int&gt; &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;           &lt;chr&gt;      
+1   154    36       0.95    0.234    0.169     0.309 Clopper-Pearso… two.sided  </code></pre>
 </div>
 </div>
 </section>
-<section id="normal-approximation-method-also-known-as-the-wald-method" class="level3">
-<h3 class="anchored" data-anchor-id="normal-approximation-method-also-known-as-the-wald-method">Normal Approximation Method (Also known as the Wald Method)</h3>
-<p>In large random samples from independent trials, the sampling distribution of proportions approximately follows the normal distribution. The expectation of a sample proportion is the corresponding population proportion. Therefore, based on a sample of size <span class="math inline">\(n\)</span>, a <span class="math inline">\((1-\alpha)\%\)</span> confidence interval for population proportion can be calculated using normal approximation as follows:</p>
-<p><span class="math inline">\(p\approx \hat p \pm z_\alpha \sqrt{\hat p(1-\hat p)}/{n}\)</span>, where <span class="math inline">\(\hat p\)</span> is the sample proportion, <span class="math inline">\(z_\alpha\)</span> is the <span class="math inline">\(1-\alpha/2\)</span> quantile of a standard normal distribution corresponding to level <span class="math inline">\(\alpha\)</span>, and <span class="math inline">\(\sqrt{\hat p(1-\hat p)}/{n}\)</span> is the standard error.</p>
-<p>For more technical information see the corresponding <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html">SAS page</a>.</p>
-<section id="example-code" class="level4">
-<h4 class="anchored" data-anchor-id="example-code">Example code</h4>
-<p>The following code calculates a confidence interval for a binomial proportion using normal approximation equation manually. This is replicated exactly using the <code>cardx::proportion_ci_wald function</code> which also allows the continuity correction to be applied.</p>
+<section id="normal-approximation-method-also-known-as-the-wald-method" class="level2">
+<h2 class="anchored" data-anchor-id="normal-approximation-method-also-known-as-the-wald-method">Normal Approximation Method (Also known as the Wald Method)</h2>
+<p>The following code calculates a confidence interval for a binomial proportion using the normal approximation equation manually. This is replicated exactly using the <code>cardx::proportion_ci_wald function</code> which also allows the continuity correction to be applied.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># sample proportion by trt</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>summary <span class="ot">&lt;-</span> adcibc <span class="sc">|&gt;</span></span>
@@ -387,52 +563,42 @@ pHigh &lt;- qbeta(High, r + 1, n - r)</p>
   &lt;int&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;glue&gt;                     
 1   154    36    0.234    0.167     0.301       0.95 Wald Confidence Interval w…</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># cardx package Wald method with continuity correction</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_wald</span>(act2, <span class="at">conf.level =</span> <span class="fl">0.95</span>, <span class="at">correct =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 7
-      N     n estimate conf.low conf.high conf.level method                     
-  &lt;int&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;glue&gt;                     
-1   154    36    0.234    0.164     0.304       0.95 Wald Confidence Interval w…</code></pre>
-</div>
 </div>
 </section>
-</section>
-<section id="wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method3" class="level3">
-<h3 class="anchored" data-anchor-id="wilson-method-also-known-as-the-score-method-or-the-altman-newcombe-method3">Wilson Method (Also known as the Score method or the Altman, Newcombe method<sup>3</sup> )</h3>
-<p>The cardx package calculates the Wilson (score) method by calling stats::prop.test() function. This method is often used as a compromise between the Clopper-Pearson and the Wald given it was found to be accurate for most parameter values (even those close to 0 and 1), and it does not suffer from being over-conservative. For more technical information see the corresponding <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html">SAS page</a>.</p>
-<p>The package also contains a function for proportion_ci_strat_wilson() which calculates the stratified Wilson CIs for unequal proportions as described on page 47 <a href="https://cran.r-universe.dev/cardx/cardx.pdf">here</a>.</p>
+<section id="wilson-method-also-known-as-the-asymptotic-score-method" class="level2">
+<h2 class="anchored" data-anchor-id="wilson-method-also-known-as-the-asymptotic-score-method">Wilson Method (Also known as the (Asymptotic) Score method)</h2>
+<p>The cardx package calculates the Wilson (score) method by calling the <code>stats::prop.test()</code> function. This method is often used as a compromise between the Clopper-Pearson and the Wald given it was found to be accurate for most parameter values (even those close to 0 and 1), and it does not suffer from being over-conservative. However, it over-corrects the asymmetric one-sided coverage of Wald - the location of the Wilson interval is shifted too far towards 0.5<span class="citation" data-cites="tonycai2005"><sup><a href="#ref-tonycai2005" role="doc-biblioref">1</a></sup></span>. For more technical information see the corresponding <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html">SAS page</a>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># cardx package Wilson method without continuity correction</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_wilson</span>(act2, <span class="at">conf.level =</span> <span class="fl">0.95</span>, <span class="at">correct =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># cardx package Wilson method without continuity correction</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_wilson</span>(act2, <span class="at">conf.level =</span> <span class="fl">0.95</span>, <span class="at">correct =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>() <span class="sc">|&gt;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>(statistic<span class="sc">:</span>parameter))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 11
-      N     n conf.level estimate statistic  p.value parameter conf.low
-  &lt;int&gt; &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;int&gt;    &lt;dbl&gt;
-1   154    36       0.95    0.234      43.7 3.90e-11         1    0.174
-# ℹ 3 more variables: conf.high &lt;dbl&gt;, method &lt;glue&gt;, alternative &lt;chr&gt;</code></pre>
+<pre><code># A tibble: 1 × 8
+      N     n conf.level estimate conf.low conf.high method          alternative
+  &lt;int&gt; &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt; &lt;glue&gt;          &lt;chr&gt;      
+1   154    36       0.95    0.234    0.174     0.307 Wilson Confide… two.sided  </code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># cardx package Wilson method with continuity correction</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_wilson</span>(act2, <span class="at">conf.level =</span> <span class="fl">0.95</span>, <span class="at">correct =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
+</div>
+<p>A recent improvement to the Wilson Score method introduces a skewness correction in order to address the asymmetric one-sided coverage probabilities<span class="citation" data-cites="laud2017"><sup><a href="#ref-laud2017" role="doc-biblioref">2</a></sup></span>. The resulting Skewness Corrected Asymptotic Score (SCAS) method can be obtained from the {ratesci} package. Note in this example the interval is shifted downwards by about 0.0015.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>ratesci<span class="sc">::</span><span class="fu">rateci</span>(<span class="at">x =</span> <span class="dv">36</span>, <span class="at">n =</span> <span class="dv">154</span>)<span class="sc">$</span>scas <span class="sc">|&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 5
+  lower   est upper     x     n
+  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1 0.172 0.234 0.305    36   154</code></pre>
+</div>
+</div>
+</section>
+<section id="agresti-coull-method" class="level2">
+<h2 class="anchored" data-anchor-id="agresti-coull-method">Agresti-Coull Method</h2>
+<p>The {cardx} package calculates the Agresti-Coull method using the equation from the published method by Alan Agresti &amp; Brent Coull based on adding 2 successes and 2 failures before computing the wald CI. The CI is truncated, when it overshoots the boundary (&lt;0 or &gt;1).</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># cardx package agresti_coull method</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_agresti_coull</span>(act2, <span class="at">conf.level =</span> <span class="fl">0.95</span>) <span class="sc">|&gt;</span></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 11
-      N     n conf.level estimate statistic  p.value parameter conf.low
-  &lt;int&gt; &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;int&gt;    &lt;dbl&gt;
-1   154    36       0.95    0.234      42.6 6.70e-11         1    0.171
-# ℹ 3 more variables: conf.high &lt;dbl&gt;, method &lt;glue&gt;, alternative &lt;chr&gt;</code></pre>
-</div>
-</div>
-</section>
-<section id="agresti-coull-method" class="level3">
-<h3 class="anchored" data-anchor-id="agresti-coull-method">Agresti-Coull Method</h3>
-<p>The cardx package calculates the Agresti-Coull method using the equation from the published method by Alan Agresti &amp; Brent Coull based on adding 2 successes and 2 failures before computing the wald CI. The CI is truncated, when it overshoots the boundary (&lt;0 or &gt;1).</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># cardx package agresti_coull method</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_agresti_coull</span>(act2, <span class="at">conf.level =</span> <span class="fl">0.95</span>) <span class="sc">|&gt;</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 1 × 7
       N     n estimate conf.low conf.high conf.level method                     
@@ -441,13 +607,13 @@ pHigh &lt;- qbeta(High, r + 1, n - r)</p>
 </div>
 </div>
 </section>
-<section id="jeffreys-method" class="level3">
-<h3 class="anchored" data-anchor-id="jeffreys-method">Jeffreys Method</h3>
-<p>Jeffreys method is a particular type of Bayesian Highest Probability Density (HPD) Method. For proportions, the beta distribution is generally used for the prior, which consists of two parameters alpha and beta. Setting alpha=beta=0.5 is called Jeffrey’s prior. NOTE: if you want to use any other priors, you can use <code>binom.bayes</code> which estimates a credible interval for proportions.</p>
+<section id="jeffreys-method" class="level2">
+<h2 class="anchored" data-anchor-id="jeffreys-method">Jeffreys Method</h2>
+<p>The Jeffreys ‘equal-tailed’ method is a particular type of Bayesian method, which optimises central location instead of Highest Probability Density (HPD)<span class="citation" data-cites="brown2001"><sup><a href="#ref-brown2001" role="doc-biblioref">3</a></sup></span>. For proportions, the beta distribution is generally used for the prior, which consists of two parameters alpha and beta. Setting alpha=beta=0.5 is called the Jeffreys prior. NOTE: if you want to use any other priors you can use the <code>ratesci:jeffreysci()</code> function which allows a different beta prior to be specified using the <code>ai</code> and <code>bi</code> arguments. Alternatively (and if you prefer to opt for an HPD approach not recommended by Brown et al.), you can use <code>binom::binom.bayes</code>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># cardx package jeffreys method</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_jeffreys</span>(act2, <span class="at">conf.level =</span> <span class="fl">0.95</span>) <span class="sc">|&gt;</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># cardx package jeffreys method</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_jeffreys</span>(act2, <span class="at">conf.level =</span> <span class="fl">0.95</span>) <span class="sc">|&gt;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 1 × 7
       N     n estimate conf.low conf.high conf.level method           
@@ -456,28 +622,202 @@ pHigh &lt;- qbeta(High, r + 1, n - r)</p>
 </div>
 </div>
 </section>
+<section id="binomial-based-mid-p-method" class="level2">
+<h2 class="anchored" data-anchor-id="binomial-based-mid-p-method">Binomial based mid-P Method</h2>
+<p>The table below (from {ratesci}) includes two versions of the mid-P interval, one derived iteratively from binomial tail proportions and another from quantiles of a beta distribution. These have been claimed to be equivalent<span class="citation" data-cites="brown2001"><sup><a href="#ref-brown2001" role="doc-biblioref">3</a></sup></span>, but it seems they are not quite identical - the beta version is very close to the Jeffreys interval. The first version closely matches with the result (0.17200131, 0.30545883) from SAS PROC FREQ:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>ratesci<span class="sc">::</span><span class="fu">rateci</span>(<span class="at">x =</span> <span class="dv">36</span>, <span class="at">n =</span> <span class="dv">154</span>, <span class="at">precis =</span> <span class="dv">10</span>)<span class="sc">$</span>ciarray[,,<span class="dv">1</span>] <span class="sc">|&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(<span class="at">rownames =</span> <span class="st">"Method"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 0 × 0</code></pre>
+</div>
+</div>
+<p>The mid-P result from {DescTools} doesn’t quite match with either of the above results, beyond the 4th decimal place, even with increased precision using the <code>tol</code> argument (which according to the documentation only affects the Blaker method). The documentation indicates that the mid-P interval is derived from the F-distribution, which suggests there are actually 3 slightly different versions of ‘mid-P’.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>DescTools<span class="sc">::</span><span class="fu">BinomCI</span>(<span class="at">x =</span> <span class="dv">36</span>, <span class="at">n =</span> <span class="dv">154</span>, </span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">tol =</span> <span class="fl">1e-10</span>,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">method =</span> <span class="fu">c</span>(<span class="st">"jeffreys"</span>, <span class="st">"wilson"</span>, <span class="st">"midp"</span>, <span class="st">"clopper-pearson"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(<span class="at">rownames =</span> <span class="st">"Method"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 4
+  Method            est lwr.ci upr.ci
+  &lt;chr&gt;           &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+1 jeffreys        0.234  0.172  0.305
+2 wilson          0.234  0.174  0.307
+3 midp            0.234  0.172  0.305
+4 clopper-pearson 0.234  0.169  0.309</code></pre>
+</div>
+</div>
+<p>The PropCIs version only displays 4dps, because the calculations are performed on sequential values of p at intervals of 0.0005. Therefore the 4th decimal place shown is only ever 1 or 6, and the PropCIs output for this method is only reliable up to the 3rd decimal place. (A similar precision issue is also noted for the <code>exactci::binom.exact(..., midp = TRUE)</code> function, which is probably due to reliance on <code>uniroot()</code> with its default value for the <code>tol</code> argument.)</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>PropCIs<span class="sc">::</span><span class="fu">midPci</span>(<span class="at">x =</span> <span class="dv">36</span>, <span class="at">n =</span> <span class="dv">154</span>, <span class="at">conf.level =</span> <span class="fl">0.95</span>) </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+
+
+data:  
+
+95 percent confidence interval:
+ 0.1721 0.3051</code></pre>
+</div>
+</div>
 </section>
-<section id="continuity-adjusted-methods" class="level2">
-<h2 class="anchored" data-anchor-id="continuity-adjusted-methods">Continuity Adjusted Methods</h2>
-<p>[TBC]</p>
+<section id="blaker-method" class="level2">
+<h2 class="anchored" data-anchor-id="blaker-method">Blaker Method</h2>
+<p>The Blaker ‘exact’ CI matching SAS output (to at least 7 dps) may be obtained as follows from {ratesci}, or from the dedicated {BlakerCI} package. Output from <code>DescTools::BinomCI</code> and <code>PropCIs::blakerci()</code> is less precise, matching to 4 decimal places.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">digits=</span><span class="dv">8</span>)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="co"># ratesci package Blaker method </span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>ratesci<span class="sc">::</span><span class="fu">rateci</span>(<span class="dv">36</span>, <span class="dv">154</span>, <span class="at">cc =</span> <span class="cn">TRUE</span>)<span class="sc">$</span>blaker <span class="sc">|&gt;</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 5
+  lower   est upper     x     n
+  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1 0.170 0.234 0.307    36   154</code></pre>
+</div>
+</div>
 </section>
-<section id="consistency-with-hypothesis-tests" class="level2">
-<h2 class="anchored" data-anchor-id="consistency-with-hypothesis-tests">Consistency with hypothesis tests</h2>
-<p>[TBC]</p>
 </section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<ol type="1">
-<li><a href="https://insightsengineering.github.io/cardx/main/#:~:text=The%20%7Bcardx%7D%20package%20is%20an%20extension%20of%20the,Data%20Objects%20%28ARDs%29%20using%20the%20R%20programming%20language.">pharmaverse cardx package</a></li>
-<li><a href="https://cran.r-project.org/web//packages/PropCIs/PropCIs.pdf">PropCIs package</a></li>
-<li>D. Altman, D. Machin, T. Bryant, M. Gardner (eds). Statistics with Confidence: Confidence Intervals and Statistical Guidelines, 2nd edition. John Wiley and Sons 2000.</li>
-<li><a href="https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf" class="uri">https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf</a></li>
-</ol>
+<section id="continuity-adjusted-methods" class="level1">
+<h1>Continuity Adjusted Methods</h1>
+<p>Continuity adjustments (at a magnitude of <span class="math inline">\(\gamma / N\)</span> where conventionally <span class="math inline">\(\gamma = 0.5\)</span> but smaller values may be used) can be applied to the Wald, Wilson and SCAS formulae.</p>
+<p>Here is an example of the adjusted Wilson interval from {cardx}:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># cardx package Wilson method with continuity correction</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_wilson</span>(act2, <span class="at">conf.level =</span> <span class="fl">0.95</span>, <span class="at">correct =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 11
+      N     n conf.level estimate statistic  p.value parameter conf.low
+  &lt;int&gt; &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;int&gt;    &lt;dbl&gt;
+1   154    36       0.95    0.234      42.6 6.70e-11         1    0.171
+# ℹ 3 more variables: conf.high &lt;dbl&gt;, method &lt;glue&gt;, alternative &lt;chr&gt;</code></pre>
+</div>
+</div>
+<p>In principle, the concept can also be applied to the Jeffreys CI, although with <span class="math inline">\(\gamma=0.5\)</span> this turns out to be identical to the Clopper-Pearson interval.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>ratesci<span class="sc">::</span><span class="fu">rateci</span>(<span class="at">x =</span> <span class="dv">36</span>, <span class="at">n =</span> <span class="dv">154</span>, <span class="at">cc =</span> <span class="fl">0.5</span>)<span class="sc">$</span>ciarray <span class="sc">|&gt;</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop</span>() <span class="sc">|&gt;</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(<span class="at">rownames=</span><span class="st">"Method"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 0 × 0</code></pre>
+</div>
+</div>
+</section>
+<section id="consistency-with-hypothesis-tests" class="level1">
+<h1>Consistency with hypothesis tests</h1>
+<p>The consistency of CIs for a proportion with a hypothesis test depends on what test is specified. Some confidence interval methods are derived by inverting a test, and therefore guarantee consistency. This includes Clopper Pearson (exact binomial test from <code>prop.test()</code>), Wilson Score (asymptotic binomial test from <code>binom.test()</code> using the standard error estimated under the null hypothesis), and mid-P (exact test with mid-P adjustment, e.g.&nbsp;from <code>exactci::binom.exact(..., midp = TRUE)</code>), although given the observations above, it would be important to select the right version of the mid-P interval. For the SCAS method, the CI is consistent with a skewness-corrected version of the asymptotic test (output by the <code>ratesci::scoreci()</code> function).</p>
+<p>The output from some of the {cardx} functions (e.g.&nbsp;<code>proportion_ci_wilson()</code>) and <code>proportion_ci_clopperpearson()</code> includes a p-value, which is not mentioned in the package documentation. It is a test against a null hypothesis of p=0.5, which is the default value used by the underlying <code>binom.test</code> and <code>prop.test</code> functions. If a test against a specified value of p was required, then those underlying functions should be used to obtain the p-value, as there is no facility to select a different null value in the {cardx} functions.</p>
+</section>
+<section id="stratified-score-methods" class="level1">
+<h1>Stratified Score methods</h1>
+<p>[To be moved to separate page for stratified analysis?]</p>
+<p>{cardx} also contains a function <code>proportion_ci_strat_wilson()</code> which calculates stratified Wilson CIs for unequal proportions<span class="citation" data-cites="yan2010"><sup><a href="#ref-yan2010" role="doc-biblioref">4</a></sup></span>, with or without continuity adjustment, using a combination of the CIs from each stratum. The default weights (not clearly documented) are presumably those described in the publication, which aim to minimise the weighted sum of the squared interval lengths. The function has the facility to specify other weights (such as proportional to stratum size, for example, or adjusted for known population weights). Examples shown use the <code>adcibc2</code> dataset, stratified by age group.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>actstrat <span class="ot">&lt;-</span> adcibc2 <span class="sc">|&gt;</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(TRTP, AVAL, AGEGR1) <span class="sc">|&gt;</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(TRTP <span class="sc">!=</span> <span class="st">"Placebo"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">respn =</span> <span class="fu">if_else</span>(AVAL <span class="sc">&gt;</span> <span class="dv">4</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">agegrp =</span> <span class="fu">factor</span>(AGEGR1)</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(respn, agegrp)</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>actage <span class="ot">&lt;-</span> actstrat<span class="sc">$</span>agegrp</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(actage, act2) <span class="sc">|&gt;</span></span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 3
+  actage act2      n
+  &lt;chr&gt;  &lt;chr&gt; &lt;int&gt;
+1 &lt;65    0        13
+2 &gt;80    0        32
+3 65-80  0        73
+4 &lt;65    1         4
+5 &gt;80    1        11
+6 65-80  1        21</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(actage) <span class="sc">|&gt;</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 2
+  actage     n
+  &lt;chr&gt;  &lt;int&gt;
+1 &lt;65       17
+2 &gt;80       43
+3 65-80     94</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_strat_wilson</span>(<span class="at">x =</span> act2, <span class="at">strata =</span> actage) <span class="sc">|&gt;</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 8
+      N     n estimate conf.low conf.high conf.level weights method             
+  &lt;int&gt; &lt;int&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt;   &lt;dbl&gt; &lt;glue&gt;             
+1   154    36    0.234    0.174     0.307       0.95   0.113 Stratified Wilson …
+2   154    36    0.234    0.174     0.307       0.95   0.263 Stratified Wilson …
+3   154    36    0.234    0.174     0.307       0.95   0.623 Stratified Wilson …</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>cardx<span class="sc">::</span><span class="fu">proportion_ci_strat_wilson</span>(<span class="at">x =</span> act2, <span class="at">strata =</span> actage, <span class="at">weights =</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">/</span><span class="dv">3</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">3</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">3</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 7
+      N     n estimate conf.low conf.high conf.level method                     
+  &lt;int&gt; &lt;int&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;glue&gt;                     
+1   154    36    0.234    0.166     0.332       0.95 Stratified Wilson Confiden…</code></pre>
+</div>
+</div>
+<p>The {ratesci} package can also produce stratified Wilson or SCAS intervals (with or without continuity adjustment), though the underlying methodology is different - this version uses a stratified score function<span class="citation" data-cites="laud2017"><sup><a href="#ref-laud2017" role="doc-biblioref">2</a></sup></span> (analogous to the Miettinen-Nurminen formula for stratified risk difference) instead of constructing the interval from a CI calculated separately for each stratum. For stratified analysis, the <code>ratesci::scoreci()</code> function takes inputs in the form of vectors of the numerators and denominators per stratum. By default, weights are proportional to stratum size, but custom weights are also catered for using the <code>wt</code> argument. Arbitrary fixed weights are shown here to allow comparison with the {cardx} version.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>ratesci<span class="sc">::</span><span class="fu">scoreci</span>(<span class="at">x1 =</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">21</span>, <span class="dv">11</span>), </span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>                 <span class="at">n1 =</span> <span class="fu">c</span>(<span class="dv">17</span>, <span class="dv">94</span>, <span class="dv">43</span>), </span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">contrast =</span> <span class="st">'p'</span>, </span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">skew =</span> <span class="cn">FALSE</span>, </span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">stratified =</span> <span class="cn">TRUE</span>)<span class="sc">$</span>estimates <span class="sc">|&gt;</span></span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 6
+  lower   est upper level p1hat p1mle
+  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1 0.174 0.234 0.307  0.95 0.234 0.234</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>ratesci<span class="sc">::</span><span class="fu">scoreci</span>(<span class="at">x1 =</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">21</span>, <span class="dv">11</span>), </span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>                 <span class="at">n1 =</span> <span class="fu">c</span>(<span class="dv">17</span>, <span class="dv">94</span>, <span class="dv">43</span>), </span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">wt =</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>), </span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">contrast =</span> <span class="st">'p'</span>, </span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">skew =</span> <span class="cn">FALSE</span>, </span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>                 <span class="at">stratified =</span> <span class="cn">TRUE</span>)<span class="sc">$</span>estimates <span class="sc">|&gt;</span></span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 6
+  lower   est upper level p1hat p1mle
+  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1 0.164 0.238 0.332  0.95 0.238 0.238</code></pre>
+</div>
+</div>
+</section>
+<section id="references" class="level1">
+
+
 
 
 </section>
 
-</main> <!-- /main -->
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body" data-entry-spacing="0" data-line-spacing="2" role="list">
+<div id="ref-tonycai2005" class="csl-entry" role="listitem">
+<div class="csl-left-margin">1. </div><div class="csl-right-inline">Tony Cai, T. <a href="https://doi.org/10.1016/j.jspi.2004.01.005">One-sided confidence intervals in discrete distributions</a>. <em>Journal of Statistical Planning and Inference</em> <strong>131</strong>, 63–88 (2005).</div>
+</div>
+<div id="ref-laud2017" class="csl-entry" role="listitem">
+<div class="csl-left-margin">2. </div><div class="csl-right-inline">Laud, P. J. <a href="https://doi.org/10.1002/pst.1813">Equal<span>-</span>tailed confidence intervals for comparison of rates</a>. <em>Pharmaceutical Statistics</em> <strong>16</strong>, 334–348 (2017).</div>
+</div>
+<div id="ref-brown2001" class="csl-entry" role="listitem">
+<div class="csl-left-margin">3. </div><div class="csl-right-inline">Brown, L. D., Cai, T. T. &amp; DasGupta, A. <a href="https://doi.org/10.1214/ss/1009213286">Interval estimation for a binomial proportion</a>. <em>Statistical Science</em> <strong>16</strong>, (2001).</div>
+</div>
+<div id="ref-yan2010" class="csl-entry" role="listitem">
+<div class="csl-left-margin">4. </div><div class="csl-right-inline">Yan, X. &amp; Su, X. G. <a href="https://doi.org/10.1198/sbr.2009.0049">Stratified wilson and newcombe confidence intervals for multiple binomial proportions</a>. <em>Statistics in Biopharmaceutical Research</em> <strong>2</strong>, 329–335 (2010).</div>
+</div>
+</div></section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";

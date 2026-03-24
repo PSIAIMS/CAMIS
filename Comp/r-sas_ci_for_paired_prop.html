@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>CAMIS Blog</title>
+<title>R vs SAS Confidence Intervals for Paired Proportions</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -23,6 +23,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -34,8 +69,6 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
 <link href="../images/logo.png" rel="icon" type="image/png">
-<script src="../site_libs/quarto-listing/list.min.js"></script>
-<script src="../site_libs/quarto-listing/quarto-listing.js"></script>
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -73,65 +106,7 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
-<script>
 
-  window.document.addEventListener("DOMContentLoaded", function (_event) {
-    const listingTargetEl = window.document.querySelector('#listing-listing .list');
-    if (!listingTargetEl) {
-      // No listing discovered, do not attach.
-      return; 
-    }
-
-    const options = {
-      valueNames: ['listing-date','listing-title','listing-author','listing-subtitle','listing-image','listing-description',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
-      
-      searchColumns: ["listing-date","listing-title","listing-author","listing-subtitle","listing-image","listing-description"],
-    };
-
-    window['quarto-listings'] = window['quarto-listings'] || {};
-    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
-
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  });
-
-  window.addEventListener('hashchange',() => {
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  })
-  </script>
-
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
-
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -185,7 +160,7 @@ window.Quarto = {
 <span class="menu-text">Meeting Minutes</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="../blogs/index.html" aria-current="page"> 
+    <a class="nav-link" href="../blogs/index.html"> 
 <span class="menu-text">Blog</span></a>
   </li>  
   <li class="nav-item dropdown ">
@@ -224,24 +199,31 @@ window.Quarto = {
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#general-comparison-table-for-two-matched-samples-proportions" id="toc-general-comparison-table-for-two-matched-samples-proportions" class="nav-link" data-scroll-target="#general-comparison-table-for-two-matched-samples-proportions">General Comparison Table For Two Matched Samples Proportions</a></li>
+  <li><a href="#prerequisites-r-packages" id="toc-prerequisites-r-packages" class="nav-link" data-scroll-target="#prerequisites-r-packages">Prerequisites: R Packages</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
-<main class="content column-page" id="quarto-document-content">
+<main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">CAMIS Blog</h1>
-<p class="subtitle lead">News, updates, and commentary on the CAMIS working group</p>
+<h1 class="title">R vs SAS Confidence Intervals for Paired Proportions</h1>
 </div>
 
 
 
-<div class="quarto-title-meta column-page">
+<div class="quarto-title-meta">
 
     
   
@@ -253,190 +235,83 @@ window.Quarto = {
 </header>
 
 
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>See the <a href="../method_summary/ci_for_prop_intro.html">summary page</a> for general introductory information on confidence intervals for proportions, including the principles underlying the most common methods.</p>
+<p>For more technical derivation of methods for comparisons of paired proportions, see the corresponding <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_paired_prop.html">SAS page</a>.</p>
+<p>The tables below provide an overview of findings from R &amp; SAS, for calculation of CIs for 2 matched pair proportions.</p>
+</section>
+<section id="general-comparison-table-for-two-matched-samples-proportions" class="level2">
+<h2 class="anchored" data-anchor-id="general-comparison-table-for-two-matched-samples-proportions">General Comparison Table For Two Matched Samples Proportions</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Analysis of Two Matched Sample Proportions</th>
+<th>Supported in R</th>
+<th>Supported in SAS</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Exact method</td>
+<td>Yes {ExactCIdiff}</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Normal approximation (Wald Method)</td>
+<td>Yes {ratesci}, for RD and RR</td>
+<td>(?)Yes for RD only (cumbersome process using stratification by pair appears to match, but requires extra data manipluation)</td>
+<td>Using the equations provided in the <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html">SAS page</a>, You could do this programatically in either package</td>
+</tr>
+<tr class="odd">
+<td>MOVER (Newcombe ‘Square-and-add’ method)</td>
+<td>Yes {ratesci}, for RD and RR</td>
+<td><p>No (proc freq does CIs for the risk difference, not the difference between two proportions)</p>
+<p><code>%PAIRBINCI</code> macro</p></td>
+<td>Using the equations provided in the <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html">SAS page</a>, You could do this programatically in either package</td>
+</tr>
+<tr class="even">
+<td>Asymptotic Score method (Tango RD / Tang RR / SCAS)</td>
+<td>Yes {ratesci}, for RD and RR</td>
+<td>Not in PROC FREQ but in <code>%PAIRBINCI</code> macro</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Methods for analysis of condional (subject-specific) Odds Ratio from paired data are also available in R {ratesci}. These could be derived in SAS by transforming a selected method for the single proportion as described <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_paired_prop.html">here</a></p>
+<!--#
+Note to previous contributor:
+
+The text below is removed, because the logic is flawed. Generally, reliable conclusions can't be drawn regarding the difference between methods from looking at a single example interval. Having said that, in this example the difference between the exact and approximate methods has the potential to result in a different study conclusion (the more conservative exact interval includes the value 0).
+
+Calculating the Normal approximation and Wilson methods by hand and comparing it to the Exact method gave similar results for the 1 example demonstrated indicating as long as the proportion of responders is not close to 0 or 1, then the faster computation of the approximation methods may be easier to implement than the exact method and produce similar results. Hence {ExactCIdiff} is not recommended for most scenarios.
+
++-------------+----------------------------------------------------------------------------------------------+--------------+--------------+
+| Method Name | Calculated Using matched pair example from R & SAS pages                                     | Lower 95% CI | Upper 95% CI |
++=============+==============================================================================================+==============+==============+
+| Exact       | R                                                                                            | -0.00339     | 0.38065      |
++-------------+----------------------------------------------------------------------------------------------+--------------+--------------+
+| Normal      | by hand using equation from [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html) | 0.00911      | 0.38289      |
++-------------+----------------------------------------------------------------------------------------------+--------------+--------------+
+| MOVER       | by hand using equation from [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html) | 0.00032      | 0.36739      |
++-------------+----------------------------------------------------------------------------------------------+--------------+--------------+
+-->
+</section>
+<section id="prerequisites-r-packages" class="level2">
+<h2 class="anchored" data-anchor-id="prerequisites-r-packages">Prerequisites: R Packages</h2>
+<p>See the <a href="https://psiaims.github.io/CAMIS/R/ci_for_prop.html">R page</a> for more detail.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Example R packages required</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(cardx)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ratesci)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
 
 
+</section>
 
-
-<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
-<div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-listing-date-sort="1767744000000" data-listing-file-modified-sort="1774365555803" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="3" data-listing-word-count-sort="420">
-<div class="thumbnail"><a href="../blogs/posts/2026-01-07_CAMIS-awards-2025/index.html" class="no-external">
-
-<img loading="lazy" src="../blogs/posts/2026-01-07_CAMIS-awards-2025/chicken.jpg" class="thumbnail-image">
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/2026-01-07_CAMIS-awards-2025/index.html" class="no-external">CAMIS Awards 2025</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/2026-01-07_CAMIS-awards-2025/index.html" class="no-external">Reflections on key contributors for 2025 and looking ahead to 2026!</a>
-</div>
-<div class="delink listing-description"><a href="../blogs/posts/2026-01-07_CAMIS-awards-2025/index.html" class="no-external">
-The CAMIS team look forward to another year of collaboration and growth, and also reflect on the achievements of the previous 12 months.
-</a></div>
-</div>
-<div class="metadata">
-<a href="../blogs/posts/2026-01-07_CAMIS-awards-2025/index.html" class="no-external">
-<div class="listing-date">
-Jan 7, 2026
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="1" data-categories="TXVsdGlwbGUlMjBJbXB1dGF0aW9uJTJDUiUyQ1NBUw==" data-listing-date-sort="1764028800000" data-listing-file-modified-sort="1774365555801" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="3" data-listing-word-count-sort="512">
-<div class="thumbnail"><a href="../blogs/posts/2025-11-25_ref-based-multiple-imputation/index.html" class="no-external">
-
-<img loading="lazy" src="../blogs/posts/2025-11-25_ref-based-multiple-imputation/rbmi1.jpg" class="thumbnail-image">
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/2025-11-25_ref-based-multiple-imputation/index.html" class="no-external">Reference-Based Multiple Imputation</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/2025-11-25_ref-based-multiple-imputation/index.html" class="no-external">A comparison of Reference-Based Multiple Imputation between R and SAS</a>
-</div>
-<div class="delink listing-description"><a href="../blogs/posts/2025-11-25_ref-based-multiple-imputation/index.html" class="no-external">
-A recent PHUSE CAMIS contribution (in collaboration with PSI AIMS SIG) explored the implementation of reference-based multiple imputation in R and SAS, and a comparison of…
-</a></div>
-</div>
-<div class="metadata">
-<a href="../blogs/posts/2025-11-25_ref-based-multiple-imputation/index.html" class="no-external">
-<div class="listing-date">
-Nov 25, 2025
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="2" data-categories="Q29uZmVyZW5jZQ==" data-listing-date-sort="1750118400000" data-listing-file-modified-sort="1774365555801" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="2" data-listing-word-count-sort="206">
-<div class="thumbnail"><a href="../blogs/posts/2025-06-17_psi-conference/index.html" class="no-external">
-
-<img loading="lazy" src="../blogs/posts/2025-06-17_psi-conference/2025-06_PSI.jpg" class="thumbnail-image">
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/2025-06-17_psi-conference/index.html" class="no-external">PSI Conference 2025</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/2025-06-17_psi-conference/index.html" class="no-external">The CAMIS group presentations at the 2025 PSI Conference in London</a>
-</div>
-<div class="delink listing-description"><a href="../blogs/posts/2025-06-17_psi-conference/index.html" class="no-external">
-The PSI Conference 2025 took place 8th-11th June 2025 in Wembley, London.
-</a></div>
-</div>
-<div class="metadata">
-<a href="../blogs/posts/2025-06-17_psi-conference/index.html" class="no-external">
-<div class="listing-date">
-Jun 17, 2025
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="3" data-categories="UmVncmVzc2lvbiUyQ1IlMkNTQVM=" data-listing-date-sort="1741824000000" data-listing-file-modified-sort="1774365555800" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="2" data-listing-word-count-sort="270">
-<div class="thumbnail"><a href="../blogs/posts/2025-03-13_tobit-regression/index.html" class="no-external">
-
-<img loading="lazy" src="../blogs/posts/2025-03-13_tobit-regression/tobit-comparison.jpg" class="thumbnail-image">
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/2025-03-13_tobit-regression/index.html" class="no-external">Tobit Regression Comparison</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/2025-03-13_tobit-regression/index.html" class="no-external">A Comparison of Tobit Regression between R and SAS</a>
-</div>
-<div class="delink listing-description"><a href="../blogs/posts/2025-03-13_tobit-regression/index.html" class="no-external">
-A recent CAMIS contribution explored the standard Tobit model for a virology endpoint (viral load) with a lower detection limit.
-</a></div>
-</div>
-<div class="metadata">
-<a href="../blogs/posts/2025-03-13_tobit-regression/index.html" class="no-external">
-<div class="listing-date">
-Mar 13, 2025
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="4" data-categories="Q29uZmVyZW5jZXM=" data-listing-date-sort="1711670400000" data-listing-file-modified-sort="1774365555799" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="101">
-<div class="thumbnail"><a href="../blogs/posts/2024-03-29_phuse-conference/index.html" class="no-external">
-
-<img loading="lazy" src="../blogs/posts/2024-03-29_phuse-conference/2024-03_phuse-conference.jpeg" class="thumbnail-image">
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/2024-03-29_phuse-conference/index.html" class="no-external">2024 PHUSE US Connect Conference</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/2024-03-29_phuse-conference/index.html" class="no-external">PHUSE Poster Presentation by Soma &amp; Vikash</a>
-</div>
-<div class="delink listing-description"><a href="../blogs/posts/2024-03-29_phuse-conference/index.html" class="no-external">
-Congratulations, Soma Sekhar Sriadibhatla, on your poster presentation “CAMIS-An open source repository to document differences in statistical methodology software” at PHUSE…
-</a></div>
-</div>
-<div class="metadata">
-<a href="../blogs/posts/2024-03-29_phuse-conference/index.html" class="no-external">
-<div class="listing-date">
-Mar 29, 2024
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="5" data-listing-date-sort="1701388800000" data-listing-file-modified-sort="1774365555786" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="2" data-listing-word-count-sort="309">
-<div class="thumbnail"><a href="../blogs/posts/2023-12-01_highlights/index.html" class="no-external">
-
-<img loading="lazy" src="../blogs/posts/2023-12-01_highlights/2023-12_highlights.jpg" class="thumbnail-image">
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/2023-12-01_highlights/index.html" class="no-external">2023 Highlights</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/2023-12-01_highlights/index.html" class="no-external">A Year of Progress for the PHUSE CAMIS Working Group Project</a>
-</div>
-<div class="delink listing-description"><a href="../blogs/posts/2023-12-01_highlights/index.html" class="no-external">
-As we draw towards the end of 2023, the PHUSE DVOST CAMIS Working Group Project reflect on their key progress and successes this year.
-</a></div>
-</div>
-<div class="metadata">
-<a href="../blogs/posts/2023-12-01_highlights/index.html" class="no-external">
-<div class="listing-date">
-Dec 1, 2023
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="6" data-listing-date-sort="1683244800000" data-listing-file-modified-sort="1774365555786" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="2" data-listing-word-count-sort="209">
-<div class="thumbnail"><a href="../blogs/posts/2023-05-05_introduction-to-CAMIS/index.html" class="no-external">
-
-<img loading="lazy" src="../blogs/posts/2023-05-05_introduction-to-CAMIS/logo.png" class="thumbnail-image">
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="../blogs/posts/2023-05-05_introduction-to-CAMIS/index.html" class="no-external">Introduction to CAMIS</a>
-</h3>
-<div class="listing-subtitle">
-<a href="../blogs/posts/2023-05-05_introduction-to-CAMIS/index.html" class="no-external">An Introduction to the Comparing Analysis Method Implementations in Software (CAMIS) Working Group</a>
-</div>
-<div class="delink listing-description"><a href="../blogs/posts/2023-05-05_introduction-to-CAMIS/index.html" class="no-external">
-Are you trying to replicate results using different software/languages and struggling to find out why you can’t match the results? Check out the CAMIS repository!
-</a></div>
-</div>
-<div class="metadata">
-<a href="../blogs/posts/2023-05-05_introduction-to-CAMIS/index.html" class="no-external">
-<div class="listing-date">
-May 5, 2023
-</div>
-</a>
-</div>
-</div>
-</div>
-<div class="listing-no-matching d-none">No matching items</div>
-</div></main> <!-- /main -->
+</main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";
