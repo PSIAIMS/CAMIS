@@ -1,14 +1,18 @@
 ---
 title: "Confidence Intervals for Independent Proportions in R"
+bibliography: references.bib
+csl: nature.csl 
 ---
 
-## Introduction
+# Introduction
 
-\[See separate page for general introductory information on confidence intervals for proportions.\]
+This page covers confidence intervals for comparisons of two independent proportions in R, including the contrast parameters for risk difference (RD) $\theta_{RD} = p_1 - p_2$, relative risk (RR) $\theta_{RR} = p_1 / p_2$, and odds ratio (OR) $\theta_{OR} = p_1(1-p_2) / (p_2(1-p_1))$.
 
-\[Note: information about cicalc package will be added to this page soon.\]
+See the [summary page](../method_summary/ci_for_prop_intro.html) for general introductory information on confidence intervals for proportions, including the principles underlying the most common methods.
 
-## Data used
+Note that because the Asymptotic Score methods rely on an iterative root-finding subroutine to identify the confidence limits, the precision of results (and therefore agreement between packages) depends on the tolerance parameter used.
+
+# Data used
 
 The adcibc data stored [here](../data/adcibc.csv) was used in this example, creating a binary treatment variable `trt` taking the values of `ACT` or `PBO` and a binary response variable `resp` taking the values of `Yes` or `No`. For this example, a response is defined as a score greater than 4.
 
@@ -18,6 +22,9 @@ The adcibc data stored [here](../data/adcibc.csv) was used in this example, crea
 library(tidyverse)
 library(cardx)
 library(DescTools)
+library(ratesci)
+library(contingencytables)
+options(digits=6)
 adcibc2 <- read_csv("../data/adcibc.csv")
 
 adcibc <- adcibc2 |>
@@ -36,7 +43,7 @@ act <- filter(adcibc, trt == "ACT") |>
 act2 <- act$respn
 ```
 
-The below shows that for the Actual Treatment, there are 36 responders out of 154 subjects = 0.234 (23.4% responders).
+The below shows that for the Active Treatment, there are 36 responders out of 154 subjects, $p_1$ = 0.2338 (23.38% responders), while for the placebo treatment $p_2$ = 12/77 = 0.1558, giving a risk difference of 0.0779, relative risk 1.50, and odds ratio 1.6525.
 
 ```{r}
 #| echo: false
@@ -45,39 +52,68 @@ adcibc |>
   tally()
 ```
 
-## Packages
+# Packages
 
-**The {cardx} package** is an extension of the {cards} package, providing additional functions to create Analysis Results Data Objects (ARDs)^1^. It was developed as part of {NEST} and pharmaverse. This package requires the binary endpoint to be a logical (TRUE/FALSE) vector or a numeric/integer coded as (0, 1) with 1 (TRUE) being the success you want to calculate the confidence interval for.
+The table below indicates which methods can be produced using each package, for each contrast. Methods are grouped by those that aim to achieve the nominal confidence interval on average, then the 'exact' and continuity adjusted methods that aim to achieve the nominal confidence level as a minimum. {ExactCIdiff} appears to be the only package offering an 'exact' method for RD, but run times can be prohibitively long, and it is not clear which of the SAS 'exact' methods it matches with, if any.
 
-See [here](R:%20Functions%20for%20Calculating%20Proportion%20Confidence%20Intervals) for full description of the {cardx} proportions equations.
+|   | ratesci | contingencytables | DescTools | cicalc | gsDesign | PropCIs | cardx |
+|---------|---------|---------|---------|---------|---------|---------|---------|
+| For proximate coverage: |  |  |  |  |  |  |  |
+| **Wald/log** | RD,RR,OR | RD,RR,OR | RD,RR,OR | RD | \- | \- | RD |
+| **Agresti-Caffo** | RD | RD | RD | \- | \- | \- | \- |
+| **MOVER-Wilson (Newcombe)** | RD,RR,OR | RD,RR,OR | RD | RD | \- | \- | \- |
+| **MOVER-Jeffreys** | RD,RR,OR | \- | \- | \- | \- | \- | \- |
+| Asymptotic Score methods: |  |  |  |  |  |  |  |
+| **Miettinen-Nurminen** | RD,RR,OR | RD,RR,OR | RD | RD | RD,RR,OR | RD | \- |
+| **Mee/ Koopman** | RD,RR,OR | RD,RR,OR | RD,RR | RD | RD,RR,OR | RR | \- |
+| **SCAS** | RD,RR,OR | \- | \- | \- | \- | \- | \- |
+| For conservative coverage: |  |  |  |  |  |  |  |
+| **Wald-cc** | RD | RD | RD | RD | \- | \- | RD |
+| **MOVER-Wilson-cc** | RD,RR,OR | \- | RD | RD | \- | \- | \- |
+| **MOVER-Jeffreys-cc** | RD,RR,OR | \- | \- | \- | \- | \- | \- |
+| **MN-cc** | RD,RR,OR | \- | \- | \- | \- | \- | \- |
+| **SCAS-cc** | RD,RR,OR | \- | \- | \- | \- | \- | \- |
 
-If calculating the CI for a difference in proportions, the package requires both the response and the treatment variable to be numeric/integer coded as (0, 1) (or logical vector).
+**The {ratesci} package** has the most extensive coverage of the best-performing methods (Asymptotic Score and MOVER) for all contrasts, including several features not available elsewhere, including the skewness correction for improved symmetrical one-sided coverage (SCAS), corresponding hypothesis tests, an option to apply the MOVER approach with Jeffreys intervals (MOVER-J), and optional 'sliding scale' continuity adjustments across all methods. It also produces a selection of other methods for reference. Note, the current development version at <https://github.com/petelaud/ratesci> has added more functionality (including the convenience functions `rdci()` etc) compared to the CRAN release (v1.0.0). A CRAN update will be released in due course.
 
-Instead of the code presented below, you can use `ard_categorical_ci(data, variables=resp, method ='wilson')` for example. This invokes the code below but returns an analysis results dataset (ARD) format as the output.
+**The {DescTools} package** has a function `BinomDiffCI()` which produces CIs for RD using numerous different methods including those indicated above plus Brown-Li(Jeffreys), Hauck-Anderson, and Haldane. See [here](https://search.r-project.org/CRAN/refmans/DescTools/html/BinomDiffCI.html) for more detail. The `BinomRatioCI()` function offers several methods for RR CIs, including the approximate (log)normal and Asymptotic Score (Koopman) methods. The methods available for OR are more limited: `OddsRatio()` only has Wald, MLE and mid-P CI methods.
 
-Methods included are \[TBC\] methods for 2 independent samples.
+**The {PropCIs} package** has functions `diffscoreci()` for the Miettinen-Nurminen (MN) CI for RD, `riskscoreci()` for the Koopman interval for RR, and `orscoreci()` for the MN CI for OR. It also has functions providing Bayesian tail intervals (with user-specified prior).
 
-**The {ratesci} package** is ... \[TBC\]
+**The {contingencytables} package** also provides a good selection of different methods.
 
-**The {DescTools} package** has a function BinomDiffCI which produces CIs for two independent proportions (unmatched pairs) including methods for Agresti/Caffo, Wald, Wald with Continuity correction, Newcombe Score, Newcombe score with continuity correction, and more computationally intensive methods such as Miettinen and Nurminen, Mee, Brown Li's Jeffreys, Hauck-Anderson and Haldane. See [here](https://search.r-project.org/CRAN/refmans/DescTools/html/BinomDiffCI.html) for more detail.
+**The {cicalc} package** in general replicates the methods available in SAS, but only for the RD contrast.
+
+**The {gsDesign} package** gives Asymptotic Score intervals (with or without 'N-1' correction) for all contrasts with the `ciBinomial()` function. The package also has functions for the corresponding hypothesis tests, and sample size calculations.
+
+**The {cardx} package** has very limited options for comparing proportions - the `cardx::ard_stats_prop_test` function only provides for estimation of RD with the Wald approximate normal method (which is not recommended).
+
+```{=html}
+<!-- #
+Note to previous contributor: description of the {presize} package is removed. The function for RD is called prec_riskdiff, but it doesn't seem very well set up for producing the intervals for a given dataset (user has to specify p1, p2, n1 and allocation ratio). Suggest it doesn't belong in this evaluation.
 
 **The {presize} package** has a function prec_prop() which also calculates CIs for 2 independent samples using the Wilson, Agresti-Coull, Exact or Wald approaches. The package is not described in further detail here since in most cases **{DescTools}** will be able to compute what is needed. However, it's mentioned due to other functionality it has available such as sample size and precision calculations for AUC, correlations, cronbach's alpha, intraclass correlation, Cohen's kappa, likelihood ratios, means, mean differences, odds ratios, rates, rate ratios, risk differences and risk ratios.
+-->
+```
 
-## Methods for Calculating Confidence Intervals for Proportion Difference from 2 independent samples
+# Proportion Difference
 
-This [paper](https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf)^4^ describes many methods for the calculation of confidence intervals for 2 independent proportions.
+This [paper](https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf) describes many methods for the calculation of confidence intervals for 2 independent proportions. The 2-sided and 1-sided performance of many of the same methods have been compared graphically[@laud2014]. For more technical information regarding the methods below see the corresponding [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_2indep_prop.html).
 
-### Normal Approximation Method (Also known as the Wald or asymptotic CI Method) using {cardx}
+````{=html}
+<!-- #
+Note to previous contributor: The section on {cardx} is removed, because the package only offers the inferior Wald method. Note the documentation for prop.test references Newcombe's 1998 paper, which evaluated several methods (including Wald and his proposed hybrid score method) - it does not say which of those methods is implemented, but it clearly is the Wald method.
+Also note that the example code for the cardx function calls does not produce readable output for me.
 
-For more technical information regarding the Wald method see the corresponding [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html).
+## Normal Approximation Method (Also known as the Wald or asymptotic CI Method) using {cardx}
 
 #### Example code
 
 `cardx::ard_stats_prop_test function` uses `stats::prop.test` which also allows a continuity correction to be applied.
 
-Although this website [here](https://rdrr.io/r/stats/prop.test.html) and this one [here](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/prop.test) both reference Newcombe for the CI that this function uses, replication of the results by hand and compared to SAS show that the results below match the Normal Approximation (Wald method).
+Although this website [here](https://rdrr.io/r/stats/prop.test.html) and this one [here](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/prop.test) both reference Newcombe for the CI that this function uses, replication of the results by hand and compared to SAS show that the results below match the Normal Approximation (Wald method, i.e. 'method 1' in Newcombe's paper).
 
-Both the Treatment variable (ACT,PBO) and the Response variable (Yes,No) have to be numeric (0,1) or Logit (TRUE,FALSE) variables.
+Both the Treatment variable (ACT,PBO) and the Response variable (Yes,No) have to be numeric (0,1) or logical (TRUE,FALSE) variables.
 
 The prop.test default with 2 groups, is the null hypothesis that the proportions in each group are the same and a 2-sided CI.
 
@@ -112,29 +148,47 @@ cardx::ard_stats_prop_test(
   correct = TRUE
 )
 ```
+-->
+````
 
-### Normal Approximation (Wald) and Other Methods for 2 independent samples using {DescTools}
-
-For more technical information regarding the derivations of these methods see the corresponding [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html) or {DescTools} package documentation [here](https://search.r-project.org/CRAN/refmans/DescTools/html/BinomDiffCI.html). **The {DescTools} package** has a function BinomDiffCI which produces CIs for two independent proportions (unmatched pairs) including methods for Agresti/Caffo, Wald, Wald with Continuity correction, Newcombe Score, Newcombe score with continuity correction, and more computationally intensive (less commonly used) methods such as Miettinen and Nurminen, Mee, Brown Li's Jeffreys, Hauck-Anderson, Haldane and Jeffreys-Perks.
-
-#### Example code
-
-With 2 groups, the null hypothesis that the proportions in each group are the same and a 2-sided CI.
+### Example code for {DescTools}
 
 ```{r}
-count_dat <- indat |>
-  count(trtn, respn)
-count_dat
+indat1 <- adcibc2 |>
+  select(AVAL, TRTP) |>
+  mutate(
+    resp = if_else(AVAL > 4, "Yes", "No"),
+    respn = if_else(AVAL > 4, 1, 0),
+    trt = if_else(TRTP == "Placebo", "PBO", "ACT"),
+    trtn = if_else(TRTP == "Placebo", 1, 0)
+  ) |>
+  select(trt, trtn, resp, respn)
+
+# cardx package required a vector with 0 and 1s for a single proportion CI
+# To get the comparison the correct way around Placebo must be 1, and Active 0
+
+indat <- select(indat1, trtn, respn)
 
 # BinomDiffCI requires
 # x1 = successes in active,  n1 = total subjects in active,
 # x2 = successes in placebo, n2 = total subjects in placebo
 
+x <- indat |>
+  filter(respn == 1) |>
+  count(trtn, respn) |>
+  pull(n)
+x
+
+n <- indat |>
+  count(trtn) |>
+  pull(n)
+n
+
 DescTools::BinomDiffCI(
-  x1 = 36,
-  n1 = 154,
-  x2 = 12,
-  n2 = 77,
+  x1 = x[1],
+  n1 = n[1],
+  x2 = x[2],
+  n2 = n[2],
   conf.level = 0.95,
   sides = c("two.sided"),
   method = c(
@@ -150,30 +204,171 @@ DescTools::BinomDiffCI(
     "hal",
     "jp"
   )
+) |>
+  as_tibble(rownames = "Method")
+```
+
+### Example code for {ratesci}
+
+```{r}
+# Selected methods for proximate coverage
+ratesci::rdci(
+  x1 = x[1],
+  n1 = n[1],
+  x2 = x[2],
+  n2 = n[2],
+  level = 0.95,
+  precis = 6
+)$estimates 
+```
+
+### Example code for {contingencytables}
+
+```{r}
+
+# Tricky to get this the right way round
+tab2x2 <- table(indat1$trt, indat1$resp)[, c(2,1)]
+
+contingencytables::the_2x2_table_CIs_difference(n = tab2x2)
+```
+
+# Relative Risk
+
+The 1-sided performance of selected methods have been compared graphically[@laud2017], with the observation that optimum 2-sided coverage follows directly from optimum 1-sided coverage (while the reverse is not true). It has been noted previously that the ratio contrasts suffer a greater imbalance in 1-sided coverage than RD[@gart1990]. Therefore, skewness correction is particularly valuable here.
+
+Another relatively recent method, not provided by SAS, is the MOVER-R interval, which uses a formula adapted from the MOVER (Newcombe Hybrid Score) method for application to ratio contrasts.
+
+### Example code for {DescTools}
+
+```{r}
+DescTools::BinomRatioCI(
+  x1 = x[1],
+  n1 = n[1],
+  x2 = x[2],
+  n2 = n[2],
+  conf.level = 0.95,
+  sides = c("two.sided"),
+  method = c("katz.log", "adj.log", "bailey", "koopman", "noether", 
+                        "sinh-1", "boot")
+) |>
+  as_tibble(rownames = "Method")
+```
+
+### Example code for {ratesci}
+
+```{r}
+# Selected methods for proximate coverage
+ratesci::rrci(
+  x1 = x[1],
+  n1 = n[1],
+  x2 = x[2],
+  n2 = n[2],
+  level = 0.95,
+  precis = 6
+)$estimates 
+```
+
+### Example code for {gsDesign}
+
+```{r}
+# Miettinen-Nurminen
+gsDesign::ciBinomial(
+  x1 = x[1],
+  n1 = n[1],
+  x2 = x[2],
+  n2 = n[2],
+  scale = 'rr', 
+  adj = 1
 )
 ```
 
-## Methods for Calculating Confidence Intervals for Relative Risk from 2 independent samples
+### Example code for {contingencytables}
 
-\[TBC\]
+```{r}
 
-### 
+contingencytables::the_2x2_table_CIs_ratio(n = tab2x2)
+```
 
-## Methods for Calculating Confidence Intervals for Odds Ratio from 2 independent samples
+# Odds Ratio
 
-\[TBC\]
+### Example code for {ratesci}
 
-## Continuity Adjusted Methods
+```{r}
+# Selected methods for proximate coverage
+ratesci::orci(
+  x1 = x[1],
+  n1 = n[1],
+  x2 = x[2],
+  n2 = n[2],
+  level = 0.95,
+  precis = 6
+)$estimates 
+```
 
-\[TBC\]
+### Example code for {gsDesign}
 
-## Consistency with hypothesis tests
+```{r}
+# Miettinen-Nurminen
+gsDesign::ciBinomial(
+  x1 = x[1],
+  n1 = n[1],
+  x2 = x[2],
+  n2 = n[2],
+  scale = 'or', 
+  adj = 1
+)
+```
 
-\[TBC\] - cf. chi-squared tests
+### Example code for {contingencytables}
 
-## References
+Note there is an error in the {contingencytables} package v3.1.0 for the MOVER-R Wilson method.
 
-1.  [pharmaverse cardx package](https://insightsengineering.github.io/cardx/main/#:~:text=The%20%7Bcardx%7D%20package%20is%20an%20extension%20of%20the,Data%20Objects%20%28ARDs%29%20using%20the%20R%20programming%20language.)
-2.  [PropCIs package](https://cran.r-project.org/web//packages/PropCIs/PropCIs.pdf)
-3.  D. Altman, D. Machin, T. Bryant, M. Gardner (eds). Statistics with Confidence: Confidence Intervals and Statistical Guidelines, 2nd edition. John Wiley and Sons 2000.
-4.  <https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf>
+```{r}
+contingencytables::the_2x2_table_CIs_OR(n = tab2x2)
+```
+
+# Continuity Adjusted Methods
+
+There are relatively few methods widely available for aligning the minimum coverage with the nominal confidence level. The most versatile option is to use functions from the {ratesci} package, which provides optional continuity adjustments, on a sliding scale from 0 to $0.5/N$, for any of the Asymptotic Score or MOVER methods for any contrast.
+
+### Example code for {ratesci}
+
+```{r}
+# Selected methods for conservative coverage
+# Using the conventional 0.5
+ratesci::rdci(
+  x1 = x[1],
+  n1 = n[1],
+  x2 = x[2],
+  n2 = n[2],
+  level = 0.95,
+  cc = TRUE,
+  precis = 6
+)$estimates 
+```
+
+```{r}
+# Using an intermediate adjustment of magnitude 0.25
+ratesci::rdci(
+  x1 = x[1],
+  n1 = n[1],
+  x2 = x[2],
+  n2 = n[2],
+  level = 0.95,
+  cc = 0.25,
+  precis = 6
+)$estimates 
+
+```
+
+# Consistency with hypothesis tests
+
+## Test for association
+
+The Asymptotic Score methods for all contrasts are inherently consistent with $\chi^2$ tests. What may be less widely known is that there is more than one version of the $\chi^2$ test. The Mee and Koopman methods (without the 'N-1' variance correction) are consistent with the **Karl** Pearson $\chi^2$ (as produced by `stats::chisq.test()`) , while the Miettinen-Nurminen method agrees with the **Egon** Pearson 'N-1' test. (The stratified MN interval agrees with the standard CMH test, which also incorporates the 'N-1' adjustment.) Note that the SCAS (with or without 'N-1' adjustment) also agrees with the same tests for association, because the skewness correction term is zero when $\theta_{RD}=0$ or when $\theta_{RR}$ or $\theta_{OR}=1$. The 'N-1' adjusted $\chi^2$ test is available in the {ratesci} and {gsDesign} packages.
+
+## Non-inferiority test
+
+One important use for CIs for independent proportions is in the analysis of clinical trials aiming to demonstrate non-inferiority for an outcome such as cure rate or relapse rate. The Asymptotic Score methods are naturally suited for this purpose, as they are derived by inverting a score test statistic. Probably the most well-known named test for such analysis is the Farrington-Manning (FM) test, but it is important to note that the FM formula omits the 'N-1' correction factor, so is consistent with the Mee CI, not the Miettinen-Nurminen CI. Non-inferiority tests including the 'N-1' adjustment can be obtained from the {ratesci} and {gsDesign} functions.
+
+# References

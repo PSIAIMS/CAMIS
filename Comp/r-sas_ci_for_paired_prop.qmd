@@ -1,0 +1,59 @@
+---
+title: "R vs SAS Confidence Intervals for Paired Proportions"
+---
+
+## Introduction
+
+See the [summary page](../method_summary/ci_for_prop_intro.html) for general introductory information on confidence intervals for proportions, including the principles underlying the most common methods.
+
+For more technical derivation of methods for comparisons of paired proportions, see the corresponding [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_paired_prop.html).
+
+The tables below provide an overview of findings from R & SAS, for calculation of CIs for 2 matched pair proportions.
+
+## General Comparison Table For Two Matched Samples Proportions
+
++-----------------------------------------------------+------------------------------+-----------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Analysis of Two Matched Sample Proportions          | Supported in R               | Supported in SAS                                                                                                            | Notes                                                                                                                                                     |
++=====================================================+==============================+=============================================================================================================================+===========================================================================================================================================================+
+| Exact method                                        | Yes {ExactCIdiff}            | No                                                                                                                          |                                                                                                                                                           |
++-----------------------------------------------------+------------------------------+-----------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Normal approximation (Wald Method)                  | Yes {ratesci}, for RD and RR | (?)Yes for RD only (cumbersome process using stratification by pair appears to match, but requires extra data manipluation) | Using the equations provided in the [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html), You could do this programatically in either package |
++-----------------------------------------------------+------------------------------+-----------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------+
+| MOVER (Newcombe 'Square-and-add' method)            | Yes {ratesci}, for RD and RR | No (proc freq does CIs for the risk difference, not the difference between two proportions)                                 | Using the equations provided in the [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html), You could do this programatically in either package |
+|                                                     |                              |                                                                                                                             |                                                                                                                                                           |
+|                                                     |                              | `%PAIRBINCI` macro                                                                                                          |                                                                                                                                                           |
++-----------------------------------------------------+------------------------------+-----------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Asymptotic Score method (Tango RD / Tang RR / SCAS) | Yes {ratesci}, for RD and RR | Not in PROC FREQ but in `%PAIRBINCI` macro                                                                                  |                                                                                                                                                           |
++-----------------------------------------------------+------------------------------+-----------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+Methods for analysis of condional (subject-specific) Odds Ratio from paired data are also available in R {ratesci}. These could be derived in SAS by transforming a selected method for the single proportion as described [here](https://psiaims.github.io/CAMIS/SAS/ci_for_paired_prop.html)
+
+```{=html}
+<!--#
+Note to previous contributor:
+
+The text below is removed, because the logic is flawed. Generally, reliable conclusions can't be drawn regarding the difference between methods from looking at a single example interval. Having said that, in this example the difference between the exact and approximate methods has the potential to result in a different study conclusion (the more conservative exact interval includes the value 0).
+
+Calculating the Normal approximation and Wilson methods by hand and comparing it to the Exact method gave similar results for the 1 example demonstrated indicating as long as the proportion of responders is not close to 0 or 1, then the faster computation of the approximation methods may be easier to implement than the exact method and produce similar results. Hence {ExactCIdiff} is not recommended for most scenarios.
+
++-------------+----------------------------------------------------------------------------------------------+--------------+--------------+
+| Method Name | Calculated Using matched pair example from R & SAS pages                                     | Lower 95% CI | Upper 95% CI |
++=============+==============================================================================================+==============+==============+
+| Exact       | R                                                                                            | -0.00339     | 0.38065      |
++-------------+----------------------------------------------------------------------------------------------+--------------+--------------+
+| Normal      | by hand using equation from [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html) | 0.00911      | 0.38289      |
++-------------+----------------------------------------------------------------------------------------------+--------------+--------------+
+| MOVER       | by hand using equation from [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html) | 0.00032      | 0.36739      |
++-------------+----------------------------------------------------------------------------------------------+--------------+--------------+
+-->
+```
+
+## Prerequisites: R Packages
+
+See the [R page](https://psiaims.github.io/CAMIS/R/ci_for_prop.html) for more detail.
+
+```{r}
+# Example R packages required
+library(cardx)
+library(ratesci)
+```

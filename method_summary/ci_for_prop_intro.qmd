@@ -4,7 +4,7 @@
   csl: nature.csl 
 ---
 
-## Introduction
+# Introduction
 
 The methods to use for calculating confidence intervals (CIs) for binomial proportions depend on the situation:
 
@@ -16,13 +16,17 @@ The methods to use for calculating confidence intervals (CIs) for binomial propo
 
     -   If the 2 samples are matched (i.e. the same subject has 2 results, one from each treatment \[paired data\]).
 
+    -   If estimates from more then one set of samples is to be combined using a stratified estimate, for example contrast estimates from a clinical trial with stratified randomisation, or combining results from multiple trials in a meta-analysis.
+
+In some cases, data might be collected on events ocurring over a specified exposure time (for example adverse events), in which case a Poisson model would be appropriate for estimating exposure-adjusted event rates.
+
 Reporting a CI for such contrasts is useful for giving a clinically interpretable estimate of the magnitude of a treatment effect. Moreover, it is particularly relevant for non-inferiority (NI) or equivalence trials, where the hypothesis test is an assessment of whether the CI spans a pre-specified NI margin or not.
 
 Some sources suggest selecting a different method depending on your sample size and whether your proportion takes an extreme value (i.e. close to 0 or 1). Similarly, for a 2x2 table, there is a widely-held belief that a so-called 'exact' method should be used if expected cell counts are less than 5. These conventions originated at a time when the Wald method was the only available alternative, but options are now available for CI methods that have appropriate coverage properties across the whole parameter space. These are easily obtained with modern computing software, so there is no need for a data-driven approach to method selection or reliance on overly conservative methods.
 
 The poor performance of the approximate normal ('Wald') methods is well documented - they can fail to achieve the nominal confidence level even with large sample sizes, and there is a consensus in the literature that they should be avoided[@brown2001, p128]. Wald intervals remain a default output component in SAS, so continue to be widely used, but alternative methods are strongly recommended. \[Note in particular that most other methods become conservative for very small cell counts, which suggests there is no need to resort to 'exact' methods.\]
 
-### Strictly conservative vs proximate coverage
+## Strictly conservative vs proximate coverage
 
 Because of the discrete nature of binomial data, it is impossible for any CI method to cover the true value of the estimated proportion precisely 95% of the time for all values of p. Some CI methods are designed to achieve the nominal confidence level **as a minimum**, but many researchers find such a criterion to be excessive, producing CIs that are unnecessarily wide. The alternative position is to aim for coverage probability that is close to the nominal confidence level **on average.** These two opposing positions are described as "aiming to align either the minimum or the mean coverage with the nominal $(1-\alpha)$"[@newcombe2012], or in other words aiming for coverage to be either 'strictly conservative' or 'proximate'[@laud2017]. It has been pointed out that the proximate stance is consistent with most other types of statistical models, based on approximate assumptions[@brown2001]. The debate makes it difficult to state in simple objective terms whether one method is 'better' than another.
 
@@ -30,7 +34,7 @@ Many CI methods are designed to achieve proximate coverage, but some employ comp
 
 It is worth noting that although one might assume that regulatory authorities would insist on strictly conservative coverage (noting that one-sided non-coverage equates to the type 1 error of a NI test), in recent years it appears that the FDA's preferred method for RD is the Miettinen-Nurminen (MN) method (e.g. see <https://www.accessdata.fda.gov/drugsatfda_docs/nda/2010/200327orig1s000statr.pdf>). In contrast, for a single proportion, the 'exact' Clopper-Pearson method seems (anecdotally) to be more commonly preferred.
 
-### Consistency with hypothesis tests, and one-sided coverage
+## Consistency with hypothesis tests, and one-sided coverage
 
 It is desirable (and in some analysis contexts, essential) for a reported CI to be consistent with the result of a hypothesis test, so that for example the 95% CI will exclude the null hypothesis value if and only if the test p-value is less than 0.05 (or 0.025 one-sided). This applies for the special case of a test for association (where the null hypothesis is of 0 difference between the groups), but also the more general case of a non-zero null hypothesis for NI or equivalence testing. It should be noted that not all CI methods satisfy this criterion.
 
@@ -40,21 +44,21 @@ A related issue is whether it is sufficient for two-sided coverage probability t
 
 There are some methods that apply (or have variants which apply) across all contrast parameters (i.e. $\theta=p$ or $\theta=RD$ etc.), which are outlined below.
 
-### Normal Approximation Methods (Also known as the Wald Methods)
+## Normal Approximation Methods (Also known as Wald Methods)
 
 The Wald confidence interval is constructed simply from the the point estimate plus and minus a multiple of its estimated standard error: $(L_{Wald}, U_{Wald}) = \hat \theta \pm z_{\alpha/2} \sqrt{\hat V(\hat\theta)}$ where $z_{\alpha/2}$ is the $1-\alpha/2$ quantile of a standard normal distribution corresponding to the confidence level $(1-\alpha)$.
 
 For RR and OR, $\theta$ is first log-transformed to improve the normal approximation, and then $(L_{Wald}, U_{Wald}) = exp[ ln(\hat \theta) \pm z_{\alpha/2} \sqrt{\hat V(ln(\hat\theta))}]$, which requires a modification for boundary cases.
 
-### Asymptotic Score Methods
+## Asymptotic Score Methods
 
 The Score confidence interval is also based on an asymptotic normal approximation, but uses a score statistic $Z(\theta) = S(\theta)/\sqrt {\tilde V}$. This statistic is based on a contrast function $S(\theta)$ (e.g. for the single proportion, $S(p) = \hat p - p$, or for RD, $S(\theta) = \hat p_1 - \hat p_2 - \theta$), and a maximum likelihood estimate of its variance $\tilde V = V(S(\theta))$, which is also function of $\theta$.
 
 $Z(\theta)$ can be evaluated at any value of $\theta$ to find the range of values for which $|Z(\theta)|< z_{\alpha/2}$. For the single proportion (Wilson score interval), this process simplifies to solving a quadratic equation in $p$.
 
-For the contrast parameters, score methods were derived for independent proportions by Miettinen & Nurminen and others in the 1980s[@miettinen1985][@Mee1984][@koopman1984], and related methods for paired data followed later[@tango1998][@tango1999][@nam2002][@tang2003]. In each case, the variance is a function of both $p_1$ and $p_2$, or of $\theta$ and a 'nuisance parameter', which is eliminated using the maximum likelihood estimate for $p_2$ (or for the paired case, the cell probability $p_{21}$) for the given value of $\theta$.
+For the contrast parameters, score methods were derived for independent proportions by Miettinen & Nurminen and others in the 1980s[@miettinen1985][@Mee1984][@koopman1984], and related methods for paired data followed later[@tango1998][@tango1999][@nam2002][@tang2003]. Miettinen & Nurminen also produced formulae for the Poisson event rate contrasts. In each case, the variance is a function of both $p_1$ and $p_2$, or of $\theta$ and a 'nuisance parameter', which is eliminated using the maximum likelihood estimate for $p_2$ (or for the paired case, the cell probability $p_{21}$) for the given value of $\theta$.
 
-### SCAS Methods
+## SCAS Methods
 
 Originating from papers published in 1985-1990 by Gart and Nam, the skewness-corrected asymptotic score ('SCAS') methods introduce a further term within the score statistic that involves $\tilde \mu$, the third central moment of $S(\theta)$:
 
@@ -62,30 +66,54 @@ $$
 Z(\theta) = \frac{S(\theta)}{\sqrt {\tilde V}} - \frac{(Z(\theta)^2 - 1)\tilde \mu_3}{6 \tilde V^{3/2}}
 $$
 
-Hence these are an extension of the asymptotic score methods, designed to address asymmetric coverage which was observed for the score method, particularly for the RR contrast. The same principle is applied to the Wilson score interval for a single proportion, which has also been noted to have a systematic bias in one-sided coverage[@tonycai2005]. A unified family of methods covering the single proportion and all independent contrasts was described by Laud[@laud2017], with the addition of a bias correction for the OR case[@laud2018], and a further publication currently under review for paired data.
+Hence these are an extension of the asymptotic score methods, designed to address asymmetric coverage which was observed for the score method, particularly for the RR contrast. The same principle is applied to the Wilson score interval for a single proportion, which has also been noted to have a systematic bias in one-sided coverage[@tonycai2005]. A unified family of methods covering the single proportion/rate and all contrasts for independent binomial or Poisson rates was described by Laud[@laud2017], with the addition of a bias correction for the OR case[@laud2018], and a further publication is currently under review for paired data.
 
 SCAS intervals generally achieve one-sided coverage that is very close to the nominal $\alpha/2$, which naturally also leads to excellent two-sided coverage. Symmetric strictly conservative coverage can be achieved by adding a continuity adjustment.
 
-The SCAS method is not implemented in SAS PROC FREQ, but can be obtained using the %SCORECI and %PAIRBINCI macros from <https://github.com/petelaud/ratesci-sas>.
+The SCAS method is not implemented in SAS PROC FREQ, but can be obtained using the `%SCORECI` and `%PAIRBINCI` macros from <https://github.com/petelaud/ratesci-sas>.
 
-### MOVER Methods (Also known as the Newcombe Method)
+## MOVER Methods (Also known as the Newcombe Method)
 
-This class of methods was popularised by Newcombe for the RD contrast, and is therefore labelled as the Newcombe method in current SAS PROC FREQ documentation. It has since been generalised to other contrasts and for paired data (though not implemented in SAS), and renamed as the Method of Variance Estimates Recovery (MOVER). It is also referred to as the 'Square-and-add' approach.
+This class of methods was popularised by Newcombe for the RD contrast, and is therefore labelled as the Newcombe method in current SAS PROC FREQ documentation. It has since been generalised to other binomial and Poisson contrasts and for paired data (though not implemented in SAS), and renamed as the Method of Variance Estimates Recovery (MOVER). It is also referred to as the 'Square-and-add' approach.
 
 MOVER intervals are produced by combining CIs for each of the two separate proportions involved (and an estimate of their correlation, in the paired data case). Originally Wilson Score intervals were used (hence earlier versions of SAS (e.g. v9.3) labelled this method as WILSON or SCORE), but improved performance may be obtained by using Jeffreys intervals instead.
 
-### 'Exact' Methods
+## 'Exact' Methods
 
 So-called 'exact' methods are designed to guarantee strictly conservative coverage. (Newcombe points out some problems with the use of the term 'exact' here, hence the quotation marks.) For the single proportion, the Clopper-Pearson confidence interval is the range of p for which $P(X \ge x | p) = \alpha / 2$ and $P(X \le x | p) = \alpha / 2$. More complex calculations are involved for the contrast parameters, which eliminate the nuisance parameter by taking the supremum of all p-values across the range of combinations of $p_1$ and $p_2$ for a given $\theta$.
 
 There are actually a few different versions of 'exact' methods for each contrast, with alternatives aimed at reducing the conservatism of coverage. For example, Chan-Zhang is an improvement on Santner-Snell. However, it should be noted that some methods (e.g. Blaker, Agresti-Min) achieve reduced conservatism by inverting a two-sided exact test, but as a result they do not satisfy the strictly conservative criterion for one-sided coverage (and therefore would produce inflated type 1 error rates if used for a non-inferiority test).
 
-Several asymptotic methods offer a continuity adjustment, which aims to emulate 'exact' methods and achieve almost conservative coverage, by for example adding a quantity of the order $0.5 \times n$ to the formula. Generally this is not a successful modification to the Wald method, but can produce good results for the score methods. It has been suggested that an adjustment of smaller magnitude such as $3/8 \times n$ [@mehrotra2000], or $0.25 \times n$[@laud2017, Appendix S2] (or any other selected value on a 'sliding scale' from 0 to 0.5) could be used to achieve coverage that is at least $(1-\alpha)$ nearly all of the time.
+Several asymptotic methods offer a continuity adjustment, which aims to emulate 'exact' methods and achieve almost conservative coverage, by for example adding a quantity of the order $0.5 / N$ to the formula. Generally this is not a successful modification to the Wald method, but can produce good results for the score methods. It has been suggested that an adjustment of smaller magnitude such as $0.25 / N$[@laud2017, Appendix S2] (or any other selected value on a 'sliding scale' from 0 to 0.5) could be used to achieve coverage that is at least $(1-\alpha)$ nearly all of the time.
 
-### 'Mid-P' Methods
+## 'Mid-P' Methods
 
 'Exact' methods may be adapted to be less conservative (i.e. to achieve proximate coverage) by applying a mid-P adjustment, essentially including half the probability of the observed data in the calculations. This is like a reversal of the continuity adjustment for asymptotic methods.
 
 Although theoretically possible for any contrast, the mid-P method is only implemented in SAS for CIs for the single proportion and the odds ratio contrast.
+
+# Packages for R
+
+Here we provide an overview of the packages containing methods for the different analysis types. Further detail of the specific methods offered and agreement between packages can be found on the relevant pages.
+
+**The [{cardx} package](https://insightsengineering.github.io/cardx)** is an extension of the {cards} package, providing additional functions to create Analysis Results Data Objects (ARDs). It was developed as part of {NEST} and pharmaverse. This package requires the binary endpoint to be a logical (TRUE/FALSE) vector or a numeric/integer coded as (0, 1) with 1 (TRUE) being the success you want to calculate the confidence interval for.
+
+If calculating the CI for a difference in proportions, the package requires both the response and the treatment variable to be numeric/integer coded as (0, 1) (or logical vector).
+
+Methods are included for one-sample proportions and limited options for 2 independent samples, but {cardx} currently does not have a method for 2 matched proportions.
+
+**The {PropCIs} package** produces a selection of CIs for single proportion, and estimation of all contrasts for independent proportions and paired proportions (except paired RR). The {PropsCIs} package generally requires just the number of events (numerator number of successes) & total number of subjects (denominator) as an input dataset.
+
+**The {ratesci} package** contains functions to produce a variety of CIs for a single binomial proportion or Poisson event rate, and all contrasts of independent proportions/rates or paired proportions. It has a particular emphasis on classes of methods that can be applied across different analysis types, in particular the Asymptotic Score methods (with or without skewness correction) which come with naturally consistent hypothesis tests (for association or non-inferiority), and also caters for analysis of stratified datasets. The full range of MOVER (or 'square-and-add') methods is also included.
+
+**The {Hmisc} package** contains the binconf() function, which produces CIs for a single proportion only.
+
+**The {RBesT} package** contains a function (BinaryExactCI()) to produce the Clopper-Pearson CI only.
+
+**The {ExactCIdiff} package** produces 'exact' CIs for RD for two independent or paired proportions.
+
+**The {DescTools} package** has functions which produce CIs for single proportions and all contrasts of two proportions (independent samples only).
+
+**The {presize} package** has a function prec_prop() which also calculates CIs for 2 independent samples using the Wilson, Agresti-Coull, Exact or Wald approaches. The package is not described in further detail here since in most cases **{DescTools}** will be able to compute what is needed. However, it's mentioned due to other functionality it has available such as sample size and precision calculations for AUC, correlations, cronbach's alpha, intraclass correlation, Cohen's kappa, likelihood ratios, means, mean differences, odds ratios, rates, rate ratios, risk differences and risk ratios.
 
 ## References
