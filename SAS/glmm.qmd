@@ -60,8 +60,7 @@ To uniquely identify subjects, a new variable USUBJID was created by concatenati
 
 Additionally, two variables were created using randomly generated values to simulate variables with more than two categories. One was an ordinal variable with values 1, 2, and 3; the other was a nominal variable with categories 'liver', 'lung', and 'bone'. The following SAS code was used:
 
-```{r}
-#| eval: false
+```sas
 proc format; 
   value respmulti 
   1='Liver' 
@@ -83,8 +82,7 @@ GLMM with GHQ approximation can be fitted using `PROC GLIMMIX` by specifying `qu
 
 Unlike in GEE models, which computed the robust Sandwich S.E. by default, the GLIMMIX procedure displays the model-based S.E. (also called naïve S.E. in R) by default.
 
-```{r}
-#| eval: false
+```sas
 proc glimmix data=resp method=quad(qpoints=5);
 class trtp(ref="P") avisitn(ref='1') usubjid;
 model outcome=trtp avisitn trtp*avisitn/dist=bin link=logit solution ddfm=BW;/*1*/;
@@ -108,8 +106,7 @@ knitr::include_graphics("../images/glmm/SAS_Image_1.png")
 
 Laplace is a particular GHQ where only one point is used. In SAS, it can be obtained in the method statement using either `method=quad(qpoints=<n>)` or `method=Laplace`. Both approaches return similar results with slight differences in later decimal places (See Appendix 1).
 
-```{r}
-#| eval: false
+```sas
 proc glimmix data=resp method=laplace;
 class trtp(ref="A") avisitn(ref='1') usubjid;
 model outcome=trtp avisitn trtp*avisitn/dist=bin link=logit solution ddfm=BW;
@@ -131,8 +128,7 @@ The PQL approach uses linear approximations instead of likelihood, making it **l
 
 In SAS, this is implemented by default using the Residual Pseudo-Likelihood method (`method=RSPL)`, which is a refinement of PQL which incorporates residual adjustments to better approximate the marginal likelihood, in the GLIMMIX procedure.
 
-```{r}
-#| eval: false
+```sas
 proc glimmix data=resp method=rspl;
 class trtp(ref="A") avisitn(ref='1') usubjid;
 model outcome=trtp avisitn trtp*avisitn/ dist=bin link=logit solution ddfm=residual;
@@ -156,8 +152,7 @@ Additionally, FDA advises "*sponsors to consider using of robust SE method such 
 
 The example below is done using GHQ with n=5 points, but it also works for Laplace approximation.
 
-```{r}
-#| eval: false
+```sas
 proc glimmix data=resp method=quad(qpoints=5) empirical;
 class trtp(ref="A") avisitn(ref='1') usubjid;
 model outcome=trtp avisitn trtp*avisitn/dist=bin link=logit solution ddfm=BW;
@@ -186,15 +181,14 @@ Predicted probabilities and odds ratios (ORs) can be obtained in SAS using the `
 
     The example below is done using GHQ with n=5 points, but it also works for Laplace approximation.
 
-```{r}
-#| eval: false
-    proc glimmix data=resp method=quad(qpoints=5) empirical;
-    class trtp(ref="P") avisitn(ref='1') usubjid; 
-    model outcome=trtp avisitn trtp*avisitn  / dist=bin link=logit solution  ddfm=betwithin ;
-    lsmeans  trtp*avisitn /cl  ilink oddsratio diff;
-    random intercept /subject=usubjid ;
-    ods output LSMeans = Lsmeans Diffs=Diffs1;
-    run; 
+```sas
+proc glimmix data=resp method=quad(qpoints=5) empirical;
+class trtp(ref="P") avisitn(ref='1') usubjid; 
+model outcome=trtp avisitn trtp*avisitn  / dist=bin link=logit solution  ddfm=betwithin ;
+lsmeans  trtp*avisitn /cl  ilink oddsratio diff;
+random intercept /subject=usubjid ;
+ods output LSMeans = Lsmeans Diffs=Diffs1;
+run; 
 
 ```
 
@@ -224,8 +218,7 @@ One notable limitation is that the `LSMEANS` statement does not work as expected
 
 ### Ordinal variable
 
-```{r}
-#| eval: false
+```sas
 proc glimmix data=resp method=quad(qpoints=5) empirical;
 	class trtp(ref="P") avisitn(ref='1') usubjid; 
 	model respord=trtp avisitn trtp*avisitn base / dist=multinomial link=cumlogit solution oddsratio ddfm=betwithin;
@@ -244,8 +237,7 @@ knitr::include_graphics("../images/glmm/SAS_Image_7.png")
 
 ### Nominal variable
 
-```{r}
-#| eval: false
+```sas
 proc glimmix data=resp method=quad(qpoints=5) ;
 	class trtp(ref="P") avisitn(ref='1') usubjid respnom; 
 	model respnom(order=freq ref=first)=trtp avisitn trtp*avisitn base / dist=multinomial link=glogit  solution ddfm=betwithin ;
@@ -267,8 +259,7 @@ knitr::include_graphics("../images/glmm/SAS_Image_8.png")
 
 ### Laplace: GLIMMIX with method=Laplace vs method=quad(qpoints=1)
 
-```{r}
-#| eval: false
+```sas
 proc glimmix data=resp method=laplace empirical; 
 class trtp(ref="P") avisitn(ref='1') usubjid;  
 model outcome=trtp avisitn trtp*avisitn/ dist=bin link=logit solution ddfm=BW; 

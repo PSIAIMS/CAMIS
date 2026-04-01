@@ -1,14 +1,12 @@
 ---
 title: "Binomial Test on Coin Flips and Clinical Data"
-execute:
-  eval: false
 ---
 
 ## Simulating Coin Flips
 
 Set the seed for reproducibility and simulate 1000 coin flips using a Bernoulli distribution.
 
-```{sas}
+```sas
 /* Set the seed for reproducibility */
 %let seed = 19;
 
@@ -29,7 +27,7 @@ run;
 
 Use SQL to count how many heads and tails were observed in the simulation.
 
-```{sas}
+```sas
 proc sql;
     select 
         sum(result = "H") as heads_count,
@@ -44,7 +42,7 @@ quit;
 
 Print the counts using `%put` statements.
 
-```{sas}
+```sas
 %put Heads Count: &heads_count;
 %put Tails Count: &tails_count;
 %put Total Flips: &total_flips;
@@ -58,7 +56,7 @@ $H_0 : p = 0.5$
 
 ## 1. Exact Binomial Test
 
-```{sas}
+```sas
 proc freq data=coin_flips;
     tables result / binomial(p=0.5 );
 	exact binomial;
@@ -67,7 +65,7 @@ run;
 
 ## 2. Wald Binomial Test(Asymptotic)
 
-```{sas}
+```sas
 proc freq data=coin_flips;
     tables result / binomial(p=0.5);
 run;
@@ -75,7 +73,7 @@ run;
 
 ## 3. Mid-p adjusted Test
 
-```{sas}
+```sas
 proc freq data=coin_flips;     
     tables result / binomial(p=0.5 level='H' cl=midp );  
     exact binomial / midp;
@@ -84,7 +82,7 @@ run;
 
 ## 4. Wilson Score Test
 
-```{sas}
+```sas
 proc freq data=coin_flips;
     tables result / binomial(level='H' p=0.5 cl=score);
 run;
@@ -96,7 +94,7 @@ We load a clinical dataset and test if the observed death proportion is signific
 
 ### Import Dataset
 
-```{sas}
+```sas
 proc import datafile='/home/u63532805/CAMIS/lung_cancer.csv'
     out=lung_cancer
     dbms=csv
@@ -108,7 +106,7 @@ run;
 
 ### Create Binary Flag for Deaths
 
-```{sas}
+```sas
 data lung_cancer;
     set lung_cancer;
     death_flag = (status = 1);
@@ -119,7 +117,7 @@ Perform four binomial tests (Exact test, Wald test, Mid-p adjusted test and Wils
 
 ## 1. Exact Binomial Test
 
-```{sas}
+```sas
 proc freq data=lung_cancer;
     tables death_flag / binomial(p=0.19 level='1');
     exact binomial;
@@ -129,7 +127,7 @@ run;
 
 ## 2. Wald Binomial Test (Asymptotic)
 
-```{sas}
+```sas
 proc freq data=lung_cancer;
     tables death_flag / binomial(p=0.19 level='1');
     title "Asymptotic Binomial Test for Death Proportion"; 
@@ -138,7 +136,7 @@ run;
 
 ## 3. Mid-p adjusted Exact Binomial Test
 
-```{sas}
+```sas
 proc freq data=lung_cancer;     
     tables death_flag / binomial(p=0.19 level='1');  
     exact binomial / midp;
@@ -148,7 +146,7 @@ run;
 
 ## 4. Wilson Score Test.
 
-```{sas}
+```sas
 proc freq data=lung_cancer;
     tables death_flag / binomial(level='1' p=0.19 cl=score);
 	title "Wilson Score Test for Death Proportion";
