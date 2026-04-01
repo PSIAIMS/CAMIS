@@ -78,7 +78,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-e3841a6227f37f918cbd845038855064.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-3bb95fcf13a991dba0133ab2e30b42a7.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -331,12 +331,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ul>
 <li>SAS: change method for ties to use “efron”</li>
 </ul>
-<div class="cell">
-<pre class="sas cell-code"><code>proc phreg data=dat;
-    class afb;
-    model lenfol*fstat(0) = afb/rl ties = efron;
-run;</code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">proc phreg</span> <span class="bu">data</span><span class="op">=</span>dat;</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">class</span> afb;</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">model</span> lenfol<span class="op">*</span>fstat(<span class="fl">0</span>) <span class="op">=</span> afb<span class="op">/</span>rl ties <span class="op">=</span> efron;</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>If there are no tied event times, then the methods are equivalent.</p>
 <p>The Breslow approximation is the easiest to program and hence it historically became the first option coded for almost all software. It then ended up as the default option when other options were added in order to maintain “backwards compatibility”. The Efron option is more accurate if there are a large number of ties, and it was therefore selected as the default option in R. In practice the number of ties is usually small, in which case all the methods are statistically indistinguishable.</p>
 <p>From the arguments of <code>coxph</code> in R, there are three possible choices for handling tied event times ‘ties=breslow’, ‘ties=efron’, or ‘ties=exact’. This last option is an exact partial likelihood approach, and corresponds to the “discrete” method in SAS. See <a href="https://www.rdocumentation.org/packages/survival/versions/3.5-8/topics/coxph">here</a> for more detail. (For {survival} versions prior to 3.2-14, the options are ‘ties=breslow’, ‘ties=efron’, or ‘ties=logit’.)</p>
@@ -358,12 +356,10 @@ run;</code></pre>
 <ul>
 <li>SAS: change to “log”</li>
 </ul>
-<div class="cell">
-<pre class="sas cell-code"><code>proc lifetest data=dat conftype=log;
-    time lenfoly*fstat(0);
-    strata afb;
-run;</code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">proc lifetest</span> <span class="bu">data</span><span class="op">=</span>dat <span class="bu">conftype</span><span class="op">=</span>log;</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">time</span> lenfoly<span class="op">*</span>fstat(<span class="fl">0</span>);</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">strata</span> afb;</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>“log-log” prevents the problem of having confidence intervals of &gt;1 or &lt;0, which might happen if using “log” transformation. However, both R and SAS will clip the interval at [0, 1] and report a bound &gt;1 as 1 and &lt;0 as 0.</p>
 <p>From a <a href="https://myweb.uiowa.edu/pbreheny/7210/f15/notes/9-10.pdf">reference</a>: The appeal of the log-log interval is clear, but the log-scale interval has the advantage of variance stabilization. As a result, simulation studies have generally found it to have better (closer to nominal) coverage; for this reason, it is the default in the <code>survival</code> package.</p>
 <p>Now if we change the confidence interval type in SAS to “log” and tie handling to “efron”, the results will be identical to the results in R.</p>
@@ -401,12 +397,10 @@ run;</code></pre>
 <ul>
 <li>SAS: adjust convergence criterion</li>
 </ul>
-<div class="cell">
-<pre class="sas cell-code"><code>proc phreg data=dat;
-    class afb;
-    model lenfol*fstat(0) = afb / rl fconv = 1e-9;
-run;</code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">proc phreg</span> <span class="bu">data</span><span class="op">=</span>dat;</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">class</span> afb;</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">model</span> lenfol<span class="op">*</span>fstat(<span class="fl">0</span>) <span class="op">=</span> afb <span class="op">/</span> rl fconv <span class="op">=</span> <span class="fl">1e-9</span>;</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>By making this adjustment, the hazard ratios obtained from SAS will align more closely with those from R or even achieve bitwise reproducibility.</p>
 <p>The convergence criterion details are described in their documentation:</p>
 <ul>
@@ -460,11 +454,9 @@ run;</code></pre>
 <span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit.km, <span class="at">times =</span> <span class="fu">c</span>(<span class="dv">80</span>, <span class="dv">100</span>, <span class="dv">120</span>), <span class="at">extend =</span> T)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Below is the SAS code:</p>
-<div class="cell">
-<pre class="sas cell-code"><code>proc lifetest data=dat outsurv=_SurvEst timelist= 80 100 120 reduceout stderr; 
-    time lenfoly*fstat(0);
-run;</code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">proc lifetest</span> <span class="bu">data</span><span class="op">=</span>dat <span class="bu">outsurv</span><span class="op">=</span>_SurvEst <span class="bu">timelist</span><span class="op">=</span> <span class="fl">80</span> <span class="fl">100</span> <span class="fl">120</span> <span class="bu">reduceout</span> <span class="bu">stderr</span>; </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">time</span> lenfoly<span class="op">*</span>fstat(<span class="fl">0</span>);</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Below is the side-by-side comparison:</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">

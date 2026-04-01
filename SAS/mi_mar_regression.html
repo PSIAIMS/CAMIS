@@ -23,6 +23,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -43,7 +78,7 @@ ul.task-list li input[type="checkbox"] {
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-e3841a6227f37f918cbd845038855064.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-3bb95fcf13a991dba0133ab2e30b42a7.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -214,35 +249,33 @@ ul.task-list li input[type="checkbox"] {
 <li><code>AVAL</code>: A random value between 1 and 2, with a random 10% chance of being missing.</li>
 </ul>
 <p>As PROC MI requires a horizontal, one record per subject data set. More often than not, the data we impute will come from a vertical ADaM BDS data set. So we need to first transpose the aval with the avisitn as ID (assuming avisitn = 1 to 5),creating transposed variable v1-v5.</p>
-<div class="cell">
-<pre class="sas cell-code"><code>data dummy;
-    length USUBJID $4;
-    do i=1 to 10;
-            sex1n=int(ranuni(0)*2);
-        do j=1 to 5;
-            USUBJID=strip(put(1000+i,best.));
-            AVISITN=j;
-            AVAL=round(1+ranuni(0),0.01);
-            if ranuni(0) &lt;0.1 then aval=.;
-            output;
-        end;
-    end;
-    drop i j;
-run;
-
-proc sort data=dummy; 
-    by usubjid sex1n;
-run;
-
-proc transpose data=dummy out=dummyt(drop=_name_) prefix=v;
-    by USUBJID sex1n;
-    id avisitn;
-    var aval;
-run;
-
-proc print data=dummyt(obs=5);
-run;</code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> dummy;</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">length</span> USUBJID $<span class="fl">4</span>;</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">do</span> i<span class="op">=</span><span class="fl">1</span> <span class="cf">to</span> <span class="fl">10</span>;</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>            sex1n<span class="op">=</span><span class="fu">int</span>(ranuni(<span class="fl">0</span>)<span class="op">*</span><span class="fl">2</span>);</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">do</span> j<span class="op">=</span><span class="fl">1</span> <span class="cf">to</span> <span class="fl">5</span>;</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>            USUBJID<span class="op">=</span><span class="fu">strip</span>(put(<span class="fl">1000</span><span class="op">+</span>i,<span class="dt">best.</span>));</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>            AVISITN<span class="op">=</span>j;</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>            AVAL<span class="op">=</span><span class="fu">round</span>(<span class="fl">1</span><span class="op">+</span>ranuni(<span class="fl">0</span>),<span class="fl">0.01</span>);</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="fu">ranuni</span>(<span class="fl">0</span>) <span class="op">&lt;</span><span class="fl">0.1</span> <span class="cf">then</span> aval<span class="op">=</span>.;</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>            <span class="kw">output</span>;</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">end</span>;</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span>;</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">drop</span> i j;</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="kw">proc sort</span> <span class="bu">data</span><span class="op">=</span>dummy; </span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">by</span> usubjid sex1n;</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="kw">proc transpose</span> <span class="bu">data</span><span class="op">=</span>dummy <span class="bu">out</span><span class="op">=</span>dummyt(<span class="bu">drop</span><span class="op">=</span>_name_) <span class="bu">prefix</span><span class="op">=</span>v;</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">by</span> USUBJID sex1n;</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span> avisitn;</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    <span class="bu">var</span> aval;</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="kw">proc print</span> <span class="bu">data</span><span class="op">=</span>dummyt(<span class="bu">obs</span><span class="op">=</span><span class="fl">5</span>);</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
@@ -260,12 +293,10 @@ run;</code></pre>
 <li><p>“Monotone” : The missingness of data follows a specific order such that if a certain variable is missing for a particular observation, all subsequent variables are also missing for that observation. If a dataset has columns X1,X2,…,Xk a monotone missing pattern appears when: If Xj is missing, then Xj+1, Xj+2,…,Xj+3 are missing.</p></li>
 <li><p>“Arbitrary” : The missingness of data does not follow any specific order or predictable sequence. Data can be missing at random points without a discernible pattern.</p></li>
 </ul>
-<div class="cell">
-<pre class="sas cell-code"><code>ods select MissPattern;
-proc mi data=dummyt nimpute=0;
-    var v1 - v5;
-run;</code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">ods</span> select MissPattern;</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">proc mi</span> <span class="bu">data</span><span class="op">=</span>dummyt <span class="bu">nimpute</span><span class="op">=</span><span class="fl">0</span>;</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">var</span> v1 <span class="op">-</span> v5;</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>As below figure shows the missingness dose not follow any specific order, obviously the missing pattern is arbitrary and non-monotone missing pattern.</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
@@ -279,13 +310,11 @@ run;</code></pre>
 </section>
 <section id="fcs-regression-for-non-monotone-missing-pattern" class="level2">
 <h2 class="anchored" data-anchor-id="fcs-regression-for-non-monotone-missing-pattern">FCS Regression for non-monotone missing pattern</h2>
-<div class="cell">
-<pre class="sas cell-code"><code>proc mi data=dummyt out=outdata nimpute=10 seed=123;
-    class sex1n;
-    var sex1n v1 - v5;
-    fcs reg (v1-v5 /details);
-run;</code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">proc mi</span> <span class="bu">data</span><span class="op">=</span>dummyt <span class="bu">out</span><span class="op">=</span>outdata <span class="bu">nimpute</span><span class="op">=</span><span class="fl">10</span> <span class="bu">seed</span><span class="op">=</span><span class="fl">123</span>;</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">class</span> sex1n;</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">var</span> sex1n v1 <span class="op">-</span> v5;</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">fcs</span> reg (v1<span class="op">-</span>v5 <span class="op">/</span>details);</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li>The <code>VAR</code> statement above listing the variables to be analyzed, should match the statistical models for efficacy analysis per SAP, which may include TRTPN, necessary grouping variable (for eg AGEGR1/AGEGR1N), and all outcome variables coming from repeated assessments</li>
 <li><code>NIMPUTE</code> : the number of imputations</li>
@@ -318,41 +347,39 @@ run;</code></pre>
 <section id="monotone-regression-for-monotone-missing-pattern" class="level2">
 <h2 class="anchored" data-anchor-id="monotone-regression-for-monotone-missing-pattern">Monotone Regression for monotone missing pattern</h2>
 <p>Let’s update above SAS code to generate a dummy dataset with monotone missing pattern</p>
-<div class="cell">
-<pre class="sas cell-code"><code>data dummy;
-    length USUBJID $4;
-    do i=1 to 10; 
-        sex1n=int(ranuni(0)*2); 
-        USUBJID = strip(put(1000+i, best.));
-        miss_start = ceil(ranuni(0) * 5); /* Randomly decide the start point for missing data (1 to 5) */
-        do j=1 to 5; 
-            AVISITN = j;
-            if j &gt;= miss_start then AVAL = .; /* If the visit number is greater than or equal to miss_start, make AVAL missing */
-            else AVAL = round(1 + ranuni(0), 0.01);
-            output; 
-        end;
-    end;
-    drop i miss_start j;
-run;
-
-proc sort data=dummy; 
-    by usubjid sex1n;
-run;
-
-proc transpose data=dummy out=dummyt(drop=_name_) prefix=v;
-    by USUBJID sex1n;
-    id avisitn;
-    var aval;
-run;
-
-proc print data=dummyt(obs=5);
-run;
-
-ods select MissPattern;
-proc mi data=dummyt nimpute=0;
-    var v1 - v5;
-run;</code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> dummy;</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">length</span> USUBJID $<span class="fl">4</span>;</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">do</span> i<span class="op">=</span><span class="fl">1</span> <span class="cf">to</span> <span class="fl">10</span>; </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        sex1n<span class="op">=</span><span class="fu">int</span>(ranuni(<span class="fl">0</span>)<span class="op">*</span><span class="fl">2</span>); </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        USUBJID <span class="op">=</span> <span class="fu">strip</span>(put(<span class="fl">1000</span><span class="op">+</span>i, <span class="dt">best.</span>));</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        miss_start <span class="op">=</span> <span class="fu">ceil</span>(ranuni(<span class="fl">0</span>) <span class="op">*</span> <span class="fl">5</span>); <span class="co">/* Randomly decide the start point for missing data (1 to 5) */</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">do</span> j<span class="op">=</span><span class="fl">1</span> <span class="cf">to</span> <span class="fl">5</span>; </span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>            AVISITN <span class="op">=</span> j;</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> j <span class="op">&gt;=</span> miss_start <span class="cf">then</span> AVAL <span class="op">=</span> .; <span class="co">/* If the visit number is greater than or equal to miss_start, make AVAL missing */</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span> AVAL <span class="op">=</span> <span class="fu">round</span>(<span class="fl">1</span> <span class="op">+</span> ranuni(<span class="fl">0</span>), <span class="fl">0.01</span>);</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>            <span class="kw">output</span>; </span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">end</span>;</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span>;</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">drop</span> i miss_start j;</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="kw">proc sort</span> <span class="bu">data</span><span class="op">=</span>dummy; </span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="bu">by</span> usubjid sex1n;</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="kw">proc transpose</span> <span class="bu">data</span><span class="op">=</span>dummy <span class="bu">out</span><span class="op">=</span>dummyt(<span class="bu">drop</span><span class="op">=</span>_name_) <span class="bu">prefix</span><span class="op">=</span>v;</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">by</span> USUBJID sex1n;</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span> avisitn;</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>    <span class="bu">var</span> aval;</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="kw">proc print</span> <span class="bu">data</span><span class="op">=</span>dummyt(<span class="bu">obs</span><span class="op">=</span><span class="fl">5</span>);</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="kw">ods</span> select MissPattern;</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a><span class="kw">proc mi</span> <span class="bu">data</span><span class="op">=</span>dummyt <span class="bu">nimpute</span><span class="op">=</span><span class="fl">0</span>;</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>    <span class="bu">var</span> v1 <span class="op">-</span> v5;</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
@@ -363,13 +390,11 @@ run;</code></pre>
 </div>
 </div>
 <p>In this case we will use <code>monotone</code> statement instead of <code>FCS</code> for the imputation, example code as below:</p>
-<div class="cell">
-<pre class="sas cell-code"><code>proc mi data=dummyt out=outdata nimpute=10 seed=123;
-    class sex1n;
-    var sex1n v1 - v5;
-    monotone reg (v1-v5 /details);
-run;</code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">proc mi</span> <span class="bu">data</span><span class="op">=</span>dummyt <span class="bu">out</span><span class="op">=</span>outdata <span class="bu">nimpute</span><span class="op">=</span><span class="fl">10</span> <span class="bu">seed</span><span class="op">=</span><span class="fl">123</span>;</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">class</span> sex1n;</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">var</span> sex1n v1 <span class="op">-</span> v5;</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">monotone</span> reg (v1<span class="op">-</span>v5 <span class="op">/</span>details);</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="reference" class="level2">
 <h2 class="anchored" data-anchor-id="reference">Reference</h2>
