@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>R vs SAS Random Effect Models</title>
+<title>Comparing Testing approaches under Non-Proportional Hazards.</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -201,31 +201,13 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
-  <li><a href="#model-implementations" id="toc-model-implementations" class="nav-link" data-scroll-target="#model-implementations">Model Implementations</a>
-  <ul class="collapse">
-  <li><a href="#mean-model-representation" id="toc-mean-model-representation" class="nav-link" data-scroll-target="#mean-model-representation">Mean Model Representation</a>
-  <ul class="collapse">
-  <li><a href="#covariance-model-representation" id="toc-covariance-model-representation" class="nav-link" data-scroll-target="#covariance-model-representation">Covariance Model Representation</a></li>
-  </ul></li>
-  <li><a href="#numerical-optimisation-and-computation" id="toc-numerical-optimisation-and-computation" class="nav-link" data-scroll-target="#numerical-optimisation-and-computation">Numerical Optimisation and Computation</a>
-  <ul class="collapse">
-  <li><a href="#optimisation-strategy-in-sas" id="toc-optimisation-strategy-in-sas" class="nav-link" data-scroll-target="#optimisation-strategy-in-sas">Optimisation Strategy in SAS</a></li>
-  <li><a href="#optimisation-strategy-in-r-lme4" id="toc-optimisation-strategy-in-r-lme4" class="nav-link" data-scroll-target="#optimisation-strategy-in-r-lme4">Optimisation Strategy in R (lme4)</a></li>
-  <li><a href="#consequences-for-numerical-output" id="toc-consequences-for-numerical-output" class="nav-link" data-scroll-target="#consequences-for-numerical-output">Consequences for Numerical Output</a></li>
-  </ul></li>
-  <li><a href="#convergence-behaviour" id="toc-convergence-behaviour" class="nav-link" data-scroll-target="#convergence-behaviour">Convergence Behaviour</a>
-  <ul class="collapse">
-  <li><a href="#boundary-and-near-boundary-parameters" id="toc-boundary-and-near-boundary-parameters" class="nav-link" data-scroll-target="#boundary-and-near-boundary-parameters">Boundary and Near-Boundary Parameters</a></li>
-  <li><a href="#diagnostic-philosophy" id="toc-diagnostic-philosophy" class="nav-link" data-scroll-target="#diagnostic-philosophy">Diagnostic Philosophy</a></li>
-  <li><a href="#interpretation-of-convergence-differences" id="toc-interpretation-of-convergence-differences" class="nav-link" data-scroll-target="#interpretation-of-convergence-differences">Interpretation of Convergence Differences</a></li>
-  </ul></li>
-  <li><a href="#comparison-of-outputs" id="toc-comparison-of-outputs" class="nav-link" data-scroll-target="#comparison-of-outputs">Comparison of Outputs</a></li>
-  <li><a href="#degrees-of-freedom-and-kenward-rodger-adjusted-standard-errors" id="toc-degrees-of-freedom-and-kenward-rodger-adjusted-standard-errors" class="nav-link" data-scroll-target="#degrees-of-freedom-and-kenward-rodger-adjusted-standard-errors">Degrees of freedom and Kenward-Rodger adjusted standard errors</a></li>
-  <li><a href="#confidence-intervals-for-model-coefficients" id="toc-confidence-intervals-for-model-coefficients" class="nav-link" data-scroll-target="#confidence-intervals-for-model-coefficients">Confidence intervals for model coefficients</a></li>
-  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
-  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
-  </ul></li>
+  <li><a href="#weighted-log-rank-testwlrt." id="toc-weighted-log-rank-testwlrt." class="nav-link active" data-scroll-target="#weighted-log-rank-testwlrt.">1. Weighted Log-rank test(WLRT).</a></li>
+  <li><a href="#modestly-weighted-log-rank-test." id="toc-modestly-weighted-log-rank-test." class="nav-link" data-scroll-target="#modestly-weighted-log-rank-test.">2. Modestly Weighted Log-rank test.</a></li>
+  <li><a href="#max-combo-test." id="toc-max-combo-test." class="nav-link" data-scroll-target="#max-combo-test.">3. Max Combo test.</a></li>
+  <li><a href="#note-on-the-use-of-custom-r-functions" id="toc-note-on-the-use-of-custom-r-functions" class="nav-link" data-scroll-target="#note-on-the-use-of-custom-r-functions">Note on the Use of Custom R Functions:</a></li>
+  <li><a href="#comparison-results." id="toc-comparison-results." class="nav-link" data-scroll-target="#comparison-results.">Comparison Results.</a></li>
+  <li><a href="#summary-and-recommendation." id="toc-summary-and-recommendation." class="nav-link" data-scroll-target="#summary-and-recommendation.">Summary and Recommendation.</a></li>
+  <li><a href="#references." id="toc-references." class="nav-link" data-scroll-target="#references.">References.</a></li>
   </ul>
 </nav>
     </div>
@@ -234,7 +216,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">R vs SAS Random Effect Models</h1>
+<h1 class="title">Comparing Testing approaches under Non-Proportional Hazards.</h1>
 </div>
 
 
@@ -251,184 +233,420 @@ window.Quarto = {
 </header>
 
 
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>Linear mixed models are applied in clinical trials to analyse longitudinal outcomes where repeated observations within subjects induce correlation. In this setting, the statistical objective is to estimate treatment effects while accounting for within-subject dependence through a likelihood-based specification of the model’s mean structure and covariance components.</p>
-<p>Both SAS and R provide valid likelihood-based implementations of linear mixed models. When the same fixed-effect structure, covariance model, and estimation method are specified, the two systems target the same statistical model. Nevertheless, exact numerical equality of all reported quantities should not be expected. This is because SAS and R do not solve the likelihood optimisation problem in the same parameter space, nor do they apply identical profiling strategies, optimisation algorithms, or convergence criteria.</p>
-<p>This document therefore focuses explicitly on the numerical computation underlying linear mixed model estimation. It explains why fixed-effect estimates typically agree closely once model specification is aligned, while differences may arise in covariance parameter estimates and convergence diagnostics as a direct consequence of differences in numerical representation and optimisation behaviour.</p>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>As fixed effect estimates are entirely determined by the estimated V matrix which is a function of the estimated variance parameters, the agreement of fixed effect estimates depends on the agreement of covariance parameter estimates.</p>
-</div>
-</div>
-</section>
-<section id="model-implementations" class="level1">
-<h1>Model Implementations</h1>
-<section id="mean-model-representation" class="level2">
-<h2 class="anchored" data-anchor-id="mean-model-representation">Mean Model Representation</h2>
-<p>In both SAS and R, the fixed-effect component of the linear mixed-effects model is defined through a linear predictor of the form <span class="math display">\[
-\eta = X \beta,
-\]</span> where <span class="math inline">\(X\)</span> denotes the fixed-effect design matrix and <span class="math inline">\(\beta\)</span> is the corresponding vector of regression coefficients.</p>
-<p>The structure of <span class="math inline">\(X\)</span> is determined by the chosen factor coding scheme, reference levels, and any specified interaction terms. Provided that factor parameterisation and contrasts are aligned, both systems construct equivalent fixed-effect design matrices and therefore target the same estimand.</p>
-<p>Any disagreement in fixed-effect estimates almost always indicates misalignment in factor coding rather than numerical instability.</p>
-<section id="covariance-model-representation" class="level3">
-<h3 class="anchored" data-anchor-id="covariance-model-representation">Covariance Model Representation</h3>
-<p>The primary distinction between SAS and R implementations lies in how the covariance structure is represented internally.</p>
+<section id="weighted-log-rank-testwlrt." class="level3">
+<h3 class="anchored" data-anchor-id="weighted-log-rank-testwlrt.">1. Weighted Log-rank test(WLRT).</h3>
 <ul>
-<li><p>SAS PROC MIXED parameterises covariance structures directly in terms of variance and correlation parameters associated with the residuals and/or random effects.</p></li>
-<li><p>R lme4::lmer parameterises the random-effects covariance matrix via its Cholesky factor, ensuring positive definiteness by construction.</p></li>
+<li>Peto-Peto .</li>
+<li>Modified Peto-Peto.</li>
+<li>Tarone-ware.</li>
+<li>Gehan-Breslow/ Wilcoxon.</li>
+<li>Fleming-Harrington.</li>
 </ul>
-<p>Although these representations are mathematically equivalent at the model level, they are not numerically equivalent. The parameters optimised by the algorithm differ, and the mapping from internal parameters to reported standard deviations and correlations is nonlinear.</p>
-<p>As a result, covariance parameter estimates may differ at the level of numerical tolerance even when the fitted likelihood values are effectively identical.</p>
 </section>
-</section>
-<section id="numerical-optimisation-and-computation" class="level2">
-<h2 class="anchored" data-anchor-id="numerical-optimisation-and-computation">Numerical Optimisation and Computation</h2>
-<section id="optimisation-strategy-in-sas" class="level3">
-<h3 class="anchored" data-anchor-id="optimisation-strategy-in-sas">Optimisation Strategy in SAS</h3>
-<p>PROC MIXED formulates the Gaussian log-likelihood explicitly and proceeds by profiling out the fixed effects, and in some configurations the residual variance, thereby reducing the optimisation problem to the covariance parameters. Estimation of these covariance parameters is carried out using an iterative hybrid strategy combining Expectation–Maximisation (EM) steps with Newton–Raphson updates.</p>
-<p>The EM steps provide stable updates of variance and covariance parameters by exploiting closed-form expectations under the current parameter values, ensuring monotonic increases in the likelihood and robustness when parameters are near the boundary of the parameter space. Once the algorithm is sufficiently close to the optimum, Newton–Raphson iterations are used to accelerate convergence, updating covariance parameters using first and second derivatives of the profiled likelihood.</p>
-<p>This optimisation is performed directly in the variance–correlation parameter space, rather than in a transformed factor space. As a result, the numerical behaviour of PROC MIXED is closely tied to the curvature of the likelihood with respect to variance components, and convergence properties depend on the strength of information supporting each covariance parameter.</p>
-</section>
-<section id="optimisation-strategy-in-r-lme4" class="level3">
-<h3 class="anchored" data-anchor-id="optimisation-strategy-in-r-lme4">Optimisation Strategy in R (lme4)</h3>
-<p>In lme4, the likelihood is re-expressed using a penalised least squares formulation derived from the Cholesky factorisation of the random-effects covariance matrix. For fixed covariance parameters, the conditional modes of the random effects are obtained by solving a penalised least squares system.</p>
-<p>The likelihood is then evaluated using quantities derived from this representation, including residual sums of squares and log-determinants of the Cholesky factors. An outer optimiser updates the Cholesky parameters rather than the variance components themselves.</p>
-<p>Because optimisation occurs in this transformed parameter space, the geometry of the objective function differs from that used by PROC MIXED, even though both correspond to the same likelihood.</p>
-<p>It is possible to change the optimisation method used by lme4. The lme4::allFit function can be used to check whether the different optimisation methods give the same results.</p>
-</section>
-<section id="consequences-for-numerical-output" class="level3">
-<h3 class="anchored" data-anchor-id="consequences-for-numerical-output">Consequences for Numerical Output</h3>
-<p>These differences imply that:</p>
+<section id="modestly-weighted-log-rank-test." class="level3">
+<h3 class="anchored" data-anchor-id="modestly-weighted-log-rank-test.">2. Modestly Weighted Log-rank test.</h3>
 <ul>
-<li>The optimisation paths taken by SAS and R are not the same.</li>
-<li>The stopping points may differ slightly on flat regions of the likelihood surface.</li>
-<li>Small differences in reported covariance parameters are expected, particularly near parameter boundaries.</li>
+<li>Unstratified</li>
+<li>Stratified</li>
 </ul>
-<p>Importantly, these effects arise from numerical computation, not from differences in the underlying statistical model.</p>
 </section>
+<section id="max-combo-test." class="level3">
+<h3 class="anchored" data-anchor-id="max-combo-test.">3. Max Combo test.</h3>
+<ul>
+<li>Unstratified</li>
+<li>Stratified</li>
+</ul>
 </section>
-<section id="convergence-behaviour" class="level2">
-<h2 class="anchored" data-anchor-id="convergence-behaviour">Convergence Behaviour</h2>
-<section id="boundary-and-near-boundary-parameters" class="level3">
-<h3 class="anchored" data-anchor-id="boundary-and-near-boundary-parameters">Boundary and Near-Boundary Parameters</h3>
-<p>In linear mixed models, variance components can be weakly identified when the contribution of a random slope to the marginal covariance structure is negligible relative to a random intercept, when the design provides limited information for estimating specific covariance components, or when imbalance and missing observations reduce effective replication at later time points.</p>
-<p>Under these conditions, the log-likelihood exhibits low curvature with respect to one or more covariance parameters. Consequently, a range of parameter values yields nearly indistinguishable likelihood values, making numerical optimisation sensitive to parameterisation, optimisation strategy, and convergence tolerances.</p>
-</section>
-<section id="diagnostic-philosophy" class="level3">
-<h3 class="anchored" data-anchor-id="diagnostic-philosophy">Diagnostic Philosophy</h3>
-<p>lme4 applies explicit checks on the rank and conditioning of the estimated covariance structure under the Cholesky parameterisation. When one or more components are estimated effectively at zero, lme4 reports a singular fit warning.</p>
-<p>PROC MIXED may converge to a likelihood-equivalent solution while reporting a small non-zero variance estimate and no explicit warning. This reflects a difference in diagnostic thresholds and reporting conventions, not a substantive difference in model fit.</p>
-</section>
-<section id="interpretation-of-convergence-differences" class="level3">
-<h3 class="anchored" data-anchor-id="interpretation-of-convergence-differences">Interpretation of Convergence Differences</h3>
-<p>A convergence warning in R does not imply model failure, nor does the absence of a warning in SAS imply strong identification of all covariance parameters. In both cases, the relevant question is whether inferential quantities, treatment effects, standard errors, and test statistics, are stable under reasonable sensitivity analyses.</p>
-</section>
-</section>
-<section id="comparison-of-outputs" class="level2">
-<h2 class="anchored" data-anchor-id="comparison-of-outputs">Comparison of Outputs</h2>
-<p><strong>Table 1.</strong> Summary Table: SAS vs R (Linear Mixed Models)</p>
+<section id="note-on-the-use-of-custom-r-functions" class="level3">
+<h3 class="anchored" data-anchor-id="note-on-the-use-of-custom-r-functions">Note on the Use of Custom R Functions:</h3>
+<p>The <code>survminer</code> package can be used to perform the Peto–Peto, modified Peto–Peto, Tarone–Ware, and Gehan–Breslow/Wilcoxon tests. However, its functionality is limited to generating p-values and does not provide the corresponding test statistics. The <a href="https://github.com/kassambara/survminer/blob/master/R/weighted_logrank.R">custom R function</a> from Kassambara’s GitHub repository can be used to perform these tests. This function internally implements weighted log-rank tests and supports the log-rank, Gehan–Breslow, Tarone–Ware, Peto–Peto, modified Peto–Peto, and Fleming–Harrington tests. The custom function reproduces functionality previously available through <code>survMisc::comp()</code>, which is no longer available on CRAN. The custom functions used to perform each test, as presented in the R document, were derived from this GitHub-based implementation. Only the sections relevant to pairwise comparisons were retained, since the original custom function also supports k-group comparisons.</p>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 19%">
-<col style="width: 19%">
-<col style="width: 19%">
-<col style="width: 19%">
-<col style="width: 21%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Statistic</th>
-<th>R Result</th>
-<th>SAS Result</th>
-<th>Match</th>
-<th>Interpretation</th>
-</tr>
-</thead>
 <tbody>
 <tr class="odd">
-<td>Fixed-effect estimates</td>
-<td>Typically very close (when contrasts/reference levels match)</td>
-<td>Typically very close (when contrasts/reference levels match)</td>
-<td>Yes (in practice, once aligned)</td>
-<td>Same mean model <span class="math inline">\((X\beta)\)</span> once factor coding/contrasts are aligned; differences usually indicate coding mismatch rather than numerical instability.</td>
+<td><strong>Analysis</strong></td>
+<td><strong>Supported in R</strong></td>
+<td><strong>Supported in SAS</strong></td>
+<td><strong>Match</strong></td>
+<td><strong>Notes</strong></td>
 </tr>
 <tr class="even">
-<td>Fixed-effect standard errors / Wald tests</td>
-<td>Typically very close</td>
-<td>Typically very close</td>
-<td>Yes (usually)</td>
-<td>With the same likelihood target and mean model, inference on fixed effects is generally stable across implementations; residual differences can occur due to optimisation tolerances and covariance estimation details.</td>
+<td><strong>WLRT</strong>- Peto-Peto</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>In R, the <code>survminer::surv_pvalue(method = "S1")</code> function computes the p-value for the Peto–Peto test. However, the <code>survminer</code> package does not provide a function for generating the corresponding test statistics. The <a href="https://github.com/kassambara/survminer/blob/master/R/weighted_logrank.R">custom R function</a> can be used to perform this test and obtain both the p-value and chi-square statistic. The resulting values are comparable to those produced by SAS but not consistent with results from the <code>coin::logrank_test()</code> and <code>survival::survdiff()</code> functions. In SAS, this test is implemented using the <code>LIFETEST</code> procedure with a <code>STRATA</code> statement and the <code>TEST=peto</code> option.</td>
 </tr>
 <tr class="odd">
-<td>Log-likelihood / REML criterion</td>
-<td>Very close (often effectively identical to tolerance)</td>
-<td>Very close (often effectively identical to tolerance)</td>
-<td>Yes (to numerical tolerance)</td>
-<td>Both target the same (RE)ML objective under aligned specification, but evaluate/optimise it via different internal representations.</td>
+<td><strong>WLRT-</strong> Modified Peto-Peto</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>The <code>survminer::surv_pvalue(method = "S2")</code> function in R generates the p-value for the modified Peto–Peto test. The <a href="https://github.com/kassambara/survminer/blob/master/R/weighted_logrank.R">custom R function</a> can be used to obtain both the chi-square statistic and the p-value. In SAS, this test is performed using the <code>LIFETEST</code> procedure with a <code>STRATA</code> statement and the <code>TEST=modpeto</code> option.</td>
 </tr>
 <tr class="even">
-<td>Covariance parameter estimates (variance components, correlations)</td>
-<td>Close but not identical; may land nearer boundary (e.g., ~0)</td>
-<td>Close but not identical; may report small non-zero values</td>
-<td>No (exact equality not expected)</td>
-<td>Different internal parameter spaces (Cholesky in lme4 vs variance/correlation in PROC MIXED) and different optimisation paths can yield small differences, especially on flat likelihood regions or near boundaries.</td>
+<td><strong>WLRT</strong>-Tarone-Ware</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>The <code>coin::logrank_test()</code> function in R performs the Tarone–Ware test when the argument <code>type = "Tarone-Ware"</code> is specified. The <code>survminer::surv_pvalue(method = "sqrtN")</code> function computes the p-value for this test. However, because the <code>survminer</code> package does not provide a built-in function to return the test statistic, the <a href="https://github.com/kassambara/survminer/blob/master/R/weighted_logrank.R">custom R function</a> can be used to compute the chi-square statistic along with a p-value consistent with the <code>method = "sqrtN"</code> implementation. The results obtained from the custom function and the <code>survminer</code> package agree with those produced in SAS using <code>TEST=TaroneWare</code> with the STRATA statement in PROC LIFETEST. In contrast, the results from <code>coin::logrank_test()</code> do not match the SAS output. The <code>survminer::surv_pvalue()</code> function computes p-values from <code>survfit</code> objects by comparing survival curves. Its default method is <code>survdiff</code>, which performs the standard log-rank test.</td>
 </tr>
 <tr class="odd">
-<td>Random-effect standard deviations</td>
-<td>Close but not identical</td>
-<td>Close but not identical</td>
+<td><strong>WLRT</strong>Gehan Breslow</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>In R, <code>survminer::surv_pvalue(method = "n")</code> together with the <a href="https://github.com/kassambara/survminer/blob/master/R/weighted_logrank.R">custom R function</a> yields the p-value for the Gehan–Breslow test, corresponding to its canonical weighting scheme. The <code>coin::logrank_test()</code> function performs this test when the argument <code>type = "Gehan-Breslow"</code> is specified. In SAS, the equivalent test is obtained by specifying <code>TEST=Wilcoxon</code> in the <code>PROC LIFETEST</code> procedure. However, the results produced by <code>coin::logrank_test()</code> are not consistent with the SAS output.</td>
+</tr>
+<tr class="even">
+<td><strong>WLRT</strong>-Fleming- Harrington</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>This test is computed in R using <code>nphRCT::wlrt()</code> and <code>coin::logrank_test</code> functions. In SAS, you have to specify <code>test=FH(</code><span class="math inline">\(\rho,\gamma\)</span><code>)</code> using the <code>LIFETEST</code> procedure. The results produced by <code>nphRCT::wlrt()</code> and the <code>LIFETEST</code> procedure are consistent.</td>
+</tr>
+<tr class="odd">
+<td><strong>Max Combo</strong></td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><p>In R, the test can be implemented using <code>nph::logrank.maxtest()</code>, which defaults to a two-sided test. There is no built-in functionality in the SAS <code>LIFETEST</code> procedure to perform this test directly; it must be implemented via this <a href="https://github.com/dreaknezevic/combo-wlr">SAS macro</a>. Results from the R implementation and the SAS macro are similar.</p>
+<p>A stratified max-combo test can be performed in both R and SAS. Additionally, the choice of weighting can be modified, as demonstrated in the SAS file.</p></td>
+</tr>
+<tr class="even">
+<td><strong>Modestly Weighted Log-rank</strong></td>
+<td>Yes</td>
 <td>No</td>
-<td>Reported SDs are nonlinear functions of internally optimised parameters; small numerical differences are expected even when the likelihood is essentially the same.</td>
-</tr>
-<tr class="even">
-<td>Convergence / diagnostics</td>
-<td>May warn about singular fit or near-boundary components</td>
-<td>May converge without an explicit singularity warning</td>
-<td>No (diagnostics differ)</td>
-<td>lme4 applies explicit singularity/rank checks under the Cholesky parameterisation; PROC MIXED may report convergence with small non-zero estimates depending on its diagnostic thresholds and reporting conventions.</td>
+<td>No</td>
+<td>In R, this test can be performed using the <code>nphRCT::wlrt()</code> function and specifying either the <code>t*</code> or <code>s*</code> parameter. Here, <code>s*</code> represents the fixed survival probability threshold, whereas <code>t*</code> denotes the time point at which the pooled survival probability reaches <code>s*</code> (see the referenced documentation for the definition of this test’s weight function). A stratified version of the test can be implemented by incorporating the <code>strata()</code> function. This approach provides both the individual test statistics for each stratum and the combined test statistic. To the knowledge of the CAMIS contributors, there is no direct implementation of this test in the SAS <code>LIFETEST</code> procedure.</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="degrees-of-freedom-and-kenward-rodger-adjusted-standard-errors" class="level2">
-<h2 class="anchored" data-anchor-id="degrees-of-freedom-and-kenward-rodger-adjusted-standard-errors">Degrees of freedom and Kenward-Rodger adjusted standard errors</h2>
-<p>There is generally very close agreement between PROC MIXED and lme4/lmerTest for Satterthwaite degrees of freedom and Kenward-Rodger degrees of freedom and adjusted standard errors. Some differences may arise in the Kenward-Rodger results, particularly for small samples sizes, because of the information matrix which is used in the calculations.</p>
-<p>By default PROC MIXED uses the observed information matrix in the Kenward-Rodger calculations, whereas lmerTest uses the expected information matrix. It is possible to force PROC MIXED to use the expected information matrix by using the SCORING option. When SCORING = n is specified, the procedure will use Fisher scoring for the first n iterations. If the model converges when the Fisher scoring method is still being used, SAS will use the expected information to implement the Kenward-Roger method.</p>
+<section id="comparison-results." class="level1">
+<h1>Comparison Results.</h1>
+<p><span class="math display">\[H_0 : S_1(t)=S_2(t) \mbox{    }\forall t  \mbox{ v/s }  H_1 : S_1(t) \neq S_2(t) \mbox{ for some t. }\]</span></p>
+<p><strong>Note:</strong> <code>coin::logrank_test()</code> - Default distribution is <code>asymptotic</code>. Generates <span class="math inline">\(Z\)</span> test statistic. <span class="math inline">\(Z^2 = \chi^2_{(1)}\)</span></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Test</th>
+<th>Statistic</th>
+<th>Function in R</th>
+<th>R Result</th>
+<th>Function in SAS</th>
+<th>SAS Result</th>
+<th>Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>WLRT</strong>- Peto-Peto</td>
+<td><strong>Chi-square</strong></td>
+<td><p><code>Custom R function</code></p>
+<p><code>coin::logrank_test()-</code>Asymptotic</p>
+<p><code>survival::survdiff()</code></p></td>
+<td><p>9.8238</p>
+<p>Z=3.0423</p>
+<p>9.9000</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group /test=peto)</code></td>
+<td>9.8238</td>
+<td><p>Yes</p>
+<p>No</p>
+<p>No</p></td>
+<td><code>survminer::surv_pvalue()</code> prints the p-value; The <a href="https://github.com/kassambara/survminer/blob/master/R/weighted_logrank.R">custom R function</a> generates both the chi-square statistics and the corresponding p-value.</td>
+</tr>
+<tr class="even">
+<td></td>
+<td><strong>P-Value</strong></td>
+<td><p><code>survminer::surv_pvalue()</code></p>
+<p><code>Custom R function</code></p>
+<p><code>coin::logrank_test()-</code>Asymptotic</p>
+<p><code>survival::survdiff()</code></p></td>
+<td><p>0.0017</p>
+<p>0.0017</p>
+<p>0.0023</p>
+<p>0.0020</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group /test=peto</code></td>
+<td>0.0017</td>
+<td><p>Yes</p>
+<p>Yes</p>
+<p>No</p>
+<p>No</p>
+<p>No</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>WLRT-</strong> Modified Peto</td>
+<td><strong>Chi-square</strong></td>
+<td><code>Custom R function</code></td>
+<td><p>9.7491</p>
+<p>Z= 3.0276</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group /test=modpeto</code></td>
+<td>9.7491</td>
+<td><p>Yes</p>
+<p>No</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td></td>
+<td><strong>P-Value</strong></td>
+<td><p>|<code>survimer::surv_pvalue()</code></p>
+<p><code>Custom R function</code></p>
+<p><code>coin::logrank_test()</code></p></td>
+<td><p>0.0018</p>
+<p>0.0018</p>
+<p>0.002465</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group /test=modpeto</code></td>
+<td>0.0018</td>
+<td><p>Yes</p>
+<p>Yes</p>
+<p>No</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>WLRT</strong>- Tarone-Ware</td>
+<td><strong>Chi-square</strong></td>
+<td><p><code>Custom R function</code></p>
+<p><code>coin::logrank_test()</code></p></td>
+<td><p>9.4230</p>
+<p>Z=2.9636</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group /test=taroneware</code></td>
+<td>9.4230</td>
+<td><p>Yes</p>
+<p>No</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td></td>
+<td><strong>P-Value</strong></td>
+<td><p>|<code>survimer::surv_pvalue()</code></p>
+<p><code>Custom R function.</code></p>
+<p><code>coin::logrank_test()</code></p></td>
+<td><p>0.0021</p>
+<p>0.0021</p>
+<p>0.0030</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group /test=taroneware</code></td>
+<td>0.0021</td>
+<td><p>Yes</p>
+<p>Yes</p>
+<p>No</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>WLRT</strong>- Gehan-Breslow/ Wilcoxon</td>
+<td><strong>Chi-square</strong></td>
+<td><p><code>Custom R function</code></p>
+<p><code>coin::logrank_test()</code></p></td>
+<td><p>8.2593</p>
+<p>Z=2.7863</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group/test=wilcoxon</code></td>
+<td>8.2593</td>
+<td><p>Yes</p>
+<p>No</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td></td>
+<td><strong>P-Value</strong></td>
+<td><p>|<code>survimer::surv_pvalue()</code></p>
+<p><code>Custom R function</code></p>
+<p><code>coin::logrank_test()</code></p></td>
+<td><p>0.0041</p>
+<p>0.0041</p>
+<p>0.0053</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group/test=wilcoxon</code></td>
+<td>0.0041</td>
+<td><p>Yes</p>
+<p>Yes</p>
+<p>No</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>Fleming- Harrington</strong></td>
+<td><strong>Chi-square</strong></td>
+<td><code>nphRCT::wlrt()</code></td>
+<td><p>FH(0.5,0.5)=10.3122</p>
+<p>FH(1,1)=9.8019</p>
+<p>FH(0,1)=9.5455</p>
+<p>FH(0.5,2)=8.32428</p>
+<p>FH(1,0)=9.9</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group/test=FH()</code></td>
+<td><p>FH(0.5,0.5)=10.3122</p>
+<p>FH(1,1)=9.8019</p>
+<p>FH(0,1)=9.5455</p>
+<p>FH(0.5,2)=8.32428</p>
+<p>FH(1,0)=9.9</p></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td><code>coin::logrank_test()</code></td>
+<td><p>FH(0.5,0.5) :Z=3.0582</p>
+<p>FH(1,1): Z=2.9720</p>
+<p>FH(0,1): Z=2.9256</p>
+<p>FH(0.5,2): Z=2.7163</p>
+<p>FH(1,0): Z=3.0423</p></td>
+<td></td>
+<td></td>
+<td>No</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td></td>
+<td><strong>P-Value</strong></td>
+<td><code>nphRCT::wlrt()</code></td>
+<td><p>FH(0.5,0.5)=0.0013</p>
+<p>FH(1,1)=0.0017</p>
+<p>FH(0,1)=0.0020</p>
+<p>FH(0.5,2)=0.0041</p>
+<p>FH(1,0)=0.0017</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group/test=FH()</code></td>
+<td><p>FH(0.5,0.5)=0.0013</p>
+<p>FH(1,1)=0.0017</p>
+<p>FH(0,1)=0.0020</p>
+<p>FH(0.5,2)=0.0041</p>
+<p>FH(1,0)=0.0017</p></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td><code>coin::logrank_test()</code></td>
+<td><p>FH(0.5,0.5)=0.0022</p>
+<p>FH(1,1)=0.0030</p>
+<p>FH(0,1)=0.0034</p>
+<p>FH(0.5,2)=0.0066</p>
+<p>FH(1,0)=0.0023</p></td>
+<td></td>
+<td></td>
+<td>No</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>Modestly Weighted Log-rank(unstratified)</strong></td>
+<td><strong>Chi-square</strong></td>
+<td><code>nphRCT::wlrt()</code></td>
+<td>11.2786</td>
+<td><code>No direct implementation</code></td>
+<td>Null</td>
+<td>No</td>
+<td>This function can perform types of modestly-weighted log-rank tests and the Fleming-Harrington(<span class="math inline">\(\rho,\gamma\)</span>) test, in addition to the standard log-rank test.</td>
+</tr>
+<tr class="even">
+<td></td>
+<td><strong>P-Value</strong></td>
+<td><code>nphRCT::wlrt()</code></td>
+<td>0.0008</td>
+<td><code>No direct implementation</code></td>
+<td>Null</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>stratified Modestly Weighted Logrank_test</strong></td>
+<td><strong>Chi-square</strong></td>
+<td><code>nphRCT::wlrt()</code></td>
+<td><p>strata1=7.5185</p>
+<p>strata2=3.7418</p>
+<p>Combined=10.8359</p></td>
+<td><code>No direct implementation</code></td>
+<td>Null</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr class="even">
+<td></td>
+<td><strong>P-Value</strong></td>
+<td><code>nphRCT::wlrt()</code></td>
+<td><p>strata1=0.0061</p>
+<p>strata2=0.0531</p>
+<p>Combined=0.0010</p></td>
+<td><code>No direct implementation</code></td>
+<td>Null</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>Unstratified -Max Combo</strong></td>
+<td><strong>Chi-square</strong></td>
+<td><code>nph::logrank.maxtest()</code></td>
+<td>3.30 (Z test)</td>
+<td><code>SAS macro</code></td>
+<td>3.30152</td>
+<td>Yes</td>
+<td>In R, it defaults to two sided test, unless specified otherwise.</td>
+</tr>
+<tr class="even">
+<td></td>
+<td><strong>P-Value</strong></td>
+<td><code>nph::logrank.maxtest()</code></td>
+<td><p>0.00196<span class="math inline">\(\approx\)</span> 0.0020</p>
+<p>Bonferroni adjusted p-value=0.00385</p></td>
+<td><code>SAS macro</code></td>
+<td><p>0.0020</p>
+<p>The <code>SAS macro</code> does not perform Bonferroni adjustment.</p></td>
+<td>Yes</td>
+<td><p>In R, <code>logrank.maxtest()</code>, the algorithm <code>mvtnorm::GenzBretz()</code>&nbsp;calls the Genz–Bretz algorithm, a quasi-Monte Carlo method, which introduces randomness in each run; this generates slightly varying values for the unadjusted p-value in each run. Therefore, there is a need to use&nbsp;<code>set.seed()</code>&nbsp;for reproducibility.</p>
+<p>In the <code>SAS macro</code>, a Monte-Carlo simulation <code>x = RANDNORMAL(n, mean,corr2)</code> generates 5,000,000 samples from a k-dimensional multivariate normal distribution and a fixed seed (1).</p></td>
+</tr>
+<tr class="odd">
+<td><strong>Stratified -Max Combo</strong></td>
+<td><strong>Chi-square</strong></td>
+<td><code>strata.MaxCombo::SMCtest()</code></td>
+<td><p>Z1=3.1813</p>
+<p>Z2=3.1813</p>
+<p>Z3=3.2738</p></td>
+<td><code>SAS macro</code></td>
+<td>3.18132</td>
+<td><p>Yes</p>
+<p>Yes</p>
+<p>No</p></td>
+<td>In R, the test outputs multiple p-values corresponding to different covariance estimators; The <code>SAS macro</code> generates a combination test with a single <code>Z max</code> and <code>p</code> for p-value. The first <code>pval</code> and <code>z.max</code> is closer to those of <code>SAS Macro.</code></td>
+</tr>
+<tr class="even">
+<td></td>
+<td><strong>p-Value</strong></td>
+<td><code>strata.MaxCombo::SMCtest()</code></td>
+<td><p>p1=0.0030</p>
+<p>p2=0.0026</p>
+<p>p3=0.0021</p></td>
+<td><code>SAS macro</code></td>
+<td>0.0034</td>
+<td><p>The closest. slight difference</p>
+<p>No</p>
+<p>No</p></td>
+<td>The <code>SAS macro</code> was modified to accommodate a stratifying variable. The adjustments are documented in the SAS document.</td>
+</tr>
+</tbody>
+</table>
 </section>
-<section id="confidence-intervals-for-model-coefficients" class="level2">
-<h2 class="anchored" data-anchor-id="confidence-intervals-for-model-coefficients">Confidence intervals for model coefficients</h2>
-<p>The confint function applied directly to the lme4 model in R will use the Wald method (method = “Wald”) or profile likelihood (method = “profile”) method to calculate confidence intervals for model coefficients. The Wald method uses the normal distribution (infinite degrees of freedom). If you would like to use the Kenward-Rodger or Satterthwaite degrees of freedom, either calculate the confidence interval manually using the degrees of freedom provided or construct a contrast using emmeans and then calculate the confidence interval for the contrast.</p>
+<section id="summary-and-recommendation." class="level1">
+<h1>Summary and Recommendation.</h1>
+<p>Testing combinations of Weighted Log-rank statistics is a robust alternative to Weighted Log-rank for detecting differences in survival curves in non-proportional hazard situations. However, some authors have expressed caution about the use of the combination test in the sense that one risk is identifying statistically significant results with clinical insignificance; for instance, in cases where treatment is uniformly worse than control, Max Combo can still offer a high chance of rejecting the null hypothesis, favouring treatment. Magirr &amp; Burman developed Modestly weighted Log-rank to counter these issues, especially for a delayed effect case; the weighting is controlled such that the worse treatment effect is not rewarded at an early time point.</p>
+<p>The Wilcoxon test reported in SAS documentation corresponds to the Gehan-Breslow test in R. For Peto Peto, Modified Peto, Gehan-Breslow/Wilcoxon and Tarone-Ware test, to ensure reproducibility with SAS procedures, |<code>survimer::surv_pvalue()</code> and a <code>Custom R</code> function can be used. |<code>survimer::surv_pvalue()</code> and <code>custom R</code> compute these test statistics based on the weighting definition of these tests, for example: these functions utilise the size of the risk set and the square root of the risk set, respectively, to compute weights for Gehan-Breslow/Wilcoxon and Tarone-Ware, respectively. The <code>coin::logrank_test()</code> and |<code>survival::survdiff()</code> implement these tests differently, as discussed earlier. <code>coin</code> provides an implementation of a general framework for conditional inference procedures commonly known as permutation tests. |<code>survival::survdiff()</code> in R uses hypergeometric variance formulation to implement Mantel-Cox log-rank test . It uses <span class="math inline">\(G^\rho\)</span> family of tests .</p>
 </section>
-<section id="conclusion" class="level2">
-<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
-<p>SAS and R implement linear mixed models under the same statistical framework but solve the likelihood optimisation problem using different numerical representations. Fixed-effect estimates typically agree closely once model specification is aligned. Differences arise primarily in covariance parameters and convergence diagnostics due to differences in parameterisation, optimisation geometry, and diagnostic thresholds. These differences are intrinsic to numerical computation and should be interpreted accordingly in clinical trial analyses.</p>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<p><strong>R Documentation and Methodology:</strong></p>
-<ul>
-<li><p>Bates, D., Mächler, M., Bolker, B., &amp; Walker, S. (2015). Fitting Linear Mixed-Effects Models Using lme4. Journal of Statistical Software, 67(1), 1–48. https://doi.org/10.18637/jss.v067.i01</p></li>
-<li><p>Bates, D. (2014). lmer for SAS PROC MIXED Users. Vignette for the R package SASmixed (version 1.0-4). The Comprehensive R Archive Network (CRAN). Available at: https://cran.r-project.org/web/packages/SASmixed/vignettes/Usinglmer.pdf</p></li>
-</ul>
-<p><strong>SAS Documentation and Methodology:</strong></p>
-<ul>
-<li><p>Edupganti, S. &amp; Nisal, S. (2011). Proc Mixed – Right Options to Get Right Output. NESUG 2011 Proceedings: Statistics &amp; Analysis. Available at: https://www.lexjansen.com/nesug/nesug11/sa/sa03.pdf</p></li>
-<li><p>SAS Institute Inc.&nbsp;(2021). SAS/STAT® User’s Guide, The MIXED Procedure (Version 2021.1.5). Cary, NC: SAS Institute Inc.&nbsp;https://documentation.sas.com/api/collections/pgmsascdc/v_017/docsets/statug/content/mixed.pdf?locale=ja#nameddest=statug_mixed_details58</p></li>
-<li><p>SAS Institute Inc.&nbsp;(n.d.). SAS PROC MIXED: Numerical Optimisation and Computational Details. Technical documentation. Available at: http://gauss.stat.su.se/gu/mm/SAS_PROC_MIXED.pdf</p></li>
-</ul>
-<p> </p>
+<section id="references." class="level1">
+<h1>References.</h1>
+<ol type="1">
+<li><p><code>wlrt()</code> documentation: <a href="https://search.r-project.org/CRAN/refmans/nphRCT/html/wlrt.html" class="uri">https://search.r-project.org/CRAN/refmans/nphRCT/html/wlrt.html</a></p></li>
+<li><p><code>survdiff()</code> documentation: <a href="https://www.rdocumentation.org/packages/survival/versions/3.8-3/topics/survdiff" class="uri">https://www.rdocumentation.org/packages/survival/versions/3.8-3/topics/survdiff</a></p></li>
+<li><p><code>survminer()</code> documentation: <a href="https://cran.r-project.org/web/packages/survminer/survminer.pdf" class="uri">https://cran.r-project.org/web/packages/survminer/survminer.pdf</a></p></li>
+<li><p><code>logrank.maxtest()</code> documentation: <a href="https://search.r-project.org/CRAN/refmans/nph/html/logrank.maxtest.html" class="uri">https://search.r-project.org/CRAN/refmans/nph/html/logrank.maxtest.html</a></p></li>
+<li><p><code>Robust modestly weighted log-rank tests</code>documentation:<a href="https://arxiv.org/html/2412.14942v1" class="uri">https://arxiv.org/html/2412.14942v1</a></p></li>
+<li><p><code>nphRCT package</code> documentation: <a href="https://cran.r-project.org/web/packages/nphRCT/nphRCT.pdf" class="uri">https://cran.r-project.org/web/packages/nphRCT/nphRCT.pdf</a></p></li>
+<li><p><code>LIFETEST procedure</code> documentation: <a href="https://documentation.sas.com/doc/en/statug/15.2/statug_lifetest_syntax01.htm" class="uri">https://documentation.sas.com/doc/en/statug/15.2/statug_lifetest_syntax01.htm</a></p></li>
+<li><p><code>Combination weighted log-rank tests</code> documentation: <a href="https://support.sas.com/resources/papers/proceedings20/5062-2020.pdf" class="uri">https://support.sas.com/resources/papers/proceedings20/5062-2020.pdf</a></p></li>
+<li><p><code>LIFETEST procedure</code> documentation: <a href="https://support.sas.com/documentation//cdl/en/statug/68162/HTML/default/viewer.htm#statug_lifetest_details16.htm" class="uri">https://support.sas.com/documentation//cdl/en/statug/68162/HTML/default/viewer.htm#statug_lifetest_details16.htm</a></p></li>
+<li><p><code>Stratified modestly weighted log-rank test</code> documentation: <a href="https://cran.r-project.org/web/packages/nphRCT/vignettes/weighted_log_rank_tests.html" class="uri">https://cran.r-project.org/web/packages/nphRCT/vignettes/weighted_log_rank_tests.html</a></p></li>
+<li><p><code>Stratified Max-Combo</code> documentation: <a href="https://cran.r-project.org/web/packages/strata.MaxCombo/strata.MaxCombo.pdf" class="uri">https://cran.r-project.org/web/packages/strata.MaxCombo/strata.MaxCombo.pdf</a></p></li>
+<li><p><code>Max-combo</code> documentation: <a href="https://search.r-project.org/CRAN/refmans/nph/html/logrank.maxtest.html" class="uri">https://search.r-project.org/CRAN/refmans/nph/html/logrank.maxtest.html</a></p></li>
+</ol>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->
