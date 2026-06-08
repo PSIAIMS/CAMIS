@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Accelerated Failure Time (AFT) - R vs.&nbsp;SAS</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../images/logo.png" rel="icon" type="image/png">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-00505b3f1e40208f6eab480a42ba967a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../images/logo.png" alt="" class="navbar-logo light-content">
+    <img src="../images/logo.png" alt="" class="navbar-logo dark-content">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-publications-and-projects" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Publications and Projects</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-publications-and-projects">    
+        <li>
+    <a class="dropdown-item" href="../publication/white_paper.html"><i class="bi bi-file-earmark-word-fill" role="img">
+</i> 
+ <span class="dropdown-text">White Paper</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/conference.html"><i class="bi bi-easel3-fill" role="img">
+</i> 
+ <span class="dropdown-text">Conferences</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/dissertation.html"><i class="bi bi-mortarboard-fill" role="img">
+</i> 
+ <span class="dropdown-text">Academic Projects</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../minutes/index.html"> 
+<span class="menu-text">Meeting Minutes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../blogs/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-help" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Help</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-help">    
+        <li>
+    <a class="dropdown-item" href="https://github.com/PSIAIMS/CAMIS/issues"><i class="bi bi-bug-fill" role="img">
+</i> 
+ <span class="dropdown-text">Report a Bug</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/get_started.html"><i class="bi bi-git" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with Your Environment</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/contribution.html"><i class="bi bi-person-raised-hand" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with CAMIS</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/package_review.html"><i class="bi bi-box-fill" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with a New R Package</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+    <a href="https://github.com/PSIAIMS/CAMIS/" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a>
+  <ul class="collapse">
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#r-packages" id="toc-r-packages" class="nav-link" data-scroll-target="#r-packages">R Packages</a></li>
+  </ul></li>
+  <li><a href="#aft-using-weibull-distribution-default" id="toc-aft-using-weibull-distribution-default" class="nav-link" data-scroll-target="#aft-using-weibull-distribution-default">AFT using Weibull Distribution (Default)</a>
+  <ul class="collapse">
+  <li><a href="#r" id="toc-r" class="nav-link" data-scroll-target="#r">R</a></li>
+  <li><a href="#sas" id="toc-sas" class="nav-link" data-scroll-target="#sas">SAS</a></li>
+  </ul></li>
+  <li><a href="#aft-using-log-normal-distribution" id="toc-aft-using-log-normal-distribution" class="nav-link" data-scroll-target="#aft-using-log-normal-distribution">AFT using Log-Normal Distribution</a>
+  <ul class="collapse">
+  <li><a href="#r-1" id="toc-r-1" class="nav-link" data-scroll-target="#r-1">R</a></li>
+  <li><a href="#sas-1" id="toc-sas-1" class="nav-link" data-scroll-target="#sas-1">SAS</a></li>
+  </ul></li>
+  <li><a href="#aft-using-log-logistic-distribution" id="toc-aft-using-log-logistic-distribution" class="nav-link" data-scroll-target="#aft-using-log-logistic-distribution">AFT using Log-Logistic Distribution</a>
+  <ul class="collapse">
+  <li><a href="#r-2" id="toc-r-2" class="nav-link" data-scroll-target="#r-2">R</a></li>
+  <li><a href="#sas-2" id="toc-sas-2" class="nav-link" data-scroll-target="#sas-2">SAS</a></li>
+  </ul></li>
+  <li><a href="#conclusions" id="toc-conclusions" class="nav-link" data-scroll-target="#conclusions">Conclusions</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Accelerated Failure Time (AFT) - R vs.&nbsp;SAS</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<section id="summary" class="level3">
+<h3 class="anchored" data-anchor-id="summary">Summary</h3>
+<p>The Accelerated Failure Time (AFT) model is implemented in R using the <code>survival::survreg</code> function and in SAS using <code>PROC LIFEREG</code>, with the choice of distribution specified as appropriate for the analysis (see R and SAS sections for further model details).</p>
+<p>In the table 1, the distributions available in R and SAS are listed together with its keywords.</p>
+<p><strong>Table 1.</strong> Distributions Available in R and SAS for AFT Models</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Distribution</th>
+<th>R</th>
+<th>SAS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Weibull</td>
+<td>weibull*</td>
+<td>weibull*</td>
+</tr>
+<tr class="even">
+<td>Exponential</td>
+<td>exponential</td>
+<td>exponential</td>
+</tr>
+<tr class="odd">
+<td>gaussian</td>
+<td>gaussian</td>
+<td>normal</td>
+</tr>
+<tr class="even">
+<td>Logistic</td>
+<td>logistic</td>
+<td>logistic</td>
+</tr>
+<tr class="odd">
+<td>Log-normal</td>
+<td>lognormal</td>
+<td>lnormal</td>
+</tr>
+<tr class="even">
+<td>Log-Logistic</td>
+<td>loglogistic</td>
+<td>llogistic</td>
+</tr>
+<tr class="odd">
+<td>Gamma</td>
+<td>NA</td>
+<td>gamma</td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">NA: Not applicable.<br>
+*<em>By default.</em></div>
+<p>To obtain the acceleration factors, the model coefficients are transformed using the exponential function. In R, this is done by applying the exponential transformation directly to the estimated coefficients. In SAS, acceleration factors can be derived using the <code>ESTIMATE</code> statement or by applying the same transformation to the parameter estimates in a data step.</p>
+<p>The following sections explore the three most commonly used distributions: Log-Normal, Log-Logistic and Weibull (by default) through examples.</p>
+<p>Predicted survival times in R are obtained using the <code>predict</code> function. In these examples, the predicted survival times for each subject are exported to a CSV file and then imported into SAS for comparison. In SAS, equivalent predictions can be generated and stored in an output dataset using the <code>OUTPUT OUT=</code> statement. Table 2 summarized the key differences found between R and SAS:</p>
+<p><strong>Table 2.</strong> Key differences between R and SAS</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 35%">
+<col style="width: 21%">
+<col style="width: 42%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Item</th>
+<th>SAS</th>
+<th>R</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Class variables</td>
+<td>class statement</td>
+<td>should be defined as factor</td>
+</tr>
+<tr class="even">
+<td>Class variables - reference</td>
+<td>Last</td>
+<td>First</td>
+</tr>
+<tr class="odd">
+<td>Predicted values</td>
+<td>Median</td>
+<td><p>Using Predict function:</p>
+<p>Log-Normal, Log-Logisitic: Median</p>
+<p>Weibull: Mean*</p></td>
+</tr>
+<tr class="even">
+<td>Scale Parameter</td>
+<td>scale</td>
+<td>Log(scale)</td>
+</tr>
+</tbody>
+</table>
+<p>*<em>The resulting parameterization of the distributions is sometimes (e.g.&nbsp;gaussian) identical to the usual form found in statistics textbooks, but other times (e.g.&nbsp;Weibull) it is not [3].</em></p>
+</section>
+<section id="r-packages" class="level3">
+<h3 class="anchored" data-anchor-id="r-packages">R Packages</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#install.packages("survival")</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#install.packages("stats")</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survival)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stats)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="aft-using-weibull-distribution-default" class="level1">
+<h1>AFT using Weibull Distribution (Default)</h1>
+<p>This example uses ovarian dataset from the R <code>survival</code> package [1] (see SAS section for further details about the content).</p>
+<p>The variables RX (treatment group) and RESID_DS (residual disease status) are converted to factors in R. The reference levels are defined in reverse order to ensure consistency with SAS, where the first level is used as the reference category, while R by default uses the last level. In SAS, categorical variables are defined in the <code>class</code> statement.</p>
+<p>Based on the <code>survival</code> package documentation [1]: “<em>The predicted response is identical to the linear predictor for fits to the untransformed distributions, i.e., the extreme-value, logistic and Gaussian. For transformed distributions such as the Weibull, for which log(y) is from an extreme value distribution, the linear predictor is on the transformed scale and the response is the inverse transform, e.g.&nbsp;exp(ηi) for the Weibull</em>”.</p>
+<p>Therefore, for the Weibull AFT model, differences in predicted survival times between R and SAS are due to different default definitions. SAS (<code>PROC LIFEREG</code>) returns the median survival time (exp(Xβ)), while in R (<code>survreg</code>) the default prediction for Weibull corresponds to the response on the original scale, which may differ from the median due to the model parameterisation. This results in a constant offset across predictions. When the median is explicitly requested in R using <code>type = "quantile", p = 0.5</code>, the predictions align with those from SAS (using a comparison tolerance of 0.00001).</p>
+<p>Similar results are obtained between R and SAS. SAS reports the scale parameter directly (0.518051…, rounded to 0.5181), whereas R reports its logarithm. In this example, log(0.518051) = −0.6577, which matches the value displayed in R. Variables RX and RESID_DS are removed from the comparison because had different attributes.</p>
+<section id="r" class="level3">
+<h3 class="anchored" data-anchor-id="r">R</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Transform variables RX (treatment group1) and RESID_DS (residual disease present) #to factor.</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>ovarian<span class="sc">$</span>rx<span class="ot">&lt;-</span><span class="fu">factor</span>(ovarian<span class="sc">$</span>rx, <span class="at">levels=</span><span class="fu">c</span>(<span class="st">'2'</span>, <span class="st">'1'</span>)) </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>ovarian<span class="sc">$</span>resid_ds<span class="ot">&lt;-</span><span class="fu">factor</span>(ovarian<span class="sc">$</span>resid.ds, <span class="at">levels=</span><span class="fu">c</span>(<span class="st">'2'</span>, <span class="st">'1'</span>)) </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit an AFT model using Weibull distribution</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>model_aft <span class="ot">&lt;-</span> survival<span class="sc">::</span><span class="fu">survreg</span>(</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  survival<span class="sc">::</span><span class="fu">Surv</span>(futime, fustat) <span class="sc">~</span> age <span class="sc">+</span> resid_ds <span class="sc">+</span> rx,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> ovarian,</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">dist=</span><span class="st">"weibull"</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co">#Get confident limit</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>cl<span class="ot">&lt;-</span><span class="fu">confint</span>(model_aft)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute acceleration factor (exponentiated coefficients)</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>af <span class="ot">&lt;-</span> <span class="fu">exp</span>(<span class="fu">cbind</span>(<span class="at">Estimate =</span> <span class="fu">coef</span>(model_aft),</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>                <span class="fu">confint</span>(model_aft)))</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="co">#Print results</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">summary</span>(model_aft))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+survival::survreg(formula = survival::Surv(futime, fustat) ~ 
+    age + resid_ds + rx, data = ovarian, dist = "weibull")
+              Value Std. Error     z      p
+(Intercept) 10.5932     1.1931  8.88 &lt;2e-16
+age         -0.0661     0.0190 -3.48 0.0005
+resid_ds1    0.5002     0.3799  1.32 0.1879
+rx1         -0.5152     0.3236 -1.59 0.1114
+Log(scale)  -0.6577     0.2384 -2.76 0.0058
+
+Scale= 0.518 
+
+Weibull distribution
+Loglik(model)= -87.9   Loglik(intercept only)= -98
+    Chisq= 20.17 on 3 degrees of freedom, p= 0.00016 
+Number of Newton-Raphson Iterations: 6 
+n= 26 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">round</span>(cl,<span class="dv">4</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>              2.5 %  97.5 %
+(Intercept)  8.2548 12.9317
+age         -0.1033 -0.0289
+resid_ds1   -0.2443  1.2448
+rx1         -1.1494  0.1190</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">round</span>(af, <span class="dv">4</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>              Estimate     2.5 %      97.5 %
+(Intercept) 39864.6704 3846.1168 413193.8827
+age             0.9360    0.9019      0.9715
+resid_ds1       1.6491    0.7833      3.4721
+rx1             0.5974    0.3168      1.1264</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Predicted time</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>pred_wei<span class="ot">&lt;-</span>ovarian</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>pred_wei<span class="sc">$</span>pred <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">predict</span>(model_aft,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">newdata =</span> ovarian,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>                         <span class="at">type =</span> <span class="st">"quantile"</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>                         <span class="at">p =</span> <span class="fl">0.5</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="co">#Export predicted time to compare in SAS</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co">#write.csv(pred_wei, "pred_wei_R.csv", row.names = FALSE)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="sas" class="level3">
+<h3 class="anchored" data-anchor-id="sas">SAS</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a> <span class="co">*------ Data preparation-----------------------------------------;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a> <span class="kw">data</span> lung1;</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a> <span class="kw">set</span> lung;</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a> <span class="cf">if</span> ph_ecog <span class="op">NE</span> <span class="st">'NA'</span> <span class="cf">then</span> ph_ecogn<span class="op">=</span><span class="fu">input</span>(ph_ecog, <span class="fl">1.</span>);</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a> <span class="co">*------ Run the model, using estimate to compute the AF ---------;</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="kw">proc lifereg</span> <span class="bu">data</span><span class="op">=</span>ovarian;</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="bu">class</span> rx resid_ds;</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="bu">model</span> futime<span class="op">*</span>fustat(<span class="fl">0</span>)<span class="op">=</span>age resid_ds rx<span class="op">/</span>dist<span class="op">=</span>weibull ;</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="bu">estimate</span>  <span class="st">'age'</span>                             age <span class="fl">1</span>    <span class="op">/</span>exp cl;</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  <span class="bu">estimate</span>  <span class="st">'resid_ds (2 vs 1)'</span>  resid_ds <span class="fl">1</span> <span class="op">-</span><span class="fl">1</span> <span class="op">/</span>exp cl;</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="bu">estimate</span>  <span class="st">'rx (2 vs 1)'</span>              rx <span class="fl">1</span> <span class="op">-</span><span class="fl">1</span> <span class="op">/</span>exp cl;</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  <span class="bu">ods</span> output ParameterEstimates<span class="op">=</span>Est_wei Estimates <span class="op">=</span> af_wei;</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  <span class="bu">output</span> out<span class="op">=</span>pred_weibull_SAS predicted<span class="op">=</span>pred; </span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a> <span class="kw">run;</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a><span class="co">*----Print estimates---------------------------------------------;</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a><span class="kw">proc print</span> <span class="bu">data</span><span class="op">=</span> Estimates_wei  <span class="bu">noobs</span>;</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>  <span class="bu">where</span> df <span class="op">&gt;</span> <span class="fl">0</span>;</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>  <span class="bu">title</span> <span class="st">'Estimates - Weibull'</span>;</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a><span class="co">*----Print AF----------------------------------------------------;</span></span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a><span class="kw">proc print</span> <span class="bu">data</span><span class="op">=</span> af_wei  <span class="bu">noobs</span>;</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>  <span class="bu">var</span> label expestimate  lowerexp upperexp;</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>  <span class="bu">title</span> <span class="st">'AF - Weibull'</span>;</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/survival_aft/R_vs_SAS_Picture 1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/survival_aft/R_vs_SAS_Picture 2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a> <span class="co">*---Predicted time, R vs SAS Comparison ---------;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a> <span class="kw">proc compare</span> <span class="bu">base</span><span class="op">=</span>pred_wei_R(<span class="bu">drop</span><span class="op">=</span>rx resid_ds) </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>      <span class="bu">compare</span><span class="op">=</span>pred_wei_SAS(<span class="bu">drop</span><span class="op">=</span>_prob_ rx resid_ds) <span class="bu">criterion</span><span class="op">=</span><span class="fl">0.00001</span> ; </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>      <span class="bu">title</span> <span class="st">'Predicted time - Weibull - R vs SAS comparison'</span>; </span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/survival_aft/R_vs_SAS_Picture 3.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="aft-using-log-normal-distribution" class="level1">
+<h1>AFT using Log-Normal Distribution</h1>
+<p>In this example, the <code>lung</code> dataset from R survival package is used (see SAS section for further details about the content).. The variable sex is transformed to factor and the order of the levers is reverse to match with SAS. In SAS, the variable PH_ECOG is transformed to numeric to be analysed as a continuous variables.</p>
+<section id="r-1" class="level3">
+<h3 class="anchored" data-anchor-id="r-1">R</h3>
+<p>In R, the syntax is similar to the previous example, with the distribution specified as <code>"lognormal"</code>. For the log-normal model, the <code>predict</code> function returns the median survival time by default, so there is no need to explicitly request quantiles, unlike in the Weibull example.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Transform sex to factor, and reverse the order of the levels}</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>lung<span class="sc">$</span>sex<span class="ot">&lt;-</span><span class="fu">factor</span>(lung<span class="sc">$</span>sex, <span class="at">levels=</span><span class="fu">c</span>(<span class="st">'2'</span>, <span class="st">'1'</span>)) </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit an AFT model using lognormal distribution</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>model_aft <span class="ot">&lt;-</span> survival<span class="sc">::</span><span class="fu">survreg</span>(</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  survival<span class="sc">::</span><span class="fu">Surv</span>(time, status) <span class="sc">~</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> lung,</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">dist =</span> <span class="st">"lognormal"</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="co">#Get confident limit</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>cl<span class="ot">&lt;-</span><span class="fu">confint</span>(model_aft)</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute acceleration factor (exponentiated coefficients)</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>af <span class="ot">&lt;-</span> <span class="fu">exp</span>(<span class="fu">cbind</span>(<span class="at">Estimate =</span> <span class="fu">coef</span>(model_aft),</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>                <span class="fu">confint</span>(model_aft)))</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a><span class="co">#Print results</span></span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">summary</span>(model_aft))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+survival::survreg(formula = survival::Surv(time, status) ~ age + 
+    sex + ph.ecog, data = lung, dist = "lognormal")
+               Value Std. Error     z       p
+(Intercept)  7.53869    0.52492 14.36 &lt; 2e-16
+age         -0.01918    0.00833 -2.30 0.02126
+sex1        -0.52195    0.15278 -3.42 0.00063
+ph.ecog     -0.35557    0.10331 -3.44 0.00058
+Log(scale)   0.02823    0.05596  0.50 0.61391
+
+Scale= 1.03 
+
+Log Normal distribution
+Loglik(model)= -1146.9   Loglik(intercept only)= -1163.2
+    Chisq= 32.59 on 3 degrees of freedom, p= 3.9e-07 
+Number of Newton-Raphson Iterations: 3 
+n=227 (1 observation deleted due to missingness)</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">round</span>(cl,<span class="dv">5</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>               2.5 %   97.5 %
+(Intercept)  6.50987  8.56752
+age         -0.03550 -0.00286
+sex1        -0.82139 -0.22252
+ph.ecog     -0.55805 -0.15309</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">round</span>(af, <span class="dv">5</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>              Estimate     2.5 %     97.5 %
+(Intercept) 1879.37111 671.73787 5258.05669
+age            0.98100   0.96512    0.99714
+sex1           0.59336   0.43982    0.80050
+ph.ecog        0.70078   0.57233    0.85806</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Predicted time</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>pred_lnorm<span class="ot">&lt;-</span>lung</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>pred_lnorm<span class="sc">$</span>pred <span class="ot">&lt;-</span> pred_lnorm<span class="sc">$</span>pred <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">predict</span>(model_aft,<span class="at">newdata =</span> lung)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="co">#Export predicted time to compare in SAS</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="co">#write.csv(pred_lnorm, "pred_lnorm_R.csv", row.names = FALSE)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="sas-1" class="level3">
+<h3 class="anchored" data-anchor-id="sas-1">SAS</h3>
+<p>In SAS, the AF is computed using the <code>estimates</code> statement. Results are displayed with 5 decimal places to align with the results displayed in R.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co">*------ Data preparation-ph.ecog also changed to ph_ecog in sas----------;</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a> <span class="kw">data</span> lung1;</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a> <span class="kw">set</span> lung;</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a> <span class="cf">if</span> ph_ecog <span class="op">NE</span> <span class="st">'NA'</span> <span class="cf">then</span> ph_ecogn<span class="op">=</span><span class="fu">input</span>(ph_ecog, <span class="fl">1.</span>);</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a> <span class="co">*------ Run the model, using estimate to compute the AF ---------;</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a> <span class="kw">proc lifereg</span> <span class="bu">data</span><span class="op">=</span>lung1;</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>  <span class="bu">class</span> sex;</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>  <span class="bu">model</span> time<span class="op">*</span>status(<span class="fl">1</span>)<span class="op">=</span>age sex ph_ecogN<span class="op">/</span>dist<span class="op">=</span>lnormal;</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>  <span class="bu">estimate</span>  <span class="st">'age'</span>            age <span class="fl">1</span>    <span class="op">/</span>exp cl;</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>  <span class="bu">estimate</span>  <span class="st">'sex'</span>           sex  <span class="fl">1</span> <span class="op">-</span><span class="fl">1</span> <span class="op">/</span>exp cl;</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>  <span class="bu">estimate</span>  <span class="st">'ph_ecogN'</span> ph_ecogN <span class="fl">1</span> <span class="op">-</span><span class="fl">1</span> <span class="op">/</span>exp cl;</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>  <span class="bu">ods</span> output ParameterEstimates<span class="op">=</span>Est_lnorm Estimates <span class="op">=</span> af_lnorm;</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>  <span class="bu">output</span> out<span class="op">=</span>pred_lnormal_SAS predicted<span class="op">=</span>pred; </span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a> <span class="kw">run;</span></span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a><span class="co">*----Print estimates---------------------------------------------;</span></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a><span class="kw">proc print</span> <span class="bu">data</span><span class="op">=</span> Est_lnorm  <span class="bu">noobs</span>;</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>  <span class="bu">where</span> df <span class="op">&gt;</span> <span class="fl">0</span>;</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>  <span class="bu">title</span> <span class="st">'Estimates - Log-Normal'</span>;</span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>  <span class="bu">format</span> estimate stderr lowercl uppercl  <span class="fl">8.5</span> probchisq <span class="dt">pvalue7.</span>;</span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a><span class="co">*----Print AF----------------------------------------------------;</span></span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a><span class="kw">proc print</span> <span class="bu">data</span><span class="op">=</span> af_lnorm  <span class="bu">noobs</span>;</span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>  <span class="bu">var</span> label expestimate  lowerexp upperexp;</span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>  <span class="bu">title</span> <span class="st">'AF - Log-Normal'</span>;</span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/survival_aft/R_vs_SAS_Picture 4.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/survival_aft/R_vs_SAS_Picture 5.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">proc compare</span> <span class="bu">base</span><span class="op">=</span>pred_lnorm_R <span class="bu">compare</span><span class="op">=</span>pred_lnorm_SAS(<span class="bu">drop</span><span class="op">=</span>_prob_);</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>   <span class="bu">title</span> <span class="st">'Predicted time - Log-Normal - R vs SAS comparison'</span>;</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/survival_aft/R_vs_SAS_Picture 6.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="aft-using-log-logistic-distribution" class="level1">
+<h1>AFT using Log-Logistic Distribution</h1>
+<p>In this example, the same <code>lung</code> dataset as in the log-normal model is used. The syntax is the same as in previous example, only the distribution is changed.</p>
+<section id="r-2" class="level3">
+<h3 class="anchored" data-anchor-id="r-2">R</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Transform sex to factor, and reverse the order of the levels}</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>lung<span class="sc">$</span>sex<span class="ot">&lt;-</span><span class="fu">factor</span>(lung<span class="sc">$</span>sex, <span class="at">levels=</span><span class="fu">c</span>(<span class="st">'2'</span>, <span class="st">'1'</span>)) </span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit an AFT model using lognormal distribution</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>model_aft <span class="ot">&lt;-</span> survival<span class="sc">::</span><span class="fu">survreg</span>(</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  survival<span class="sc">::</span><span class="fu">Surv</span>(time, status) <span class="sc">~</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog,</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> lung,</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">dist =</span> <span class="st">"loglogistic"</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a><span class="co">#Get confident limit</span></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>cl<span class="ot">&lt;-</span><span class="fu">confint</span>(model_aft)</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute acceleration factor (exponentiated coefficients)</span></span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>af <span class="ot">&lt;-</span> <span class="fu">exp</span>(<span class="fu">cbind</span>(<span class="at">Estimate =</span> <span class="fu">coef</span>(model_aft),</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>                <span class="fu">confint</span>(model_aft)))</span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a><span class="co">#Print results</span></span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">summary</span>(model_aft))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+survival::survreg(formula = survival::Surv(time, status) ~ age + 
+    sex + ph.ecog, data = lung, dist = "loglogistic")
+               Value Std. Error     z       p
+(Intercept)  6.90993    0.47048 14.69 &lt; 2e-16
+age         -0.00808    0.00748 -1.08 0.27992
+sex1        -0.48662    0.13489 -3.61 0.00031
+ph.ecog     -0.40462    0.09301 -4.35 1.4e-05
+Log(scale)  -0.62336    0.06581 -9.47 &lt; 2e-16
+
+Scale= 0.536 
+
+Log logistic distribution
+Loglik(model)= -1137.5   Loglik(intercept only)= -1154.5
+    Chisq= 34.12 on 3 degrees of freedom, p= 1.9e-07 
+Number of Newton-Raphson Iterations: 4 
+n=227 (1 observation deleted due to missingness)</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">round</span>(cl,<span class="dv">5</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>               2.5 %   97.5 %
+(Intercept)  5.98781  7.83206
+age         -0.02274  0.00658
+sex1        -0.75101 -0.22224
+ph.ecog     -0.58692 -0.22231</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">round</span>(af, <span class="dv">5</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>              Estimate     2.5 %     97.5 %
+(Intercept) 1002.18116 398.53932 2520.12044
+age            0.99195   0.97752    1.00660
+sex1           0.61470   0.47189    0.80073
+ph.ecog        0.66723   0.55604    0.80067</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Predicted time</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>pred_llog<span class="ot">&lt;-</span>lung</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>pred_llog<span class="sc">$</span>pred <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">predict</span>(model_aft, <span class="at">newdata =</span> lung)</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="co">#Export predicted time to compare in SAS</span></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="co">#write.csv(pred_llog, "pred_llog_R.csv", row.names = FALSE)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="sas-2" class="level3">
+<h3 class="anchored" data-anchor-id="sas-2">SAS</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a> <span class="co">*------ Data preparation-----------------------------------------;</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a> <span class="kw">data</span> lung1;</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a> <span class="kw">set</span> lung;</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a> <span class="cf">if</span> ph_ecog <span class="op">NE</span> <span class="st">'NA'</span> <span class="cf">then</span> ph_ecogn<span class="op">=</span><span class="fu">input</span>(ph_ecog, <span class="fl">1.</span>);</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a> <span class="co">*------ Run the model, using estimate to compute the AF ---------;</span></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a> <span class="kw">proc lifereg</span> <span class="bu">data</span><span class="op">=</span>lung1;</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>  <span class="bu">class</span> sex;</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>  <span class="bu">model</span> time<span class="op">*</span>status(<span class="fl">1</span>)<span class="op">=</span>age sex ph_ecogN<span class="op">/</span>dist<span class="op">=</span>llogistic;</span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>  <span class="bu">estimate</span>  <span class="st">'age'</span>            age <span class="fl">1</span>    <span class="op">/</span>exp cl;</span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a>  <span class="bu">estimate</span>  <span class="st">'sex'</span>           sex  <span class="fl">1</span> <span class="op">-</span><span class="fl">1</span> <span class="op">/</span>exp cl;</span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>  <span class="bu">estimate</span>  <span class="st">' ph_ecogN'</span> ph_ecogN <span class="fl">1</span> <span class="op">-</span><span class="fl">1</span> <span class="op">/</span>exp cl;</span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a>  <span class="bu">ods</span> output ParameterEstimates<span class="op">=</span>Est_llog Estimates <span class="op">=</span> af_llog;</span>
+<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a>  <span class="bu">output</span> out<span class="op">=</span>pred_llog_SAS predicted<span class="op">=</span>pred; </span>
+<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a> <span class="kw">run;</span></span>
+<span id="cb27-19"><a href="#cb27-19" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb27-20"><a href="#cb27-20" aria-hidden="true" tabindex="-1"></a><span class="co">*----Print estimates---------------------------------------------;</span></span>
+<span id="cb27-21"><a href="#cb27-21" aria-hidden="true" tabindex="-1"></a><span class="kw">proc print</span> <span class="bu">data</span><span class="op">=</span> Est_llog  <span class="bu">noobs</span>;</span>
+<span id="cb27-22"><a href="#cb27-22" aria-hidden="true" tabindex="-1"></a>  <span class="bu">where</span> df <span class="op">&gt;</span> <span class="fl">0</span>;</span>
+<span id="cb27-23"><a href="#cb27-23" aria-hidden="true" tabindex="-1"></a>  <span class="bu">title</span> <span class="st">'Estimates - Log-Logistic'</span>;</span>
+<span id="cb27-24"><a href="#cb27-24" aria-hidden="true" tabindex="-1"></a>  <span class="bu">format</span> estimate stderr lowercl uppercl  <span class="fl">8.5</span> probchisq <span class="dt">pvalue7.</span>;</span>
+<span id="cb27-25"><a href="#cb27-25" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb27-26"><a href="#cb27-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-27"><a href="#cb27-27" aria-hidden="true" tabindex="-1"></a><span class="co">*----Print AF----------------------------------------------------;</span></span>
+<span id="cb27-28"><a href="#cb27-28" aria-hidden="true" tabindex="-1"></a><span class="kw">proc print</span> <span class="bu">data</span><span class="op">=</span> af_llog  <span class="bu">noobs</span>;</span>
+<span id="cb27-29"><a href="#cb27-29" aria-hidden="true" tabindex="-1"></a>  <span class="bu">var</span> label expestimate  lowerexp upperexp;</span>
+<span id="cb27-30"><a href="#cb27-30" aria-hidden="true" tabindex="-1"></a>  <span class="bu">title</span> <span class="st">'AF - Log-Logistic'</span>;</span>
+<span id="cb27-31"><a href="#cb27-31" aria-hidden="true" tabindex="-1"></a>  <span class="bu">format</span>  expestimate  lowerexp upperexp <span class="fl">8.5</span>;</span>
+<span id="cb27-32"><a href="#cb27-32" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb27-33"><a href="#cb27-33" aria-hidden="true" tabindex="-1"></a> </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/survival_aft/R_vs_SAS_Picture 7.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/survival_aft/R_vs_SAS_Picture 8.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">proc compare</span> <span class="bu">base</span><span class="op">=</span>pred_llog_R <span class="bu">compare</span><span class="op">=</span>pred_llog_SAS(<span class="bu">drop</span><span class="op">=</span>_prob_);</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>   <span class="bu">title</span> <span class="st">'Predicted time - Log-Logistic - R vs SAS comparison'</span>;</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/survival_aft/R_vs_SAS_Picture 9.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="conclusions" class="level1">
+<h1>Conclusions</h1>
+<p>Overall, consistent results were obtained between R and SAS for Weibull, log-normal, and log-logistic AFT models when reference levels for categorical variables were aligned and predictions were defined consistently.</p>
+<p>Differences observed for the Weibull model were due to default prediction definitions (mean in R vs median in SAS) and were resolved by matching the prediction type, resulting in full agreement across software.</p>
+</section>
+<section id="references" class="level1">
+<h1>References</h1>
+<p>[1] <a href="https://cran.r-project.org/web/packages/survival/vignettes/survival.pdf" title="Therneau TM. A Package for Survival Analysis in R (survival vignette). Available from: https://cran.r-project.org/web/packages/survival/vignettes/survival.pdf">Therneau TM. A Package for Survival Analysis in R (survival vignette).</a></p>
+<p>[2] <a href="https://documentation.sas.com/doc/en/pgmsascdc/v_074/statug/statug_lifereg_syntax01.htm" class="uri">SAS Institute Inc.&nbsp;SAS/STAT® User’s Guide: The LIFEREG Procedure.</a></p>
+<p>[3] Therneau TM. survival: Survival Analysis. R package documentation for survreg functions. Available from CRAN; accessed via R help (e.g.: <em>help(survreg)</em>).</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/psiaims\.github\.io\/CAMIS\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

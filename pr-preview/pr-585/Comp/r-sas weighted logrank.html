@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Comparing Testing approaches under Non-Proportional Hazards.</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../images/logo.png" rel="icon" type="image/png">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-00505b3f1e40208f6eab480a42ba967a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../images/logo.png" alt="" class="navbar-logo light-content">
+    <img src="../images/logo.png" alt="" class="navbar-logo dark-content">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-publications-and-projects" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Publications and Projects</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-publications-and-projects">    
+        <li>
+    <a class="dropdown-item" href="../publication/white_paper.html"><i class="bi bi-file-earmark-word-fill" role="img">
+</i> 
+ <span class="dropdown-text">White Paper</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/conference.html"><i class="bi bi-easel3-fill" role="img">
+</i> 
+ <span class="dropdown-text">Conferences</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/dissertation.html"><i class="bi bi-mortarboard-fill" role="img">
+</i> 
+ <span class="dropdown-text">Academic Projects</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../minutes/index.html"> 
+<span class="menu-text">Meeting Minutes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../blogs/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-help" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Help</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-help">    
+        <li>
+    <a class="dropdown-item" href="https://github.com/PSIAIMS/CAMIS/issues"><i class="bi bi-bug-fill" role="img">
+</i> 
+ <span class="dropdown-text">Report a Bug</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/get_started.html"><i class="bi bi-git" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with Your Environment</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/contribution.html"><i class="bi bi-person-raised-hand" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with CAMIS</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/package_review.html"><i class="bi bi-box-fill" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with a New R Package</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+    <a href="https://github.com/PSIAIMS/CAMIS/" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#weighted-log-rank-testwlrt." id="toc-weighted-log-rank-testwlrt." class="nav-link active" data-scroll-target="#weighted-log-rank-testwlrt.">1. Weighted Log-rank test(WLRT).</a></li>
+  <li><a href="#modestly-weighted-log-rank-test." id="toc-modestly-weighted-log-rank-test." class="nav-link" data-scroll-target="#modestly-weighted-log-rank-test.">2. Modestly Weighted Log-rank test.</a></li>
+  <li><a href="#max-combo-test." id="toc-max-combo-test." class="nav-link" data-scroll-target="#max-combo-test.">3. Max Combo test.</a></li>
+  <li><a href="#note-on-the-use-of-custom-r-functions" id="toc-note-on-the-use-of-custom-r-functions" class="nav-link" data-scroll-target="#note-on-the-use-of-custom-r-functions">Note on the Use of Custom R Functions:</a></li>
+  <li><a href="#comparison-results." id="toc-comparison-results." class="nav-link" data-scroll-target="#comparison-results.">Comparison Results.</a></li>
+  <li><a href="#summary-and-recommendation." id="toc-summary-and-recommendation." class="nav-link" data-scroll-target="#summary-and-recommendation.">Summary and Recommendation.</a></li>
+  <li><a href="#references." id="toc-references." class="nav-link" data-scroll-target="#references.">References.</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Comparing Testing approaches under Non-Proportional Hazards.</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="weighted-log-rank-testwlrt." class="level3">
+<h3 class="anchored" data-anchor-id="weighted-log-rank-testwlrt.">1. Weighted Log-rank test(WLRT).</h3>
+<ul>
+<li>Peto-Peto .</li>
+<li>Modified Peto-Peto.</li>
+<li>Tarone-ware.</li>
+<li>Gehan-Breslow/ Wilcoxon.</li>
+<li>Fleming-Harrington.</li>
+</ul>
+</section>
+<section id="modestly-weighted-log-rank-test." class="level3">
+<h3 class="anchored" data-anchor-id="modestly-weighted-log-rank-test.">2. Modestly Weighted Log-rank test.</h3>
+<ul>
+<li>Unstratified</li>
+<li>Stratified</li>
+</ul>
+</section>
+<section id="max-combo-test." class="level3">
+<h3 class="anchored" data-anchor-id="max-combo-test.">3. Max Combo test.</h3>
+<ul>
+<li>Unstratified</li>
+<li>Stratified</li>
+</ul>
+</section>
+<section id="note-on-the-use-of-custom-r-functions" class="level3">
+<h3 class="anchored" data-anchor-id="note-on-the-use-of-custom-r-functions">Note on the Use of Custom R Functions:</h3>
+<p>The <code>survminer</code> package can be used to perform the Peto–Peto, modified Peto–Peto, Tarone–Ware, and Gehan–Breslow/Wilcoxon tests. However, its functionality is limited to generating p-values and does not provide the corresponding test statistics. The <a href="https://github.com/kassambara/survminer/blob/master/R/weighted_logrank.R">custom R function</a> from Kassambara’s GitHub repository can be used to perform these tests. This function internally implements weighted log-rank tests and supports the log-rank, Gehan–Breslow, Tarone–Ware, Peto–Peto, modified Peto–Peto, and Fleming–Harrington tests. The custom function reproduces functionality previously available through <code>survMisc::comp()</code>, which is no longer available on CRAN. The custom functions used to perform each test, as presented in the R document, were derived from this GitHub-based implementation. Only the sections relevant to pairwise comparisons were retained, since the original custom function also supports k-group comparisons.</p>
+<table class="caption-top table">
+<tbody>
+<tr class="odd">
+<td><strong>Analysis</strong></td>
+<td><strong>Supported in R</strong></td>
+<td><strong>Supported in SAS</strong></td>
+<td><strong>Match</strong></td>
+<td><strong>Notes</strong></td>
+</tr>
+<tr class="even">
+<td><strong>WLRT</strong>- Peto-Peto</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>In R, the <code>survminer::surv_pvalue(method = "S1")</code> function computes the p-value for the Peto–Peto test. However, the <code>survminer</code> package does not provide a function for generating the corresponding test statistics. The <a href="https://github.com/kassambara/survminer/blob/master/R/weighted_logrank.R">custom R function</a> can be used to perform this test and obtain both the p-value and chi-square statistic. The resulting values are comparable to those produced by SAS but not consistent with results from the <code>coin::logrank_test()</code> and <code>survival::survdiff()</code> functions. In SAS, this test is implemented using the <code>LIFETEST</code> procedure with a <code>STRATA</code> statement and the <code>TEST=peto</code> option.</td>
+</tr>
+<tr class="odd">
+<td><strong>WLRT-</strong> Modified Peto-Peto</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>The <code>survminer::surv_pvalue(method = "S2")</code> function in R generates the p-value for the modified Peto–Peto test. The <a href="https://github.com/kassambara/survminer/blob/master/R/weighted_logrank.R">custom R function</a> can be used to obtain both the chi-square statistic and the p-value. In SAS, this test is performed using the <code>LIFETEST</code> procedure with a <code>STRATA</code> statement and the <code>TEST=modpeto</code> option.</td>
+</tr>
+<tr class="even">
+<td><strong>WLRT</strong>-Tarone-Ware</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>The <code>coin::logrank_test()</code> function in R performs the Tarone–Ware test when the argument <code>type = "Tarone-Ware"</code> is specified. The <code>survminer::surv_pvalue(method = "sqrtN")</code> function computes the p-value for this test. However, because the <code>survminer</code> package does not provide a built-in function to return the test statistic, the <a href="https://github.com/kassambara/survminer/blob/master/R/weighted_logrank.R">custom R function</a> can be used to compute the chi-square statistic along with a p-value consistent with the <code>method = "sqrtN"</code> implementation. The results obtained from the custom function and the <code>survminer</code> package agree with those produced in SAS using <code>TEST=TaroneWare</code> with the STRATA statement in PROC LIFETEST. In contrast, the results from <code>coin::logrank_test()</code> do not match the SAS output. The <code>survminer::surv_pvalue()</code> function computes p-values from <code>survfit</code> objects by comparing survival curves. Its default method is <code>survdiff</code>, which performs the standard log-rank test.</td>
+</tr>
+<tr class="odd">
+<td><strong>WLRT</strong>Gehan Breslow</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>In R, <code>survminer::surv_pvalue(method = "n")</code> together with the <a href="https://github.com/kassambara/survminer/blob/master/R/weighted_logrank.R">custom R function</a> yields the p-value for the Gehan–Breslow test, corresponding to its canonical weighting scheme. The <code>coin::logrank_test()</code> function performs this test when the argument <code>type = "Gehan-Breslow"</code> is specified. In SAS, the equivalent test is obtained by specifying <code>TEST=Wilcoxon</code> in the <code>PROC LIFETEST</code> procedure. However, the results produced by <code>coin::logrank_test()</code> are not consistent with the SAS output.</td>
+</tr>
+<tr class="even">
+<td><strong>WLRT</strong>-Fleming- Harrington</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>This test is computed in R using <code>nphRCT::wlrt()</code> and <code>coin::logrank_test</code> functions. In SAS, you have to specify <code>test=FH(</code><span class="math inline">\(\rho,\gamma\)</span><code>)</code> using the <code>LIFETEST</code> procedure. The results produced by <code>nphRCT::wlrt()</code> and the <code>LIFETEST</code> procedure are consistent.</td>
+</tr>
+<tr class="odd">
+<td><strong>Max Combo</strong></td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td><p>In R, the test can be implemented using <code>nph::logrank.maxtest()</code>, which defaults to a two-sided test. There is no built-in functionality in the SAS <code>LIFETEST</code> procedure to perform this test directly; it must be implemented via this <a href="https://github.com/dreaknezevic/combo-wlr">SAS macro</a>. Results from the R implementation and the SAS macro are similar.</p>
+<p>A stratified max-combo test can be performed in both R and SAS. Additionally, the choice of weighting can be modified, as demonstrated in the SAS file.</p></td>
+</tr>
+<tr class="even">
+<td><strong>Modestly Weighted Log-rank</strong></td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>In R, this test can be performed using the <code>nphRCT::wlrt()</code> function and specifying either the <code>t*</code> or <code>s*</code> parameter. Here, <code>s*</code> represents the fixed survival probability threshold, whereas <code>t*</code> denotes the time point at which the pooled survival probability reaches <code>s*</code> (see the referenced documentation for the definition of this test’s weight function). A stratified version of the test can be implemented by incorporating the <code>strata()</code> function. This approach provides both the individual test statistics for each stratum and the combined test statistic. To the knowledge of the CAMIS contributors, there is no direct implementation of this test in the SAS <code>LIFETEST</code> procedure.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="comparison-results." class="level1">
+<h1>Comparison Results.</h1>
+<p><span class="math display">\[H_0 : S_1(t)=S_2(t) \mbox{    }\forall t  \mbox{ v/s }  H_1 : S_1(t) \neq S_2(t) \mbox{ for some t. }\]</span></p>
+<p><strong>Note:</strong> <code>coin::logrank_test()</code> - Default distribution is <code>asymptotic</code>. Generates <span class="math inline">\(Z\)</span> test statistic. <span class="math inline">\(Z^2 = \chi^2_{(1)}\)</span></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Test</th>
+<th>Statistic</th>
+<th>Function in R</th>
+<th>R Result</th>
+<th>Function in SAS</th>
+<th>SAS Result</th>
+<th>Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>WLRT</strong>- Peto-Peto</td>
+<td><strong>Chi-square</strong></td>
+<td><p><code>Custom R function</code></p>
+<p><code>coin::logrank_test()-</code>Asymptotic</p>
+<p><code>survival::survdiff()</code></p></td>
+<td><p>9.8238</p>
+<p>Z=3.0423</p>
+<p>9.9000</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group /test=peto)</code></td>
+<td>9.8238</td>
+<td><p>Yes</p>
+<p>No</p>
+<p>No</p></td>
+<td><code>survminer::surv_pvalue()</code> prints the p-value; The <a href="https://github.com/kassambara/survminer/blob/master/R/weighted_logrank.R">custom R function</a> generates both the chi-square statistics and the corresponding p-value.</td>
+</tr>
+<tr class="even">
+<td></td>
+<td><strong>P-Value</strong></td>
+<td><p><code>survminer::surv_pvalue()</code></p>
+<p><code>Custom R function</code></p>
+<p><code>coin::logrank_test()-</code>Asymptotic</p>
+<p><code>survival::survdiff()</code></p></td>
+<td><p>0.0017</p>
+<p>0.0017</p>
+<p>0.0023</p>
+<p>0.0020</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group /test=peto</code></td>
+<td>0.0017</td>
+<td><p>Yes</p>
+<p>Yes</p>
+<p>No</p>
+<p>No</p>
+<p>No</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>WLRT-</strong> Modified Peto</td>
+<td><strong>Chi-square</strong></td>
+<td><code>Custom R function</code></td>
+<td><p>9.7491</p>
+<p>Z= 3.0276</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group /test=modpeto</code></td>
+<td>9.7491</td>
+<td><p>Yes</p>
+<p>No</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td></td>
+<td><strong>P-Value</strong></td>
+<td><p>|<code>survimer::surv_pvalue()</code></p>
+<p><code>Custom R function</code></p>
+<p><code>coin::logrank_test()</code></p></td>
+<td><p>0.0018</p>
+<p>0.0018</p>
+<p>0.002465</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group /test=modpeto</code></td>
+<td>0.0018</td>
+<td><p>Yes</p>
+<p>Yes</p>
+<p>No</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>WLRT</strong>- Tarone-Ware</td>
+<td><strong>Chi-square</strong></td>
+<td><p><code>Custom R function</code></p>
+<p><code>coin::logrank_test()</code></p></td>
+<td><p>9.4230</p>
+<p>Z=2.9636</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group /test=taroneware</code></td>
+<td>9.4230</td>
+<td><p>Yes</p>
+<p>No</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td></td>
+<td><strong>P-Value</strong></td>
+<td><p>|<code>survimer::surv_pvalue()</code></p>
+<p><code>Custom R function.</code></p>
+<p><code>coin::logrank_test()</code></p></td>
+<td><p>0.0021</p>
+<p>0.0021</p>
+<p>0.0030</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group /test=taroneware</code></td>
+<td>0.0021</td>
+<td><p>Yes</p>
+<p>Yes</p>
+<p>No</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>WLRT</strong>- Gehan-Breslow/ Wilcoxon</td>
+<td><strong>Chi-square</strong></td>
+<td><p><code>Custom R function</code></p>
+<p><code>coin::logrank_test()</code></p></td>
+<td><p>8.2593</p>
+<p>Z=2.7863</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group/test=wilcoxon</code></td>
+<td>8.2593</td>
+<td><p>Yes</p>
+<p>No</p></td>
+<td></td>
+</tr>
+<tr class="even">
+<td></td>
+<td><strong>P-Value</strong></td>
+<td><p>|<code>survimer::surv_pvalue()</code></p>
+<p><code>Custom R function</code></p>
+<p><code>coin::logrank_test()</code></p></td>
+<td><p>0.0041</p>
+<p>0.0041</p>
+<p>0.0053</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group/test=wilcoxon</code></td>
+<td>0.0041</td>
+<td><p>Yes</p>
+<p>Yes</p>
+<p>No</p></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>Fleming- Harrington</strong></td>
+<td><strong>Chi-square</strong></td>
+<td><code>nphRCT::wlrt()</code></td>
+<td><p>FH(0.5,0.5)=10.3122</p>
+<p>FH(1,1)=9.8019</p>
+<p>FH(0,1)=9.5455</p>
+<p>FH(0.5,2)=8.32428</p>
+<p>FH(1,0)=9.9</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group/test=FH()</code></td>
+<td><p>FH(0.5,0.5)=10.3122</p>
+<p>FH(1,1)=9.8019</p>
+<p>FH(0,1)=9.5455</p>
+<p>FH(0.5,2)=8.32428</p>
+<p>FH(1,0)=9.9</p></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td><code>coin::logrank_test()</code></td>
+<td><p>FH(0.5,0.5) :Z=3.0582</p>
+<p>FH(1,1): Z=2.9720</p>
+<p>FH(0,1): Z=2.9256</p>
+<p>FH(0.5,2): Z=2.7163</p>
+<p>FH(1,0): Z=3.0423</p></td>
+<td></td>
+<td></td>
+<td>No</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td></td>
+<td><strong>P-Value</strong></td>
+<td><code>nphRCT::wlrt()</code></td>
+<td><p>FH(0.5,0.5)=0.0013</p>
+<p>FH(1,1)=0.0017</p>
+<p>FH(0,1)=0.0020</p>
+<p>FH(0.5,2)=0.0041</p>
+<p>FH(1,0)=0.0017</p></td>
+<td><code>PROC LIFETEST</code> with <code>STRATA group/test=FH()</code></td>
+<td><p>FH(0.5,0.5)=0.0013</p>
+<p>FH(1,1)=0.0017</p>
+<p>FH(0,1)=0.0020</p>
+<p>FH(0.5,2)=0.0041</p>
+<p>FH(1,0)=0.0017</p></td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td><code>coin::logrank_test()</code></td>
+<td><p>FH(0.5,0.5)=0.0022</p>
+<p>FH(1,1)=0.0030</p>
+<p>FH(0,1)=0.0034</p>
+<p>FH(0.5,2)=0.0066</p>
+<p>FH(1,0)=0.0023</p></td>
+<td></td>
+<td></td>
+<td>No</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>Modestly Weighted Log-rank(unstratified)</strong></td>
+<td><strong>Chi-square</strong></td>
+<td><code>nphRCT::wlrt()</code></td>
+<td>11.2786</td>
+<td><code>No direct implementation</code></td>
+<td>Null</td>
+<td>No</td>
+<td>This function can perform types of modestly-weighted log-rank tests and the Fleming-Harrington(<span class="math inline">\(\rho,\gamma\)</span>) test, in addition to the standard log-rank test.</td>
+</tr>
+<tr class="even">
+<td></td>
+<td><strong>P-Value</strong></td>
+<td><code>nphRCT::wlrt()</code></td>
+<td>0.0008</td>
+<td><code>No direct implementation</code></td>
+<td>Null</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>stratified Modestly Weighted Logrank_test</strong></td>
+<td><strong>Chi-square</strong></td>
+<td><code>nphRCT::wlrt()</code></td>
+<td><p>strata1=7.5185</p>
+<p>strata2=3.7418</p>
+<p>Combined=10.8359</p></td>
+<td><code>No direct implementation</code></td>
+<td>Null</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr class="even">
+<td></td>
+<td><strong>P-Value</strong></td>
+<td><code>nphRCT::wlrt()</code></td>
+<td><p>strata1=0.0061</p>
+<p>strata2=0.0531</p>
+<p>Combined=0.0010</p></td>
+<td><code>No direct implementation</code></td>
+<td>Null</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><strong>Unstratified -Max Combo</strong></td>
+<td><strong>Chi-square</strong></td>
+<td><code>nph::logrank.maxtest()</code></td>
+<td>3.30 (Z test)</td>
+<td><code>SAS macro</code></td>
+<td>3.30152</td>
+<td>Yes</td>
+<td>In R, it defaults to two sided test, unless specified otherwise.</td>
+</tr>
+<tr class="even">
+<td></td>
+<td><strong>P-Value</strong></td>
+<td><code>nph::logrank.maxtest()</code></td>
+<td><p>0.00196<span class="math inline">\(\approx\)</span> 0.0020</p>
+<p>Bonferroni adjusted p-value=0.00385</p></td>
+<td><code>SAS macro</code></td>
+<td><p>0.0020</p>
+<p>The <code>SAS macro</code> does not perform Bonferroni adjustment.</p></td>
+<td>Yes</td>
+<td><p>In R, <code>logrank.maxtest()</code>, the algorithm <code>mvtnorm::GenzBretz()</code>&nbsp;calls the Genz–Bretz algorithm, a quasi-Monte Carlo method, which introduces randomness in each run; this generates slightly varying values for the unadjusted p-value in each run. Therefore, there is a need to use&nbsp;<code>set.seed()</code>&nbsp;for reproducibility.</p>
+<p>In the <code>SAS macro</code>, a Monte-Carlo simulation <code>x = RANDNORMAL(n, mean,corr2)</code> generates 5,000,000 samples from a k-dimensional multivariate normal distribution and a fixed seed (1).</p></td>
+</tr>
+<tr class="odd">
+<td><strong>Stratified -Max Combo</strong></td>
+<td><strong>Chi-square</strong></td>
+<td><code>strata.MaxCombo::SMCtest()</code></td>
+<td><p>Z1=3.1813</p>
+<p>Z2=3.1813</p>
+<p>Z3=3.2738</p></td>
+<td><code>SAS macro</code></td>
+<td>3.18132</td>
+<td><p>Yes</p>
+<p>Yes</p>
+<p>No</p></td>
+<td>In R, the test outputs multiple p-values corresponding to different covariance estimators; The <code>SAS macro</code> generates a combination test with a single <code>Z max</code> and <code>p</code> for p-value. The first <code>pval</code> and <code>z.max</code> is closer to those of <code>SAS Macro.</code></td>
+</tr>
+<tr class="even">
+<td></td>
+<td><strong>p-Value</strong></td>
+<td><code>strata.MaxCombo::SMCtest()</code></td>
+<td><p>p1=0.0030</p>
+<p>p2=0.0026</p>
+<p>p3=0.0021</p></td>
+<td><code>SAS macro</code></td>
+<td>0.0034</td>
+<td><p>The closest. slight difference</p>
+<p>No</p>
+<p>No</p></td>
+<td>The <code>SAS macro</code> was modified to accommodate a stratifying variable. The adjustments are documented in the SAS document.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="summary-and-recommendation." class="level1">
+<h1>Summary and Recommendation.</h1>
+<p>Testing combinations of Weighted Log-rank statistics is a robust alternative to Weighted Log-rank for detecting differences in survival curves in non-proportional hazard situations. However, some authors have expressed caution about the use of the combination test in the sense that one risk is identifying statistically significant results with clinical insignificance; for instance, in cases where treatment is uniformly worse than control, Max Combo can still offer a high chance of rejecting the null hypothesis, favouring treatment. Magirr &amp; Burman developed Modestly weighted Log-rank to counter these issues, especially for a delayed effect case; the weighting is controlled such that the worse treatment effect is not rewarded at an early time point.</p>
+<p>The Wilcoxon test reported in SAS documentation corresponds to the Gehan-Breslow test in R. For Peto Peto, Modified Peto, Gehan-Breslow/Wilcoxon and Tarone-Ware test, to ensure reproducibility with SAS procedures, |<code>survimer::surv_pvalue()</code> and a <code>Custom R</code> function can be used. |<code>survimer::surv_pvalue()</code> and <code>custom R</code> compute these test statistics based on the weighting definition of these tests, for example: these functions utilise the size of the risk set and the square root of the risk set, respectively, to compute weights for Gehan-Breslow/Wilcoxon and Tarone-Ware, respectively. The <code>coin::logrank_test()</code> and |<code>survival::survdiff()</code> implement these tests differently, as discussed earlier. <code>coin</code> provides an implementation of a general framework for conditional inference procedures commonly known as permutation tests. |<code>survival::survdiff()</code> in R uses hypergeometric variance formulation to implement Mantel-Cox log-rank test . It uses <span class="math inline">\(G^\rho\)</span> family of tests .</p>
+</section>
+<section id="references." class="level1">
+<h1>References.</h1>
+<ol type="1">
+<li><p><code>wlrt()</code> documentation: <a href="https://search.r-project.org/CRAN/refmans/nphRCT/html/wlrt.html" class="uri">https://search.r-project.org/CRAN/refmans/nphRCT/html/wlrt.html</a></p></li>
+<li><p><code>survdiff()</code> documentation: <a href="https://www.rdocumentation.org/packages/survival/versions/3.8-3/topics/survdiff" class="uri">https://www.rdocumentation.org/packages/survival/versions/3.8-3/topics/survdiff</a></p></li>
+<li><p><code>survminer()</code> documentation: <a href="https://cran.r-project.org/web/packages/survminer/survminer.pdf" class="uri">https://cran.r-project.org/web/packages/survminer/survminer.pdf</a></p></li>
+<li><p><code>logrank.maxtest()</code> documentation: <a href="https://search.r-project.org/CRAN/refmans/nph/html/logrank.maxtest.html" class="uri">https://search.r-project.org/CRAN/refmans/nph/html/logrank.maxtest.html</a></p></li>
+<li><p><code>Robust modestly weighted log-rank tests</code>documentation:<a href="https://arxiv.org/html/2412.14942v1" class="uri">https://arxiv.org/html/2412.14942v1</a></p></li>
+<li><p><code>nphRCT package</code> documentation: <a href="https://cran.r-project.org/web/packages/nphRCT/nphRCT.pdf" class="uri">https://cran.r-project.org/web/packages/nphRCT/nphRCT.pdf</a></p></li>
+<li><p><code>LIFETEST procedure</code> documentation: <a href="https://documentation.sas.com/doc/en/statug/15.2/statug_lifetest_syntax01.htm" class="uri">https://documentation.sas.com/doc/en/statug/15.2/statug_lifetest_syntax01.htm</a></p></li>
+<li><p><code>Combination weighted log-rank tests</code> documentation: <a href="https://support.sas.com/resources/papers/proceedings20/5062-2020.pdf" class="uri">https://support.sas.com/resources/papers/proceedings20/5062-2020.pdf</a></p></li>
+<li><p><code>LIFETEST procedure</code> documentation: <a href="https://support.sas.com/documentation//cdl/en/statug/68162/HTML/default/viewer.htm#statug_lifetest_details16.htm" class="uri">https://support.sas.com/documentation//cdl/en/statug/68162/HTML/default/viewer.htm#statug_lifetest_details16.htm</a></p></li>
+<li><p><code>Stratified modestly weighted log-rank test</code> documentation: <a href="https://cran.r-project.org/web/packages/nphRCT/vignettes/weighted_log_rank_tests.html" class="uri">https://cran.r-project.org/web/packages/nphRCT/vignettes/weighted_log_rank_tests.html</a></p></li>
+<li><p><code>Stratified Max-Combo</code> documentation: <a href="https://cran.r-project.org/web/packages/strata.MaxCombo/strata.MaxCombo.pdf" class="uri">https://cran.r-project.org/web/packages/strata.MaxCombo/strata.MaxCombo.pdf</a></p></li>
+<li><p><code>Max-combo</code> documentation: <a href="https://search.r-project.org/CRAN/refmans/nph/html/logrank.maxtest.html" class="uri">https://search.r-project.org/CRAN/refmans/nph/html/logrank.maxtest.html</a></p></li>
+</ol>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/psiaims\.github\.io\/CAMIS\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
