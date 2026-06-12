@@ -4,121 +4,204 @@ title: "Confidence Intervals for Paired Proportions in R"
 
 ## Introduction
 
-\[See separate page for general introductory information on confidence intervals for proportions.\]
+This page covers confidence intervals for comparisons of two paired proportions in R, including risk difference (RD) $\theta_{RD} = p_1 - p_2$ or relative risk (RR) $\theta_{RR} = p_1 / p_2$. For odds ratio (OR) in the context of paired data, and of particular interest for case-control studies, the OR is estimated conditional on the number of discordant pairs, calculated as $\theta_{OR} = p_{12} / p_{21}$.
 
-\[Note: information about cicalc package will be added to this page soon.\]
+See the [summary page](../method_summary/ci_for_prop_intro.html) for general introductory information on confidence intervals for proportions, including the principles underlying the most common methods.
+
+You may experience paired data in any of the following types of situation:
+
+- Tumour assesssments classified as Progressive Disease or Not Progressive Disease performed by an Investigator and separately by an independent panel.
+
+- A paired case-control study (each subject taking active treatment is matched to a patient taking control)
+
+- A cross-over trial where the same subjects take both medications
+
+In all these cases, the calculated proportions for the 2 groups are not independent.
+
+Using a cross-over study as our example, a 2 x 2 table can be formed as follows:
+
++-----------------------+---------------+---------------+---------------+
+|                       | Placebo\      | Placebo\      | Total         |
+|                       | Response= Yes | Response = No |               |
++=======================+===============+===============+===============+
+| Active Response = Yes | r             | s             | r+s           |
++-----------------------+---------------+---------------+---------------+
+| Active Response = No  | t             | u             | t+u           |
++-----------------------+---------------+---------------+---------------+
+| Total                 | r+t           | s+u           | N = r+s+t+u   |
++-----------------------+---------------+---------------+---------------+
+
+The table below indicates the proportions that are estimated from the data (note the difference in structure compared to the usual 2x2 table for independent proportions).
+
++-----------------------+---------------+---------------+---------------+
+|                       | Placebo\      | Placebo\      | Total         |
+|                       | Response= Yes | Response = No |               |
++=======================+===============+===============+===============+
+| Active Response = Yes | $p_{11}$      | $p_{12}$      | $p_1$         |
++-----------------------+---------------+---------------+---------------+
+| Active Response = No  | $p_{21}$      | $p_{22}$      | $(1-p_1)$     |
++-----------------------+---------------+---------------+---------------+
+| Total                 | $p_2$         | $(1-p_2)$     |               |
++-----------------------+---------------+---------------+---------------+
+
+The proportions of subjects responding on each treatment are:
+
+Active: $\hat p_1 = (r+s)/N$ and Placebo: $\hat p_2= (r+t)/N$
+
+The estimated difference between the proportions for each treatment is: $D=\hat p_1 - \hat p_2 = (s-t)/N$
+
+The estimated relative risk is $(r+s)/(r+t)$.
+
+The estimated conditional odds ratio is $s/t = \frac{s/(s+t)}{1-s/(s+t)}$.
 
 ## Data used
 
-The adcibc data stored [here](../data/adcibc.csv) was used in this example, creating a binary treatment variable `trt` taking the values of `ACT` or `PBO` and a binary response variable `resp` taking the values of `Yes` or `No`. For this example, a response is defined as a score greater than 4.
+Worked examples below use the following artificial dataset:
 
-```{r}
-#| echo: false
-#| include: false
-library(tidyverse)
-library(cardx)
-library(DescTools)
-adcibc2 <- read_csv("../data/adcibc.csv")
++-----------------------+---------------+---------------+---------------+
+|                       | Placebo\      | Placebo\      | Total         |
+|                       | Response= Yes | Response = No |               |
++=======================+===============+===============+===============+
+| Active Response = Yes | r = 20        | s = 15        | r+s = 35      |
++-----------------------+---------------+---------------+---------------+
+| Active Response = No  | t = 6         | u = 5         | t+u = 11      |
++-----------------------+---------------+---------------+---------------+
+| Total                 | r+t = 26      | s+u = 20      | N = 46        |
++-----------------------+---------------+---------------+---------------+
 
-adcibc <- adcibc2 |>
-  select(AVAL, TRTP) |>
-  mutate(
-    resp = if_else(AVAL > 4, "Yes", "No"),
-    respn = if_else(AVAL > 4, 1, 0),
-    trt = if_else(TRTP == "Placebo", "PBO", "ACT"),
-    trtn = if_else(TRTP == "Placebo", 0, 1)
-  ) |>
-  select(trt, trtn, resp, respn)
-
-# cardx package required a vector with 0 and 1s for a single proportion CI
-act <- filter(adcibc, trt == "ACT") |>
-  select(respn)
-act2 <- act$respn
-```
-
-The below shows that for the Active Treatment, there are 36 responders out of 154 subjects = 0.234 (23.4% responders).
-
-```{r}
-#| echo: false
-adcibc |>
-  group_by(trt, resp) |>
-  tally()
-```
+The estimated paired RD is (35-26)/46 = 0.196. RR is 35/26 = 1.346, and the conditional odds ratio is 15/6 = 2.5.
 
 ## Packages
 
-**The {ratesci} package** is ... \[TBC\]
+**The {ratesci} package** includes the `pairbinci()` function with a comprehensive set of options for computing approximate confidence intervals for paired RD and RR, including Score methods with and without skewness correction, MOVER methods, Wald and Bonett Price normal approximations. It also provides several options for conditional OR from paired data. Optional 'sliding scale' continuity adjustments are also provided.
 
-**The {ExactCIdiff} package** produces exact CIs for two dependent proportions (matched pairs).
+**The {contingencytables} package** also provides a selection of different methods, including Wald, MOVER and asymptotic score methods for RD and RR, and transformed Wald, Wilson, Clopper-Pearson and mid-P methods for OR.
 
-## Methods for Calculating Confidence Intervals for Proportion Difference from matched pairs using {ExactCIdiff} and {ratesci}
+**The {PropCIs} package** offers the `diffpropci.Wald.mp` and `diffpropci.mp` functions for RD only, which give the Wald and Agresti-Min adjusted Wald methods respectively.
 
-For more information about the detailed methods for calculating confidence intervals for a matched pair proportion see [here](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html#methods-for-calculating-confidence-intervals-for-a-matched-pair-proportion). When you have 2 measurements on the same subject, the 2 sets of measures are not independent and you have matched pair of responses.
+**The {MKinfer} package** provides `binomDiffCI()` with a `paired` argument. When the recommended `method = "wilson-cc"` is used, the MOVER-Wilson method for RD is produced, incorporating Newcombe's adjustment to the estimated correlation (note the 'cc' is not a 'continuity correction' here).
 
-To date we have not found an R package which calculates a CI for matched pair proportions using the normal approximation or Wilson methods although they can be done by hand using the equations provided on the SAS page link above.
+**The {ExactCIdiff} package** produces exact CIs for paired RD with the `PairedCI()` function. However, it should only be used when the sample size is not too large as it can be computationally intensive giving prohibitively long run times.
 
-**The {ExactCIdiff} package** produces exact CIs for two dependent proportions (matched pairs), claiming to be the first package in R to do this method. However, it should only be used when the sample size is not too large as it can be computationally intensive.\
-NOTE that the {ExactNumCI} package should not be used for this task. More detail on these two packages can be found [here](RJ-2013-026.pdf).
+# Methods for Calculating Confidence Intervals for Proportion Difference from matched pairs
 
-Using a cross over study as our example, a 2 x 2 table can be formed as follows:
+For technical details on the methods for calculating confidence intervals for a paired RD see the corresponding [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html#methods-for-calculating-confidence-intervals-for-a-matched-pair-proportion). A comparison
 
-+-----------------------+---------------+---------------+-------------+
-|                       | Placebo\      | Placebo\      | Total       |
-|                       | Response= Yes | Response = No |             |
-+=======================+===============+===============+=============+
-| Active Response = Yes | r             | s             | r+s         |
-+-----------------------+---------------+---------------+-------------+
-| Active Response = No  | t             | u             | t+u         |
-+-----------------------+---------------+---------------+-------------+
-| Total                 | r+t           | s+u           | N = r+s+t+u |
-+-----------------------+---------------+---------------+-------------+
+From our example dataset, we have estimates as follows: $\hat p_1 = (r+s)/n$ = 35/46 = 0.761 and $\hat p_2= (r+t)/n$ = 26/46 = 0.565
 
-: The proportions of subjects responding on each treatment are:
-
-Active: $\hat p_1 = (r+s)/n$ and Placebo: $\hat p_2= (r+t)/n$
-
-Difference between the proportions for each treatment are: $D=p1-p2=(s-t)/n$
-
-Suppose :
-
-+-----------------------+---------------+---------------+------------------+
-|                       | Placebo\      | Placebo\      | Total            |
-|                       | Response= Yes | Response = No |                  |
-+=======================+===============+===============+==================+
-| Active Response = Yes | r = 20        | s = 15        | r+s = 35         |
-+-----------------------+---------------+---------------+------------------+
-| Active Response = No  | t = 6         | u = 5         | t+u = 11         |
-+-----------------------+---------------+---------------+------------------+
-| Total                 | r+t = 26      | s+u = 20      | N = r+s+t+u = 46 |
-+-----------------------+---------------+---------------+------------------+
-
-Active: $\hat p_1 = (r+s)/n$ =35/46 =0.761 and Placebo: $\hat p_2= (r+t)/n$ = 26/46 =0.565
-
-Difference = 0.761-0.565 = 0.196, then PairedCI() function can provide an exact confidence interval as shown below
-
--0.00339 to 0.38065
+Difference = 0.761-0.565 = 0.196, then the `pairbinci()` function can provide confidence intervals as shown below:
 
 ```{r}
-#| eval: false
-# ExactCIdiff::PairedCI(s, r+u, t, conf.level = 0.95)
+# Selected methods for proximate coverage:
 
-CI <- ExactCIdiff::PairedCI(15, 25, 6, conf.level = 0.95)$ExactCI
-CI
+x <- c(20, 15, 6, 5)
+
+# SCAS
+ratesci::pairbinci( x = x, 
+                    contrast = 'RD',
+                    method = 'Score',
+                    skew = TRUE,
+                    bcf = TRUE,
+                    level = 0.95, 
+                    precis = 6 
+)$estimates
+
+# Tango Score
+ratesci::pairbinci( x = x, 
+                    contrast = 'RD',
+                    method = 'Score',
+                    skew = FALSE,
+                    bcf = FALSE,
+                    level = 0.95, 
+                    precis = 6 
+)$estimates
+
+# MOVER based on Wilson intervals
+ratesci::pairbinci( x = x, 
+                    contrast = 'RD',
+                    method = 'MOVER',
+                    moverbase = 'wilson',
+                    level = 0.95, 
+                    precis = 6 
+)$estimates
+
+# MOVER based on Wilson intervals, with Newcombe's correlation estimate
+ratesci::pairbinci( x = x, 
+                    contrast = 'RD',
+                    method = 'MOVER_newc',
+                    moverbase = 'wilson',
+                    level = 0.95, 
+                    precis = 6 
+)$estimates
+
+# MOVER-J based on Jeffreys intervals, using Newcombe's correlation adjustment
+ratesci::pairbinci( x = x, 
+                    contrast = 'RD',
+                    method = 'MOVER_newc',
+                    moverbase = 'jeff',
+                    level = 0.95, 
+                    precis = 6 
+)$estimates
+
+# Wald normal approximation
+ratesci::pairbinci( x = x, 
+                    contrast = 'RD',
+                    method = 'Wald',
+                    level = 0.95, 
+                    precis = 6 
+)$estimates
+
+# Bonett-Price normal approximation
+ratesci::pairbinci( x = x, 
+                    contrast = 'RD',
+                    method = 'BP',
+                    level = 0.95, 
+                    precis = 6 
+)$estimates
+
+
+
+# Wald normal approximation with continuity adjustment
+ratesci::pairbinci( x = x, 
+                    contrast = 'RD',
+                    method = 'Wald',
+                    cc = TRUE,
+                    level = 0.95, 
+                    precis = 6 
+)$estimates
+
+# SCAS with intermediate continuity adjustment
+ratesci::pairbinci( x = x, 
+                    contrast = 'RD',
+                    method = 'Score',
+                    skew = TRUE,
+                    bcf = TRUE,
+                    cc = 0.25,
+                    level = 0.95, 
+                    precis = 6 
+)$estimates
+
+
+# contingencytables package:
+xmat <- matrix(x, nrow = 2, byrow = TRUE)
+contingencytables::the_paired_2x2_table_CIs_difference(xmat)
+
+
 ```
 
-## Methods for Calculating Confidence Intervals for Relative Risk from matched pairs using {ratesci}
+# Methods for Calculating Confidence Intervals for Relative Risk from matched pairs
 
 \[TBC\]
 
-## Methods for Calculating Confidence Intervals for Conditional Odds Ratio from matched pairs using {ratesci}
+# Methods for Calculating Confidence Intervals for Conditional Odds Ratio from matched pairs
 
 \[TBC\]
 
-## Continuity Adjusted Methods
+# Continuity Adjusted Methods
 
 \[TBC\]
 
-## Consistency with Hypothesis Tests
+# Consistency with Hypothesis Tests
 
 \[TBC\] - cf. McNemar test
 
