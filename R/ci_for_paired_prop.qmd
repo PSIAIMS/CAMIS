@@ -1,8 +1,10 @@
 ---
 title: "Confidence Intervals for Paired Proportions in R"
+bibliography: references.bib
+csl: nature.csl 
 ---
 
-## Introduction
+# Introduction
 
 This page covers confidence intervals for comparisons of two paired proportions in R, including risk difference (RD) $\theta_{RD} = p_1 - p_2$ or relative risk (RR) $\theta_{RR} = p_1 / p_2$. For odds ratio (OR) in the context of paired data, and of particular interest for case-control studies, the OR is estimated conditional on the number of discordant pairs, calculated as $\theta_{OR} = p_{12} / p_{21}$.
 
@@ -16,7 +18,7 @@ You may experience paired data in any of the following types of situation:
 
 - A cross-over trial where the same subjects take both medications
 
-In all these cases, the calculated proportions for the 2 groups are not independent.
+In all these cases, the calculated proportions for the 2 groups are not independent, as the outcomes in each pair of observations are expected to be correlated.
 
 Using a cross-over study as our example, a 2 x 2 table can be formed as follows:
 
@@ -52,9 +54,9 @@ The estimated difference between the proportions for each treatment is: $D=\hat 
 
 The estimated relative risk is $(r+s)/(r+t)$.
 
-The estimated conditional odds ratio is $s/t = \frac{s/(s+t)}{1-s/(s+t)}$.
+The estimated conditional odds ratio is $s/t$.
 
-## Data used
+# Data used
 
 Worked examples below use the following artificial dataset:
 
@@ -71,147 +73,141 @@ Worked examples below use the following artificial dataset:
 
 The estimated paired RD is (35-26)/46 = 0.196. RR is 35/26 = 1.346, and the conditional odds ratio is 15/6 = 2.5.
 
-## Packages
+# Packages
 
-**The {ratesci} package** includes the `pairbinci()` function with a comprehensive set of options for computing approximate confidence intervals for paired RD and RR, including Score methods with and without skewness correction, MOVER methods, Wald and Bonett Price normal approximations. It also provides several options for conditional OR from paired data. Optional 'sliding scale' continuity adjustments are also provided.
+**The {ratesci} package** includes the `scorepairci()` function for computing approximate Score confidence intervals for paired RD, RR and OR, with or without skewness correction. The `moverpairci()` function provides MOVER methods for paired RD and RR. The convenience functions `rdpairci()`, `rrpairci()` and `orpairci()` may be used for a side-by-side comparison of computed intervals for each contrast, and these include other inferior methods such as Wald and other normal approximations.
 
 **The {contingencytables} package** also provides a selection of different methods, including Wald, MOVER and asymptotic score methods for RD and RR, and transformed Wald, Wilson, Clopper-Pearson and mid-P methods for OR.
 
 **The {PropCIs} package** offers the `diffpropci.Wald.mp` and `diffpropci.mp` functions for RD only, which give the Wald and Agresti-Min adjusted Wald methods respectively.
 
-**The {MKinfer} package** provides `binomDiffCI()` with a `paired` argument. When the recommended `method = "wilson-cc"` is used, the MOVER-Wilson method for RD is produced, incorporating Newcombe's adjustment to the estimated correlation (note the 'cc' is not a 'continuity correction' here).
+**The {MKinfer} package** provides `binomDiffCI()` with a `paired` argument to cater for paired data. When the recommended `method = "wilson-cc"` is used, the MOVER-Wilson method for RD is produced, incorporating Newcombe's adjustment to the estimated correlation (note that here the 'cc' does not refer to a 'continuity correction' in the usual sense).
 
-**The {ExactCIdiff} package** produces exact CIs for paired RD with the `PairedCI()` function. However, it should only be used when the sample size is not too large as it can be computationally intensive giving prohibitively long run times.
+**The {ExactCIdiff} package** produces exact CIs for paired RD with the `PairedCI()` function. However, it should only be used when the sample size is not too large as it can be computationally intensive with prohibitively long run times.
 
-# Methods for Calculating Confidence Intervals for Proportion Difference from matched pairs
+# Paired Proportion Difference
 
-For technical details on the methods for calculating confidence intervals for a paired RD see the corresponding [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html#methods-for-calculating-confidence-intervals-for-a-matched-pair-proportion). A comparison
+For technical details on the methods for calculating confidence intervals for a paired RD see the corresponding [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html#methods-for-calculating-confidence-intervals-for-a-matched-pair-proportion).
 
 From our example dataset, we have estimates as follows: $\hat p_1 = (r+s)/n$ = 35/46 = 0.761 and $\hat p_2= (r+t)/n$ = 26/46 = 0.565
 
-Difference = 0.761-0.565 = 0.196, then the `pairbinci()` function can provide confidence intervals as shown below:
+Difference = 0.761-0.565 = 0.196, then selected confidence intervals can be obtained from R as shown below:
 
 ```{r}
-# Selected methods for proximate coverage:
+#| echo: false
+#| include: false
+library(tidyverse)
+library(ratesci)
+library(contingencytables)
+options(digits=6)
+```
+
+### Example code for {ratesci}
+
+```{r}
 
 x <- c(20, 15, 6, 5)
 
-# SCAS
-ratesci::pairbinci( x = x, 
-                    contrast = 'RD',
-                    method = 'Score',
-                    skew = TRUE,
-                    bcf = TRUE,
-                    level = 0.95, 
-                    precis = 6 
-)$estimates
-
-# Tango Score
-ratesci::pairbinci( x = x, 
-                    contrast = 'RD',
-                    method = 'Score',
-                    skew = FALSE,
-                    bcf = FALSE,
-                    level = 0.95, 
-                    precis = 6 
-)$estimates
-
-# MOVER based on Wilson intervals
-ratesci::pairbinci( x = x, 
-                    contrast = 'RD',
-                    method = 'MOVER',
-                    moverbase = 'wilson',
-                    level = 0.95, 
-                    precis = 6 
-)$estimates
-
-# MOVER based on Wilson intervals, with Newcombe's correlation estimate
-ratesci::pairbinci( x = x, 
-                    contrast = 'RD',
-                    method = 'MOVER_newc',
-                    moverbase = 'wilson',
-                    level = 0.95, 
-                    precis = 6 
-)$estimates
-
-# MOVER-J based on Jeffreys intervals, using Newcombe's correlation adjustment
-ratesci::pairbinci( x = x, 
-                    contrast = 'RD',
-                    method = 'MOVER_newc',
-                    moverbase = 'jeff',
-                    level = 0.95, 
-                    precis = 6 
-)$estimates
-
-# Wald normal approximation
-ratesci::pairbinci( x = x, 
-                    contrast = 'RD',
-                    method = 'Wald',
-                    level = 0.95, 
-                    precis = 6 
-)$estimates
-
-# Bonett-Price normal approximation
-ratesci::pairbinci( x = x, 
-                    contrast = 'RD',
-                    method = 'BP',
-                    level = 0.95, 
-                    precis = 6 
-)$estimates
-
-
-
-# Wald normal approximation with continuity adjustment
-ratesci::pairbinci( x = x, 
-                    contrast = 'RD',
-                    method = 'Wald',
-                    cc = TRUE,
-                    level = 0.95, 
-                    precis = 6 
-)$estimates
-
-# SCAS with intermediate continuity adjustment
-ratesci::pairbinci( x = x, 
-                    contrast = 'RD',
-                    method = 'Score',
-                    skew = TRUE,
-                    bcf = TRUE,
-                    cc = 0.25,
-                    level = 0.95, 
-                    precis = 6 
-)$estimates
-
-
-# contingencytables package:
-xmat <- matrix(x, nrow = 2, byrow = TRUE)
-contingencytables::the_paired_2x2_table_CIs_difference(xmat)
-
+# Selected methods for proximate coverage:
+ratesci::rdpairci(x = x,
+                  level = 0.95,
+                  precis = 6)
 
 ```
 
-# Methods for Calculating Confidence Intervals for Relative Risk from matched pairs
+### Example code for {contingencytables}
 
-\[TBC\]
+```{r}
+xmat <- matrix(x, nrow = 2, byrow = TRUE)
+contingencytables::the_paired_2x2_table_CIs_difference(xmat)
+```
 
-# Methods for Calculating Confidence Intervals for Conditional Odds Ratio from matched pairs
+# Paired Relative Risk
 
-\[TBC\]
+For technical details on the methods for calculating confidence intervals for a paired RR see the corresponding [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html#methods-for-calculating-confidence-intervals-for-a-matched-pair-proportion).
+
+### Example code for {ratesci}
+
+```{r}
+
+# Selected methods for proximate coverage:
+ratesci::rrpairci(x = x,
+                  level = 0.95,
+                  precis = 6)
+```
+
+### Example code for {contingencytables}
+
+```{r}
+
+contingencytables::the_paired_2x2_table_CIs_ratio(xmat)
+
+```
+
+# Conditional Odds Ratio
+
+For technical details on the methods for calculating confidence intervals for a conditional OR from paired date see the corresponding [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html#methods-for-calculating-confidence-intervals-for-a-matched-pair-proportion).
+
+### Example code for {ratesci}
+
+```{r}
+
+# Selected methods for proximate coverage:
+ratesci::orpairci(x = x,
+                  level = 0.95,
+                  precis = 6)
+
+```
+
+### Example code for {contingencytables}
+
+```{r}
+contingencytables::the_paired_2x2_table_CIs_OR(xmat)
+```
 
 # Continuity Adjusted Methods
 
-\[TBC\]
+There are relatively few methods widely available for aligning the minimum coverage with the nominal confidence level. The most versatile option is to use functions from the {ratesci} package, which provides optional continuity adjustments, on a sliding scale from 0 to $0.5/N$, for any of the Asymptotic Score or MOVER methods for any contrast.
+
+### Example code for {ratesci}
+
+```{r}
+# Selected methods for conservative coverage 
+
+# Using the conventional 0.5 
+ratesci::rdpairci(x = x,
+                  level = 0.95,
+                  cc =0.5,
+                  precis = 6)
+
+```
+
+```{r}
+# Using an intermediate adjustment of magnitude 0.25 
+
+ratesci::rdpairci(x = x,
+                  level = 0.95,
+                  cc =0.25,
+                  precis = 6)
+
+```
 
 # Consistency with Hypothesis Tests
 
-\[TBC\] - cf. McNemar test
+## Test for association
 
-## 
+The Asymptotic Score methods for all contrasts based on paired data are inherently consistent with the McNemar $\chi^2$ tests if `bcf` = FALSE.
 
-## 
+## Non-inferiority test
 
-## References
+One important use for CIs for proportions is in the analysis of clinical trials aiming to demonstrate non-inferiority. The Asymptotic Score methods are naturally suited for this purpose, as they are derived by inverting a score test statistic, so that the hypothesis test for any null hypothesis value of the contrast parameter is guaranteed to be consistent with the confidence interval. A one-sided non-inferiority test may be obtained with the `scorepairci` function (for example, with a non-inferiority margin of RD = 0.4) as follows:
 
-1.  [pharmaverse cardx package](https://insightsengineering.github.io/cardx/main/#:~:text=The%20%7Bcardx%7D%20package%20is%20an%20extension%20of%20the,Data%20Objects%20%28ARDs%29%20using%20the%20R%20programming%20language.)
-2.  [PropCIs package](https://cran.r-project.org/web//packages/PropCIs/PropCIs.pdf)
-3.  D. Altman, D. Machin, T. Bryant, M. Gardner (eds). Statistics with Confidence: Confidence Intervals and Statistical Guidelines, 2nd edition. John Wiley and Sons 2000.
-4.  <https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf>
+```{r}
+ratesci::scorepairci(x = x,
+                  level = 0.95,
+                  theta0 = 0.4,
+                  precis = 6)$pval
+
+```
+
+# References
