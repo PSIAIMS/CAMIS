@@ -2,6 +2,89 @@
 title: "R vs SAS Paired T-Test"
 ---
 
+# Summary
+
+## Goal
+
+The goal of this comparison is to evaluate whether paired t-tests produce equivalent results in R and SAS for both normal and lognormal data. For normal data, results from `stats::t.test()`, `procs::proc_ttest()`, and SAS `PROC TTEST` are compared directly. For lognormal data, results from a log-transformation / back-transformation approach in R are compared with SAS `PROC TTEST` using the `DIST=LOGNORMAL` option.
+
+## Scope
+
+::::::: columns
+:::: {.column width="45%"}
+::: {.callout-note appearance="minimal" collapse="false"}
+## Methodologies
+
+Paired t-test
+
+Lognormal paired t-test
+:::
+::::
+
+:::: {.column width="55%"}
+::: {.callout-note appearance="minimal" collapse="false"}
+## Technical implementations
+
+SAS: `PROC TTEST` with and without the `DIST=LOGNORMAL` option
+
+R: `stats::t.test(paired = TRUE)` and log-transformation / back-transformation approach for lognormal data
+:::
+::::
+:::::::
+
+# Prerequisites
+
+## R packages
+
+```{r}
+#| output: false 
+#| message: false 
+library(tibble) # for example data
+library(stats) # t.test()
+library(procs) # proc_ttest()
+```
+
+## Data
+
+### Lognormal One Sample t-test
+
+We use a simulated paired dataset containing systolic blood pressure measurements before and after treatment. The same data are used in the R and SAS examples to compare the log-transformation / back-transformation approach in R with SAS `PROC TTEST` using the `DIST=LOGNORMAL` option.
+
+R:
+
+```{r}
+pressure <- tibble::tribble(
+  ~SBPbefore, ~SBPafter,
+  120, 128,
+  124, 131,
+  130, 131,
+  118, 127,
+  140, 132,
+  128, 125,
+  140, 141,
+  135, 137,
+  126, 118,
+  130, 132,
+  126, 129,
+  127, 135
+)
+
+
+```
+
+SAS:
+
+``` sas
+data pressure;
+    input SBPbefore SBPafter @@;
+    datalines;
+120 128 124 131 130 131 118 127
+140 132 128 125 140 141 135 137
+126 118 130 132 126 129 127 135
+;
+run;
+```
+
 ```{r}
 #| label: setup
 #| include: false
@@ -13,10 +96,10 @@ library(procs)
 
 The following table shows the types of Paired t-test analysis, the capabilities of each language, and whether or not the results from each language match.
 
-| Analysis                      | Supported in R                            | Supported in SAS                       | Results Match    | Notes                                                 |
+| Analysis | Supported in R | Supported in SAS | Results Match | Notes |
 |---------------|---------------|---------------|---------------|---------------|
-| Paired t-test, normal data    | [Yes](../R/ttest_Paired.html#normal)      | [Yes](../SAS/ttest_Paired.html#normal) | [Yes](#normal)   | In Base R, use `paired = TRUE` on `t.test()` function |
-| Paired t-test, lognormal data | [Maybe](../R/ttest_Paired.html#lognormal) | [Yes](../SAS/ttest_Paired.html#lognormal) | [NA](#lognormal) | May be supported by **envstats** package              |
+| Paired t-test, normal data | [Yes](../R/ttest_Paired.html#normal) | [Yes](../SAS/ttest_Paired.html#normal) | [Yes](#normal) | In Base R, use `paired = TRUE` on `t.test()` function |
+| Paired t-test, lognormal data | [Yes](../R/ttest_Paired.html#lognormal) | [Yes](../SAS/ttest_Paired.html#lognormal) | [NA](#lognormal) | Apply a natural log transformation to both paired measurements, perform the paired t-test on the log-transformed data, and exponentiate the mean difference and the confidence limits. |
 
 ## Comparison Results
 
@@ -24,21 +107,32 @@ The following table shows the types of Paired t-test analysis, the capabilities 
 
 Here is a table of comparison values between `t.test()`, `proc_ttest()`, and SAS `PROC TTEST`:
 
-| Statistic          | t.test() | proc_ttest() | PROC TTEST | Match | Notes |
-|--------------------|----------|--------------|------------|-------|-------|
-| Degrees of Freedom | 11       | 11           | 11         | Yes   |       |
-| t value            | -1.089648	|-1.089648    | -1.089648	     | Yes   |      |
-| p value            | 0.2992   | 0.2992       | 0.2992     | Yes   |       |
+| Statistic          | t.test()  | proc_ttest() | PROC TTEST | Match | Notes |
+|--------------------|-----------|--------------|------------|-------|-------|
+| Degrees of Freedom | 11        | 11           | 11         | Yes   |       |
+| t value            | -1.089648 | -1.089648    | -1.089648  | Yes   |       |
+| p value            | 0.2992    | 0.2992       | 0.2992     | Yes   |       |
 
 ### Lognormal Data {#lognormal}
 
-Since there is currently no known support for lognormal t-test in R, this comparison is not applicable.
+For lognormal paired data, a paired t-test can be performed in R by applying a natural log transformation to both paired measurements and conducting the analysis on the log-transformed values. The resulting mean difference and confidence limits can then be exponentiated to obtain a geometric mean ratio and corresponding confidence limits. The table below compares results from `stats::t.test()`, `procs::proc_ttest()`, and SAS `PROC TTEST` with the `DIST=LOGNORMAL` option.
+
+Here is a table of comparison values between `t.test()`, `proc_ttest()`, and SAS `PROC TTEST`:
+
+| Statistic | t.test() | proc_ttest() | PROC TTEST | Match | Notes |
+|------------|------------|------------|------------|------------|------------|
+| Degrees of Freedom | 11 | 11 | 11 | Yes |  |
+| t value | 1.094185 | 1.094185 | 1.094185 | Yes |  |
+| p value | 0.2972 | 0.2992 | 0.2972 | Yes |  |
+| Geometric Mean Ratio | 1.0146204 | 1.0146204 | 1.0146204 | Yes | Back-transformed mean difference |
+| Lower 95% CL Mean Ratio | 0.98542 | 0.98542 | 0.98542 | Yes | Back-transformed lower confidence limit |
+| Upper 95% CL Mean Ratio | 1.04468 | 1.04468 | 1.04468 | Yes | Back-transformed upper confidence limit |
 
 # Summary and Recommendation
 
 For normal data, the R paired t-test capabilities are comparable to SAS. Comparison between SAS and R show identical results for the datasets tried. The **procs** package `proc_ttest()` function is very similar to SAS in the syntax and output produced. `proc_ttest()` also supports by groups, where `t.test()` does not.
 
-For the lognormal version of the t-test, it does not appear to be supported in the **stats** or **procs** package. It may be supported in the **envstats** package. More exploration is needed to determine whether this package will produce the expected results, and whether the results will match SAS.
+For the lognormal version of the paired t-test, equivalent results can be obtained in R by applying a natural log transformation to the paired measurements, performing the paired t-test on the transformed data, and exponentiating the resulting estimates and confidence limits. Comparison with SAS `PROC TTEST` using the `DIST=LOGNORMAL` option showed that the results matched after back-transformation. Therefore, a separate package is not required for this analysis.
 
 # References
 

@@ -88,7 +88,29 @@ knitr::include_graphics("../images/ttest/paired_rtest1.png")
 
 The Base R `t.test()` function does not have an option for lognormal data. Likewise, the **procs** `proc_ttest()` function also does not have an option for lognormal data.
 
-One possibility may be the `tTestLnormAltPower()` function from the **EnvStats** package. This package has not been evaluated yet.
+Paired lognormal data can be analyzed by applying a natural log transformation to both paired measurements and performing the paired t-test on the log-transformed values. The resulting mean difference and confidence limits are on the log scale and can be exponentiated to obtain a ratio of geometric means and corresponding confidence limits. The standard deviation is not back-transformed.
+
+```{r}
+#| echo: false
+#| label: session info
+
+# Apply natural log transformation to both paired measurements
+log_after <- log(pressure$SBPafter)
+log_before <- log(pressure$SBPbefore)
+
+# Perform paired t-test on the log-transformed values
+tt <- stats::t.test(log_after, log_before, paired = TRUE)
+
+# Back-transform the mean difference to obtain the geometric mean ratio
+exp(tt$estimate)
+
+# Back-transform the confidence limits
+exp(tt$conf.int)
+
+# Display p-value
+tt$p.value
+
+```
 
 ::: {.callout-note collapse="true" title="Session Info"}
 ```{r}
