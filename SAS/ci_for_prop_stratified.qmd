@@ -1,0 +1,46 @@
+---
+title: "Confidence Intervals - proportions for stratified designs"
+---
+
+# Introduction
+
+As documented [here](Confidence%20limits%20using%20the%20Miettinen-Nurminen%20stratified%20method%20as%20de...%20-%20SAS%20Support%20Communities), there is requirement to use methods other than the wald method, for CI's for proportions. In certain cases, for example, when you have a baseline imbalance of stratification factors, the stratified Miettinen-Nurminen 1985 method is reccommended.
+
+You may think that SAS can do this method using the following code. However, this is performing an unstratified miettinen-nurminen method. The output would contain the risk differences calculated for each strata seperately and then a common risk difference (however this is not a stratified approach). See [SAS](https://support.sas.com/documentation/cdl/en/procstat/67528/HTML/default/viewer.htm#procstat_freq_details63.htm) for more detail of SAS's calculations and .
+
+``` sas
+proc freq data = xxxx;
+  tables  var1 * var2 * var3 / cmh riskdiff (common cl=mn)
+run;
+```
+
+# Online SAS macros
+
+There are two available macros to use in SAS:
+
+-   [{ratesci}](Score confidence intervals and tests for a single binomial or Poisson rate, or for comparisons of independent rates, with or without stratification. — scoreci • ratesci)
+-   [cytel](A%20SAS%20Macro%20Calculating%20Confidence%20Intervals%20of%20the%20Difference%20in%20Binomial%20Proportions%20from%20Stratified%20Analysis%20using%20the%20Miettinen%20&%20Nurminen%20Method%20with%20Cochran-Mantel-Haenszel%20Weights)
+
+This page is a placeholder whilst further content is being developed.
+
+To date the cytel macro has been been extensively tested by CAMIS project (please contact us if you'd like to help with this research!). However, the ratesci macro has been tested against {cicalc} and {ratesci} r packages and found to have agreement.
+
+```         
+NOTE that: skew = FALSE option, indicates no skewness correction which gives us the miettinen-nurminen method. 
+
+NOTE: The dataset <input_dataset> contents need to be aggregated with 1 row per strata of results.  With variables: N1, N0 for the sample size in the test and comparator groups and e1, e0 for the number of events in the test and comparator groups respectively
+Eg.
+strata  e1  N1  e0  N0
+grp1    5   10  3   12
+grp2    1   3   7   15
+etc.
+
+              
+%SCORECI(DS=<input_dataset>,
+  		 CONTRAST = RD,
+  		 SKEW = FALSE,
+  		 LEVEL = 0.95,
+  		 STRATIFY = TRUE,
+  		 OUTPUT = TRUE,
+  		 WEIGHT = 1);
+```
