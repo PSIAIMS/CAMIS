@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>R vs SAS Linear Regression</title>
+<title>R vs SAS vs Python Linear Regression</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -22,6 +22,41 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -172,7 +207,21 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#summary-of-r-vs-sas-comparison-for-linear-regression" id="toc-summary-of-r-vs-sas-comparison-for-linear-regression" class="nav-link active" data-scroll-target="#summary-of-r-vs-sas-comparison-for-linear-regression">Summary of R vs SAS Comparison for Linear Regression</a></li>
+  <li><a href="#summary-of-linear-regression-comparison" id="toc-summary-of-linear-regression-comparison" class="nav-link active" data-scroll-target="#summary-of-linear-regression-comparison">Summary of Linear Regression Comparison</a>
+  <ul class="collapse">
+  <li><a href="#goal" id="toc-goal" class="nav-link" data-scroll-target="#goal">Goal</a></li>
+  <li><a href="#scope" id="toc-scope" class="nav-link" data-scroll-target="#scope">Scope</a></li>
+  </ul></li>
+  <li><a href="#prerequisites" id="toc-prerequisites" class="nav-link" data-scroll-target="#prerequisites">Prerequisites</a>
+  <ul class="collapse">
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
+  </ul></li>
+  <li><a href="#linear-regression" id="toc-linear-regression" class="nav-link" data-scroll-target="#linear-regression">Linear Regression</a>
+  <ul class="collapse">
+  <li><a href="#comparison-results" id="toc-comparison-results" class="nav-link" data-scroll-target="#comparison-results">Comparison Results</a></li>
+  </ul></li>
+  <li><a href="#summary-and-recommendation" id="toc-summary-and-recommendation" class="nav-link" data-scroll-target="#summary-and-recommendation">Summary and Recommendation</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 </nav>
     </div>
@@ -181,7 +230,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">R vs SAS Linear Regression</h1>
+<h1 class="title">R vs SAS vs Python Linear Regression</h1>
 </div>
 
 
@@ -198,29 +247,232 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="summary-of-r-vs-sas-comparison-for-linear-regression" class="level3 unnumbered">
-<h3 class="unnumbered anchored" data-anchor-id="summary-of-r-vs-sas-comparison-for-linear-regression">Summary of R vs SAS Comparison for Linear Regression</h3>
-<p>To date the <code>lm</code> function in R and <code>proc reg</code> in sas have been found to 100% agree.</p>
+<section id="summary-of-linear-regression-comparison" class="level1 unnumbered">
+<h1 class="unnumbered">Summary of Linear Regression Comparison</h1>
+<section id="goal" class="level2">
+<h2 class="anchored" data-anchor-id="goal">Goal</h2>
+<p>The goal of this comparison is to evaluate whether linear regression methods produce equivalent results in R, SAS, and Python. Results from R’s <code>stats::lm()</code> function, SAS <code>PROC REG</code>, and Python’s <code>sm.OLS()</code> function are compared using the same data and model specification.</p>
+</section>
+<section id="scope" class="level2">
+<h2 class="anchored" data-anchor-id="scope">Scope</h2>
+<div class="columns">
+<div class="column" style="width:45%;">
+<div class="callout callout-style-simple callout-note no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="true" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Methodologies
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse show">
+<div class="callout-body-container callout-body">
+<ul>
+<li>Linear Regression</li>
+</ul>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:55%;">
+<div class="callout callout-style-simple callout-note no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="true" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Technical implementations
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse show">
+<div class="callout-body-container callout-body">
+<ul>
+<li><p>SAS: <code>PROC REG</code></p></li>
+<li><p>R: <code>stats::lm()</code></p></li>
+<li><p>Python: <code>sm.OLS()</code></p></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="prerequisites" class="level1">
+<h1>Prerequisites</h1>
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<p>We used the htwt dataset, which contains two numeric variables: height and weight. The same data are used for the R, SAS, and Python examples. The dataset is available <a href="https://raw.githubusercontent.com/PSIAIMS/CAMIS/main/data/htwt.csv">here</a> and is imported to the workspaces.</p>
+<p>R:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>htwt <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"https://raw.githubusercontent.com/PSIAIMS/CAMIS/main/data/htwt.csv"</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>SAS:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">filename</span> htwt url</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="st">"https://raw.githubusercontent.com/PSIAIMS/CAMIS/main/data/htwt.csv"</span>;</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">proc import</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">datafile</span><span class="op">=</span>htwt</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">out</span><span class="op">=</span>htwt</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">dbms</span><span class="op">=</span>csv</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">replace</span>;</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">getnames</span><span class="op">=</span>yes;</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Python:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>htwt <span class="op">=</span> pd.read_csv(</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"https://raw.githubusercontent.com/PSIAIMS/CAMIS/main/data/htwt.csv"</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+<section id="linear-regression" class="level1">
+<h1>Linear Regression</h1>
+<p>The following table summarizes the linear regression analysis, the capabilities of each language, and whether or not the results from each language match.</p>
 <table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
 <thead>
 <tr class="header">
 <th>Analysis</th>
 <th>Supported in R</th>
 <th>Supported in SAS</th>
-<th>Results Match</th>
+<th>Supported in Python</th>
+<th>Match</th>
 <th>Notes</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>Linear regression</td>
-<td><a href="../R/linear-regression.html">Yes</a></td>
-<td><a href="../SAS/linear-regression.html">Yes</a></td>
+<td>Simple Linear Regression</td>
 <td>Yes</td>
-<td></td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>R uses <code>stats::lm()</code>; SAS uses <code>PROC REG</code>; and Python uses <code>sm.OLS()</code>.</td>
 </tr>
 </tbody>
 </table>
+<section id="comparison-results" class="level2">
+<h2 class="anchored" data-anchor-id="comparison-results">Comparison Results</h2>
+<p>Here is a table of comparison values between R <code>lm()</code>, SAS <code>PROC REG</code>, and Python <code>sm.OLS()</code>:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Statistic</th>
+<th><u>R</u>: lm()</th>
+<th><u>SAS</u>: PROC REG</th>
+<th><u>Python</u>: sm.OLS()</th>
+<th>Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Intercept estimate</td>
+<td>-132.9910</td>
+<td>-132.9910</td>
+<td>-132.9910</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Slope estimate</td>
+<td>3.8181</td>
+<td>3.8181</td>
+<td>3.8181</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Slope t value</td>
+<td>18.79</td>
+<td>18.79</td>
+<td>18.79</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Intercept t value</td>
+<td>-10.64</td>
+<td>-10.64</td>
+<td>-10.64</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Intercept p value</td>
+<td>&lt; 2e-16</td>
+<td>&lt;.0001</td>
+<td>0.000*</td>
+<td>Mostly yes</td>
+<td>Very small p-values are displayed differently due to software-specific formatting and rounding.</td>
+</tr>
+<tr class="even">
+<td>Slope p value</td>
+<td>&lt; 2e-16</td>
+<td>&lt;.0001</td>
+<td>0.000*</td>
+<td>Mostly yes</td>
+<td>Very small p-values are displayed differently due to software-specific formatting and rounding.</td>
+</tr>
+<tr class="odd">
+<td>R-squared</td>
+<td>.6004</td>
+<td>.6004</td>
+<td>.600</td>
+<td>Mostly yes</td>
+<td>Rounding</td>
+</tr>
+<tr class="even">
+<td>F statistic</td>
+<td>353.1</td>
+<td>353.1</td>
+<td>353.1</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Model p value</td>
+<td>&lt; 2.2e-16</td>
+<td>&lt;.0001</td>
+<td>0.000*</td>
+<td>Mostly yes</td>
+<td>Very small p-values are displayed differently due to software-specific formatting and rounding.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="summary-and-recommendation" class="level1">
+<h1>Summary and Recommendation</h1>
+<p>For linear regression, R <code>stats::lm()</code>, SAS <code>PROC REG</code>, and Python <code>sm.OLS()</code> provide comparable capabilities for fitting ordinary least squares regression models. Comparison between R, SAS, and Python showed equivalent results for the example dataset, including regression coefficient estimates, t statistics, p-values, and measures of model fit.</p>
+<p>Although the syntax and output differ between R, SAS, and Python, all three implementations produced equivalent results for the example analysis. The intercept and slope estimates, hypothesis tests for regression coefficients, and overall model statistics matched across the three implementations.</p>
+<p>Based on the example evaluated, R <code>stats::lm()</code>, SAS <code>PROC REG</code>, and Python <code>sm.OLS()</code> produced equivalent results for linear regression analysis.</p>
+</section>
+<section id="references" class="level1">
+<h1>References</h1>
+<p>R <code>lm()</code> documentation: <a href="https://stat.ethz.ch/R-manual/R-patched/library/stats/html/lm.html" class="uri">https://stat.ethz.ch/R-manual/R-patched/library/stats/html/lm.html</a></p>
+<p>SAS <code>PROC REG</code> documentation: <a href="https://documentation.sas.com/doc/en/statug/15.3/statug_reg_overview.htm" class="uri">https://documentation.sas.com/doc/en/statug/15.3/statug_reg_overview.htm</a></p>
+<p>Python <code>sm.OLS()</code> documentation: <a href="https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.OLS.html" class="uri">https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.OLS.html</a></p>
 
 
 </section>

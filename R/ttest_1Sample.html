@@ -323,7 +323,33 @@ $TTests
 <section id="lognormal" class="level2">
 <h2 class="anchored" data-anchor-id="lognormal">Lognormal Data</h2>
 <p>The Base R <code>t.test()</code> function does not have an option for lognormal data. Likewise, the <strong>procs</strong> <code>proc_ttest()</code> function also does not have an option for lognormal data.</p>
-<p>One possibility may be the <code>tTestLnormAltPower()</code> function from the <strong>EnvStats</strong> package. This package has not been evaluated yet.</p>
+<p>Although Base R <code>t.test()</code> does not include a lognormal option, lognormal data can be analyzed by applying a natural log transformation to the data, performing the t-test on the log-transformed data, and exponentiating the resulting mean and confidence limits. The back-transformed mean is interpreted as the geometric mean. The standard deviation is not back-transformed.</p>
+<p>The following example applies a natural log transformation, performs the one sample t-test on the log-transformed data, and exponentiates the mean and confidence limits.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply natural log transformation to the sample data</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>log_score <span class="ot">&lt;-</span> <span class="fu">log</span>(read<span class="sc">$</span>score)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform one-sample t-test on the log-transformed data</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>tt <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">t.test</span>(log_score, <span class="at">mu =</span> <span class="fu">log</span>(<span class="dv">30</span>))</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Back-transform the geometric mean</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="fu">exp</span>(<span class="fu">mean</span>(log_score))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 32.91447</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Back-transform the confidence limits</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">exp</span>(tt<span class="sc">$</span>conf.int)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 28.60623 37.87155
+attr(,"conf.level")
+[1] 0.95</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Display p-value</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>tt<span class="sc">$</span>p.value</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.1869289</code></pre>
+</div>
+</div>
 <div class="callout callout-style-default callout-note callout-titled" title="Session Info">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -345,11 +371,11 @@ $TTests
  system   x86_64, linux-gnu
  ui       X11
  language (EN)
- collate  en_US.UTF-8
- ctype    en_US.UTF-8
- tz       Europe/London
- date     2026-03-26
- pandoc   3.6.3 @ /home/michael/.positron-server/bin/f3aae65e0a1a11d39226cd884520f49301daef82/quarto/bin/tools/x86_64/ (via rmarkdown)
+ collate  C.UTF-8
+ ctype    C.UTF-8
+ tz       UTC
+ date     2026-06-24
+ pandoc   3.8.3 @ /opt/quarto/bin/tools/ (via rmarkdown)
 
 ─ Packages ───────────────────────────────────────────────────────────────────
  ! package * version date (UTC) lib source
@@ -357,7 +383,7 @@ $TTests
  P procs   * 1.0.7   2025-07-27 [?] RSPM (R 4.5.0)
  P tibble    3.3.1   2026-01-11 [?] RSPM (R 4.5.0)
 
- [1] /home/michael/source/personal/CAMIS/renv/library/linux-ubuntu-noble/R-4.5/x86_64-pc-linux-gnu
+ [1] /home/runner/work/CAMIS/CAMIS/renv/library/linux-ubuntu-noble/R-4.5/x86_64-pc-linux-gnu
  [2] /opt/R/4.5.2/lib/R/library
 
  P ── Loaded and on-disk path mismatch.

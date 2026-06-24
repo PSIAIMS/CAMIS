@@ -23,6 +23,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -172,7 +207,20 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#paired-t-test-comparison" id="toc-paired-t-test-comparison" class="nav-link active" data-scroll-target="#paired-t-test-comparison">Paired t-test Comparison</a>
+  <li><a href="#summary" id="toc-summary" class="nav-link active" data-scroll-target="#summary">Summary</a>
+  <ul class="collapse">
+  <li><a href="#goal" id="toc-goal" class="nav-link" data-scroll-target="#goal">Goal</a></li>
+  <li><a href="#scope" id="toc-scope" class="nav-link" data-scroll-target="#scope">Scope</a></li>
+  </ul></li>
+  <li><a href="#prerequisites" id="toc-prerequisites" class="nav-link" data-scroll-target="#prerequisites">Prerequisites</a>
+  <ul class="collapse">
+  <li><a href="#r-packages" id="toc-r-packages" class="nav-link" data-scroll-target="#r-packages">R packages</a></li>
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a>
+  <ul class="collapse">
+  <li><a href="#lognormal-one-sample-t-test" id="toc-lognormal-one-sample-t-test" class="nav-link" data-scroll-target="#lognormal-one-sample-t-test">Lognormal One Sample t-test</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#paired-t-test-comparison" id="toc-paired-t-test-comparison" class="nav-link" data-scroll-target="#paired-t-test-comparison">Paired t-test Comparison</a>
   <ul class="collapse">
   <li><a href="#comparison-results" id="toc-comparison-results" class="nav-link" data-scroll-target="#comparison-results">Comparison Results</a>
   <ul class="collapse">
@@ -207,6 +255,100 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
+<section id="summary" class="level1">
+<h1>Summary</h1>
+<section id="goal" class="level2">
+<h2 class="anchored" data-anchor-id="goal">Goal</h2>
+<p>The goal of this comparison is to evaluate whether paired t-tests produce equivalent results in R and SAS for both normal and lognormal data. For normal data, results from <code>stats::t.test()</code>, <code>procs::proc_ttest()</code>, and SAS <code>PROC TTEST</code> are compared directly. For lognormal data, results from a log-transformation / back-transformation approach in R are compared with SAS <code>PROC TTEST</code> using the <code>DIST=LOGNORMAL</code> option.</p>
+</section>
+<section id="scope" class="level2">
+<h2 class="anchored" data-anchor-id="scope">Scope</h2>
+<div class="columns">
+<div class="column" style="width:45%;">
+<div class="callout callout-style-simple callout-note no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="true" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Methodologies
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse show">
+<div class="callout-body-container callout-body">
+<p>Paired t-test</p>
+<p>Lognormal paired t-test</p>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:55%;">
+<div class="callout callout-style-simple callout-note no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="true" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Technical implementations
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse show">
+<div class="callout-body-container callout-body">
+<p>SAS: <code>PROC TTEST</code> with and without the <code>DIST=LOGNORMAL</code> option</p>
+<p>R: <code>stats::t.test(paired = TRUE)</code> and log-transformation / back-transformation approach for lognormal data</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="prerequisites" class="level1">
+<h1>Prerequisites</h1>
+<section id="r-packages" class="level2">
+<h2 class="anchored" data-anchor-id="r-packages">R packages</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tibble) <span class="co"># for example data</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stats) <span class="co"># t.test()</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(procs) <span class="co"># proc_ttest()</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<section id="lognormal-one-sample-t-test" class="level3">
+<h3 class="anchored" data-anchor-id="lognormal-one-sample-t-test">Lognormal One Sample t-test</h3>
+<p>We use a simulated paired dataset containing systolic blood pressure measurements before and after treatment. The same data are used in the R and SAS examples to compare the log-transformation / back-transformation approach in R with SAS <code>PROC TTEST</code> using the <code>DIST=LOGNORMAL</code> option.</p>
+<p>R:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>pressure <span class="ot">&lt;-</span> tibble<span class="sc">::</span><span class="fu">tribble</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="sc">~</span>SBPbefore, <span class="sc">~</span>SBPafter,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dv">120</span>, <span class="dv">128</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dv">124</span>, <span class="dv">131</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="dv">130</span>, <span class="dv">131</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="dv">118</span>, <span class="dv">127</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="dv">140</span>, <span class="dv">132</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="dv">128</span>, <span class="dv">125</span>,</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="dv">140</span>, <span class="dv">141</span>,</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="dv">135</span>, <span class="dv">137</span>,</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="dv">126</span>, <span class="dv">118</span>,</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="dv">130</span>, <span class="dv">132</span>,</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="dv">126</span>, <span class="dv">129</span>,</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="dv">127</span>, <span class="dv">135</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>SAS:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> pressure;</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">input</span> SBPbefore SBPafter <span class="op">@@</span>;</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">datalines;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ot">120 128 124 131 130 131 118 127</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ot">140 132 128 125 140 141 135 137</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="ot">126 118 130 132 126 129 127 135</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>;</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+</section>
 <section id="paired-t-test-comparison" class="level1">
 <h1>Paired t-test Comparison</h1>
 <p>The following table shows the types of Paired t-test analysis, the capabilities of each language, and whether or not the results from each language match.</p>
@@ -230,10 +372,10 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 <tr class="even">
 <td>Paired t-test, lognormal data</td>
-<td><a href="../R/ttest_Paired.html#lognormal">Maybe</a></td>
+<td><a href="../R/ttest_Paired.html#lognormal">Yes</a></td>
 <td><a href="../SAS/ttest_Paired.html#lognormal">Yes</a></td>
 <td><a href="#lognormal">NA</a></td>
-<td>May be supported by <strong>envstats</strong> package</td>
+<td>Apply a natural log transformation to both paired measurements, perform the paired t-test on the log-transformed data, and exponentiate the mean difference and the confidence limits.</td>
 </tr>
 </tbody>
 </table>
@@ -245,11 +387,11 @@ ul.task-list li input[type="checkbox"] {
 <table class="caption-top table">
 <colgroup>
 <col style="width: 28%">
-<col style="width: 14%">
-<col style="width: 20%">
-<col style="width: 17%">
-<col style="width: 10%">
-<col style="width: 10%">
+<col style="width: 15%">
+<col style="width: 19%">
+<col style="width: 16%">
+<col style="width: 9%">
+<col style="width: 9%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -291,14 +433,85 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="lognormal" class="level3">
 <h3 class="anchored" data-anchor-id="lognormal">Lognormal Data</h3>
-<p>Since there is currently no known support for lognormal t-test in R, this comparison is not applicable.</p>
+<p>For lognormal paired data, a paired t-test can be performed in R by applying a natural log transformation to both paired measurements and conducting the analysis on the log-transformed values. The resulting mean difference and confidence limits can then be exponentiated to obtain a geometric mean ratio and corresponding confidence limits. The table below compares results from <code>stats::t.test()</code>, <code>procs::proc_ttest()</code>, and SAS <code>PROC TTEST</code> with the <code>DIST=LOGNORMAL</code> option.</p>
+<p>Here is a table of comparison values between <code>t.test()</code>, <code>proc_ttest()</code>, and SAS <code>PROC TTEST</code>:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Statistic</th>
+<th>t.test()</th>
+<th>proc_ttest()</th>
+<th>PROC TTEST</th>
+<th>Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Degrees of Freedom</td>
+<td>11</td>
+<td>11</td>
+<td>11</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>t value</td>
+<td>1.094185</td>
+<td>1.094185</td>
+<td>1.094185</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>p value</td>
+<td>0.2972</td>
+<td>0.2992</td>
+<td>0.2972</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Geometric Mean Ratio</td>
+<td>1.0146204</td>
+<td>1.0146204</td>
+<td>1.0146204</td>
+<td>Yes</td>
+<td>Back-transformed mean difference</td>
+</tr>
+<tr class="odd">
+<td>Lower 95% CL Mean Ratio</td>
+<td>0.98542</td>
+<td>0.98542</td>
+<td>0.98542</td>
+<td>Yes</td>
+<td>Back-transformed lower confidence limit</td>
+</tr>
+<tr class="even">
+<td>Upper 95% CL Mean Ratio</td>
+<td>1.04468</td>
+<td>1.04468</td>
+<td>1.04468</td>
+<td>Yes</td>
+<td>Back-transformed upper confidence limit</td>
+</tr>
+</tbody>
+</table>
 </section>
 </section>
 </section>
 <section id="summary-and-recommendation" class="level1">
 <h1>Summary and Recommendation</h1>
 <p>For normal data, the R paired t-test capabilities are comparable to SAS. Comparison between SAS and R show identical results for the datasets tried. The <strong>procs</strong> package <code>proc_ttest()</code> function is very similar to SAS in the syntax and output produced. <code>proc_ttest()</code> also supports by groups, where <code>t.test()</code> does not.</p>
-<p>For the lognormal version of the t-test, it does not appear to be supported in the <strong>stats</strong> or <strong>procs</strong> package. It may be supported in the <strong>envstats</strong> package. More exploration is needed to determine whether this package will produce the expected results, and whether the results will match SAS.</p>
+<p>For the lognormal version of the paired t-test, equivalent results can be obtained in R by applying a natural log transformation to the paired measurements, performing the paired t-test on the transformed data, and exponentiating the resulting estimates and confidence limits. Comparison with SAS <code>PROC TTEST</code> using the <code>DIST=LOGNORMAL</code> option showed that the results matched after back-transformation. Therefore, a separate package is not required for this analysis.</p>
 </section>
 <section id="references" class="level1">
 <h1>References</h1>
