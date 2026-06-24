@@ -1,0 +1,42 @@
+---
+title: "Confidence Intervals - proportions for stratified designs"
+---
+
+# Introduction
+
+As documented [here](Confidence%20limits%20using%20the%20Miettinen-Nurminen%20stratified%20method%20as%20de...%20-%20SAS%20Support%20Communities), there is requirement to derived confidence intervals for proportions using methods other than the wald method, and in certain cases (e.g when you have baseline imbalance of stratification factors), then the stratified Miettinen-Nurminen 1985 method is reccomended.
+
+You may think that SAS can do this method using something like the following code. However, this is performing an unstratified miettinen-nurminen method. The output would contain the same risk differences calculated for each strata seprately adn then a common risk difference (however this is not a stratified approach). See [SAS](https://support.sas.com/documentation/cdl/en/procstat/67528/HTML/default/viewer.htm#procstat_freq_details63.htm) for more detail of SAS's calculations.
+
+``` sas
+proc freq data = xxxx;
+  tables  var1 * var2 * var3 / cmh riskdiff (common cl=mn)
+run;
+```
+
+# Online SAS macros
+
+There are two available macros to use in SAS:
+
+-   [{ratesci}](Score confidence intervals and tests for a single binomial or Poisson rate, or for comparisons of independent rates, with or without stratification. — scoreci • ratesci)
+-   [cytel](A%20SAS%20Macro%20Calculating%20Confidence%20Intervals%20of%20the%20Difference%20in%20Binomial%20Proportions%20from%20Stratified%20Analysis%20using%20the%20Miettinen%20&%20Nurminen%20Method%20with%20Cochran-Mantel-Haenszel%20Weights)
+
+This page is a placeholder whilst further content is being developed.
+
+Package to use for EAIR CIs {ratesci}. For more information see [here](https://petelaud.github.io/ratesci/)
+
+```         
+NOTE that: skew = FALSE indicates no skewness correction which gives us the miettinen-nurminen method 
+
+eair <- scoreci( x1 = nn1, #events treatment 1
+                 n1 = ex1, #exposure treatment 1
+                 x2 = nn2, #events treatment2 (reference)
+                 n2 = ex2, #exposure treatment 2 (reference)
+                 distrib = "poi", #poisson 
+                 contrast = "RD", #risk difference
+                 level = 0.95, #alpha for CI (95%CI)
+                 skew = FALSE, #MN method )|>
+              as_tibble()
+```
+
+# References
