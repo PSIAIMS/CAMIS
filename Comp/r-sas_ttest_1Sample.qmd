@@ -2,6 +2,86 @@
 title: "R vs SAS One Sample T-Test"
 ---
 
+# Summary
+
+## Goal
+
+The goal of this comparison is to evaluate whether one sample t-tests produce equivalent results in R and SAS for both normal and lognormal data. For normal data, results from `stats::t.test()`, `procs::proc_ttest()`, and SAS `PROC TTEST` are compared directly. For lognormal data, results from a log-transformation / back-transformation approach in R are compared with SAS `PROC TTEST` using the `DIST=LOGNORMAL` option.
+
+## Scope
+
+::::::: columns
+:::: {.column width="45%"}
+::: {.callout-note appearance="minimal" collapse="false"}
+## Methodologies
+
+- One sample t-test
+
+- Lognormal one sample t-test
+:::
+::::
+
+:::: {.column width="55%"}
+::: {.callout-note appearance="minimal" collapse="false"}
+## Technical implementations
+
+- SAS: `PROC TTEST` with and without the DIST=LOGNORMAL option
+
+- R: `stats::t.test()` and log-transformation / back-transformation approach for lognormal data
+:::
+::::
+:::::::
+
+# Prerequisites
+
+## R packages
+
+```{r}
+#| output: false 
+#| message: false 
+library(tibble) # for example data
+library(stats) # t.test()
+library(procs) # proc_ttest()
+```
+
+## Data
+
+### Lognormal One Sample t-test
+
+We use a simulated sample data containing one numeric variable, `score`. The same data are used for the R and SAS examples.
+
+R:
+
+```{r}
+read <- tibble::tribble(
+  ~score, ~count,
+  40, 2, 47, 2, 52, 2, 26, 1, 19, 2,
+  25, 2, 35, 4, 39, 1, 26, 1, 48, 1,
+  14, 2, 22, 1, 42, 1, 34, 2, 33, 2,
+  18, 1, 15, 1, 29, 1, 41, 2, 44, 1,
+  51, 1, 43, 1, 27, 2, 46, 2, 28, 1,
+  49, 1, 31, 1, 28, 1, 54, 1, 45, 1
+)
+
+
+```
+
+SAS:
+
+``` sas
+data read;
+    input score count @@;
+    datalines;
+40 2 47 2 52 2 26 1 19 2
+25 2 35 4 39 1 26 1 48 1
+14 2 22 1 42 1 34 2 33 2
+18 1 15 1 29 1 41 2 44 1
+51 1 43 1 27 2 46 2 28 1
+49 1 31 1 28 1 54 1 45 1
+;
+run;
+```
+
 ```{r}
 #| label: setup
 #| include: false
@@ -9,14 +89,14 @@ knitr::opts_chunk$set(echo = TRUE)
 library(procs)
 ```
 
-# One Sample t-test Comparison 
+# One Sample t-test Comparison
 
 The following table shows the types of One Sample t-test analysis, the capabilities of each language, and whether or not the results from each language match.
 
-| Analysis                      | Supported in R                            | Supported in SAS                       | Results Match    | Notes                                                 |
+| Analysis | Supported in R | Supported in SAS | Results Match | Notes |
 |---------------|---------------|---------------|---------------|---------------|
-| One sample t-test, normal data    | [Yes](../R/ttest_1Sample.html#normal)      | [Yes](../SAS/ttest_1Sample.html#normal) | [Yes](#normal)   | In Base R, use `mu` parameter on `t.test()` function to set null hypothesis value |
-| One sample t-test, lognormal data | [Maybe](../R/ttest_1Sample.html#lognormal) | [Yes](../SAS/ttest_1Sample.html#lognormal) | [NA](#lognormal) | May be supported by **envstats** package              |
+| One sample t-test, normal data | [Yes](../R/ttest_1Sample.html#normal) | [Yes](../SAS/ttest_1Sample.html#normal) | [Yes](#normal) | In Base R, use `mu` parameter on `t.test()` function to set null hypothesis value |
+| One sample t-test, lognormal data | [Yes](../R/ttest_1Sample.html#lognormal) | [Yes](../SAS/ttest_1Sample.html#lognormal) | [Yes](#lognormal) | Apply natural log transformation, perform `stats::t.test()` on the log-transformed data, and exponentiate the mean and confidence limits. |
 
 ## Comparison Results
 
@@ -24,23 +104,34 @@ The following table shows the types of One Sample t-test analysis, the capabilit
 
 Here is a table of comparison values between `t.test()`, `proc_ttest()`, and SAS `PROC TTEST`:
 
-| Statistic          | t.test() | proc_ttest() | PROC TTEST | Match | Notes |
-|--------------------|----------|--------------|------------|-------|-------|
-| Degrees of Freedom | 29       | 29           | 29         | Yes   |       |
-| t value            | 2.364306	| 2.364306   | 2.364306	     | Yes   |      |
-| p value            | 0.0249741 | 0.0249741       | 0.0249741     | Yes   |       |
+| Statistic          | t.test()  | proc_ttest() | PROC TTEST | Match | Notes |
+|--------------------|-----------|--------------|------------|-------|-------|
+| Degrees of Freedom | 29        | 29           | 29         | Yes   |       |
+| t value            | 2.364306  | 2.364306     | 2.364306   | Yes   |       |
+| p value            | 0.0249741 | 0.0249741    | 0.0249741  | Yes   |       |
 
 ### Lognormal Data {#lognormal}
 
-Since there is currently no known support for lognormal t-test in R, this comparison is not applicable.
+Lognormal one sample t-tests can be performed in R by applying a natural log transformation to the data, performing `stats::t.test()` on the log-transformed values, and exponentiating the resulting mean and confidence limits. Comparison of the example data produced equivalent results to SAS PROC TTEST with the DIST=LOGNORMAL option.
+
+Here is a table of comparison values between `t.test()`, `proc_ttest()`, and SAS `PROC TTEST`:
+
+| Statistic | t.test() | proc_ttest() | PROC TTEST | Match | Notes |
+|------------|------------|------------|------------|------------|------------|
+| Degrees of Freedom | 29 | 29 | 29 | Yes | Calculated on log-transformed data |
+| t value | 1.351675 | 1.351675 | 1.351675 | Yes | Calculated on log-transformed data |
+| p value | 0.1869289 | 0.1869289 | 0.1869289 | Yes | Calculated on log-transformed data |
+| Geometric Mean | 32.91447 | 32.91447 | 32.91447 | Yes | Back-transformed mean |
+| Lower 95% CL Mean | 28.60623 | 28.60622 | 28.60623 | Yes | Back-transformed lower confidence limit |
+| Upper 95% CL Mean | 37.87155 | 37.87155 | 37.87155 | Yes | Back-transformed upper confidence limit |
 
 # Summary and Recommendation
 
 For normal data, the R one sample t-test capabilities are comparable to SAS. Comparison between SAS and R show identical results for the datasets tried. The **procs** package `proc_ttest()` function is very similar to SAS in the syntax and output produced. `proc_ttest()` also supports by groups, where `t.test()` does not.
 
-For the lognormal version of the t-test, it does not appear to be supported in the **stats** or **procs** package. It may be supported in the **envstats** package. More exploration is needed to determine whether this package will produce the expected results, and whether the results will match SAS.
+For the lognormal version of the one sample t-test, R does not provide a dedicated lognormal option in `stats::t.test()` or `procs::proc_ttest()`. However, lognormal data can be analyzed by applying a natural log transformation to the data, performing the t-test on the log-transformed values, and exponentiating the resulting mean and confidence limits. Comparison of the example data showed equivalent results to SAS PROC TTEST using the DIST=LOGNORMAL option.
 
-Also note that neither `t.test()` or `proc_ttest()` supports the "freq" option that is utilized on examples from the SAS documentation.  Therefore, this option has been removed from this comparison.  In R, the "freq" functionality could be performed by manipulating the data prior to sending to the t-test function. 
+Also note that neither `t.test()` or `proc_ttest()` supports the "freq" option that is utilized on examples from the SAS documentation. Therefore, this option has been removed from this comparison. In R, the "freq" functionality could be performed by manipulating the data prior to sending to the t-test function.
 
 # References
 

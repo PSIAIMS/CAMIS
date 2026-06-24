@@ -1,12 +1,114 @@
 ---
-title: "R vs SAS Linear Regression"
+title: "R vs SAS vs Python Linear Regression"
 ---
 
-### Summary of R vs SAS Comparison for Linear Regression {.unnumbered}
+# Summary of Linear Regression Comparison {.unnumbered}
 
-To date the `lm` function in R and `proc reg` in sas have been found to 100% agree.
+## Goal
 
-| Analysis | Supported in R | Supported in SAS | Results Match | Notes |
-|---------------|---------------|---------------|---------------|---------------|
-| Linear regression | [Yes](../R/linear-regression.html) | [Yes](../SAS/linear-regression.html) | Yes | 
+The goal of this comparison is to evaluate whether linear regression methods produce equivalent results in R, SAS, and Python. Results from R's `stats::lm()` function, SAS `PROC REG`, and Python's `sm.OLS()` function are compared using the same data and model specification.
 
+## Scope
+
+::::::: columns
+:::: {.column width="45%"}
+::: {.callout-note appearance="minimal" collapse="false"}
+## Methodologies
+
+- Linear Regression
+:::
+::::
+
+:::: {.column width="55%"}
+::: {.callout-note appearance="minimal" collapse="false"}
+## Technical implementations
+
+- SAS: `PROC REG`
+
+- R: `stats::lm()`
+
+- Python: `sm.OLS()`
+:::
+::::
+:::::::
+
+# Prerequisites
+
+## Data
+
+We used the htwt dataset, which contains two numeric variables: height and weight. The same data are used for the R, SAS, and Python examples. The dataset is available [here](https://raw.githubusercontent.com/PSIAIMS/CAMIS/main/data/htwt.csv) and is imported to the workspaces.
+
+R:
+
+```{r}
+htwt <- read.csv(
+  "https://raw.githubusercontent.com/PSIAIMS/CAMIS/main/data/htwt.csv"
+)
+
+
+```
+
+SAS:
+
+``` sas
+filename htwt url
+"https://raw.githubusercontent.com/PSIAIMS/CAMIS/main/data/htwt.csv";
+
+proc import
+    datafile=htwt
+    out=htwt
+    dbms=csv
+    replace;
+    getnames=yes;
+run;
+```
+
+Python:
+
+``` python
+import pandas as pd
+
+htwt = pd.read_csv(
+    "https://raw.githubusercontent.com/PSIAIMS/CAMIS/main/data/htwt.csv"
+)
+```
+
+# Linear Regression
+
+The following table summarizes the linear regression analysis, the capabilities of each language, and whether or not the results from each language match.
+
+| Analysis | Supported in R | Supported in SAS | Supported in Python | Match | Notes |
+|------------|------------|------------|------------|------------|------------|
+| Simple Linear Regression | Yes | Yes | Yes | Yes | R uses `stats::lm()`; SAS uses `PROC REG`; and Python uses `sm.OLS()`. |
+
+## Comparison Results
+
+Here is a table of comparison values between R `lm()`, SAS `PROC REG`, and Python `sm.OLS()`:
+
+| Statistic | [R]{.underline}: lm() | [SAS]{.underline}: PROC REG | [Python]{.underline}: sm.OLS() | Match | Notes |
+|------------|------------|------------|------------|------------|------------|
+| Intercept estimate | -132.9910 | -132.9910 | -132.9910 | Yes |  |
+| Slope estimate | 3.8181 | 3.8181 | 3.8181 | Yes |  |
+| Slope t value | 18.79 | 18.79 | 18.79 | Yes |  |
+| Intercept t value | -10.64 | -10.64 | -10.64 | Yes |  |
+| Intercept p value | \< 2e-16 | \<.0001 | 0.000\* | Mostly yes | Very small p-values are displayed differently due to software-specific formatting and rounding. |
+| Slope p value | \< 2e-16 | \<.0001 | 0.000\* | Mostly yes | Very small p-values are displayed differently due to software-specific formatting and rounding. |
+| R-squared | .6004 | .6004 | .600 | Mostly yes | Rounding |
+| F statistic | 353.1 | 353.1 | 353.1 | Yes |  |
+| Model p value | \< 2.2e-16 | \<.0001 | 0.000\* | Mostly yes | Very small p-values are displayed differently due to software-specific formatting and rounding. |
+
+# Summary and Recommendation
+
+For linear regression, R `stats::lm()`, SAS `PROC REG`, and Python `sm.OLS()` provide comparable capabilities for fitting ordinary least squares regression models. Comparison between R, SAS, and Python showed equivalent results for the example dataset, including regression coefficient estimates, t statistics, p-values, and measures of model fit.
+
+Although the syntax and output differ between R, SAS, and Python, all three implementations produced equivalent results for the example analysis. The intercept and slope estimates, hypothesis tests for regression coefficients, and overall model statistics matched across the three implementations.
+
+Based on the example evaluated, R `stats::lm()`, SAS `PROC REG`, and Python `sm.OLS()` produced equivalent results for linear regression analysis.
+
+# References
+
+R `lm()` documentation: <https://stat.ethz.ch/R-manual/R-patched/library/stats/html/lm.html>
+
+SAS `PROC REG` documentation: <https://documentation.sas.com/doc/en/statug/15.3/statug_reg_overview.htm>
+
+Python `sm.OLS()` documentation: <https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.OLS.html>
