@@ -77,7 +77,29 @@ knitr::include_graphics("../images/ttest/onesample_rtest1.png")
 
 The Base R `t.test()` function does not have an option for lognormal data. Likewise, the **procs** `proc_ttest()` function also does not have an option for lognormal data.
 
-One possibility may be the `tTestLnormAltPower()` function from the **EnvStats** package. This package has not been evaluated yet.
+Although Base R `t.test()` does not include a lognormal option, lognormal data can be analyzed by applying a natural log transformation to the data, performing the t-test on the log-transformed data, and exponentiating the resulting mean and confidence limits. The back-transformed mean is interpreted as the geometric mean. The standard deviation is not back-transformed.
+
+The following example applies a natural log transformation, performs the one sample t-test on the log-transformed data, and exponentiates the mean and confidence limits.
+
+```{r}
+#| eval: true
+#| echo: true
+
+# Apply natural log transformation to the sample data
+log_score <- log(read$score)
+
+# Perform one-sample t-test on the log-transformed data
+tt <- stats::t.test(log_score, mu = log(30))
+
+# Back-transform the geometric mean
+exp(mean(log_score))
+
+# Back-transform the confidence limits
+exp(tt$conf.int)
+
+# Display p-value
+tt$p.value
+```
 
 ::: {.callout-note collapse="true" title="Session Info"}
 ```{r}

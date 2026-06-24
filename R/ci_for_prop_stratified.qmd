@@ -1,0 +1,77 @@
+---
+title: "Confidence Intervals - proportions for stratified designs"
+---
+
+# Introduction
+
+As documented [here](Confidence%20limits%20using%20the%20Miettinen-Nurminen%20stratified%20method%20as%20de...%20-%20SAS%20Support%20Communities), there is requirement to use methods other than the wald method, for CI's for proportions. In certain cases, for example, when you have a baseline imbalance of stratification factors, the stratified Miettinen-Nurminen 1985 method is reccommended.
+
+# Packages
+
+There are two identified packages that can do this in R:
+
+-   [{ratesci}](petelaud/ratesci: Confidence intervals and tests for comparison of rates)
+-   [{cicalc}](Stratified Miettinen-Nurminen Confidence Interval for Difference in Proportions — ci_prop_diff_mn_strata • cicalc)
+
+This page is a placeholder whilst further content is being developed. Running code as shown below was found to give the same results in the examples tested.
+
+## {ratesci}
+
+```         
+NOTE that: skew = FALSE option, indicates no skewness correction which gives us the miettinen-nurminen method. 
+
+NOTE: The data contain are aggregated with 1 row per strata of results.
+Eg.
+strata  x1  n1  x2  n2
+grp1    5   10  3   12
+grp2    1   3   7   15
+etc.
+
+ratesci_out <- scoreci(
+    x1 = strat_counts$x1,  #n events in trt 1 (Active)
+    n1 = strat_counts$n1,  #n subjects in trt 1 (Active)
+    x2 = strat_counts$x2,  #n events in trt 2 (comparator/placebo)
+    n2 = strat_counts$n2,  #n subjects in trt2 (comparator/placebo)
+    distrib = "bin",  #binomial distribution
+    contrast = "RD",  #risk difference
+    level = 0.95, # 95% ci
+    skew = FALSE, # disable skewness to get MN method
+    stratified = TRUE, #combine strata
+    weighting = "MH", #MH method as reccomended by MN method
+  )
+```
+
+## {cicalc}
+
+```         
+NOTE: set resp as: 1 = responder (event of interest), 0 = non-responders
+      set trt as: 0= Numerator Active, 1= Denominator Comparator/Placebo
+      set strat as: 
+NOTE: The data are not aggregated, there is 1 row per subject identifying their trt, resp and strat categorization
+Eg.
+subj  strat   resp  trt
+1     grp1    1     1
+2     grp1    0     0
+3     grp1    1     0
+etc
+
+NOTE: The following implements stratified mittinen nurminen
+cicalc_out <- ci_prop_diff_mn_strata(
+  x = resp, 
+  by = trt, 
+  strata = strat, 
+  data = dataqc2
+  )
+  
+  
+NOTE: Other options are available - see package for more detail:
+ci_prop_diff_mn_strata(
+  x,
+  by,
+  strata,
+  method = c("score", "summary score"),
+  conf.level = 0.95,
+  delta = NULL,
+  data = NULL
+)
+```
