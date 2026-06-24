@@ -205,17 +205,25 @@ Continuity adjustments can be incorporated into the formulae for most (if not al
 
 The Asymptotic Score methods without 'N-1' correction (Tango and SCASu methods for RD, and Tang/Nam-Blackwelder and SCASu methods for RR) are guaranteed to be consistent with the result of the McNemar test. The SCAS method comes with a corresponding test (as yet unpublished), which is a modified version of the McNemar test.
 
-# Example Code using PROC FREQ
+# Example Code using SAS PROC FREQ and the %PAIRBINCI macro
 
 As mentioned in the introduction, PROC FREQ does not currently have a procedure which outputs the above confidence intervals for matched proportions\*. A macro (`%PAIRBINCI`) is available [here](https://github.com/petelaud/ratesci-sas){.uri} which provides the asymptotic score method by Tango, and a skewness corrected version (paper under review).
 
-\*Actually that's not strictly true. A SAS Support knowledge base article [here](https://support.sas.com/kb/46/997.html) describes an approach using stratified analysis to obtain a CI for the 'common risk difference', which appears to give the Wald CI. However, this requires data to be structured in a long format, with one row per condition per pair, whereas the corresponding McNemar test of marginal homogeneity requires data structured as one row per pair.
+The Tango RD interval (0.000419, 0.377185) for our example dataset is obtained with:
+
+``` sas
+%pairbinci(a = 20, 
+           b = 15, 
+           c = 6, 
+           d = 5, 
+           contrast = RD);
+```
+
+\*Actually that's not strictly true. A SAS Support knowledge base article [here](https://support.sas.com/kb/46/997.html) describes an approach using stratified analysis to obtain a CI for the 'common risk difference', which appears to give the Wald CI. However, this requires data to be structured in a long format, with one row per condition per pair, whereas the corresponding McNemar test of marginal homogeneity requires data structured as one row per pair. An illustration of the approach is shown below.
 
 At least three options are given for the stratified common risk difference CI: Mantel-Haenszel (`CL=MH`), 'stratified' Newcombe (`CL=newcombe`) or 'summary score' (`CL=score`) intervals (See [here](https://support.sas.com/documentation/cdl/en/procstat/67528/HTML/default/viewer.htm#procstat_freq_details63.htm) for equations), but some options give unexpected results, or no result at all. For the example data above, the default output gives the MH interval as (0.008764, 0.382541), which matches the Wald method, but the 'summary score' CI is (-0.0785, 0.1690) around a point estimate of 0.0452. These methods would not guarantee agreement with the McNemar test of marginal homogeneity.
 
 There is no equivalent option in PROC FREQ for common relative risks for paired data.
-
-\[Example code to be added for `%PAIRBINCI`\]
 
 ``` sas
 data dat_used;
