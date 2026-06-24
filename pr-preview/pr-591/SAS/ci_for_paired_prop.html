@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Confidence intervals for Paired Proportions in SAS</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../images/logo.png" rel="icon" type="image/png">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-637a8987fd156daea465eecdbde71ac9.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../images/logo.png" alt="" class="navbar-logo light-content">
+    <img src="../images/logo.png" alt="" class="navbar-logo dark-content">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-publications-and-projects" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Publications and Projects</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-publications-and-projects">    
+        <li>
+    <a class="dropdown-item" href="../publication/white_paper.html"><i class="bi bi-file-earmark-word-fill" role="img">
+</i> 
+ <span class="dropdown-text">White Paper</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/conference.html"><i class="bi bi-easel3-fill" role="img">
+</i> 
+ <span class="dropdown-text">Conferences</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/dissertation.html"><i class="bi bi-mortarboard-fill" role="img">
+</i> 
+ <span class="dropdown-text">Academic Projects</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../minutes/index.html"> 
+<span class="menu-text">Meeting Minutes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../blogs/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-help" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Help</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-help">    
+        <li>
+    <a class="dropdown-item" href="https://github.com/PSIAIMS/CAMIS/issues"><i class="bi bi-bug-fill" role="img">
+</i> 
+ <span class="dropdown-text">Report a Bug</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/get_started.html"><i class="bi bi-git" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with Your Environment</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/contribution.html"><i class="bi bi-person-raised-hand" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with CAMIS</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/package_review.html"><i class="bi bi-box-fill" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with a New R Package</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+    <a href="https://github.com/PSIAIMS/CAMIS/" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data used</a></li>
+  <li><a href="#methods-for-calculating-confidence-intervals-for-proportion-difference-from-matched-pairs" id="toc-methods-for-calculating-confidence-intervals-for-proportion-difference-from-matched-pairs" class="nav-link" data-scroll-target="#methods-for-calculating-confidence-intervals-for-proportion-difference-from-matched-pairs">Methods for Calculating Confidence Intervals for Proportion Difference from matched pairs</a>
+  <ul class="collapse">
+  <li><a href="#normal-approximation-method-also-known-as-the-wald-method" id="toc-normal-approximation-method-also-known-as-the-wald-method" class="nav-link" data-scroll-target="#normal-approximation-method-also-known-as-the-wald-method">Normal Approximation Method (Also known as the Wald Method)</a></li>
+  <li><a href="#newcombe-method-also-known-as-the-hybrid-score-method-square-and-add-or-the-method-of-variance-estimates-recovery-mover" id="toc-newcombe-method-also-known-as-the-hybrid-score-method-square-and-add-or-the-method-of-variance-estimates-recovery-mover" class="nav-link" data-scroll-target="#newcombe-method-also-known-as-the-hybrid-score-method-square-and-add-or-the-method-of-variance-estimates-recovery-mover">Newcombe Method (Also known as the Hybrid Score method, Square-and-Add, or the Method of Variance Estimates Recovery (MOVER) )</a></li>
+  <li><a href="#asymptotic-score-methods" id="toc-asymptotic-score-methods" class="nav-link" data-scroll-target="#asymptotic-score-methods">Asymptotic Score Methods</a></li>
+  </ul></li>
+  <li><a href="#methods-for-calculating-confidence-intervals-for-relative-risk-from-matched-pairs" id="toc-methods-for-calculating-confidence-intervals-for-relative-risk-from-matched-pairs" class="nav-link" data-scroll-target="#methods-for-calculating-confidence-intervals-for-relative-risk-from-matched-pairs">Methods for Calculating Confidence Intervals for Relative Risk from matched pairs</a>
+  <ul class="collapse">
+  <li><a href="#normal-approximation-method-also-known-as-the-wald-method-1" id="toc-normal-approximation-method-also-known-as-the-wald-method-1" class="nav-link" data-scroll-target="#normal-approximation-method-also-known-as-the-wald-method-1">Normal Approximation Method (Also known as the Wald Method)</a></li>
+  <li><a href="#mover-r-method-also-known-as-the-hybrid-score-method-or-square-and-add" id="toc-mover-r-method-also-known-as-the-hybrid-score-method-or-square-and-add" class="nav-link" data-scroll-target="#mover-r-method-also-known-as-the-hybrid-score-method-or-square-and-add">MOVER-R Method (Also known as the Hybrid Score method or Square-and-Add)</a></li>
+  <li><a href="#asymptotic-score-methods-1" id="toc-asymptotic-score-methods-1" class="nav-link" data-scroll-target="#asymptotic-score-methods-1">Asymptotic Score Methods</a></li>
+  </ul></li>
+  <li><a href="#methods-for-calculating-confidence-intervals-for-odds-ratio-from-matched-pairs" id="toc-methods-for-calculating-confidence-intervals-for-odds-ratio-from-matched-pairs" class="nav-link" data-scroll-target="#methods-for-calculating-confidence-intervals-for-odds-ratio-from-matched-pairs">Methods for Calculating Confidence Intervals for Odds Ratio from matched pairs</a></li>
+  <li><a href="#continuity-adjusted-methods" id="toc-continuity-adjusted-methods" class="nav-link" data-scroll-target="#continuity-adjusted-methods">Continuity Adjusted Methods</a></li>
+  <li><a href="#consistency-with-hypothesis-tests" id="toc-consistency-with-hypothesis-tests" class="nav-link" data-scroll-target="#consistency-with-hypothesis-tests">Consistency with Hypothesis Tests</a></li>
+  <li><a href="#example-code-using-proc-freq" id="toc-example-code-using-proc-freq" class="nav-link" data-scroll-target="#example-code-using-proc-freq">Example Code using PROC FREQ</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Confidence intervals for Paired Proportions in SAS</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>This page covers confidence intervals for comparisons of two paired proportions in SAS. Note that PROC FREQ will give a McNemar test for such an analysis (via the <code>AGREE</code> option), but with no corresponding confidence interval. Some methods are described below to facilitate computing them programmatically. A SAS macro (<code>%PAIRBINCI</code>) can be downloaded from <a href="https://github.com/petelaud/ratesci-sas" class="uri">https://github.com/petelaud/ratesci-sas</a> to obtain the Asymptotic Score methods, which have superior coverage properties.</p>
+<p>Analysis may be based on the risk difference (RD) contrast <span class="math inline">\(\theta_{RD} = p_1 - p_2\)</span> or relative risk (RR) <span class="math inline">\(\theta_{RR} = p_1 / p_2\)</span>. In the context of paired data, and of particular interest for case-control studies, the odds ratio (OR) is estimated conditional on the number of discordant pairs, calculated as <span class="math inline">\(\theta_{OR} = p_{12} / p_{21}\)</span>, resulting in confidence intervals that are simple transformations of a CI for a single proportion.</p>
+<p>See the <a href="../method_summary/ci_for_prop_intro.html">summary page</a> for general introductory information on confidence intervals for proportions, including the principles underlying the most common methods.</p>
+<p>You may experience paired data in any of the following types of situation:</p>
+<ul>
+<li><p>Tumour assesssments classified as Progressive Disease or Not Progressive Disease performed by an Investigator and separately by an independent panel.</p></li>
+<li><p>A paired case-control study (each subject taking active treatment is matched to a patient taking control)</p></li>
+<li><p>A cross-over trial where the same subjects take both medications</p></li>
+</ul>
+<p>In all these cases, the calculated proportions for the 2 groups are not independent.</p>
+<p>Using a cross-over study as our example, a 2 x 2 table can be formed as follows:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 21%">
+<col style="width: 21%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Placebo<br>
+Response= Yes</th>
+<th>Placebo<br>
+Response = No</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Active Response = Yes</td>
+<td>r</td>
+<td>s</td>
+<td>r+s</td>
+</tr>
+<tr class="even">
+<td>Active Response = No</td>
+<td>t</td>
+<td>u</td>
+<td>t+u</td>
+</tr>
+<tr class="odd">
+<td>Total</td>
+<td>r+t</td>
+<td>s+u</td>
+<td>N = r+s+t+u</td>
+</tr>
+</tbody>
+</table>
+<p>The table below indicates the proportions that are estimated from the data (note the difference in structure compared to the usual 2x2 table for independent proportions).</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 21%">
+<col style="width: 21%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Placebo<br>
+Response= Yes</th>
+<th>Placebo<br>
+Response = No</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Active Response = Yes</td>
+<td><span class="math inline">\(p_{11}\)</span></td>
+<td><span class="math inline">\(p_{12}\)</span></td>
+<td><span class="math inline">\(p_1\)</span></td>
+</tr>
+<tr class="even">
+<td>Active Response = No</td>
+<td><span class="math inline">\(p_{21}\)</span></td>
+<td><span class="math inline">\(p_{22}\)</span></td>
+<td><span class="math inline">\((1-p_1)\)</span></td>
+</tr>
+<tr class="odd">
+<td>Total</td>
+<td><span class="math inline">\(p_2\)</span></td>
+<td><span class="math inline">\((1-p_2)\)</span></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>The proportions of subjects responding on each treatment are:</p>
+<p>Active: <span class="math inline">\(\hat p_1 = (r+s)/N\)</span> and Placebo: <span class="math inline">\(\hat p_2= (r+t)/N\)</span></p>
+<p>The estimated difference between the proportions for each treatment is: <span class="math inline">\(D=\hat p_1 - \hat p_2 = (s-t)/N\)</span></p>
+<p>The estimated relative risk is <span class="math inline">\((r+s)/(r+t)\)</span>.</p>
+<p>The estimated conditional odds ratio is <span class="math inline">\(s/t\)</span>.</p>
+</section>
+<section id="data-used" class="level1">
+<h1>Data used</h1>
+<p>Worked examples below use the following artificial dataset:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 21%">
+<col style="width: 21%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Placebo<br>
+Response= Yes</th>
+<th>Placebo<br>
+Response = No</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Active Response = Yes</td>
+<td>r = 20</td>
+<td>s = 15</td>
+<td>r+s = 35</td>
+</tr>
+<tr class="even">
+<td>Active Response = No</td>
+<td>t = 6</td>
+<td>u = 5</td>
+<td>t+u = 11</td>
+</tr>
+<tr class="odd">
+<td>Total</td>
+<td>r+t = 26</td>
+<td>s+u = 20</td>
+<td>N = 46</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="methods-for-calculating-confidence-intervals-for-proportion-difference-from-matched-pairs" class="level1">
+<h1>Methods for Calculating Confidence Intervals for Proportion Difference from matched pairs</h1>
+<section id="normal-approximation-method-also-known-as-the-wald-method" class="level2">
+<h2 class="anchored" data-anchor-id="normal-approximation-method-also-known-as-the-wald-method">Normal Approximation Method (Also known as the Wald Method)</h2>
+<p>In large random samples from paired data, the sampling distribution of the difference between two proportions is assumed to follow the normal distribution. The estimated SE for the difference and 95% confidence interval can be calculated using the following equations.</p>
+<p><span class="math inline">\(SE(D)=\frac{1}{N} \times \sqrt{(s+t-\frac{(s-t)^2}{N})} = \sqrt{\frac{1}{N}(\hat p_{12} + \hat p_{21} - (\hat p_{12} - \hat p_{21})^2)}\)</span></p>
+<p><span class="math inline">\(D-z_{\alpha/2} \times SE(D)\)</span> to <span class="math inline">\(D+z_{\alpha/2} \times SE(D)\)</span></p>
+<p>So, for the example dataset,</p>
+<p>D = (15-6) /46 = 0.196</p>
+<p>SE(D) = 1/ 46 * sqrt (15+6- (((15-6)^2)/46) ) = 0.09535</p>
+<p>Lower CI= 0.196 - 1.96 *0.0954 = 0.008764</p>
+<p>Upper CI = 0.196 + 1.96 * 0.0954 = 0.382541</p>
+<p>Like other Wald methods, this approach has been found to perform poorly, failing to achieve the nominal confidence level[<span class="citation" data-cites="newcombe1998"><sup><a href="#ref-newcombe1998" role="doc-biblioref">1</a></sup></span>]<span class="citation" data-cites="fagerland2014"><sup><a href="#ref-fagerland2014" role="doc-biblioref">2</a></sup></span>. An adjustment was suggested by Bonett &amp; Price, similar to Agresti-Caffo for independent proportions, using <span class="math inline">\(N'=N+2\)</span> instead of <span class="math inline">\(N\)</span>, and <span class="math inline">\(\tilde p_{12} = (s+1)/N'\)</span> and <span class="math inline">\(\tilde p_{21} = (r+1)/N'\)</span>, instead of <span class="math inline">\(\hat p_{12}\)</span> and <span class="math inline">\(\hat p_{21}\)</span>.</p>
+</section>
+<section id="newcombe-method-also-known-as-the-hybrid-score-method-square-and-add-or-the-method-of-variance-estimates-recovery-mover" class="level2">
+<h2 class="anchored" data-anchor-id="newcombe-method-also-known-as-the-hybrid-score-method-square-and-add-or-the-method-of-variance-estimates-recovery-mover">Newcombe Method (Also known as the Hybrid Score method, Square-and-Add, or the Method of Variance Estimates Recovery (MOVER) )</h2>
+<p>Note that Newcombe described this as a ‘Score’ method in his 1998 paper, but his later work labelled it as ‘Square-and-add’ - it is not really a score method, but a hybrid method obtained by combining Wilson Score intervals calculated separately for the two proportions.</p>
+<p>Derive the confidence intervals for each of the individual single samples 1 and 2, using the Wilson Method equations as described <a href="ci_for_prop.html">here</a>.</p>
+<p>Let <span class="math inline">\(l_1\)</span> = Lower CI for sample 1, and <span class="math inline">\(u_1\)</span> be the upper CI for sample 1.</p>
+<p>Let <span class="math inline">\(l_2\)</span> = Lower CI for sample 2, and <span class="math inline">\(u_2\)</span> be the upper CI for sample 2.</p>
+<p>We then define <span class="math inline">\(\phi\)</span> which is an estimate of the correlation coefficient, used to correct for <span class="math inline">\(\hat p_1\)</span> and <span class="math inline">\(\hat p_2\)</span> not being independent. As the samples are related, <span class="math inline">\(\phi\)</span> is usually positive and thus makes the confidence interval smaller (narrower).</p>
+<p>If any of r+s, t+u, r+t, s+u are zero, then set <span class="math inline">\(\phi\)</span> to be 0.</p>
+<p>Otherwise we calculate A, B and C, and <span class="math inline">\(\phi=C / \sqrt A\)</span></p>
+<p>In the above: <span class="math inline">\(A=(r+s)(t+u)(r+t)(s+u)\)</span> and <span class="math inline">\(B=(ru-st)\)</span></p>
+<p>To calculate C follow the table below. N = sample size.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Condition of B</th>
+<th>Set C equal to</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>If B is greater than N/2</td>
+<td>B - N/2</td>
+</tr>
+<tr class="even">
+<td>If B is between 0 and N/2</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>If B is less than 0</td>
+<td>B</td>
+</tr>
+</tbody>
+</table>
+<p>Let <span class="math inline">\(D = \hat p_1 - \hat p_2\)</span> (the difference between the observed proportions of responders)</p>
+<p>The CI for the paired difference between the proportions is: <span class="math inline">\(D - \sqrt{((\hat p_1 - l_1)^2 - 2\phi(\hat p_1 - l_1)(u_2 - \hat p_2) + (u_2 - \hat p_2)^2 )}\)</span> to</p>
+<p><span class="math inline">\(D + \sqrt{((\hat p_2 - l_2)^2 - 2\phi(\hat p_2 - l_2)(u_1 - \hat p_1) + (u_1 - \hat p_1)^2 )}\)</span></p>
+<p>First using the Wilson Method equations for each of the individual single samples 1 and 2.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th></th>
+<th>Active</th>
+<th>Placebo</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>a</td>
+<td>73.842</td>
+<td>55.842</td>
+</tr>
+<tr class="even">
+<td>b</td>
+<td>11.974</td>
+<td>13.728</td>
+</tr>
+<tr class="odd">
+<td>c</td>
+<td>99.683</td>
+<td>99.683</td>
+</tr>
+<tr class="even">
+<td>Lower CI</td>
+<td>0.621 = <span class="math inline">\(l_1\)</span></td>
+<td>0.422 = <span class="math inline">\(l_2\)</span></td>
+</tr>
+<tr class="odd">
+<td>Upper CI</td>
+<td>0.861 = <span class="math inline">\(u_1\)</span></td>
+<td>0.698 = <span class="math inline">\(u_2\)</span></td>
+</tr>
+</tbody>
+</table>
+<p><span class="math inline">\(A=(r+s)(t+u)(r+t)(s+u)\)</span> = 9450000</p>
+<p>B = 10</p>
+<p>C = 0 (as B is between 0 and N/2)</p>
+<p><span class="math inline">\(\phi\)</span> = 0.</p>
+<p>Hence the middle part of the equation simplifies to 0, and therefore in this case the interval is the same as the MOVER interval for independent proportions:</p>
+<p>Lower CI = <span class="math inline">\(D - \sqrt{((\hat p_1 - l_1)^2 + (u_2 - \hat p_2)^2 )}\)</span> = 0.196 - sqrt [ (0.761-0.621)^2 + (0.698-0.565) ^2 ]</p>
+<p>Upper CI = <span class="math inline">\(D + \sqrt{((\hat p_2 - l_2)^2 + (u_1 - \hat p_1)^2 )}\)</span> = 0.196 + sqrt [ (0.565-0.422)^2 + (0.861-0.761) ^2 ]</p>
+<p>CI= 0.002602 to 0.369943</p>
+<p>Other variants of the MOVER method are possible, and achieve improved coverage properties, by replacing the Wilson method with a more centrally-located interval for the single proportions. For example, using the Jeffreys method gives a CI of (0.003161, 0.373479).</p>
+</section>
+<section id="asymptotic-score-methods" class="level2">
+<h2 class="anchored" data-anchor-id="asymptotic-score-methods">Asymptotic Score Methods</h2>
+<p>A genuine score method for paired <span class="math inline">\(\theta_{RD}\)</span>, analogous to the Miettinen-Nurminen method for the unpaired difference, was developed in 1998<span class="citation" data-cites="tango1998"><sup><a href="#ref-tango1998" role="doc-biblioref">3</a></sup></span>, using the contrast function <span class="math inline">\(S(\theta) = \hat p_1 - \hat p_2 - \theta\)</span>, together with its variance (accounting for the correlation) estimated at the constrained maximum likelihood estimates of the cell probabilities for each given value of <span class="math inline">\(\theta\)</span>. Generally this is not a method that would be hand-calculated - originally the approach involved an iterative process of evaluating the score function over the range of <span class="math inline">\(\theta\)</span>, but closed-form expressions are now available.</p>
+<p>A proposed skewness-corrected version (SCASu) and another with an added ‘N-1’ variance bias correction (SCAS) is currently under review for publication.</p>
+<p>The Tango and SCAS methods are available for SAS via the <code>%PAIRBINCI</code> macro.</p>
+<p>For the example dataset, the Tango CI is (0.000419, 0.377185), the SCASu version is (0.000423, 0.380312), and the SCAS CI is (-0.001869, 0.382194).</p>
+</section>
+</section>
+<section id="methods-for-calculating-confidence-intervals-for-relative-risk-from-matched-pairs" class="level1">
+<h1>Methods for Calculating Confidence Intervals for Relative Risk from matched pairs</h1>
+<section id="normal-approximation-method-also-known-as-the-wald-method-1" class="level2">
+<h2 class="anchored" data-anchor-id="normal-approximation-method-also-known-as-the-wald-method-1">Normal Approximation Method (Also known as the Wald Method)</h2>
+<p>The normal approximation for <span class="math inline">\(\theta_{RR}\)</span> involves the logged estimate <span class="math inline">\(ln(\hat \theta_{RR})\)</span> and its SE which is estimated as: <span class="math inline">\(\sqrt{\frac{(s + t)}{(r+s)(r+t)}}\)</span>, with the resulting confidence limits being back-transformed to the ratio scale.</p>
+<p><span class="math inline">\(ln(\hat \theta_{RR})\)</span> = ln(35/26) = 0.297</p>
+<p>SE = sqrt( 21 / (35*26) ) = 0.152</p>
+<p>Lower CI= exp(0.297 - 1.96 * 0.152) = 0.99908</p>
+<p>Upper CI = exp(0.297 + 1.96 * 0.152) = 1.81289</p>
+</section>
+<section id="mover-r-method-also-known-as-the-hybrid-score-method-or-square-and-add" class="level2">
+<h2 class="anchored" data-anchor-id="mover-r-method-also-known-as-the-hybrid-score-method-or-square-and-add">MOVER-R Method (Also known as the Hybrid Score method or Square-and-Add)</h2>
+<p>Extending the methodology for the Newcombe method for RD, this hybrid method combines CIs for the two single proportions (using either the Wilson or Jeffreys method), together with an estimate of their correlation coefficient.</p>
+<p>[More details &amp; example to be added - not available in SAS]</p>
+<p>MOVER-Wilson CI: (1.003963, 1.84443). MOVER-Jeffreys CI: (1.004783, 1.851871)</p>
+</section>
+<section id="asymptotic-score-methods-1" class="level2">
+<h2 class="anchored" data-anchor-id="asymptotic-score-methods-1">Asymptotic Score Methods</h2>
+<p>Two score methods have also been developed for paired relative risk, which have been shown to be algebraically equivalent[<span class="citation" data-cites="nam2002"><sup><a href="#ref-nam2002" role="doc-biblioref">4</a></sup></span>]<span class="citation" data-cites="tang2003"><sup><a href="#ref-tang2003" role="doc-biblioref">5</a></sup></span>. A proposed skewness-corrected version (SCASu) and another with an added ‘N-1’ variance bias correction (SCAS) is currently under review for publication.</p>
+<p>These methods are available for SAS via the <code>%PAIRBINCI</code> macro. The Tang interval is (1.000639, 1.85982), the SCASu version is (1.00064, 1.867063) and the SCAS CI is (0.997176, 1.874279).</p>
+</section>
+</section>
+<section id="methods-for-calculating-confidence-intervals-for-odds-ratio-from-matched-pairs" class="level1">
+<h1>Methods for Calculating Confidence Intervals for Odds Ratio from matched pairs</h1>
+<p>Most methods for the paired conditional odds ratio are based on calculating an interval <span class="math inline">\((L^*, U^*)\)</span> for the single proportion <span class="math inline">\(s/(s+t)\)</span>, using any of the methods described <a href="ci_for_prop.html">here</a>, and then transforming it as <span class="math inline">\((\frac{L^*}{1-L^*}, \frac{U^*}{1-U^*})\)</span>. Generally, the CIs for <span class="math inline">\(\theta_{OR}\)</span> inherit the properties of the interval method selected for the single proportion.</p>
+</section>
+<section id="continuity-adjusted-methods" class="level1">
+<h1>Continuity Adjusted Methods</h1>
+<p>Continuity adjustments can be incorporated into the formulae for most (if not all) of the above methods. These have been implemented for Tango/Tang, SCAS and MOVER methods in the ratesci package for R, but not yet added to the <code>%PAIRBINCI</code> macro.</p>
+</section>
+<section id="consistency-with-hypothesis-tests" class="level1">
+<h1>Consistency with Hypothesis Tests</h1>
+<p>The Asymptotic Score methods without ‘N-1’ correction (Tango and SCASu methods for RD, and Tang/Nam-Blackwelder and SCASu methods for RR) are guaranteed to be consistent with the result of the McNemar test. The SCAS method comes with a corresponding test (as yet unpublished), which is a modified version of the McNemar test.</p>
+</section>
+<section id="example-code-using-proc-freq" class="level1">
+<h1>Example Code using PROC FREQ</h1>
+<p>As mentioned in the introduction, PROC FREQ does not currently have a procedure which outputs the above confidence intervals for matched proportions*. A macro (<code>%PAIRBINCI</code>) is available <a href="https://github.com/petelaud/ratesci-sas" class="uri">here</a> which provides the asymptotic score method by Tango, and a skewness corrected version (paper under review).</p>
+<p>*Actually that’s not strictly true. A SAS Support knowledge base article <a href="https://support.sas.com/kb/46/997.html">here</a> describes an approach using stratified analysis to obtain a CI for the ‘common risk difference’, which appears to give the Wald CI. However, this requires data to be structured in a long format, with one row per condition per pair, whereas the corresponding McNemar test of marginal homogeneity requires data structured as one row per pair.</p>
+<p>At least three options are given for the stratified common risk difference CI: Mantel-Haenszel (<code>CL=MH</code>), ‘stratified’ Newcombe (<code>CL=newcombe</code>) or ‘summary score’ (<code>CL=score</code>) intervals (See <a href="https://support.sas.com/documentation/cdl/en/procstat/67528/HTML/default/viewer.htm#procstat_freq_details63.htm">here</a> for equations), but some options give unexpected results, or no result at all. For the example data above, the default output gives the MH interval as (0.008764, 0.382541), which matches the Wald method, but the ‘summary score’ CI is (-0.0785, 0.1690) around a point estimate of 0.0452. These methods would not guarantee agreement with the McNemar test of marginal homogeneity.</p>
+<p>There is no equivalent option in PROC FREQ for common relative risks for paired data.</p>
+<p>[Example code to be added for <code>%PAIRBINCI</code>]</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> dat_used;</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">do</span> id <span class="op">=</span> <span class="fl">1</span> <span class="cf">to</span> <span class="fl">20</span>;</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>      trt <span class="op">=</span> <span class="st">'ACT'</span>; resp <span class="op">=</span> <span class="st">'Yes'</span>; <span class="kw">output</span>;</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      trt <span class="op">=</span> <span class="st">'PBO'</span>; resp <span class="op">=</span> <span class="st">'Yes'</span>; <span class="kw">output</span>;</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">end</span>;</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">do</span> id <span class="op">=</span> <span class="fl">21</span> <span class="cf">to</span> <span class="fl">35</span>;</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>      trt <span class="op">=</span> <span class="st">'ACT'</span>; resp <span class="op">=</span> <span class="st">'Yes'</span>; <span class="kw">output</span>;</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>      trt <span class="op">=</span> <span class="st">'PBO'</span>; resp <span class="op">=</span> <span class="st">'No'</span>; <span class="kw">output</span>;</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">end</span>;</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">do</span> id <span class="op">=</span> <span class="fl">36</span> <span class="cf">to</span> <span class="fl">41</span>;</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>      trt <span class="op">=</span> <span class="st">'ACT'</span>; resp <span class="op">=</span> <span class="st">'No'</span>; <span class="kw">output</span>;</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>      trt <span class="op">=</span> <span class="st">'PBO'</span>; resp <span class="op">=</span> <span class="st">'Yes'</span>; <span class="kw">output</span>;</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">end</span>;</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">do</span> id <span class="op">=</span> <span class="fl">42</span> <span class="cf">to</span> <span class="fl">46</span>;</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>      trt <span class="op">=</span> <span class="st">'ACT'</span>; resp <span class="op">=</span> <span class="st">'No'</span>; <span class="kw">output</span>;</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>      trt <span class="op">=</span> <span class="st">'PBO'</span>; resp <span class="op">=</span> <span class="st">'No'</span>; <span class="kw">output</span>;</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="cf">end</span>;</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="kw">proc sort</span> <span class="bu">data</span><span class="op">=</span>dat_used;</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  <span class="bu">by</span> trt descending resp;</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="kw">proc freq</span> <span class="bu">data</span><span class="op">=</span>dat_used <span class="bu">order</span><span class="op">=</span>data; </span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>  <span class="bu">table</span> id<span class="op">*</span>trt<span class="op">*</span>resp <span class="op">/</span> commonriskdiff noprint; </span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../images/ci_for_prop/riskdiff_stratified.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:50.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="references" class="level1">
+
+
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body" data-entry-spacing="0" data-line-spacing="2" role="list">
+<div id="ref-newcombe1998" class="csl-entry" role="listitem">
+<div class="csl-left-margin">1. </div><div class="csl-right-inline">Newcombe, R. G. <a href="https://doi.org/10.1002/(sici)1097-0258(19981130)17:22<2635::aid-sim954>3.0.co;2-c">Improved confidence intervals for the difference between binomial proportions based on paired data</a>. <em>Statistics in Medicine</em> <strong>17</strong>, 2635–2650 (1998).</div>
+</div>
+<div id="ref-fagerland2014" class="csl-entry" role="listitem">
+<div class="csl-left-margin">2. </div><div class="csl-right-inline">Fagerland, M. W., Lydersen, S. &amp; Laake, P. <a href="https://doi.org/10.1002/sim.6148">Recommended tests and confidence intervals for paired binomial proportions</a>. <em>Statistics in Medicine</em> <strong>33</strong>, 2850–2875 (2014).</div>
+</div>
+<div id="ref-tango1998" class="csl-entry" role="listitem">
+<div class="csl-left-margin">3. </div><div class="csl-right-inline">Tango, T. <a href="https://doi.org/10.1002/(sici)1097-0258(19980430)17:8<891::aid-sim780>3.0.co;2-b">Equivalence test and confidence interval for the difference in proportions for the paired-sample design</a>. <em>Statistics in Medicine</em> <strong>17</strong>, 891–908 (1998).</div>
+</div>
+<div id="ref-nam2002" class="csl-entry" role="listitem">
+<div class="csl-left-margin">4. </div><div class="csl-right-inline">Nam, J. &amp; Blackwelder, W. C. <a href="https://doi.org/10.1002/sim.1017">Analysis of the ratio of marginal probabilities in a matched<span>-</span>pair setting</a>. <em>Statistics in Medicine</em> <strong>21</strong>, 689–699 (2002).</div>
+</div>
+<div id="ref-tang2003" class="csl-entry" role="listitem">
+<div class="csl-left-margin">5. </div><div class="csl-right-inline">Tang, N.-S., Tang, M.-L. &amp; Chan, I. S. F. <a href="https://doi.org/10.1002/sim.1213">On tests of equivalence via non<span>-</span>unity relative risk for matched<span>-</span>pair design</a>. <em>Statistics in Medicine</em> <strong>22</strong>, 1217–1233 (2003).</div>
+</div>
+</div></section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/psiaims\.github\.io\/CAMIS\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
