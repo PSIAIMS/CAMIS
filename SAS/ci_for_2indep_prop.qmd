@@ -16,7 +16,7 @@ Caution is required if there are no responders (or all responders) in both group
 
 The adcibc data stored [here](../data/adcibc.csv) was used in this example, creating a binary treatment variable `trt` taking the values of `Act` or `PBO` and a binary response variable `resp` taking the values of `Yes` or `No`. For this example, a response is defined as a score greater than 4.
 
-```sas
+``` sas
 proc import datafile = 'data/adcibc.csv'
     out = adcibc
     dbms = csv
@@ -42,7 +42,7 @@ run;
 
 The below shows that for the Active Treatment, there are 36 responders out of 154 subjects, p1 = 0.2338 (23.38% responders), while for the placebo treatment p2 = 12/77 = 0.1558, giving a risk difference of 0.0779, relative risk 1.50, and odds ratio 1.6525.
 
-```sas
+``` sas
 proc freq data=adcibc2;
     table trt*resp/ nopct nocol;
 run;
@@ -55,11 +55,11 @@ run;
 knitr::include_graphics("../images/ci_for_prop/2by2crosstab.png")
 ```
 
-# Methods for Calculating Confidence Intervals for Proportion Difference from 2 independent samples
+# Proportion Difference
 
 This [paper](https://www.lexjansen.com/wuss/2016/127_Final_Paper_PDF.pdf) describes many methods for the calculation of confidence intervals for 2 independent proportions. The 2-sided and 1-sided performance of many of the same methods have been compared graphically[@laud2014]. According to a recent paper[@bai2021], the most commonly reported method in non-inferiority clinical trials for antibiotics is the Wald asymptotic normal approximation (despite its well-documented poor performance), followed by the Miettinen-Nurminen (asymptotic score) method. More recently, an improved variant of the Miettinen-Nurminen method (SCAS) was developed, by including a skewness correction designed to optimise the performance in terms of one-sided coverage for NI testing. SCAS corrects the slightly asymmetrical coverage of the Miettinen-Nurminen interval (note the skewness is more pronounced when analysing the RR contrast, and/or when group sizes are imbalanced).
 
-SAS PROC FREQ is able to calculate CIs for RD using the following methods: Agresti/Caffo (AC), Miettinen and Nurminen (MN or SCORE), Mee (MN(Mee)), Newcombe Hybrid Score (MOVER), and Wald. For conservative coverage, there is the 'Exact' method, or continuity-adjusted versions of the Wald and Newcombe methods, and also the Hauck-Anderson (HA) continuity-adjustment.
+SAS PROC FREQ is able to calculate CIs for RD using the following methods: Agresti/Caffo (AC), Miettinen and Nurminen (MN or SCORE), Mee (MN(Mee)), Newcombe Hybrid Score (MOVER-W), and Wald. For conservative coverage, there is the 'Exact' method, or continuity-adjusted versions of the Wald and Newcombe methods, and also the Hauck-Anderson (HA) continuity-adjustment.
 
 The SCAS method is not available in PROC FREQ, but can be produced using a SAS macro (`%SCORECI`) which can be downloaded from <https://github.com/petelaud/ratesci-sas>.
 
@@ -79,9 +79,9 @@ $\hat \theta_{RD} \pm (CC + z_{\alpha/2} \times SE(\hat \theta_{RD}))$,
 
 where $CC = \frac{1}{2} (\frac{1}{n_1} + \frac{1}{n_2})$
 
-## Newcombe Method (Also known as the Hybrid Score method, Square-and-Add, or the Method of Variance Estimates Recovery (MOVER) )
+## The MOVER methods (Method Of Variance Estimates Recovery, also known as the Newcombe Hybrid Score method, or Square-and-Add)
 
-Derive the confidence intervals for the separate proportions in each group, $p_1$ and $p_2$, using the Wilson Score Method equations as described [here](ci_for_prop.html).
+The original version (denoted MOVER-W) derives the confidence intervals for the separate proportions in each group, $p_1$ and $p_2$, using the Wilson Score Method equations as described [here](ci_for_prop.html). Any other base method may also be selected, for example Jeffreys equal-tailed intervals achieve improved symmetrical coverage, but this MOVER-J variant is not available in SAS.
 
 Let $l_1$ = Lower CI for sample 1, and $u_1$ be the upper CI for sample 1.
 
@@ -113,7 +113,7 @@ The current default method produced by PROC FREQ (`METHOD=SCORE`) is the Chan-Zh
 
 The third alternative 'exact' method by Agresti & Min (`RISKDIFF(METHOD=SCORE2)`) is less conservative, but is only guaranteed to achieve strictly conservative two-sided coverage, so is not appropriate for use in one-sided hypothesis testing.
 
-# Methods for Calculating Confidence Intervals for Relative Risk or Odds Ratio from 2 independent samples
+# Relative Risk and Odds Ratio
 
 Selected methods have been compared graphically for their 1-sided performance[@laud2017, see supplementary material], with the observation that optimum 2-sided coverage follows directly from optimum 1-sided coverage (while the reverse is not true). It has been noted previously that the ratio contrasts suffer a greater imbalance in 1-sided coverage than RD[@gart1990]. Therefore, skewness correction is particularly valuable here, but it is not available in SAS PROC FREQ.
 
@@ -125,7 +125,7 @@ Similarly, there are two versions of the 'Wald' method for OR (also known as the
 
 For conservative coverage, the 'Exact' methods are provided. For RR this includes the 3 variants described above for RD, while only one version is given for OR. Run times for the `METHOD=SCORE` version for RR may be lengthy (but the faster alternative Santner-Snell version produces a fairly uninterpretable interval of \[0.03, 23698\] for the example dataset used in this article). Continuity adjustments are not implemented for any method for RR or OR.
 
-The SCAS method (which addresses asymmetric one-sided coverage of the MN Score method which is particularly pronounced for RR, and also adds a further bias correction for OR[@laud2018]), is not available in PROC FREQ, but is given by the SAS macro `%SCORECI`.
+The SCAS method (which addresses asymmetric one-sided coverage of the MN Score method which is particularly pronounced for RR, and also adds a further bias correction for OR[@laud2018]), is not available in PROC FREQ, but is given by the SAS macro `%SCORECI`. A version of the MOVER methods adapted for the analysis of ratios has also been developed (sometimes termed MOVER-R), but is not available in SAS.
 
 # Continuity Adjusted Methods
 
@@ -151,7 +151,7 @@ Similarly for relrisk, although the output does not state that the RR is calcula
 
 SAS output often rounds to 3 or 4 decimal places in the output window, however the full values can be obtained using SAS ODS statements.
 
-```sas
+``` sas
 
 ****************************;
 *** Risk Difference examples;
