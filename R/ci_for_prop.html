@@ -325,14 +325,14 @@ window.Quarto = {
 <p>The table below indicates which methods can be produced using each package. Methods are grouped by those that aim to achieve the nominal confidence interval on average, then the ‘exact’ and continuity adjusted methods that aim to achieve the nominal confidence level as a minimum.</p>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 32%">
-<col style="width: 8%">
-<col style="width: 10%">
-<col style="width: 10%">
-<col style="width: 12%">
-<col style="width: 9%">
-<col style="width: 8%">
-<col style="width: 8%">
+<col style="width: 17%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -626,10 +626,19 @@ Documentation reports that the method uses F distribution to compute exact inter
 <h2 class="anchored" data-anchor-id="binomial-based-mid-p-method">Binomial based mid-P Method</h2>
 <p>The table below (from {ratesci}) includes two versions of the mid-P interval, one derived iteratively from binomial tail proportions and another from quantiles of a beta distribution. These have been claimed to be equivalent<span class="citation" data-cites="brown2001"><sup><a href="#ref-brown2001" role="doc-biblioref">3</a></sup></span>, but it seems they are not quite identical - the beta version is very close to the Jeffreys interval. The first version closely matches with the result (0.17200131, 0.30545883) from SAS PROC FREQ:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>ratesci<span class="sc">::</span><span class="fu">rateci</span>(<span class="at">x =</span> <span class="dv">36</span>, <span class="at">n =</span> <span class="dv">154</span>, <span class="at">precis =</span> <span class="dv">10</span>)<span class="sc">$</span>ciarray[,,<span class="dv">1</span>] <span class="sc">|&gt;</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>ratesci<span class="sc">::</span><span class="fu">rateci</span>(<span class="at">x =</span> <span class="dv">36</span>, <span class="at">n =</span> <span class="dv">154</span>, <span class="at">precis =</span> <span class="dv">10</span>)<span class="sc">$</span>estimates[,,<span class="dv">1</span>] <span class="sc">|&gt;</span></span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(<span class="at">rownames =</span> <span class="st">"Method"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 0 × 0</code></pre>
+<pre><code># A tibble: 7 × 6
+  Method        lower   est upper     x     n
+  &lt;chr&gt;         &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1 SCAS          0.172 0.234 0.305    36   154
+2 Jeffreys      0.172 0.234 0.305    36   154
+3 midp          0.172 0.234 0.305    36   154
+4 midp(beta)    0.172 0.234 0.305    36   154
+5 Wilson        0.174 0.234 0.307    36   154
+6 Wald          0.167 0.234 0.301    36   154
+7 Agresti-Coull 0.174 0.234 0.307    36   154</code></pre>
 </div>
 </div>
 <p>The mid-P result from {DescTools} doesn’t quite match with either of the above results, beyond the 4th decimal place, even with increased precision using the <code>tol</code> argument (which according to the documentation only affects the Blaker method). The documentation indicates that the mid-P interval is derived from the F-distribution, which suggests there are actually 3 slightly different versions of ‘mid-P’.</p>
@@ -664,7 +673,7 @@ data:
 </section>
 <section id="blaker-method" class="level2">
 <h2 class="anchored" data-anchor-id="blaker-method">Blaker Method</h2>
-<p>The Blaker ‘exact’ CI matching SAS output (to at least 7 dps) may be obtained as follows from {ratesci}, or from the dedicated {BlakerCI} package. Output from <code>DescTools::BinomCI</code> and <code>PropCIs::blakerci()</code> is less precise, matching to 4 decimal places.</p>
+<p>The Blaker ‘exact’ CI matching SAS output (to at least 7 dps) may be obtained as follows from {ratesci}, or from the dedicated {BlakerCI} package. Output from <code>DescTools::BinomCI</code> and <code>PropCIs::blakerci()</code> is less precise, matching only to 4 decimal places.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">digits=</span><span class="dv">8</span>)</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="co"># ratesci package Blaker method </span></span>
@@ -698,11 +707,20 @@ data:
 </div>
 <p>In principle, the concept can also be applied to the Jeffreys CI, although with <span class="math inline">\(\gamma=0.5\)</span> this turns out to be identical to the Clopper-Pearson interval.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>ratesci<span class="sc">::</span><span class="fu">rateci</span>(<span class="at">x =</span> <span class="dv">36</span>, <span class="at">n =</span> <span class="dv">154</span>, <span class="at">cc =</span> <span class="fl">0.5</span>)<span class="sc">$</span>ciarray <span class="sc">|&gt;</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>ratesci<span class="sc">::</span><span class="fu">rateci</span>(<span class="at">x =</span> <span class="dv">36</span>, <span class="at">n =</span> <span class="dv">154</span>, <span class="at">cc =</span> <span class="fl">0.5</span>)<span class="sc">$</span>estimates <span class="sc">|&gt;</span></span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop</span>() <span class="sc">|&gt;</span></span>
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(<span class="at">rownames=</span><span class="st">"Method"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 0 × 0</code></pre>
+<pre><code># A tibble: 7 × 6
+  Method                lower   est upper     x     n
+  &lt;chr&gt;                 &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1 SCAS_cc               0.169 0.234 0.309    36   154
+2 Jeffreys_cc           0.169 0.234 0.309    36   154
+3 Clopper-Pearson       0.169 0.234 0.309    36   154
+4 Clopper-Pearson(beta) 0.169 0.234 0.309    36   154
+5 Wilson_cc             0.171 0.234 0.310    36   154
+6 Wald_cc               0.164 0.234 0.304    36   154
+7 Blaker                0.170 0.234 0.307    36   154</code></pre>
 </div>
 </div>
 </section>
