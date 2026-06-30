@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Testing approaches under non-proportional hazards using R</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../images/logo.png" rel="icon" type="image/png">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-637a8987fd156daea465eecdbde71ac9.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../images/logo.png" alt="" class="navbar-logo light-content">
+    <img src="../images/logo.png" alt="" class="navbar-logo dark-content">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-publications-and-projects" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Publications and Projects</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-publications-and-projects">    
+        <li>
+    <a class="dropdown-item" href="../publication/white_paper.html"><i class="bi bi-file-earmark-word-fill" role="img">
+</i> 
+ <span class="dropdown-text">White Paper</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/conference.html"><i class="bi bi-easel3-fill" role="img">
+</i> 
+ <span class="dropdown-text">Conferences</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/dissertation.html"><i class="bi bi-mortarboard-fill" role="img">
+</i> 
+ <span class="dropdown-text">Academic Projects</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../minutes/index.html"> 
+<span class="menu-text">Meeting Minutes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../blogs/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-help" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Help</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-help">    
+        <li>
+    <a class="dropdown-item" href="https://github.com/PSIAIMS/CAMIS/issues"><i class="bi bi-bug-fill" role="img">
+</i> 
+ <span class="dropdown-text">Report a Bug</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/get_started.html"><i class="bi bi-git" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with Your Environment</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/contribution.html"><i class="bi bi-person-raised-hand" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with CAMIS</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/package_review.html"><i class="bi bi-box-fill" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with a New R Package</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+    <a href="https://github.com/PSIAIMS/CAMIS/" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a>
+  <ul class="collapse">
+  <li><a href="#wlrt" id="toc-wlrt" class="nav-link" data-scroll-target="#wlrt"><em>wlrt</em>()</a></li>
+  <li><a href="#survdiff" id="toc-survdiff" class="nav-link" data-scroll-target="#survdiff"><em>survdiff()</em></a></li>
+  </ul></li>
+  <li><a href="#data." id="toc-data." class="nav-link" data-scroll-target="#data.">Data.</a></li>
+  <li><a href="#tests" id="toc-tests" class="nav-link" data-scroll-target="#tests">Tests:</a></li>
+  <li><a href="#weighted-log-rank-test." id="toc-weighted-log-rank-test." class="nav-link" data-scroll-target="#weighted-log-rank-test.">1. Weighted Log-Rank test.</a>
+  <ul class="collapse">
+  <li><a href="#a.-peto-peto" id="toc-a.-peto-peto" class="nav-link" data-scroll-target="#a.-peto-peto">a). Peto-Peto</a></li>
+  <li><a href="#b.-modified-peto-peto." id="toc-b.-modified-peto-peto." class="nav-link" data-scroll-target="#b.-modified-peto-peto.">b). Modified Peto-Peto.</a></li>
+  <li><a href="#c.-tarone-ware." id="toc-c.-tarone-ware." class="nav-link" data-scroll-target="#c.-tarone-ware.">c). Tarone-Ware.</a></li>
+  <li><a href="#d.-gehan-breslow." id="toc-d.-gehan-breslow." class="nav-link" data-scroll-target="#d.-gehan-breslow.">d). Gehan-Breslow.</a></li>
+  <li><a href="#e.-fleming-harrington" id="toc-e.-fleming-harrington" class="nav-link" data-scroll-target="#e.-fleming-harrington">e). Fleming-Harrington</a></li>
+  </ul></li>
+  <li><a href="#max-combo-test." id="toc-max-combo-test." class="nav-link" data-scroll-target="#max-combo-test.">2. Max-Combo test.</a>
+  <ul class="collapse">
+  <li><a href="#i.-max-combono-strata" id="toc-i.-max-combono-strata" class="nav-link" data-scroll-target="#i.-max-combono-strata">i). Max-Combo(No strata)</a></li>
+  <li><a href="#ii.-stratified-max-combo" id="toc-ii.-stratified-max-combo" class="nav-link" data-scroll-target="#ii.-stratified-max-combo">ii). Stratified Max-Combo</a></li>
+  </ul></li>
+  <li><a href="#modestly-weighted-log-rank-test." id="toc-modestly-weighted-log-rank-test." class="nav-link" data-scroll-target="#modestly-weighted-log-rank-test.">3. Modestly Weighted Log-Rank test.</a>
+  <ul class="collapse">
+  <li><a href="#i.-modestly-weighted-log-rank-testno-strata" id="toc-i.-modestly-weighted-log-rank-testno-strata" class="nav-link" data-scroll-target="#i.-modestly-weighted-log-rank-testno-strata">i). Modestly Weighted Log-rank test(No strata)</a></li>
+  <li><a href="#ii.-stratified-modestly-weighted-log-rank-test-stratified-mwlrt" id="toc-ii.-stratified-modestly-weighted-log-rank-test-stratified-mwlrt" class="nav-link" data-scroll-target="#ii.-stratified-modestly-weighted-log-rank-test-stratified-mwlrt">ii). Stratified Modestly Weighted Log-Rank Test (Stratified MWLRT)</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a>
+  <ul class="collapse">
+  <li><a href="#references-for-other-mentioned-tests" id="toc-references-for-other-mentioned-tests" class="nav-link" data-scroll-target="#references-for-other-mentioned-tests">References for other mentioned tests:</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Testing approaches under non-proportional hazards using R</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>In clinical studies with time-to-event outcomes, it is commonly assumed that the hazard functions of two groups are proportional. The standard log-rank test is widely used to test the equivalence of survival functions. It assumes no relationship between the censoring indicator and the forecast, such that dropouts or individuals who are not fully observed are perceived to be the same in risks (sensitivity to proportional risk); the events are also weighted equally regardless of time of occurrence ( early/ late). However, several scenarios can lead to non-proportional hazards (NPH). For example, a delayed treatment effect may be observed in the treatment arm, which can lead to a departure from proportionality of the survival curves. Log-rank test loses power under the non-proportional hazard assumption. Thus, there are many tests available in the literature that can handle such scenarios. Most commonly used tests are as follows:</p>
+<ul>
+<li>Weighted log-rank test.</li>
+<li>Restricted Mean Survival Time (RMST).</li>
+<li>Milestone survival.</li>
+<li>Max-Combo test.</li>
+<li>Modestly Weighted log-rank test.</li>
+</ul>
+<p>This particular document focuses mainly on the weighted log-rank test, Max-combo test and Modestly Weighted log-rank. Some of the functions include:</p>
+<section id="wlrt" class="level3">
+<h3 class="anchored" data-anchor-id="wlrt"><em>wlrt</em>()</h3>
+<p>This function uses <span class="math inline">\(G(\rho,\gamma)=\hat{S}(t)^\rho (1-\hat{S}(t))^\gamma; \rho,\gamma \geq 0\)</span> , where <span class="math inline">\(\hat{S}(t)\)</span> is the Kaplan-Meier estimate of the survival function at time <span class="math inline">\(t\)</span>. If <span class="math inline">\(\rho = \gamma = 0\)</span>, then this is the standard log-rank test. When <span class="math inline">\(\rho=1, \gamma=0\)</span> this test can be used to detect early difference in the survival curves; when <span class="math inline">\(\rho=0, \gamma = 1\)</span>, this test can be used to detect late differences in the survival curves and when <span class="math inline">\(\rho=1, \gamma = 1\)</span>, this test can be used to test middle differences in the survival curves. This is enabled by specifying <code>method=fh</code> in R as illustrated in the Peto-Peto Prentice test below. Also it is to be noted that this test gives the Z-score as the test statistic which can be squared to obtain the chi-square statistic. The function also supports the log-rank test: <code>Method=lr</code> and Modestly Weighted Log-rank test: <code>method=mw</code>.</p>
+</section>
+<section id="survdiff" class="level3">
+<h3 class="anchored" data-anchor-id="survdiff"><em>survdiff()</em></h3>
+<p>This function uses <span class="math inline">\(G(\rho)=\hat{S}(t)^\rho, \rho \geq 0\)</span> , where <span class="math inline">\(\hat{S}(t)\)</span> is the Kaplan-Meier estimate of the survival function at time <span class="math inline">\(t\)</span>. If <span class="math inline">\(\rho = 0\)</span>, then this is the standard log-rank test.</p>
+</section>
+</section>
+<section id="data." class="level1">
+<h1>Data.</h1>
+<p><br>
+Data source: <a href="https://stats.idre.ucla.edu/sas/seminars/sas-survival/" class="uri">https://stats.idre.ucla.edu/sas/seminars/sas-survival/</a></p>
+<p>The data include 500 subjects from the Worcester Heart WHAS Study (WHAS500). This study examined several factors, such as age, gender and BMI, that may influence survival time after a heart WHAS. Follow-up time for all participants begins at the time of hospital admission after the WHAS and ends with death or loss to follow-up (censoring). The data in the WHAS500 are subject to right-censoring only. The variables used here are:</p>
+<ul>
+<li><p>lenfol: length of follow-up, terminated either by death or censoring - time variable</p></li>
+<li><p>fstat: loss to followup = 0, death = 1 - censoring variable</p></li>
+<li><p>afb: atrial fibrillation, no = 0, 1 = yes - covariate</p></li>
+<li><p>gender: males = 0, females = 1 - stratification factor</p></li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(haven)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span>opts_chunk<span class="sc">$</span><span class="fu">set</span>(<span class="at">echo =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(here)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>WHAS <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_sas</span>(<span class="st">"../data/whas500.sas7bdat"</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(WHAS)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 19
+     ID   AGE GENDER    HR SYSBP DIASBP   BMI   CVD   AFB   SHO   CHF   AV3
+  &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1     1    83      0    89   152     78  25.5     1     1     0     0     0
+2     2    49      0    84   120     60  24.0     1     0     0     0     0
+3     3    70      1    83   147     88  22.1     0     0     0     0     0
+4     4    70      0    65   123     76  26.6     1     0     0     1     0
+5     5    70      0    63   135     85  24.4     1     0     0     0     0
+6     6    70      0    76    83     54  23.2     1     0     0     0     1
+# ℹ 7 more variables: MIORD &lt;dbl&gt;, MITYPE &lt;dbl&gt;, YEAR &lt;dbl&gt;, LOS &lt;dbl&gt;,
+#   DSTAT &lt;dbl&gt;, LENFOL &lt;dbl&gt;, FSTAT &lt;dbl&gt;</code></pre>
+</div>
+</div>
+<p><strong>Kaplan-Meier Survival Curve.</strong></p>
+<p>Below is the Kaplan-Meier survival curve. Let:</p>
+<ul>
+<li><span class="math inline">\(S_1(t)\)</span>: survival function for individuals with no atrial fibrillation(AFB=0)</li>
+<li><span class="math inline">\(S_2(t)\)</span>: survival function for individuals with no atrial fibrillation(AFB=1)</li>
+</ul>
+<p><strong>Null hypothesis</strong> <span class="math inline">\(H_0\)</span>: <span class="math inline">\(S_1(t) = S_2(t)\quad \text{for all } t\)</span></p>
+<p><strong>Alternative hypothesis</strong> <span class="math inline">\(H_1\)</span>: <span class="math inline">\(S_1(t) \neq S_2(t) \quad \text{for some } t\)</span></p>
+<p>The p-value for the standard log-rank test is 0.00096. Since <span class="math inline">\(0.00096&lt; 0.05\)</span>, we reject the null hypothesis and conclude that there is statistically significant evidence that the survival distributions differ between the AFB groups over time. Individuals with no atrial fibrillation(AFB=0) have higher survival rates after a heart WHAS, compared to those with atrial fibrillation(AFB=1). Immediately after time 0, the curve for AFB=1 drops soon below the curve for AFB=0. This suggests that atrial fibrillation has a strong impact (early effect) on mortality after a heart WHAS.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survival) </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>KM <span class="ot">&lt;-</span> <span class="fu">survfit</span>(<span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB, <span class="at">data =</span> WHAS)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsurvplot</span>(KM,                     </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>   <span class="at">data =</span> WHAS,            </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>   <span class="at">risk.table =</span> <span class="cn">TRUE</span>, <span class="at">pval =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>   <span class="at">palette =</span> <span class="fu">c</span>(<span class="st">"red"</span>,<span class="st">"forestgreen"</span>),</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>   <span class="at">conf.int =</span> <span class="cn">FALSE</span>,         </span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>   <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">2500</span>),         </span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>   <span class="at">xlab =</span> <span class="st">"Time in days"</span>,   </span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>   <span class="at">break.time.by =</span> <span class="dv">500</span>,     </span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>   <span class="at">ggtheme =</span> <span class="fu">theme_light</span>(), </span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a> <span class="at">risk.table.y.text.col =</span> T, </span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">risk.table.y.text =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a> <span class="at">risk.table.fontsize=</span><span class="fl">2.5</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a> <span class="at">surv.median.line =</span> <span class="st">"hv"</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+ℹ Please use `linewidth` instead.
+ℹ The deprecated feature was likely used in the ggpubr package.
+  Please report the issue at &lt;https://github.com/kassambara/ggpubr/issues&gt;.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Ignoring unknown labels:
+• colour : "Strata"</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Weighted-log-rank_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="tests" class="level1">
+<h1>Tests:</h1>
+</section>
+<section id="weighted-log-rank-test." class="level1">
+<h1>1. Weighted Log-Rank test.</h1>
+<p>The Weighted log-rank has been utilised in studies with non-proportional hazards to maximise power. By pre-specifying the weights, type I error is preserved. The choice of weight can be based on initial information or anticipated study design.<br>
+Suppose we have two groups (e.g.&nbsp;treatment and control, male and female, etc.) with survival functions <span class="math inline">\(S_1\)</span> and <span class="math inline">\(S_2\)</span>, respectively. The null and alternative hypotheses are given as: <span class="math display">\[H_0 : S_1(t)=S_2(t) \mbox{    }\forall t  \mbox{ v/s }  H_1 : S_1(t) \neq S_2(t) \mbox{ for some t. }\]</span> Since the alternative hypothesis is composite, it includes multiple scenarios. Hence, the power calculation is difficult to implement. One way to tackle this situation is to consider the Lehman alternative given by <span class="math inline">\(H_L : S_1(t)=(S_2(t))^\psi\)</span> for all <span class="math inline">\(t\)</span> where <span class="math inline">\(0&lt;\psi&lt;1\)</span>. Alternatively, <span class="math display">\[ H_0 : \psi=1  \ v/s \ H_1: \psi&lt;1\]</span></p>
+<p>which implies subjects in group 1 will have longer survival times than subjects in group 2. For more details, refer to Page 44 of <a href="https://xsliulab.github.io/Workshop/2021/week3/survival-analysis-book.pdf">Moore (2016)</a>.<br>
+The test statistic for the weighted log-rank test is given by, <span class="math display">\[ Z = \frac{\sum_{j=1}^{D}w_j(o_{j} -e_j)}{\sqrt{\sum_{j=1}^{D}w_j^2 v_j}} \to N(0,1), \text{under} \ H_0\]</span> Equivalently, <span class="math display">\[ Z^2 = \frac{\big[\sum_{j=1}^{D}w_j(o_j -e_j)\big]^2}{\sum_{j=1}^{D}w_j^2 v_j} \to \chi^2_1, \text{under} \ H_0.\]</span><br>
+Here, <span class="math inline">\(t_1&lt;t_2&lt;...&lt;t_D\)</span> be the distinct failure time points of both the groups together. <span class="math inline">\(o_j\)</span> is the number of deaths, <span class="math inline">\(e_j\)</span> is the expected number of deaths, and <span class="math inline">\(v_j\)</span> is the variance of the number of deaths in either of the two groups.<br>
+Different weight functions are discussed in the literature, and a family of weight functions <span class="math inline">\(G(\rho)\)</span> is proposed by Harrington and Fleming (1982), which is implemented in R using <em>survival : : survdiff</em> (). Further, Fleming and Harrington (1991) extended the <span class="math inline">\(G(\rho)\)</span> family to <span class="math inline">\(G(\rho,\gamma)\)</span>, and it is implemented in R using <em>nphRCT : : wlrt()</em>.<br>
+Suppose <span class="math inline">\(W_k\)</span> is a positive weight function,<span class="math inline">\(n_k\)</span> is the size of the risk set, and <span class="math inline">\(S(t_k)\)</span> is the survival function. We can implement these tests by assigning different weights, such that:</p>
+<p><br>
+- <span class="math inline">\(W _k\)</span>= 1 [Weight=1] <span class="math inline">\(\implies\)</span> Log-rank test.<br>
+- <span class="math inline">\(W_k\)</span>= <span class="math inline">\(n_k\)</span> [weights by risk set size] <span class="math inline">\(\implies\)</span> Wilcoxon test.<br>
+- <span class="math inline">\(W_k\)</span>= <span class="math inline">\((n_k)^{1/2}\)</span> [square root of risk set size] <span class="math inline">\(\implies\)</span> Tarone-Ware test.<br>
+- <span class="math inline">\(W_k\)</span>= <span class="math inline">\((S(t_k))\)</span> [weights by pooled survival function] <span class="math inline">\(\implies\)</span> Peto-Peto test.<br>
+- <span class="math inline">\(W_k\)</span>= <span class="math inline">\((S(t_k))\frac{n_k}{n_k+1}\)</span> [survival weight adjusted by risk set size] <span class="math inline">\(\implies\)</span> Modified Peto-Peto test.<br>
+- <span class="math inline">\(W_k\)</span>= <span class="math inline">\(\{S(t_k)\}^{\rho}\{1 - S(t_k)\}^{\gamma}\)</span> [flexible survival-based weighting] <span class="math inline">\(\implies\)</span> Fleming-Harrington(<span class="math inline">\(\rho,\gamma\)</span>) test.</p>
+<section id="a.-peto-peto" class="level3">
+<h3 class="anchored" data-anchor-id="a.-peto-peto">a). Peto-Peto</h3>
+<p>This test assigns weights based on the pooled Kaplan–Meier survival estimate<span class="math inline">\((S(t_k))\)</span>. Larger weights are assigned to earlier failures, thereby enabling greater emphasis on group differences at earlier times. This test can be implemented in R using these functions:</p>
+<section id="i-survminersurv_pvalue" class="level4">
+<h4 class="anchored" data-anchor-id="i-survminersurv_pvalue">i) <code>survminer::surv_pvalue()</code></h4>
+<p>The <code>survminer::surv_pvalue()</code> function calculates the p-value for comparing survival curves, while <code>surv_fit()</code> estimates the survival probabilities for groups defined by <code>AFB</code>. Using <code>surv_pvalue(method = "S1")</code> applies the Peto–Peto test via the <code>survMisc</code> package to assess group differences. The <code>survMisc</code> package (version 0.5.6) provides a collection of functions for analysing right-censored survival data, extending the methods available in the <code>survival</code> package. In particular, the <code>comp</code> function can be used to compare survival curves and print the corresponding p-value. Note that <code>survMisc</code> was <a href="https://cran.r-project.org/web/packages/survMisc/index.html">archived</a> on March 17, 2026, and is no longer available on CRAN.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">surv_fit</span>(<span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB, <span class="at">data =</span> WHAS)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">surv_pvalue</span>(fit,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">method =</span> <span class="st">"S1"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  variable   pval    method   pval.txt
+1      AFB 0.0017 Peto-Peto p = 0.0017</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extending the decimal places for the p-value</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>p<span class="ot">&lt;-</span><span class="fu">surv_pvalue</span>(fit, <span class="at">method=</span><span class="st">"S1"</span>)<span class="sc">$</span>pval</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sprintf</span>(<span class="st">"%.9f"</span>, p)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "0.001700000"</code></pre>
+</div>
+</div>
+<p>The code below generates the test statistics for Peto-Peto using <a href="https://github.com/kassambara/survminer/blob/master/R/weighted_logrank.R">custom R function</a>. The implementation is based on a classical statistical definition without reliance on external packages. <code>survminer::surv_pvalue()</code> rounds off the p-value to <a href="https://rdrr.io/cran/survminer/src/R/surv_pvalue.R">4 decimal places</a> internally. This is why extending the p-value manually yields zeros beyond the 4 decimal places. Rounding off the <code>custom R</code> p-values to 4 decimal places, generates p-values similar to those from <code>survminer::surv_pvalue()</code> . The <code>custom R</code> function also generates the chi-square test statistic, which is not enabled by the <code>survminer</code> package.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>peto_peto_test <span class="ot">&lt;-</span> <span class="cf">function</span>(formula, data) {</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  mf <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">model.frame</span>(formula, data)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  surv <span class="ot">&lt;-</span> mf[[<span class="dv">1</span>]]</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  time <span class="ot">&lt;-</span> surv[, <span class="st">"time"</span>]</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  status <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(surv[, <span class="st">"status"</span>] <span class="sc">==</span> <span class="dv">2</span>, <span class="dv">1</span>, surv[, <span class="st">"status"</span>])</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  group <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(mf[[<span class="dv">2</span>]])</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  groups <span class="ot">&lt;-</span> <span class="fu">levels</span>(group)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  event_times <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">unique</span>(time[status <span class="sc">==</span> <span class="dv">1</span>]))</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  k <span class="ot">&lt;-</span> <span class="fu">length</span>(event_times)   <span class="co"># number of event times</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  g <span class="ot">&lt;-</span> <span class="fu">length</span>(groups)        <span class="co"># number of groups</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Risk set and event count matrices</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  n_jk <span class="ot">&lt;-</span> d_jk <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, k, g)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (j <span class="cf">in</span> <span class="fu">seq_len</span>(g)) {</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    t_j <span class="ot">&lt;-</span> time[group <span class="sc">==</span> groups[j]]</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    s_j <span class="ot">&lt;-</span> status[group <span class="sc">==</span> groups[j]]</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_len</span>(k)) {</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>      ti <span class="ot">&lt;-</span> event_times[i]</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>      n_jk[i, j] <span class="ot">&lt;-</span> <span class="fu">sum</span>(t_j <span class="sc">&gt;=</span> ti)</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>      d_jk[i, j] <span class="ot">&lt;-</span> <span class="fu">sum</span>(t_j <span class="sc">==</span> ti <span class="sc">&amp;</span> s_j <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Totals</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>  n_i <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(n_jk)</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>  d_i <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(d_jk)</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>  w <span class="ot">&lt;-</span> <span class="fu">cumprod</span>(<span class="dv">1</span> <span class="sc">-</span> d_i <span class="sc">/</span> (n_i <span class="sc">+</span> <span class="dv">1</span>)) <span class="co"># ---- Peto-Peto weights (S1) ----</span></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ---- 2-group test ----</span></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>  e1 <span class="ot">&lt;-</span> n_jk[, <span class="dv">1</span>] <span class="sc">*</span> d_i <span class="sc">/</span> n_i</span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>  Q <span class="ot">&lt;-</span> <span class="fu">sum</span>(w <span class="sc">*</span> (d_jk[, <span class="dv">1</span>] <span class="sc">-</span> e1))</span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>  VarQ <span class="ot">&lt;-</span> <span class="fu">sum</span>(</span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>    w<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> n_jk[, <span class="dv">1</span>] <span class="sc">*</span> n_jk[, <span class="dv">2</span>] <span class="sc">*</span> d_i <span class="sc">*</span> (n_i <span class="sc">-</span> d_i) <span class="sc">/</span></span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>      (n_i<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> (n_i <span class="sc">-</span> <span class="dv">1</span>)),</span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">na.rm =</span> <span class="cn">TRUE</span></span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>  chisq <span class="ot">&lt;-</span> (Q<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> VarQ</span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>  pvalue <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">pchisq</span>(chisq, <span class="at">df =</span> <span class="dv">1</span>, <span class="at">lower.tail =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(</span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>    <span class="at">chisq =</span> chisq,</span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">df =</span> <span class="dv">1</span>,</span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>    <span class="at">pvalue =</span> pvalue,</span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">"Peto-Peto (S1)"</span></span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a><span class="fu">peto_peto_test</span>(<span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB, <span class="at">data =</span> WHAS)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$chisq
+[1] 9.823786
+
+$df
+[1] 1
+
+$pvalue
+[1] 0.001722693
+
+$method
+[1] "Peto-Peto (S1)"</code></pre>
+</div>
+</div>
+</section>
+<section id="ii-coinlogrank_test" class="level4">
+<h4 class="anchored" data-anchor-id="ii-coinlogrank_test">ii) <code>coin::logrank_test()</code></h4>
+<p><code>coin</code> package implements a conditional inference framework based on permutation tests. The <code>log-rank test</code> is one of the conditional test procedures that provides the weighted log-rank test reformulated as a linear rank test. The p-value is obtained from the conditional null distribution of the test statistic, and the asymptotic approximation of the exact distribution is used by default <code>(distribution="Asymptotic")</code>. The distribution can also be approximated via Monte Carlo resampling or computed exactly for the univariate two-sample problem by specifying the distribution as <code>approximate</code> or <code>exact</code>, respectively.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Asymptotic</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>WHAS<span class="sc">$</span>AFB <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(WHAS<span class="sc">$</span>AFB)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">logrank_test</span>(<span class="fu">Surv</span>(WHAS<span class="sc">$</span>LENFOL, WHAS<span class="sc">$</span>FSTAT) <span class="sc">~</span> AFB, <span class="at">data =</span> WHAS,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>             <span class="at">type =</span> <span class="st">"Peto-Peto"</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>             <span class="at">distribution =</span> <span class="st">"asymptotic"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic Two-Sample Peto-Peto Test
+
+data:  Surv(WHAS$LENFOL, WHAS$FSTAT) by AFB (0, 1)
+Z = 3.0423, p-value = 0.002348
+alternative hypothesis: true theta is not equal to 1</code></pre>
+</div>
+</div>
+<p>For <code>exact</code> distribution, computing <code>exact</code> permutation distribution was computationally intensive in this case and demanded large memory, hence returned an error. This can be due to many events as well as large sample size, which makes the computation combinatorialy intensive.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Exact</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co">#logrank_test(Surv(LENFOL,FSTAT) ~ AFB, data = WHAS,</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>            <span class="co">#type = "Peto-Peto",</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>           <span class="co">#distribution = "exact")</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><code>approximate</code> distribution uses Monte Carlo re-sampling to approximate the distribution.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Approximate</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">logrank_test</span>(<span class="fu">Surv</span>(LENFOL,FSTAT)<span class="sc">~</span>AFB, <span class="at">data =</span> WHAS,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>             <span class="at">type =</span> <span class="st">"Peto-Peto"</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>             <span class="at">distribution =</span> <span class="st">"approximate"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Approximative Two-Sample Peto-Peto Test
+
+data:  Surv(LENFOL, FSTAT) by AFB (0, 1)
+Z = 3.0423, p-value = 0.0018
+alternative hypothesis: true theta is not equal to 1</code></pre>
+</div>
+</div>
+</section>
+<section id="iii-survivalsurvdiff" class="level4">
+<h4 class="anchored" data-anchor-id="iii-survivalsurvdiff">iii) <code>survival::survdiff()</code></h4>
+<p><code>survival::survdiff()</code> tests if there is a difference between two or more survival curves using the <span class="math inline">\(G^\rho\)</span> family of tests, or for a single curve against a known alternative and with <span class="math inline">\(\rho\)</span>=1, it is equivalent to the Peto &amp; Peto modification of the Gehan-Wilcoxon test. The p-value generated is 0.0016528 . <code>survminer::surv_pvalue()</code> generates a p-value of 0.0017 for the same test. This subtle difference can be caused by the fact that these two functions: <code>survival::survdiff(rho = 1)</code> implements the <span class="math inline">\(G^\rho\)</span> test with weights <span class="math inline">\(S(t)^\rho\)</span>, whereas <code>survminer:: surv_pvalue()</code> test uses weight of a modified pooled survival estimate <code>S1</code>. Mathematically, these methods can be represented as:</p>
+<p>Assume : <span class="math inline">\(t_i\)</span> for <span class="math inline">\(i=1,…,T\)</span> are possible event times, <span class="math inline">\(n_{ti}\)</span>is the overall risk set size on the time<span class="math inline">\(t_i\)</span>, <span class="math inline">\(e_{ti}\)</span>number of overall expected events in the time<span class="math inline">\(t_i\)</span> and <span class="math inline">\(w{t_i}\)</span> is a weight for the statistic, then <code>S1</code>Peto-Peto’s modified survival estimate: <span class="math display">\[
+w(t_i) = \hat{S}_1(t_i) = \prod_{t_i = 1}^{T} \left(1 - \frac{e_{t_i}}{n_{t_i} + 1} \right)
+\]</span></p>
+<p>The <code>survdiff</code> function uses <span class="math inline">\(G(\rho)=\hat{S}(t_i)^\rho, \rho \geq 0\)</span> , where <span class="math inline">\(\hat{S}(t_i)\)</span> is the Kaplan-Meier estimate of the survival function at time <span class="math inline">\(t_i\)</span>.</p>
+<p><span class="math display">\[
+\hat{S}_1(t_i) = \prod_{t_i = 1}^{T} \left(1 - \frac{e_{t_i}}{n_{t_i}} \right)
+\]</span></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>(L<span class="ot">&lt;-</span> survival<span class="sc">::</span><span class="fu">survdiff</span>(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  survival<span class="sc">::</span><span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB,<span class="at">rho =</span> <span class="dv">1</span>,<span class="at">data =</span> WHAS))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+survival::survdiff(formula = survival::Surv(LENFOL, FSTAT) ~ 
+    AFB, data = WHAS, rho = 1)
+
+        N Observed Expected (O-E)^2/E (O-E)^2/V
+AFB=0 422    130.1    142.8      1.14       9.9
+AFB=1  78     36.4     23.7      6.84       9.9
+
+ Chisq= 9.9  on 1 degrees of freedom, p= 0.002 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extending the decimal places for p-value</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>chisq_value<span class="ot">&lt;-</span>L<span class="sc">$</span>chisq</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>p_value<span class="ot">&lt;-</span><span class="dv">1</span><span class="sc">-</span><span class="fu">pchisq</span>(chisq_value, <span class="at">df =</span> <span class="fu">length</span>(L<span class="sc">$</span>n) <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"p-value="</span>, <span class="fu">format</span>(p_value,<span class="at">digits =</span> <span class="dv">9</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>p-value= 0.00165276596 </code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="b.-modified-peto-peto." class="level3">
+<h3 class="anchored" data-anchor-id="b.-modified-peto-peto.">b). Modified Peto-Peto.</h3>
+<section id="i.-survminersurv_pvalue" class="level4">
+<h4 class="anchored" data-anchor-id="i.-survminersurv_pvalue">i). <code>survminer::surv_pvalue()</code></h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>fit.null <span class="ot">&lt;-</span> <span class="fu">surv_fit</span>(<span class="fu">Surv</span>(LENFOL,FSTAT)<span class="sc">~</span>AFB, <span class="at">data =</span> WHAS)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">surv_pvalue</span>(fit.null,</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">method =</span> <span class="st">"S2"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  variable   pval             method   pval.txt
+1      AFB 0.0018 modified Peto-Peto p = 0.0018</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extending the decimal places for the p-value</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>p<span class="ot">&lt;-</span><span class="fu">surv_pvalue</span>(fit, <span class="at">method=</span><span class="st">"S2"</span>)<span class="sc">$</span>pval</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sprintf</span>(<span class="st">"%.9f"</span>, p)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "0.001800000"</code></pre>
+</div>
+</div>
+<p>Just like for Peto-Peto, the code below generates the test statistics for Modified Peto-Peto using <a href="https://github.com/kassambara/survminer/blob/master/R/weighted_logrank.R">custom R function</a>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>modified_peto_peto_test <span class="ot">&lt;-</span> <span class="cf">function</span>(formula, data) {</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  mf <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">model.frame</span>(formula, data)</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  surv <span class="ot">&lt;-</span> mf[[<span class="dv">1</span>]]</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  time <span class="ot">&lt;-</span> surv[, <span class="st">"time"</span>]</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>  status <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(surv[, <span class="st">"status"</span>] <span class="sc">==</span> <span class="dv">2</span>, <span class="dv">1</span>, surv[, <span class="st">"status"</span>])</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  group <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(mf[[<span class="dv">2</span>]])</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>  groups <span class="ot">&lt;-</span> <span class="fu">levels</span>(group)</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>  event_times <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">unique</span>(time[status <span class="sc">==</span> <span class="dv">1</span>]))</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>  k <span class="ot">&lt;-</span> <span class="fu">length</span>(event_times)   <span class="co"># number of event times</span></span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>  g <span class="ot">&lt;-</span> <span class="fu">length</span>(groups)        <span class="co"># number of groups</span></span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Risk set and event count matrices</span></span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>  n_jk <span class="ot">&lt;-</span> d_jk <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, k, g)</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (j <span class="cf">in</span> <span class="fu">seq_len</span>(g)) {</span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>    t_j <span class="ot">&lt;-</span> time[group <span class="sc">==</span> groups[j]]</span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>    s_j <span class="ot">&lt;-</span> status[group <span class="sc">==</span> groups[j]]</span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_len</span>(k)) {</span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>      ti <span class="ot">&lt;-</span> event_times[i]</span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>      n_jk[i, j] <span class="ot">&lt;-</span> <span class="fu">sum</span>(t_j <span class="sc">&gt;=</span> ti)</span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>      d_jk[i, j] <span class="ot">&lt;-</span> <span class="fu">sum</span>(t_j <span class="sc">==</span> ti <span class="sc">&amp;</span> s_j <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Totals</span></span>
+<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>  n_i <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(n_jk)</span>
+<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a>  d_i <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(d_jk)</span>
+<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a>  s1 <span class="ot">&lt;-</span> <span class="fu">cumprod</span>(<span class="dv">1</span> <span class="sc">-</span> d_i <span class="sc">/</span> (n_i <span class="sc">+</span> <span class="dv">1</span>))<span class="co"># ---- Modified Peto-Peto weights (S2) ----</span></span>
+<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a>  w  <span class="ot">&lt;-</span> s1 <span class="sc">*</span> n_i <span class="sc">/</span> (n_i <span class="sc">+</span> <span class="dv">1</span>)</span>
+<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ---- 2-group test ----</span></span>
+<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a>  e1 <span class="ot">&lt;-</span> n_jk[, <span class="dv">1</span>] <span class="sc">*</span> d_i <span class="sc">/</span> n_i</span>
+<span id="cb25-29"><a href="#cb25-29" aria-hidden="true" tabindex="-1"></a>  Q <span class="ot">&lt;-</span> <span class="fu">sum</span>(w <span class="sc">*</span> (d_jk[, <span class="dv">1</span>] <span class="sc">-</span> e1))</span>
+<span id="cb25-30"><a href="#cb25-30" aria-hidden="true" tabindex="-1"></a>  VarQ <span class="ot">&lt;-</span> <span class="fu">sum</span>(</span>
+<span id="cb25-31"><a href="#cb25-31" aria-hidden="true" tabindex="-1"></a>    w<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> n_jk[, <span class="dv">1</span>] <span class="sc">*</span> n_jk[, <span class="dv">2</span>] <span class="sc">*</span> d_i <span class="sc">*</span> (n_i <span class="sc">-</span> d_i) <span class="sc">/</span></span>
+<span id="cb25-32"><a href="#cb25-32" aria-hidden="true" tabindex="-1"></a>      (n_i<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> (n_i <span class="sc">-</span> <span class="dv">1</span>)),</span>
+<span id="cb25-33"><a href="#cb25-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">na.rm =</span> <span class="cn">TRUE</span></span>
+<span id="cb25-34"><a href="#cb25-34" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb25-35"><a href="#cb25-35" aria-hidden="true" tabindex="-1"></a>  chisq <span class="ot">&lt;-</span> (Q<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> VarQ</span>
+<span id="cb25-36"><a href="#cb25-36" aria-hidden="true" tabindex="-1"></a>  pvalue <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">pchisq</span>(chisq, <span class="at">df =</span> <span class="dv">1</span>, <span class="at">lower.tail =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb25-37"><a href="#cb25-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">chisq =</span> chisq,<span class="at">df =</span> <span class="dv">1</span>,<span class="at">pvalue =</span> pvalue,<span class="at">method =</span> <span class="st">"Modified Peto-Peto (S2)"</span></span>
+<span id="cb25-38"><a href="#cb25-38" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb25-39"><a href="#cb25-39" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb25-40"><a href="#cb25-40" aria-hidden="true" tabindex="-1"></a><span class="fu">modified_peto_peto_test</span>(<span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB, <span class="at">data =</span> WHAS)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$chisq
+[1] 9.749083
+
+$df
+[1] 1
+
+$pvalue
+[1] 0.001794122
+
+$method
+[1] "Modified Peto-Peto (S2)"</code></pre>
+</div>
+</div>
+</section>
+<section id="ii.-coinlogrank_test" class="level4">
+<h4 class="anchored" data-anchor-id="ii.-coinlogrank_test">ii). <code>coin::logrank_test()</code></h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">logrank_test</span>(<span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB,<span class="at">data =</span> WHAS,<span class="at">type =</span> <span class="st">"Andersen-Borgan-Gill-Keiding"</span>,</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="at">distribution =</span> <span class="st">"asymptotic"</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic Two-Sample Andersen-Borgan-Gill-Keiding Test
+
+data:  Surv(LENFOL, FSTAT) by AFB (0, 1)
+Z = 3.0276, p-value = 0.002465
+alternative hypothesis: true theta is not equal to 1</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="c.-tarone-ware." class="level3">
+<h3 class="anchored" data-anchor-id="c.-tarone-ware.">c). Tarone-Ware.</h3>
+<section id="i.-survminersurv_pvalue-1" class="level4">
+<h4 class="anchored" data-anchor-id="i.-survminersurv_pvalue-1">i). <code>survminer::surv_pvalue()</code></h4>
+<p>It balances sensitivity between early and late differences. The <code>survdiff()</code> function implements the <span class="math inline">\(G(\rho)\)</span> family with parameter <span class="math inline">\(\rho\)</span> but does not include the Tarone-Ware option; Tarone-Ware weight is proportional to <span class="math inline">\(\sqrt{n_k}\)</span>, which is not of the <span class="math inline">\(\hat{S}(t)^\rho\)</span> family; therefore, it should not be implemented as <code>rho=</code> option. Therefore, in this function, there is no inbuilt implementation of <code>Tarone-Ware</code> option, although some analysts approximate it by suggesting <span class="math inline">\(\rho\)</span>= 0.5, such that it assigns weights between standard log_rank (<span class="math inline">\(\rho\)</span>= 0) and tests that emphasise on early events like Gehan-Breslow. For this document, computation is based on the definition of Tarone-Ware, which is weighted by taking the square root of the risk set <span class="math inline">\(\sqrt{n_k}\)</span>. This is possible to define in the <code>survminer</code> package.</p>
+<p>The <code>survminer</code> package enables R functions for visualisation and survival analysis. <code>survminer::surv_pvalue()</code> function enables one to specify the weight <code>sqrtN</code> for Tarone-Ware in R. This outputs only the p-value of the specified test. The package does not have an inbuilt function to generate the test statistic.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>fit<span class="ot">&lt;-</span><span class="fu">survfit</span>(<span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB, <span class="at">data =</span> WHAS)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="fu">surv_pvalue</span>(fit,<span class="at">method=</span><span class="st">"sqrtN"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  variable   pval      method   pval.txt
+1      AFB 0.0022 Tarone-Ware p = 0.0022</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extending the decimal places for the p-value</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>p<span class="ot">&lt;-</span><span class="fu">surv_pvalue</span>(fit, <span class="at">method=</span><span class="st">"SqrtN"</span>)<span class="sc">$</span>pval</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sprintf</span>(<span class="st">"%.9f"</span>, p)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "0.002200000"</code></pre>
+</div>
+</div>
+<p>Just like for Peto-Peto, the code below generates the test statistics for the Tarone-Ware test based on this <a href="https://github.com/kassambara/survminer/blob/master/R/weighted_logrank.R">custom R function</a>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>tarone_ware_test <span class="ot">&lt;-</span> <span class="cf">function</span>(formula, data) {</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  mf <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">model.frame</span>(formula, data)</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  surv <span class="ot">&lt;-</span> mf[[<span class="dv">1</span>]]</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  time <span class="ot">&lt;-</span> surv[, <span class="st">"time"</span>]</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  status <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(surv[, <span class="st">"status"</span>] <span class="sc">==</span> <span class="dv">2</span>, <span class="dv">1</span>, surv[, <span class="st">"status"</span>])</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  group <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(mf[[<span class="dv">2</span>]])</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>  groups <span class="ot">&lt;-</span> <span class="fu">levels</span>(group)</span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>  event_times <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">unique</span>(time[status <span class="sc">==</span> <span class="dv">1</span>]))</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>  k <span class="ot">&lt;-</span> <span class="fu">length</span>(event_times)</span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>  g <span class="ot">&lt;-</span> <span class="fu">length</span>(groups)</span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>  n_jk <span class="ot">&lt;-</span> d_jk <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, k, g)</span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (j <span class="cf">in</span> <span class="fu">seq_len</span>(g)) {</span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>    t_j <span class="ot">&lt;-</span> time[group <span class="sc">==</span> groups[j]]</span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a>    s_j <span class="ot">&lt;-</span> status[group <span class="sc">==</span> groups[j]]</span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_len</span>(k)) {</span>
+<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a>      ti <span class="ot">&lt;-</span> event_times[i]</span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>      n_jk[i,j] <span class="ot">&lt;-</span> <span class="fu">sum</span>(t_j <span class="sc">&gt;=</span> ti)</span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a>      d_jk[i,j] <span class="ot">&lt;-</span> <span class="fu">sum</span>(t_j <span class="sc">==</span> ti <span class="sc">&amp;</span> s_j <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a>  n_i <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(n_jk)</span>
+<span id="cb33-22"><a href="#cb33-22" aria-hidden="true" tabindex="-1"></a>  d_i <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(d_jk)</span>
+<span id="cb33-23"><a href="#cb33-23" aria-hidden="true" tabindex="-1"></a>  w <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(n_i)   <span class="co"># Tarone-Ware weight</span></span>
+<span id="cb33-24"><a href="#cb33-24" aria-hidden="true" tabindex="-1"></a>  e1 <span class="ot">&lt;-</span> n_jk[,<span class="dv">1</span>] <span class="sc">*</span> d_i <span class="sc">/</span> n_i</span>
+<span id="cb33-25"><a href="#cb33-25" aria-hidden="true" tabindex="-1"></a>  Q <span class="ot">&lt;-</span> <span class="fu">sum</span>(w <span class="sc">*</span> (d_jk[,<span class="dv">1</span>] <span class="sc">-</span> e1))</span>
+<span id="cb33-26"><a href="#cb33-26" aria-hidden="true" tabindex="-1"></a>  VarQ <span class="ot">&lt;-</span> <span class="fu">sum</span>(</span>
+<span id="cb33-27"><a href="#cb33-27" aria-hidden="true" tabindex="-1"></a>    w<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> n_jk[,<span class="dv">1</span>] <span class="sc">*</span> n_jk[,<span class="dv">2</span>] <span class="sc">*</span> d_i <span class="sc">*</span> (n_i <span class="sc">-</span> d_i) <span class="sc">/</span></span>
+<span id="cb33-28"><a href="#cb33-28" aria-hidden="true" tabindex="-1"></a>    (n_i<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> (n_i <span class="sc">-</span> <span class="dv">1</span>)),</span>
+<span id="cb33-29"><a href="#cb33-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">na.rm =</span> <span class="cn">TRUE</span></span>
+<span id="cb33-30"><a href="#cb33-30" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb33-31"><a href="#cb33-31" aria-hidden="true" tabindex="-1"></a>  chisq <span class="ot">&lt;-</span> (Q<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> VarQ</span>
+<span id="cb33-32"><a href="#cb33-32" aria-hidden="true" tabindex="-1"></a>  pvalue <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">pchisq</span>(chisq, <span class="at">df =</span> <span class="dv">1</span>, <span class="at">lower.tail =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb33-33"><a href="#cb33-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">chisq =</span> chisq, <span class="at">df =</span> <span class="dv">1</span>, <span class="at">pvalue =</span> pvalue, <span class="at">method =</span> <span class="st">"Tarone-Ware"</span>)</span>
+<span id="cb33-34"><a href="#cb33-34" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb33-35"><a href="#cb33-35" aria-hidden="true" tabindex="-1"></a><span class="fu">tarone_ware_test</span>(<span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB, <span class="at">data =</span> WHAS)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$chisq
+[1] 9.42297
+
+$df
+[1] 1
+
+$pvalue
+[1] 0.002142842
+
+$method
+[1] "Tarone-Ware"</code></pre>
+</div>
+</div>
+</section>
+<section id="ii-coinlogrank_test-1" class="level4">
+<h4 class="anchored" data-anchor-id="ii-coinlogrank_test-1">ii) <code>coin::logrank_test()</code></h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">logrank_test</span>(<span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB,<span class="at">data =</span> WHAS,<span class="at">type =</span> <span class="st">"Tarone-Ware"</span>,</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="at">distribution =</span> <span class="st">"asymptotic"</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic Two-Sample Tarone-Ware Test
+
+data:  Surv(LENFOL, FSTAT) by AFB (0, 1)
+Z = 2.9636, p-value = 0.003041
+alternative hypothesis: true theta is not equal to 1</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="d.-gehan-breslow." class="level3">
+<h3 class="anchored" data-anchor-id="d.-gehan-breslow.">d). Gehan-Breslow.</h3>
+<section id="i.-survminersurv_pvalue-2" class="level4">
+<h4 class="anchored" data-anchor-id="i.-survminersurv_pvalue-2">i). <code>survminer::surv_pvalue()</code></h4>
+<p>The <code>survdiff()</code> function implements the <span class="math inline">\(G(\rho)\)</span> family with parameter <span class="math inline">\(\rho\)</span> but does not include Gehan-Breslow; Gehan-Breslow weight is proportional to <span class="math inline">\(n_k\)</span>, which is not of the <span class="math inline">\(\hat{S}(t)^\rho\)</span> family; therefore, it is not implemented as <code>rho=</code> option. Therefore, there is no inbuilt implementation of the <code>Gehan-Breslow</code> option, although some analysts approximate it by suggesting <span class="math inline">\(\rho\)</span>=1 such that it assigns weights by emphasising on early events. Here, we make a consideration based on the definition of Gehan-Breslow, which is weighted by taking the total risk set <span class="math inline">\(n_k\)</span>. <code>survminer::surv_pvalue()</code> function enables one to specify the weight <code>n</code> for Gehan-Breslow in R. This outputs only the p-value of the specified test. The package does not have an inbuilt function to generate the test statistic.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>fit<span class="ot">&lt;-</span><span class="fu">survfit</span>(<span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB, <span class="at">data =</span> WHAS)</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survminer)</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="fu">surv_pvalue</span>(fit,<span class="at">method=</span><span class="st">"n"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  variable   pval        method   pval.txt
+1      AFB 0.0041 Gehan-Breslow p = 0.0041</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extending the decimal places for the p-value</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>p<span class="ot">&lt;-</span><span class="fu">surv_pvalue</span>(fit, <span class="at">method=</span><span class="st">"n"</span>)<span class="sc">$</span>pval</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sprintf</span>(<span class="st">"%.9f"</span>, p)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "0.004100000"</code></pre>
+</div>
+</div>
+<p>The same <code>custom R function</code> is modified and implemented for the Gehan-Breslow Weighted Log-rank test. This procedure provides a similar p-value as that of <code>survminer::surv_pvalue()</code> but again outputs the test statistic, which is not enabled by <code>survminer</code> package.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>Gehan_Breslow_test <span class="ot">&lt;-</span> <span class="cf">function</span>(formula, data) {</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  mf <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">model.frame</span>(formula, data)</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>  surv <span class="ot">&lt;-</span> mf[[<span class="dv">1</span>]]</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  time <span class="ot">&lt;-</span> surv[, <span class="st">"time"</span>]</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>  status <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(surv[, <span class="st">"status"</span>] <span class="sc">==</span> <span class="dv">2</span>, <span class="dv">1</span>, surv[, <span class="st">"status"</span>])</span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>  group <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(mf[[<span class="dv">2</span>]])</span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>  groups <span class="ot">&lt;-</span> <span class="fu">levels</span>(group)</span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a>  event_times <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">unique</span>(time[status <span class="sc">==</span> <span class="dv">1</span>]))</span>
+<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a>  k <span class="ot">&lt;-</span> <span class="fu">length</span>(event_times)</span>
+<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a>  g <span class="ot">&lt;-</span> <span class="fu">length</span>(groups)</span>
+<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a>  n_jk <span class="ot">&lt;-</span> d_jk <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, k, g)</span>
+<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (j <span class="cf">in</span> <span class="fu">seq_len</span>(g)) {</span>
+<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a>    t_j <span class="ot">&lt;-</span> time[group <span class="sc">==</span> groups[j]]</span>
+<span id="cb41-14"><a href="#cb41-14" aria-hidden="true" tabindex="-1"></a>    s_j <span class="ot">&lt;-</span> status[group <span class="sc">==</span> groups[j]]</span>
+<span id="cb41-15"><a href="#cb41-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_len</span>(k)) {</span>
+<span id="cb41-16"><a href="#cb41-16" aria-hidden="true" tabindex="-1"></a>      ti <span class="ot">&lt;-</span> event_times[i]</span>
+<span id="cb41-17"><a href="#cb41-17" aria-hidden="true" tabindex="-1"></a>      n_jk[i,j] <span class="ot">&lt;-</span> <span class="fu">sum</span>(t_j <span class="sc">&gt;=</span> ti)</span>
+<span id="cb41-18"><a href="#cb41-18" aria-hidden="true" tabindex="-1"></a>      d_jk[i,j] <span class="ot">&lt;-</span> <span class="fu">sum</span>(t_j <span class="sc">==</span> ti <span class="sc">&amp;</span> s_j <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb41-19"><a href="#cb41-19" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb41-20"><a href="#cb41-20" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb41-21"><a href="#cb41-21" aria-hidden="true" tabindex="-1"></a>  n_i <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(n_jk)</span>
+<span id="cb41-22"><a href="#cb41-22" aria-hidden="true" tabindex="-1"></a>  d_i <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(d_jk)</span>
+<span id="cb41-23"><a href="#cb41-23" aria-hidden="true" tabindex="-1"></a>  w <span class="ot">&lt;-</span> n_i  <span class="co"># Gehan-Breslow weight</span></span>
+<span id="cb41-24"><a href="#cb41-24" aria-hidden="true" tabindex="-1"></a>  e1 <span class="ot">&lt;-</span> n_jk[,<span class="dv">1</span>] <span class="sc">*</span> d_i <span class="sc">/</span> n_i</span>
+<span id="cb41-25"><a href="#cb41-25" aria-hidden="true" tabindex="-1"></a>  Q <span class="ot">&lt;-</span> <span class="fu">sum</span>(w <span class="sc">*</span> (d_jk[,<span class="dv">1</span>] <span class="sc">-</span> e1))</span>
+<span id="cb41-26"><a href="#cb41-26" aria-hidden="true" tabindex="-1"></a>  VarQ <span class="ot">&lt;-</span> <span class="fu">sum</span>(</span>
+<span id="cb41-27"><a href="#cb41-27" aria-hidden="true" tabindex="-1"></a>    w<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> n_jk[,<span class="dv">1</span>] <span class="sc">*</span> n_jk[,<span class="dv">2</span>] <span class="sc">*</span> d_i <span class="sc">*</span> (n_i <span class="sc">-</span> d_i) <span class="sc">/</span></span>
+<span id="cb41-28"><a href="#cb41-28" aria-hidden="true" tabindex="-1"></a>    (n_i<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> (n_i <span class="sc">-</span> <span class="dv">1</span>)),</span>
+<span id="cb41-29"><a href="#cb41-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">na.rm =</span> <span class="cn">TRUE</span></span>
+<span id="cb41-30"><a href="#cb41-30" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb41-31"><a href="#cb41-31" aria-hidden="true" tabindex="-1"></a>  chisq <span class="ot">&lt;-</span> (Q<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> VarQ</span>
+<span id="cb41-32"><a href="#cb41-32" aria-hidden="true" tabindex="-1"></a>  pvalue <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">pchisq</span>(chisq, <span class="at">df =</span> <span class="dv">1</span>, <span class="at">lower.tail =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb41-33"><a href="#cb41-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">chisq =</span> chisq, <span class="at">df =</span> <span class="dv">1</span>, <span class="at">pvalue =</span> pvalue, <span class="at">method =</span> <span class="st">"Gehan-Breslow"</span>)</span>
+<span id="cb41-34"><a href="#cb41-34" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb41-35"><a href="#cb41-35" aria-hidden="true" tabindex="-1"></a><span class="fu">Gehan_Breslow_test</span>(<span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB, <span class="at">data =</span> WHAS)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$chisq
+[1] 8.259274
+
+$df
+[1] 1
+
+$pvalue
+[1] 0.004054433
+
+$method
+[1] "Gehan-Breslow"</code></pre>
+</div>
+</div>
+</section>
+<section id="ii-coinlogrank_test-2" class="level4">
+<h4 class="anchored" data-anchor-id="ii-coinlogrank_test-2">ii) <code>coin::logrank_test()</code></h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">logrank_test</span>(<span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB,<span class="at">data =</span> WHAS,<span class="at">type =</span> <span class="st">"Gehan-Breslow"</span>,</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="at">distribution =</span> <span class="st">"asymptotic"</span></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic Two-Sample Gehan-Breslow Test
+
+data:  Surv(LENFOL, FSTAT) by AFB (0, 1)
+Z = 2.7863, p-value = 0.005331
+alternative hypothesis: true theta is not equal to 1</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="e.-fleming-harrington" class="level3">
+<h3 class="anchored" data-anchor-id="e.-fleming-harrington">e). Fleming-Harrington</h3>
+<section id="i.-nphrctwlrt" class="level4">
+<h4 class="anchored" data-anchor-id="i.-nphrctwlrt">i). <code>nphRCT::wlrt()</code></h4>
+<p>This test is implemented using the function <code>wlrt()</code> from the <code>nphRCT</code> package. This function uses <span class="math inline">\(G(\rho,\gamma)=\hat{S}(t)^\rho (1-\hat{S}(t))^\gamma; \rho,\gamma \geq 0\)</span> (Fleming-Harrington test), where <span class="math inline">\(\hat{S}(t)\)</span> is the Kaplan-Meier estimate of the survival function at time <span class="math inline">\(t\)</span>. When <span class="math inline">\(\rho=1, \gamma=0\)</span>, this test can be used to detect early differences in the survival curves. To obtain the corresponding <span class="math inline">\(p\)</span>-value, we can either use <em>2(1-pnorm(abs(ppp$z),0,1))</em> or we can square the test statistic <em>WL$z</em> by using <em>(ppp$z)^2</em> and obtain the corresponding <span class="math inline">\(p\)</span>-values as <em>1 - pchisq((ppp$z)^2,1)</em>; both the <span class="math inline">\(p\)</span>-values will be the same.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Places weight on hazards in the middle of the study.</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>(ppp <span class="ot">&lt;-</span> nphRCT<span class="sc">::</span><span class="fu">wlrt</span>(survival<span class="sc">::</span><span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB,   </span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> WHAS,<span class="at">method =</span> <span class="st">"fh"</span>,<span class="at">rho =</span> <span class="fl">0.5</span>,<span class="at">gamma =</span> <span class="fl">0.5</span> ))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         u    v_u        z trt_group
+1 6.312899 3.8646 3.211268         1</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>p<span class="ot">&lt;-</span><span class="dv">2</span> <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="fu">pnorm</span>(<span class="fu">abs</span>(ppp<span class="sc">$</span>z), <span class="dv">0</span>, <span class="dv">1</span>))</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"chisquare:"</span>, <span class="fu">round</span>(ppp<span class="sc">$</span>z<span class="sc">^</span><span class="dv">2</span>, <span class="dv">4</span>), <span class="st">"  p-value:"</span>, <span class="fu">round</span>(p, <span class="dv">4</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>chisquare: 10.3122   p-value: 0.0013 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Places weight on hazards in the middle of the study.</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>(ppp <span class="ot">&lt;-</span> nphRCT<span class="sc">::</span><span class="fu">wlrt</span>(survival<span class="sc">::</span><span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB,   </span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> WHAS,<span class="at">method =</span> <span class="st">"fh"</span>,<span class="at">rho =</span> <span class="dv">1</span>,<span class="at">gamma =</span> <span class="dv">1</span> ))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         u       v_u        z trt_group
+1 2.669976 0.7272873 3.130793         1</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>p<span class="ot">&lt;-</span><span class="dv">2</span> <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="fu">pnorm</span>(<span class="fu">abs</span>(ppp<span class="sc">$</span>z), <span class="dv">0</span>, <span class="dv">1</span>))</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"chisquare:"</span>, <span class="fu">round</span>(ppp<span class="sc">$</span>z<span class="sc">^</span><span class="dv">2</span>, <span class="dv">4</span>), <span class="st">"  p-value:"</span>, <span class="fu">round</span>(p, <span class="dv">4</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>chisquare: 9.8019   p-value: 0.0017 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Places weight on hazards at the end of the study.</span></span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>(ppp <span class="ot">&lt;-</span> nphRCT<span class="sc">::</span><span class="fu">wlrt</span>(survival<span class="sc">::</span><span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB,   </span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> WHAS,<span class="at">method =</span> <span class="st">"fh"</span>,<span class="at">rho =</span> <span class="dv">0</span>,<span class="at">gamma =</span> <span class="dv">1</span> ))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         u     v_u        z trt_group
+1 4.042585 1.71206 3.089582         1</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>p<span class="ot">&lt;-</span><span class="dv">2</span> <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="fu">pnorm</span>(<span class="fu">abs</span>(ppp<span class="sc">$</span>z), <span class="dv">0</span>, <span class="dv">1</span>))</span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"chisquare:"</span>, <span class="fu">round</span>(ppp<span class="sc">$</span>z<span class="sc">^</span><span class="dv">2</span>, <span class="dv">4</span>), <span class="st">"  p-value:"</span>, <span class="fu">round</span>(p, <span class="dv">4</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>chisquare: 9.5455   p-value: 0.002 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Places weight on hazards at the end of the study.</span></span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>(ppp <span class="ot">&lt;-</span> nphRCT<span class="sc">::</span><span class="fu">wlrt</span>(survival<span class="sc">::</span><span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB,   </span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> WHAS,<span class="at">method =</span> <span class="st">"fh"</span>,<span class="at">rho =</span> <span class="fl">0.5</span>,<span class="at">gamma =</span> <span class="dv">2</span> ))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        u      v_u       z trt_group
+1 1.07388 0.139906 2.87103         1</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>p<span class="ot">&lt;-</span><span class="dv">2</span> <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="fu">pnorm</span>(<span class="fu">abs</span>(ppp<span class="sc">$</span>z), <span class="dv">0</span>, <span class="dv">1</span>))</span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"chisquare:"</span>, <span class="fu">round</span>(ppp<span class="sc">$</span>z<span class="sc">^</span><span class="dv">2</span>, <span class="dv">4</span>), <span class="st">"  p-value:"</span>, <span class="fu">round</span>(p, <span class="dv">4</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>chisquare: 8.2428   p-value: 0.0041 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Places weight on hazards at the beginning of the study.</span></span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>(ppp <span class="ot">&lt;-</span> nphRCT<span class="sc">::</span><span class="fu">wlrt</span>(survival<span class="sc">::</span><span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB,   </span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> WHAS,<span class="at">method =</span> <span class="st">"fh"</span>,<span class="at">rho =</span> <span class="dv">1</span>,<span class="at">gamma =</span> <span class="dv">0</span> ))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         u      v_u       z trt_group
+1 12.73229 16.37483 3.14643         1</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>p<span class="ot">&lt;-</span><span class="dv">2</span> <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="fu">pnorm</span>(<span class="fu">abs</span>(ppp<span class="sc">$</span>z), <span class="dv">0</span>, <span class="dv">1</span>))</span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"chisquare:"</span>, <span class="fu">round</span>(ppp<span class="sc">$</span>z<span class="sc">^</span><span class="dv">2</span>, <span class="dv">4</span>), <span class="st">"  p-value:"</span>, <span class="fu">round</span>(p, <span class="dv">4</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>chisquare: 9.9   p-value: 0.0017 </code></pre>
+</div>
+</div>
+</section>
+<section id="ii.-coinlogrank_test-1" class="level4">
+<h4 class="anchored" data-anchor-id="ii.-coinlogrank_test-1">ii). <code>coin::logrank_test()</code></h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Places weight on hazards in the middle of the study.</span></span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a><span class="fu">logrank_test</span>(<span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB, <span class="at">data =</span> WHAS,</span>
+<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a>             <span class="at">type =</span> <span class="st">"Fleming-Harrington"</span>, <span class="at">rho =</span> <span class="fl">0.5</span>, <span class="at">gamma =</span> <span class="fl">0.5</span>,</span>
+<span id="cb65-4"><a href="#cb65-4" aria-hidden="true" tabindex="-1"></a>             <span class="at">distribution =</span> <span class="st">"asymptotic"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic Two-Sample Fleming-Harrington Test
+
+data:  Surv(LENFOL, FSTAT) by AFB (0, 1)
+Z = 3.0582, p-value = 0.002226
+alternative hypothesis: true theta is not equal to 1</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Places weight on hazards in the middle of the study.</span></span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a><span class="fu">logrank_test</span>(<span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB, <span class="at">data =</span> WHAS,</span>
+<span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a>             <span class="at">type =</span> <span class="st">"Fleming-Harrington"</span>, <span class="at">rho =</span> <span class="dv">1</span>, <span class="at">gamma =</span> <span class="dv">1</span>,</span>
+<span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a>             <span class="at">distribution =</span> <span class="st">"asymptotic"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic Two-Sample Fleming-Harrington Test
+
+data:  Surv(LENFOL, FSTAT) by AFB (0, 1)
+Z = 2.972, p-value = 0.002958
+alternative hypothesis: true theta is not equal to 1</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Places weight on hazards at the end of the study.</span></span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a><span class="fu">logrank_test</span>(<span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB, <span class="at">data =</span> WHAS,</span>
+<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>             <span class="at">type =</span> <span class="st">"Fleming-Harrington"</span>, <span class="at">rho =</span> <span class="dv">0</span>, <span class="at">gamma =</span> <span class="dv">1</span>,</span>
+<span id="cb69-4"><a href="#cb69-4" aria-hidden="true" tabindex="-1"></a>             <span class="at">distribution =</span> <span class="st">"asymptotic"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic Two-Sample Fleming-Harrington Test
+
+data:  Surv(LENFOL, FSTAT) by AFB (0, 1)
+Z = 2.9256, p-value = 0.003438
+alternative hypothesis: true theta is not equal to 1</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Places weight on hazards at the end of the study.</span></span>
+<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a><span class="fu">logrank_test</span>(<span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB, <span class="at">data =</span> WHAS,</span>
+<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a>             <span class="at">type =</span> <span class="st">"Fleming-Harrington"</span>, <span class="at">rho =</span> <span class="fl">0.5</span>, <span class="at">gamma =</span> <span class="dv">2</span>,</span>
+<span id="cb71-4"><a href="#cb71-4" aria-hidden="true" tabindex="-1"></a>             <span class="at">distribution =</span> <span class="st">"asymptotic"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic Two-Sample Fleming-Harrington Test
+
+data:  Surv(LENFOL, FSTAT) by AFB (0, 1)
+Z = 2.7163, p-value = 0.006601
+alternative hypothesis: true theta is not equal to 1</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a>  <span class="co">#Places weight on hazards at the beginning of the study.</span></span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a><span class="fu">logrank_test</span>(<span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB, <span class="at">data =</span> WHAS,</span>
+<span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a>             <span class="at">type =</span> <span class="st">"Fleming-Harrington"</span>, <span class="at">rho =</span> <span class="dv">1</span>, <span class="at">gamma =</span> <span class="dv">0</span>,</span>
+<span id="cb73-4"><a href="#cb73-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">distribution =</span> <span class="st">"asymptotic"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Asymptotic Two-Sample Fleming-Harrington Test
+
+data:  Surv(LENFOL, FSTAT) by AFB (0, 1)
+Z = 3.0423, p-value = 0.002348
+alternative hypothesis: true theta is not equal to 1</code></pre>
+</div>
+</div>
+<p><strong>Summary results for Weighted log-rank test.</strong></p>
+<p>Note: <code>coin::logrank_test()</code> - Default distribution is <code>asymptotic</code>. Generates <span class="math inline">\(Z\)</span> test statistic. <span class="math inline">\(Z^2 = \chi^2_{(1)}\)</span></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 21%">
+<col style="width: 43%">
+<col style="width: 22%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Test</th>
+<th>Function</th>
+<th>Chi-square</th>
+<th>P-Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Peto - Peto</strong></td>
+<td>survminer: : surv_pvalue()</td>
+<td>Null</td>
+<td>0.0017</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>custom R function</td>
+<td>9.823786</td>
+<td>0.001722693</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>coin: : logrank_test()-asymptotic distribution</td>
+<td><p><span class="math inline">\(Z\)</span>=3.0423</p>
+<p><span class="math inline">\(Z^2\)</span>=9.2556</p></td>
+<td>0.002348</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>coin: : logrank_test()- approximate distribution</td>
+<td><p><span class="math inline">\(Z\)</span>=3.0423</p>
+<p><span class="math inline">\(Z^2\)</span>=9.2556</p></td>
+<td>0.0022</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>survival: : survdiff()</td>
+<td>9.9</td>
+<td>0.001652766</td>
+</tr>
+<tr class="even">
+<td><strong>Modified Peto-Peto</strong></td>
+<td>survminer: : surv_pvalue()</td>
+<td>Null</td>
+<td>0.0018</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>custom R function</td>
+<td>9.749083</td>
+<td>0.001794122</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>coin: : logrank_test()</td>
+<td><p><span class="math inline">\(Z\)</span>=3.0276</p>
+<p><span class="math inline">\(Z^2\)</span>=9.1664</p></td>
+<td>0.002465</td>
+</tr>
+<tr class="odd">
+<td><strong>Tarone-Ware</strong></td>
+<td>survminer: : surv_pvalue()</td>
+<td>Null</td>
+<td>0.00021</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>custom R function</td>
+<td>9.42297</td>
+<td>0.002142842</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>coin: : logrank_test()</td>
+<td><p><span class="math inline">\(Z\)</span>= 2.9636</p>
+<p><span class="math inline">\(Z^2\)</span>=8.7829</p></td>
+<td>0.003041</td>
+</tr>
+<tr class="even">
+<td><strong>Gehan- Breslow</strong></td>
+<td>survminer: : surv_pvalue()</td>
+<td>Null</td>
+<td>0.0041</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>custom R function</td>
+<td>8.259274</td>
+<td>0.004054433</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>coin: : logrank_test()</td>
+<td><p><span class="math inline">\(Z\)</span>=2.7863</p>
+<p><span class="math inline">\(Z^2\)</span>=7.7635</p></td>
+<td>0.005331</td>
+</tr>
+<tr class="odd">
+<td><strong>Fleming-Harrington</strong></td>
+<td><strong>nphRCT: : wlrt()</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td></td>
+<td>FH(0.5, 0.5)</td>
+<td>10.3122</td>
+<td>0.0013</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>FH(1, 1)</td>
+<td>9.8019</td>
+<td>0.0017</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>FH(0, 1)</td>
+<td>9.5455</td>
+<td>0.002</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>FH(0.5, 2)</td>
+<td>8.2428</td>
+<td>0.0041</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>FH(1,0</td>
+<td>9.9</td>
+<td>0.0017</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td><strong>coin: : logrank_test()</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td></td>
+<td>FH(0.5, 0.5)</td>
+<td><span class="math inline">\(Z\)</span>=3.0582 <span class="math inline">\(Z^2\)</span>=9.3526</td>
+<td>0.002226</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>FH(1, 1)</td>
+<td><span class="math inline">\(Z\)</span>=2.972 <span class="math inline">\(Z^2\)</span>=8.8327</td>
+<td>0.002958</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>FH(0, 1)</td>
+<td><span class="math inline">\(Z\)</span>=2.9256 <span class="math inline">\(Z^2\)</span>=8.5591</td>
+<td>0.0034938</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>FH(0.5, 2)</td>
+<td><span class="math inline">\(Z\)</span>=2.7163 <span class="math inline">\(Z^2\)</span>=7.3783</td>
+<td>0.006601</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>FH(1, 0)</td>
+<td><span class="math inline">\(Z\)</span>=3.0423 <span class="math inline">\(Z^2\)</span>=9.2556</td>
+<td>0.002348</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+<section id="max-combo-test." class="level1">
+<h1>2. Max-Combo test.</h1>
+<section id="i.-max-combono-strata" class="level3">
+<h3 class="anchored" data-anchor-id="i.-max-combono-strata">i). Max-Combo(No strata)</h3>
+<p>This is a universal criterion for examining the proximity of the survival functions, especially when no initial information about the trial is available. It combines multiple weighted log-rank criteria to enable sensitivity for equally, early, middle and late differences concurrently, such that it defines the maximum of the <span class="math inline">\(G^{0,1}\)</span> and <span class="math inline">\(G^{1,0}\)</span> criteria. It is also suitable when there is a violation of the proportional hazard assumption and uncertainty about the distribution of survival time.<br>
+The combination test aims for strong power to realise the survival curves difference over a range of possible alternative hypotheses. R software performs the combination test with an option to assign any set of weights using the function <code>logrank.maxtest()</code> from the <code>nph</code> package for comparison of two groups. <code>logrank.maxtest()</code> defaults to a two‑sided hypothesis, especially when no choice is made between the three in the alternative argument: <code>alternative=c("two.sided", "less", "greater")</code>. For this case, we specified to <code>"two.sided"</code>. <code>mvtnorm::GenzBretz()</code> calls the Genz–Bretz algorithm, a quasi-Monte Carlo method, which introduces randomness in each run; this generates slightly varying values for the unadjusted p-value in each run. Therefore, there is a need to use <code>set.seed()</code> for reproducibility. Max-Combo two-sided statistic is defined as <span class="math inline">\(Z_{\max} = \max(|Z_1|, |Z_2|, \ldots, |Z_k|)\)</span>. Therefore <span class="math inline">\(Z_{\max}\)</span>= 3.30, and the two-sided unadjusted p-value is: 0.00196<span class="math inline">\(\approx\)</span> 0.002. Bonferroni corrected p-value is 0.00385.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">254</span>)</span>
+<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a><span class="fu">logrank.maxtest</span>(</span>
+<span id="cb75-3"><a href="#cb75-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">time   =</span> WHAS<span class="sc">$</span>LENFOL,</span>
+<span id="cb75-4"><a href="#cb75-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">event  =</span> WHAS<span class="sc">$</span>FSTAT,</span>
+<span id="cb75-5"><a href="#cb75-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">group  =</span> WHAS<span class="sc">$</span>AFB,</span>
+<span id="cb75-6"><a href="#cb75-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">alternative =</span> <span class="fu">c</span>(<span class="st">"two.sided"</span>),</span>
+<span id="cb75-7"><a href="#cb75-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">rho =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>,<span class="dv">1</span>),</span>
+<span id="cb75-8"><a href="#cb75-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">gamma =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1</span>),</span>
+<span id="cb75-9"><a href="#cb75-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">event_time_weights =</span> <span class="cn">NULL</span>,</span>
+<span id="cb75-10"><a href="#cb75-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">algorithm =</span> mvtnorm<span class="sc">::</span><span class="fu">GenzBretz</span>(<span class="at">maxpts =</span> <span class="dv">50000</span>, <span class="at">abseps =</span> <span class="fl">1e-05</span>, <span class="at">releps =</span> <span class="dv">0</span>)</span>
+<span id="cb75-11"><a href="#cb75-11" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+logrank.maxtest(time = WHAS$LENFOL, event = WHAS$FSTAT, group = WHAS$AFB, 
+    alternative = c("two.sided"), rho = c(0, 1, 0, 1), gamma = c(0, 
+        0, 1, 1), event_time_weights = NULL, algorithm = mvtnorm::GenzBretz(maxpts = 50000, 
+        abseps = 1e-05, releps = 0))
+
+ Two sided p-value = 0.00196 (Bonferroni corrected: 0.00385)
+
+ Individual weighted log-rank tests:
+  Test     z        p
+1    1 -3.30 0.000962
+2    2 -3.15 0.001653
+3    3 -3.09 0.002004
+4    4 -3.13 0.001743</code></pre>
+</div>
+</div>
+</section>
+<section id="ii.-stratified-max-combo" class="level3">
+<h3 class="anchored" data-anchor-id="ii.-stratified-max-combo">ii). Stratified Max-Combo</h3>
+<p>Through the R package <code>strata.MaxCombo</code> using the function <code>SMCtest()</code>, the <code>Max-Combo</code> test can account for stratified baseline factors. Unlike in <code>Max-Combo</code>, <code>SMCtest</code> is almost certainly written to accept only one value for alternative, not multiple. Based on this <a href="https://onlinelibrary.wiley.com/doi/10.1002/bimj.202200126">article</a>, referenced in <code>strata.MaxCombo::SMCtest</code> documentation, there are three versions of stratified weighted logrank test, which include: combining within-strata information on the <span class="math inline">\(U\)</span>-statistic scale, <span class="math inline">\(Z\)</span>-statistic scale and <span class="math inline">\(N\)</span>-statistic scale. They differ only in terms of the definition of <span class="math inline">\(W_{ij}\)</span>(time dependent weight assigned to each event contribution). <span class="math inline">\(U\)</span>-statistic is the weighted sum of observed minus expected events. These three versions are defined in R package documentation as stratification methods 1,2 and 3. <code>z.list</code> is a vector of z values calculated from all stratified weighted log-rank tests under stratification method 1. <code>z.max</code> gives the z value that is the furthest away from 0 under stratification method 1. <code>pval</code> p-value of the desired alternative test under stratification method 1. <code>cov</code> is the covariance matrix of different startified weighted log-rank tests under stratification method 1. The test of hypothesis can be specified in the <code>alternative=c()</code> argument. For this case, two-sided hypothesis is used. Otherwise you can specify <code>less</code> or <code>greater</code> as well.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb77"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a><span class="fu">SMCtest</span>(</span>
+<span id="cb77-2"><a href="#cb77-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">time=</span> WHAS<span class="sc">$</span>LENFOL,</span>
+<span id="cb77-3"><a href="#cb77-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">event=</span> WHAS<span class="sc">$</span>FSTAT,</span>
+<span id="cb77-4"><a href="#cb77-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">group=</span>WHAS<span class="sc">$</span>AFB,</span>
+<span id="cb77-5"><a href="#cb77-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">stratum=</span>WHAS<span class="sc">$</span>GENDER,</span>
+<span id="cb77-6"><a href="#cb77-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">alternative =</span> <span class="fu">c</span>(<span class="st">"two.sided"</span>),</span>
+<span id="cb77-7"><a href="#cb77-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">rho =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>),</span>
+<span id="cb77-8"><a href="#cb77-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">gamma =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb77-9"><a href="#cb77-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$z.list
+[1] -3.181316 -3.008939 -2.979749 -3.092673
+
+$z.max
+[1] 3.181316
+
+$cor
+          [,1]      [,2]      [,3]      [,4]
+[1,] 1.0000000 0.9821119 0.8287777 0.8911845
+[2,] 0.9821119 1.0000000 0.7085849 0.7947908
+[3,] 0.8287777 0.7085849 1.0000000 0.9776784
+[4,] 0.8911845 0.7947908 0.9776784 1.0000000
+
+$pval
+[1] 0.002960945
+
+$z.list2
+[1] -3.181316 -2.977751 -3.043594 -3.103975
+
+$z.max2
+[1] 3.181316
+
+$cor2
+          [,1]      [,2]      [,3]      [,4]
+[1,] 1.0000000 0.9824736 0.8386179 0.8926592
+[2,] 0.9824736 1.0000000 0.7241105 0.7992002
+[3,] 0.8386179 0.7241105 1.0000000 0.9827113
+[4,] 0.8926592 0.7992002 0.9827113 1.0000000
+
+$pval2
+[1] 0.002852668
+
+$z.list3
+[1] -3.273802 -3.111862 -2.909857 -2.981427
+
+$z.max3
+[1] 3.273802
+
+$cor3
+          [,1]      [,2]      [,3]      [,4]
+[1,] 1.0000000 0.9848852 0.8341101 0.8868770
+[2,] 0.9848852 1.0000000 0.7315418 0.8001576
+[3,] 0.8341101 0.7315418 1.0000000 0.9856788
+[4,] 0.8868770 0.8001576 0.9856788 1.0000000
+
+$pval3
+[1] 0.001805345</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="modestly-weighted-log-rank-test." class="level1">
+<h1>3. Modestly Weighted Log-Rank test.</h1>
+<p>Max-Combo test is prone to counter-intuitive results, for instance, in cases where treatment is uniformly worse than control, Max-Combo can still offer a high chance of rejecting the null hypothesis, favouring treatment. Magirr, D. and Burman developed the Modestly Weighted Log-rank test to counter this issue (type I error control). It is designed for scenarios with delayed treatment effects, as it gives greater weight to later event times. However, the weighting is controlled (“modest”) so that an early worsening of the experimental arm is not overly penalised. In scenarios where the treatment effect appears early and diminishes over time, this test tends to lose sizeable power compared with the standard log‑rank test.</p>
+<section id="i.-modestly-weighted-log-rank-testno-strata" class="level3">
+<h3 class="anchored" data-anchor-id="i.-modestly-weighted-log-rank-testno-strata">i). Modestly Weighted Log-rank test(No strata)</h3>
+<p>Modestly Weighted Log-Rank is implemented in R using the function <code>wlrt()</code> from the <code>nphRCT</code> package by specifying <code>method="mw"</code>. <code>t*</code> and <code>s*</code> are parameters that control when the test starts assigning full weight to events. They are designed for delayed treatment effects.</p>
+<ul>
+<li><code>t*</code> <span class="math inline">\(\implies\)</span> Start assigning full weight after this time.</li>
+<li><code>s*</code> <span class="math inline">\(\implies\)</span> Start assigning full weight after this survival probability level.</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb79"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb79-1"><a href="#cb79-1" aria-hidden="true" tabindex="-1"></a>modestly <span class="ot">&lt;-</span> nphRCT<span class="sc">::</span><span class="fu">wlrt</span>(<span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB,<span class="at">data =</span> WHAS,<span class="at">method =</span> <span class="st">"mw"</span>,</span>
+<span id="cb79-2"><a href="#cb79-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">s_star =</span> <span class="fl">0.5</span></span>
+<span id="cb79-3"><a href="#cb79-3" aria-hidden="true" tabindex="-1"></a><span class="co">#t_star = 450</span></span>
+<span id="cb79-4"><a href="#cb79-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb79-5"><a href="#cb79-5" aria-hidden="true" tabindex="-1"></a>chi_sq<span class="ot">&lt;-</span>(modestly<span class="sc">$</span>z)<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb79-6"><a href="#cb79-6" aria-hidden="true" tabindex="-1"></a>p_value<span class="ot">&lt;-</span><span class="fu">pchisq</span>((modestly<span class="sc">$</span>z)<span class="sc">^</span><span class="dv">2</span>, <span class="at">df =</span> <span class="dv">1</span>, <span class="at">lower.tail =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb79-7"><a href="#cb79-7" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"Chi-square: %.6f   p-value: %.6f</span><span class="sc">\n</span><span class="st">"</span>, chi_sq, p_value))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Chi-square: 11.278612   p-value: 0.000784</code></pre>
+</div>
+</div>
+<p>Leton and Zuluaga (2001) illustrated that every weighted log-rank test can be written as either an observed-minus-expected test or as a permutation test. The weights can be reformulated as scores for a permutation test. The scores are obtained from the <code>nphRCT::find_scores</code> function. Plotting these scores against the rank of the event times provides an intuitive understanding of how the weighting operates in the modestly weighted log‑rank test, since the event scores decrease with time, as illustrated by Magirr(2021). Censoring score naturally reduces with time, since it is a negative cumulative sum of increasing weights.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb81"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a>df_scores_mw<span class="ot">&lt;-</span>nphRCT<span class="sc">::</span><span class="fu">find_scores</span>(<span class="at">formula=</span><span class="fu">Surv</span>(LENFOL,FSTAT)<span class="sc">~</span>AFB,</span>
+<span id="cb81-2"><a href="#cb81-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data=</span>WHAS,</span>
+<span id="cb81-3"><a href="#cb81-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">method=</span><span class="st">"mw"</span>,</span>
+<span id="cb81-4"><a href="#cb81-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">s_star =</span> <span class="fl">0.5</span>)</span>
+<span id="cb81-5"><a href="#cb81-5" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(df_scores_mw)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `aes_string()` was deprecated in ggplot2 3.0.0.
+ℹ Please use tidy evaluation idioms with `aes()`.
+ℹ See also `vignette("ggplot2-in-packages")` for more information.
+ℹ The deprecated feature was likely used in the nphRCT package.
+  Please report the issue to the authors.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Weighted-log-rank_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="ii.-stratified-modestly-weighted-log-rank-test-stratified-mwlrt" class="level3">
+<h3 class="anchored" data-anchor-id="ii.-stratified-modestly-weighted-log-rank-test-stratified-mwlrt">ii). Stratified Modestly Weighted Log-Rank Test (Stratified MWLRT)</h3>
+<p>A modestly weighted log-Rank test statistic can be computed separately for the two strata. Here, the stratifying variable is <code>GENDER</code>. The combined test statistic is obtained by combining stratum-specific standardised Z-statistics on the Z-scale using a variance-weighted combination as discussed in Magirr and Jiménez (2022).</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a>smodestly <span class="ot">&lt;-</span> nphRCT<span class="sc">::</span><span class="fu">wlrt</span>(</span>
+<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> <span class="fu">Surv</span>(LENFOL, FSTAT)<span class="sc">~</span>AFB <span class="sc">+</span> <span class="fu">strata</span>(GENDER),<span class="at">data =</span> WHAS,<span class="at">method =</span> <span class="st">"mw"</span>,</span>
+<span id="cb83-3"><a href="#cb83-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">s_star =</span> <span class="fl">0.5</span>)</span>
+<span id="cb83-4"><a href="#cb83-4" aria-hidden="true" tabindex="-1"></a>z_strata <span class="ot">&lt;-</span> smodestly<span class="sc">$</span>by_strata<span class="sc">$</span>z</span>
+<span id="cb83-5"><a href="#cb83-5" aria-hidden="true" tabindex="-1"></a>z_combined <span class="ot">&lt;-</span> smodestly<span class="sc">$</span>combined<span class="sc">$</span>z</span>
+<span id="cb83-6"><a href="#cb83-6" aria-hidden="true" tabindex="-1"></a>pchi_sq <span class="ot">&lt;-</span> z_strata<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb83-7"><a href="#cb83-7" aria-hidden="true" tabindex="-1"></a>cchi_sq <span class="ot">&lt;-</span> z_combined<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb83-8"><a href="#cb83-8" aria-hidden="true" tabindex="-1"></a>pp_value <span class="ot">&lt;-</span> <span class="fu">pchisq</span>(pchi_sq, <span class="at">df =</span> <span class="dv">1</span>, <span class="at">lower.tail =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb83-9"><a href="#cb83-9" aria-hidden="true" tabindex="-1"></a>cp_value <span class="ot">&lt;-</span> <span class="fu">pchisq</span>(cchi_sq, <span class="at">df =</span> <span class="dv">1</span>, <span class="at">lower.tail =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb83-10"><a href="#cb83-10" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Strata Chi-square: %.6f   p-value: %.6f</span><span class="sc">\n</span><span class="st">"</span>, pchi_sq, pp_value))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Strata Chi-square: 7.518538   p-value: 0.006107
+ 
+Strata Chi-square: 3.741750   p-value: 0.053069</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb85"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Combined Chi-square: %.6f   p-value: %.6f</span><span class="sc">\n</span><span class="st">"</span>, cchi_sq, cp_value))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Combined Chi-square: 10.835864   p-value: 0.000996</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="references" class="level1">
+<h1>References</h1>
+<ol type="1">
+<li><p><code>wlrt()</code> documentation: <a href="https://search.r-project.org/CRAN/refmans/nphRCT/html/wlrt.html" class="uri">https://search.r-project.org/CRAN/refmans/nphRCT/html/wlrt.html</a></p></li>
+<li><p><code>survdiff()</code> documentation: <a href="https://www.rdocumentation.org/packages/survival/versions/3.8-3/topics/survdiff" class="uri">https://www.rdocumentation.org/packages/survival/versions/3.8-3/topics/survdiff</a></p></li>
+<li><p><code>survminer()</code> documentation: <a href="https://cran.r-project.org/web/packages/survminer/survminer.pdf" class="uri">https://cran.r-project.org/web/packages/survminer/survminer.pdf</a></p></li>
+<li><p><code>logrank.maxtest()</code> documentation: <a href="https://search.r-project.org/CRAN/refmans/nph/html/logrank.maxtest.html" class="uri">https://search.r-project.org/CRAN/refmans/nph/html/logrank.maxtest.html</a></p></li>
+<li><p><code>Robust modestly weighted log-rank tests</code>documentation:<a href="https://arxiv.org/html/2412.14942v1" class="uri">https://arxiv.org/html/2412.14942v1</a></p></li>
+<li><p><code>nphRCT package</code> documentation: <a href="https://cran.r-project.org/web/packages/nphRCT/nphRCT.pdf" class="uri">https://cran.r-project.org/web/packages/nphRCT/nphRCT.pdf</a></p></li>
+<li><p><code>Applied survival analysis using R (Vol. 473, pp. 1-10)</code> documentation: <a href="https://xsliulab.github.io/Workshop/2021/week3/survival-analysis-book.pdf" class="uri">https://xsliulab.github.io/Workshop/2021/week3/survival-analysis-book.pdf</a></p></li>
+<li><p><code>Stratified modestly weighted log-rank test</code> documentation: <a href="https://cran.r-project.org/web/packages/nphRCT/vignettes/weighted_log_rank_tests.html" class="uri">https://cran.r-project.org/web/packages/nphRCT/vignettes/weighted_log_rank_tests.html</a></p></li>
+<li><p><code>Stratified Max-Combo</code> documentation: <a href="https://cran.r-project.org/web/packages/strata.MaxCombo/strata.MaxCombo.pdf" class="uri">https://cran.r-project.org/web/packages/strata.MaxCombo/strata.MaxCombo.pdf</a></p></li>
+<li><p><code>Max-combo</code> documentation: <a href="https://search.r-project.org/CRAN/refmans/nph/html/logrank.maxtest.html" class="uri">https://search.r-project.org/CRAN/refmans/nph/html/logrank.maxtest.html</a></p></li>
+<li><p><code>Modestly weighted log-rank test</code> documentation: <a href="https://pubmed.ncbi.nlm.nih.gov/31131462/" class="uri">https://pubmed.ncbi.nlm.nih.gov/31131462/</a></p></li>
+<li><p><code>Modestly weighted log-rank test</code> documentation: <a href="https://arxiv.org/pdf/1807.11097" class="uri">https://arxiv.org/pdf/1807.11097</a></p></li>
+<li><p><code>Modestly weighted log-rank test</code> documentation: <a href="https://arxiv.org/pdf/2007.04767v1" class="uri">https://arxiv.org/pdf/2007.04767v1</a></p></li>
+<li><p><code>Magirr and Jiménez (2022)</code>: <a href="https://arxiv.org/abs/2201.10445" class="uri">https://arxiv.org/abs/2201.10445</a></p></li>
+<li><p><code>Magirr, D. (2021)</code> <a href="https://onlinelibrary.wiley.com/doi/full/10.1002/pst.2091?msockid=1c39595bd65d63dd3de44ff2d7476288" class="uri">https://onlinelibrary.wiley.com/doi/full/10.1002/pst.2091?msockid=1c39595bd65d63dd3de44ff2d7476288</a></p></li>
+<li><p><code>Leton and Zuluaga (2001)</code> <a href="https://www.researchgate.net/publication/243044681_Equivalence_between_score_and_weighted_tests_for_survival_curves" class="uri">https://www.researchgate.net/publication/243044681_Equivalence_between_score_and_weighted_tests_for_survival_curves</a></p></li>
+</ol>
+<section id="references-for-other-mentioned-tests" class="level2">
+<h2 class="anchored" data-anchor-id="references-for-other-mentioned-tests">References for other mentioned tests:</h2>
+<ol start="17" type="1">
+<li><p><code>Milestone survival.</code> <a href="https://cran.r-project.org/web/packages/SingleArmMRCT/vignettes/survival-endpoints.html" class="uri">https://cran.r-project.org/web/packages/SingleArmMRCT/vignettes/survival-endpoints.html</a></p></li>
+<li><p><code>Restricted Mean Survival Time (RMST)</code> <a href="https://cran.r-project.org/web/packages/simtrial/vignettes/rmst.html" class="uri">https://cran.r-project.org/web/packages/simtrial/vignettes/rmst.html</a></p></li>
+</ol>
+<div class="callout callout-style-default callout-note callout-titled" title="Session Info">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Session Info
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>─ Session info ───────────────────────────────────────────────────────────────
+ setting  value
+ version  R version 4.5.2 (2025-10-31)
+ os       Ubuntu 24.04.4 LTS
+ system   x86_64, linux-gnu
+ ui       X11
+ language (EN)
+ collate  C.UTF-8
+ ctype    C.UTF-8
+ tz       UTC
+ date     2026-06-30
+ pandoc   3.8.3 @ /opt/quarto/bin/tools/ (via rmarkdown)
+
+─ Packages ───────────────────────────────────────────────────────────────────
+ ! package  * version date (UTC) lib source
+ P nphRCT   * 0.1.1   2024-06-27 [?] RSPM (R 4.5.0)
+   survival * 3.8-3   2024-12-17 [2] CRAN (R 4.5.2)
+
+ [1] /home/runner/work/CAMIS/CAMIS/renv/library/linux-ubuntu-noble/R-4.5/x86_64-pc-linux-gnu
+ [2] /opt/R/4.5.2/lib/R/library
+
+ P ── Loaded and on-disk path mismatch.
+
+──────────────────────────────────────────────────────────────────────────────</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/psiaims\.github\.io\/CAMIS\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
