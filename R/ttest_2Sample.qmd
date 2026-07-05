@@ -77,7 +77,6 @@ stats::t.test(d1p$WtGain, d1t$WtGain, var.equal = FALSE, paired = FALSE)
 
 ```
 
-
 ## Procs Package
 
 ### Student's T-Test and Welch's T-Test {#procs}
@@ -104,7 +103,6 @@ Viewer Output:
 #| out-width: 50%
 knitr::include_graphics("../images/ttest/twosample_rtest1.png")
 ```
-
 
 ## Example with unequal variances
 
@@ -140,8 +138,6 @@ Viewer Output:
 knitr::include_graphics("../images/ttest/twosample_rtest2.png")
 ```
 
-
-
 ::: {.callout-note collapse="true" title="Session Info"}
 ```{r}
 #| echo: false
@@ -155,3 +151,28 @@ si <- sessioninfo::session_info(c(
 si
 ```
 :::
+
+## Lognormal Data {#lognormal}
+
+The Base R `t.test()` function does not have an option for lognormal data. Likewise, the **procs** `proc_ttest()` function also does not have an option for lognormal data.
+
+Although Base R `t.test()` does not include a lognormal option, lognormal data can be analyzed by applying a natural log transformation to the data, performing a two-sample t-test on the log-transformed data, and exponentiating the group means and confidence limits. The back-transformed difference is interpreted as a ratio of geometric means. The standard deviation is not back-transformed.
+
+The following example applies a natural log transformation, performs the two-sample t-test on the log-transformed data, and exponentiates the mean and confidence limits.
+
+```{r}
+# Apply natural log transformation to outcome variable
+d1$log_WtGain <- log(d1$WtGain)
+
+# Perform two-sample t-test on log-transformed data
+tt <- t.test(log_WtGain ~ trt_grp, data = d1)
+
+# Back-transform log means using exponential function
+gm <- tapply(d1$WtGain, d1$trt_grp, function(x) exp(mean(log(x))))
+
+# Back-transform confidence interval limits
+ci <- exp(tt$conf.int)
+
+# Extract p-value from t-test result
+p_value <- tt$p.value
+```

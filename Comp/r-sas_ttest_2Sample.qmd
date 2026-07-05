@@ -1,5 +1,5 @@
 ---
-title: "R vs SAS Two Sample T-Test"
+title: "R vs SAS Two-Sample T-Test"
 ---
 
 ```{r}
@@ -8,14 +8,106 @@ title: "R vs SAS Two Sample T-Test"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Summary
+
+## Goal
+
+The goal of this comparison is to evaluate whether two-sample t-tests produce equivalent results in R and SAS for both normal and lognormal data. For normal data, results from `stats::t.test()`, `procs::proc_ttest()`, and SAS `PROC TTEST` are compared directly. For lognormal data, results from a log-transformation / back-transformation approach in R are compared with SAS `PROC TTEST` using the `DIST=LOGNORMAL` option.
+
+## Scope
+
+::::::: columns
+:::: {.column width="45%"}
+::: {.callout-note appearance="minimal" collapse="false"}
+## Methodologies
+
+Two-sample t-test
+
+Lognormal two-sample t-test
+:::
+::::
+
+:::: {.column width="55%"}
+::: {.callout-note appearance="minimal" collapse="false"}
+## Technical implementations
+
+SAS: `PROC TTEST` with and without the `DIST=LOGNORMAL` option
+
+R: `stats::t.test()` and log-transformation / back-transformation approach for lognormal data
+:::
+::::
+:::::::
+
+# Prerequisites
+
+## R packages
+
+```{r}
+#| output: false 
+#| message: false 
+library(tibble) # for example data
+library(stats) # t.test()
+library(procs) # proc_ttest()
+```
+
+## Data
+
+### Normal two-sample t-test and Lognormal two-sample t-test Sample Data
+
+We use a simulated two-sample dataset containing weight gain measurements for two treatment groups. The same data are used in the R and SAS examples to compare the log-transformation / back-transformation approach in R with SAS `PROC TTEST` using the `DIST=LOGNORMAL` option.
+
+R:
+
+```{r}
+d1 <- tibble::tribble(
+  ~trt_grp,	~WtGain,
+  "placebo",	94, "placebo",	12, "placebo",	26, "placebo",	89,
+  "placebo",	88, "placebo",	96, "placebo",	85, "placebo",	130,
+  "placebo",	75, "placebo",	54, "placebo",	112, "placebo",	69,
+  "placebo",	104, "placebo",	95, "placebo",	53, "placebo",	21,
+  "treatment",	45, "treatment",	62, "treatment",	96, "treatment",	128,
+  "treatment",	120, "treatment",	99, "treatment",	28, "treatment",	50,
+  "treatment",	109, "treatment",	115, "treatment",	39, "treatment",	96,
+  "treatment",	87, "treatment",	100, "treatment",	76, "treatment",	80
+)
+```
+
+SAS:
+
+``` sas
+data d1;
+    length trt_grp $ 9;
+    input trt_grp $ WtGain @@;
+    datalines;
+placebo    94 placebo    12 placebo    26 placebo    89 
+placebo    88 placebo    96 placebo    85 placebo   130 
+placebo    75 placebo    54 placebo   112 placebo    69 
+placebo   104 placebo    95 placebo    53 placebo    21 
+treatment  45 treatment  62 treatment  96 treatment 128 
+treatment 120 treatment  99 treatment  28 treatment  50 
+treatment 109 treatment 115 treatment  39 treatment  96 
+treatment  87 treatment 100 treatment  76 treatment  80 
+;
+
+run;
+```
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE)
+library(procs)
+```
+
 # Two Sample t-test Comparison
 
 The following table shows the types of Two Sample t-test analysis, the capabilities of each language, and whether or not the results from each language match.
 
-| Analysis                          | Supported in R                             | Supported in SAS                           | Results Match    | Notes                                                                             |
+| Analysis | Supported in R | Supported in SAS | Results Match | Notes |
 |---------------|---------------|---------------|---------------|---------------|
-| Two sample Student's t-test    | [Yes](../R/ttest_2Sample.html#baseS)      | [Yes](../SAS/ttest_2Sample.html#sas)    | [Yes](#student)   | In Base R, use `t.test()` function with `paired = FALSE` and `var.equal = TRUE`|
-| Two sample Welch's t-test | [Yes](../R/ttest_2Sample.html#baseW) | [Yes](../SAS/ttest_2Sample.html#sas) | [Yes](#welch) | In Base R, use `t.test()` function with `paired = FALSE` and `var.equal = FALSE`                                        |
+| Two sample Student's t-test | [Yes](../R/ttest_2Sample.html#baseS) | [Yes](../SAS/ttest_2Sample.html#sas) | [Yes](#student) | In Base R, use `t.test()` function with `paired = FALSE` and `var.equal = TRUE` |
+| Two sample Welch's t-test | [Yes](../R/ttest_2Sample.html#baseW) | [Yes](../SAS/ttest_2Sample_W.html#sas) | [Yes](#welch) | In Base R, use `t.test()` function with `paired = FALSE` and `var.equal = FALSE` |
+| Two sample Lognormal t-test | [Yes](../R/ttest_2Sample.html#baseWlog) | [Yes](../SAS/ttest_2Sample_lognormal.html#sas) | [Yes](#lognormal) |  |
 
 ## Comparison Results
 
@@ -23,43 +115,54 @@ The following table shows the types of Two Sample t-test analysis, the capabilit
 
 Here is a table of comparison values between `t.test()`, `proc_ttest()`, and SAS `PROC TTEST`:
 
-| Statistic          | t.test()  | proc_ttest() | PROC TTEST | Match | Notes |
-|--------------------|-----------|--------------|------------|-------|-------|
-| Degrees of Freedom | 30        | 30           | 30         | Yes   |       |
-| t value            | -0.6969002 | -0.6969002  | -0.6969002 | Yes   |       |
-| p value            | 0.4912306 | 0.4912306    |  0.4912306 | Yes   |       |
-
+| Statistic                    | t.test() | proc_ttest() | PROC TTEST | Match | Notes |
+|------------|------------|------------|------------|------------|------------|
+| Degrees of Freedom           | 30       | 30           | 30         | Yes   |       |
+| t value                      | -0.6969  | -0.70        | -0.70      | Yes   |       |
+| p value                      | 0.4912   | 0.4912       | 0.4912     | Yes   |       |
+| Mean Difference              | -7.9375  | -7.9375      | -7.9375    | Yes   |       |
+| Lower 95% CL Mean Difference | -31.1984 | -31.1984     | -31.1984   | Yes   |       |
+| Upper 95% CL Mean Difference | 15.3234  | 15.3234      | 15.3234    | Yes   |       |
 
 ### Welch's T-Test {#welch}
 
 In the Welch T-test the variance and effective degrees of freedom are calculated using Satterthwaite method.
 
-Here is a table of comparison values between `t.test()`, `proc_ttest()`, and SAS `PROC TTEST`for two example:
-
-Example with fairly equal variances:
-| Statistic          | t.test()  | proc_ttest() | PROC TTEST | Match | Notes |
-|--------------------|-----------|--------------|------------|-------|-------|
-| Degrees of Freedom | 29.69359  | 29.69359     | 29.69359   | Yes   |       |
-| t value            | -0.6969002  | -0.6969002   | -0.6969002 | Yes   |       |
-| p value            | 0.4912856 | 0.4912856   | 0.4912856  | Yes   |       |
-
+Here is a table of comparison values between `t.test()`, `proc_ttest()`, and SAS `PROC TTEST` for this example.
 
 Example with unequal variances:
-| Statistic          | t.test()  | proc_ttest() | PROC TTEST | Match | Notes |
-|--------------------|-----------|--------------|------------|-------|-------|
-| Degrees of Freedom | 18.137  | 18.137     | 18.137   | Yes   |       |
-| t value            | -1.54  | -1.54   | -1.54 | Yes   |       |
-| p value            | 0.1413 | 0.1413   | 0.1413  | Yes   |       |
 
+| Statistic                    | t.test() | proc_ttest() | PROC TTEST() | Match | Notes |
+|------------|------------|------------|------------|------------|------------|
+| Degrees of Freedom           | 29.694   | 29.694       | 29.694       | Yes   |       |
+| t value                      | -0.6969  | -0.70        | -0.70        | Yes   |       |
+| p value                      | 0.4913   | 0.4913       | 0.4913       | Yes   |       |
+| Mean Difference              | -7.9375  | -7.9375      | -7.9375      | Yes   |       |
+| Lower 95% CL Mean Difference | -31.2085 | -31.2085     | -31.2085     | Yes   |       |
+| Upper 95% CL Mean Difference | 15.3335  | 15.3335      | 15.3335      | Yes   |       |
+
+### Lognormal Data {#lognormal}
+
+For lognormal data for two independent groups, a two-sample t-test can be performed in R by applying a natural log transformation to the measurements in each group and conducting the analysis on the log-transformed values. The resulting mean difference and confidence limits can then be exponentiated to obtain a geometric mean ratio and corresponding confidence limits. The table below compares results from `stats::t.test()`, `procs::proc_ttest()`, and SAS `PROC TTEST` with the `DIST=LOGNORMAL` option.
+
+Here is a table of comparison values between `t.test()`, `proc_ttest()`, and SAS `PROC TTEST`:
+
+| Statistic | t.test() | proc_ttest() | PROC TTEST | Match | Notes |
+|------------|------------|------------|------------|------------|------------|
+| Degrees of Freedom | 30 | 30 | 30 | Yes |  |
+| t value | -0.8763 | -0.88 | -0.88 | Yes |  |
+| p value | 0.3878 | 0.3878 | 0.3878 | Yes |  |
+| Geometric Mean Ratio | 0.8381 | 0.8381 | 0.8381 | Yes | Back-transformed mean difference |
+| Lower 95% CL Mean Ratio | 0.5553 | 0.5553 | 0.5553 | Yes | Back-transformed lower confidence limit |
+| Upper 95% CL Mean Ratio | 1.265 | 1.2649 | 1.2649 | Yes | Back-transformed upper confidence limit |
 
 # Summary and Recommendation
 
-For the Student's T-Test, the R two sample `t.test()` and **procs** `proc_ttest()` capabilities are comparable to SAS. 
-Comparison between SAS and R show identical results for the datasets tried. 
+For the Student's T-Test, the R two-sample `t.test()` and **procs** `proc_ttest()` capabilities are comparable to SAS. Comparison between SAS and R show identical results for the datasets tried. The **procs** package `proc_ttest()` function is very similar to SAS in the syntax and output produced. The `proc_ttest()` also supports by groups, where `t.test()` does not.
 
-Likewise, for the Welch's T-Test, the R two sample `t.test()` and **procs** `proc_ttest()` capabilities are comparable to SAS. 
-Comparison between SAS and R show identical results for the datasets tried. 
+Likewise, for the Welch's T-Test, the R two-sample `t.test()` and **procs** `proc_ttest()` capabilities are comparable to SAS. Comparison between SAS and R show identical results for the datasets tried.
 
+For the lognormal version of the two-sample t-test, equivalent results can be obtained in R by applying a natural log transformation to the measurements in each group, performing the two-sample t-test on the transformed data, and exponentiating the resulting estimates and confidence limits. Comparison with SAS `PROC TTEST` using the `DIST=LOGNORMAL` option showed that the results matched after back-transformation. Therefore, a separate package is not required for this analysis.
 
 # References
 
@@ -67,4 +170,4 @@ R `t.test()` documentation: <https://www.rdocumentation.org/packages/stats/versi
 
 R `proc_ttest()` documentation: <https://procs.r-sassy.org/reference/proc_ttest.html>
 
-SAS `PROC TTEST` Two Sample analysis documentation: <https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_ttest_examples01.htm>
+SAS `PROC TTEST` Two-Sample analysis documentation: <https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_ttest_examples01.htm>
