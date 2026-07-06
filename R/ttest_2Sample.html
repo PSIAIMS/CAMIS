@@ -220,6 +220,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#procs" id="toc-procs" class="nav-link" data-scroll-target="#procs">Student’s T-Test and Welch’s T-Test</a></li>
   </ul></li>
   <li><a href="#example-with-unequal-variances" id="toc-example-with-unequal-variances" class="nav-link" data-scroll-target="#example-with-unequal-variances">Example with unequal variances</a></li>
+  <li><a href="#lognormal" id="toc-lognormal" class="nav-link" data-scroll-target="#lognormal">Lognormal Data</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -473,11 +474,11 @@ $Equality
  system   x86_64, linux-gnu
  ui       X11
  language (EN)
- collate  en_US.UTF-8
- ctype    en_US.UTF-8
- tz       Europe/London
- date     2026-03-26
- pandoc   3.6.3 @ /home/michael/.positron-server/bin/f3aae65e0a1a11d39226cd884520f49301daef82/quarto/bin/tools/x86_64/ (via rmarkdown)
+ collate  C.UTF-8
+ ctype    C.UTF-8
+ tz       UTC
+ date     2026-07-06
+ pandoc   3.8.3 @ /opt/quarto/bin/tools/ (via rmarkdown)
 
 ─ Packages ───────────────────────────────────────────────────────────────────
  ! package    * version date (UTC) lib source
@@ -496,7 +497,7 @@ $Equality
  P pkgconfig    2.0.3   2019-09-22 [?] RSPM (R 4.5.0)
  P procs      * 1.0.7   2025-07-27 [?] RSPM (R 4.5.0)
  P R6           2.6.1   2025-02-15 [?] RSPM (R 4.5.0)
- P Rcpp         1.1.1   2026-01-10 [?] RSPM (R 4.5.0)
+ P Rcpp         1.1.1   2026-01-10 [?] RSPM (R 4.5.2)
  P reporter     1.4.6   2026-02-07 [?] RSPM (R 4.5.0)
  P rlang        1.1.7   2026-01-09 [?] RSPM (R 4.5.0)
  P sasLM        0.10.7  2025-09-28 [?] RSPM (R 4.5.0)
@@ -508,7 +509,7 @@ $Equality
  P withr        3.0.2   2024-10-28 [?] RSPM (R 4.5.0)
  P zip          2.3.3   2025-05-13 [?] RSPM (R 4.5.0)
 
- [1] /home/michael/source/personal/CAMIS/renv/library/linux-ubuntu-noble/R-4.5/x86_64-pc-linux-gnu
+ [1] /home/runner/work/CAMIS/CAMIS/renv/library/linux-ubuntu-noble/R-4.5/x86_64-pc-linux-gnu
  [2] /opt/R/4.5.2/lib/R/library
 
  P ── Loaded and on-disk path mismatch.
@@ -518,6 +519,28 @@ $Equality
 </div>
 </div>
 </div>
+</div>
+</section>
+<section id="lognormal" class="level2">
+<h2 class="anchored" data-anchor-id="lognormal">Lognormal Data</h2>
+<p>The Base R <code>t.test()</code> function does not have an option for lognormal data. Likewise, the <strong>procs</strong> <code>proc_ttest()</code> function also does not have an option for lognormal data.</p>
+<p>Although Base R <code>t.test()</code> does not include a lognormal option, lognormal data can be analyzed by applying a natural log transformation to the data, performing a two-sample t-test on the log-transformed data, and exponentiating the group means and confidence limits. The back-transformed difference is interpreted as a ratio of geometric means. The standard deviation is not back-transformed.</p>
+<p>The following example applies a natural log transformation, performs the two-sample t-test on the log-transformed data, and exponentiates the mean and confidence limits.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply natural log transformation to outcome variable</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>d1<span class="sc">$</span>log_WtGain <span class="ot">&lt;-</span> <span class="fu">log</span>(d1<span class="sc">$</span>WtGain)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform two-sample t-test on log-transformed data</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>tt <span class="ot">&lt;-</span> <span class="fu">t.test</span>(log_WtGain <span class="sc">~</span> trt_grp, <span class="at">data =</span> d1)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Back-transform log means using exponential function</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>gm <span class="ot">&lt;-</span> <span class="fu">tapply</span>(d1<span class="sc">$</span>WtGain, d1<span class="sc">$</span>trt_grp, <span class="cf">function</span>(x) <span class="fu">exp</span>(<span class="fu">mean</span>(<span class="fu">log</span>(x))))</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Back-transform confidence interval limits</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>ci <span class="ot">&lt;-</span> <span class="fu">exp</span>(tt<span class="sc">$</span>conf.int)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract p-value from t-test result</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>p_value <span class="ot">&lt;-</span> tt<span class="sc">$</span>p.value</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 
 
