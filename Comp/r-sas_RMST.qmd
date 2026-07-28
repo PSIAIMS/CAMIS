@@ -1,0 +1,230 @@
+---
+title: "R vs SAS - Restricted Mean Survival Time (RMST)"
+format: html
+---
+
+## Comparison of R vs SAS
+
+The following table lists the methods for RMST analysis in R and SAS.
+
+| Method | Supported in R | Supported in SAS | Results Match | Notes |
+|---------------|---------------|---------------|---------------|---------------|
+| 1\. Inverse probability censoring weighting (IPCW) | Yes - `survRM2` | Yes - PROC RMSTREG | Yes | `survRM2` allows only 2 strata |
+| 2\. Pseudo-value estimation | Yes - `survival` + `geepack` | Yes - PROC RMSTREG | Yes |  |
+| 3\. Area under the curve | Yes - `survRM2` | Yes - PROC LIFETEST | Yes |  |
+
+Results from the examples shown for R **\[here\]** and SAS [here](https://psiaims.github.io/CAMIS/SAS/rmst.html) were compared below.
+
+## Method 1: Inverse probability censoring weighting (IPCW)
+
+Comparing the identity-link results side-by-side, the RMST estimates, standard errors (SEs), confidence intervals (CIs) and p-values match exactly across R and SAS.
+
+```{r}
+#| echo: FALSE
+#| message: FALSE
+#| warning: FALSE
+
+library(gt)
+library(dplyr)
+
+tab_dat <- tibble(
+  Variable = c("Intercept", "trt01p-2", "sex-M", "age"),
+  r_est = c(380.8065, -9.8835, -54.2552, -1.3874),
+  r_se  = c(48.9428, 14.8654, 15.5813, 0.7904),
+  r_ci  = c("284.8804, 476.7327", "-39.0192, 19.2521", "-84.7940, -23.7163",
+    "-2.9366, 0.1618"),
+  r_z   = c(7.7806, -0.6649, -3.4821, -1.7553),
+  r_p   = c("0.0000", "0.5061", "0.0005", "0.0792"),
+  sas_est = c(308.8065, -9.8835, -54.2552, -1.3874),
+  sas_se  = c(48.9428, 14.8654, 15.5813, 0.7904),
+  sas_ci  = c("284.8804, 476.7327", "-39.0192, 19.2521", "-84.7940, -23.7163",
+    "-2.9366, 0.1618"),
+  sas_chi = c(60.54, 0.44, 12.12, 3.08),
+  sas_p   = c("< 0.0001", "0.5061", "0.0005", "0.0792")
+)
+
+gt(tab_dat, rowname_col = "Variable") |>
+  cols_label(r_est = "Estimate",
+    r_se  = "SE",
+    r_ci  = "95% CI",
+    r_z   = "z",
+    r_p   = "p",
+    sas_est = "Estimate",
+    sas_se  = "SE",
+    sas_ci  = "95% CI",
+    sas_chi = "Chi-Square",
+    sas_p   = "p"
+  ) |>
+  tab_spanner(
+    label = md("**R – {survRM2}**"),
+    columns = c(r_est, r_se, r_ci, r_z, r_p)
+  ) |>
+  tab_spanner(
+    label = md("**SAS – PROC RMSTREG**"),
+    columns = c(sas_est, sas_se, sas_ci, sas_chi, sas_p)
+  ) |>
+  fmt_number(
+    columns = c(r_est, r_se, r_z, sas_est, sas_se),
+    decimals = 4
+  ) |>
+  fmt_number(
+    columns = sas_chi,
+    decimals = 2
+  ) |>
+  cols_align(
+    align = "center",
+    columns = everything()
+  )
+```
+
+The same is true of the RMST ratios (computed with the log-link function). Note that `survRM2` provides exponentiated versions of the CI values, whereas SAS provides them on the log scale.
+
+```{r}
+#| echo: FALSE
+#| message: FALSE
+#| warning: FALSE
+
+tab_dat <- tibble(
+  Variable = c("Intercept", "trt01p-2", "sex-M", "age"),
+
+  r_est = c(6.0191, -0.0367, -0.2085, -0.0054),
+  r_se  = c(0.1888, 0.0575, 0.0605, 0.0031),
+  r_ci  = c("5.6491, 6.3892", "-0.1493, 0.0760", "-0.3271, -0.0899",
+    "-0.0115, 0.0007"),
+  r_z   = c(31.8783, -0.6381, -3.4463, -1.7348),
+  r_p   = c("0.0000", "0.5234", "0.0006", "0.0828"),
+  sas_est = c(6.0191, -0.0367, -0.2085, -0.0054),
+  sas_se  = c(0.1888, 0.0575, 0.0605, 0.0031),
+  sas_ci  = c("5.6491, 6.3692", "-0.1493, 0.0760", "-0.3271, -0.0899",
+    "-0.0155, 0.0007"),
+  sas_chi = c(1016.23, 0.41, 11.88, 3.01),
+  sas_p   = c("< 0.0001", "0.5234", "0.0006", "0.0828")
+)
+
+gt(tab_dat, rowname_col = "Variable") |>
+  cols_label(
+    r_est = "Estimate",
+    r_se  = "SE",
+    r_ci = md("95% CI<sup>a</sup>"),
+    r_z   = "z",
+    r_p   = "p",
+    sas_est = "Estimate",
+    sas_se  = "SE",
+    sas_ci  = "95% CI",
+    sas_chi = "Chi-Square",
+    sas_p   = "p"
+  ) |>
+  tab_spanner(
+    label = md("**R – {survRM2}**"),
+    columns = c(r_est, r_se, r_ci, r_z, r_p)
+  ) |>
+  tab_spanner(
+    label = md("**SAS – PROC RMSTREG**"),
+    columns = c(sas_est, sas_se, sas_ci, sas_chi, sas_p)
+  ) |>
+  fmt_number(
+    columns = c(r_est, r_se, r_z, sas_est, sas_se),
+    decimals = 4
+  ) |>
+  fmt_number(
+    columns = sas_chi,
+    decimals = 2
+  ) |>
+  cols_align(
+    align = "center",
+    columns = everything()
+  ) |> 
+tab_source_note(source_note = md("<sup>a</sup> Default exponentiated CI values have been log-transformed."))
+
+# R code to create RMST.comp1
+adcibc <- read.csv(file =
+          "https://raw.githubusercontent.com/PSIAIMS/CAMIS/refs/heads/main/data/lung_cancer.csv")
+surv.times <- adcibc$time
+event.indicator <- ifelse(test = adcibc$status == 2, yes = 1, no = 0)
+trt <- ifelse(test = adcibc$trt01p == "Active", yes = 1, no = 0)
+covs <- cbind(sexM = ifelse(test = adcibc$sex == 1, yes = 1, no = 0),
+              age = adcibc$age)
+RMST.comp1 <- survRM2::rmst2(time = surv.times, status = event.indicator, arm = trt,
+                             covariates = covs, tau = 350, alpha = 0.05)
+```
+
+If needed, the exponentiated CI values returned by `survRM2` can simply be log-transformed:
+
+``` {r}
+# Get log CIs from survRM2 object `RMST.comp1`
+logCIs <- log(RMST.comp1$RMST.ratio.adjusted[, 6:7])
+round(logCIs, digits = 4) # Display rounded to 4 decimal places
+```
+
+## Method 2: Pseudo-value estimation
+
+The R vs SAS comparison of this method is yet to be completed.
+
+## Method 3: Area under the curve
+
+For the RMST of individual strata, both R and SAS return RMST estimates with SEs, and `survRM2` additionally provides confidence intervals. Both R and SAS return the RMST difference between the two strata. For the variance of the difference, SAS provides the SE, whereas `survRM2` provides CI values.
+
+```{r}
+#| echo: FALSE
+#| message: FALSE
+#| warning: FALSE
+
+tab_dat <- tibble(
+  Variable = c("Stratum 1", "Stratum 2", "Difference"),
+
+  r_est = c(248.2156, 272.9520, -24.7364),
+r_se = c("9.2343", "11.9889", "15.1330<sup>a</sup>"),
+  r_ci  = c("230.1166, 266.3146", "249.4542, 296.4499", "-54.3965, 4.9237"),
+  r_z   = c("–", "–", "–"),
+  r_p   = c("–", "–", "0.1021"),
+
+  sas_est = c(248.2156, 272.9520, -24.7364),
+  sas_se  = c(9.2343, 11.9889, 15.1330),
+  sas_ci  = c("–", "–", "–"),
+  sas_chi = c("–", "–", "2.6719"),
+  sas_p   = c("–", "–", "0.1021")
+)
+
+gt(tab_dat, rowname_col = "Variable") |>
+  cols_label(
+    r_est = "Estimate",
+    r_se  = "SE",
+    r_ci  = "95% CI",
+    r_z   = "z",
+    r_p   = "p",
+
+    sas_est = "Estimate",
+    sas_se  = "SE",
+    sas_ci  = "95% CI",
+    sas_chi = "Chi-Square",
+    sas_p   = "p"
+  ) |>
+  tab_spanner(
+    label = md("**R – {survRM2}**"),
+    columns = c(r_est, r_se, r_ci, r_z, r_p)
+  ) |>
+  tab_spanner(
+    label = md("**SAS – PROC RMSTREG**"),
+    columns = c(sas_est, sas_se, sas_ci, sas_chi, sas_p)
+  ) |>
+fmt_number(
+  columns = c(r_est, sas_est, sas_se),
+  decimals = 4) |> fmt_markdown(columns = r_se) |>
+fmt(columns = sas_chi, fns = function(x) x) |>
+  cols_align(align = "center", columns = everything()) |>
+tab_source_note(source_note = md("<sup>a</sup> Derived from the estimate and lower CI.")
+)
+
+# R code to create RMST.comp4
+RMST.comp4 <- survRM2::rmst2(time = surv.times, status = event.indicator, arm = trt,
+                             covariates = NULL, tau = 350, alpha = 0.05)
+```
+
+If needed, the SE of the RMST difference for the `survRM2` output can be easily inferred from the (Wald) CI by subtracting the lower CI from the mean and dividing the result by a percentile of a standard normal distribution, e.g., the 97.5th percentile for the default 95% confidence level:
+
+``` {r}
+# Get SE of RMST difference from survRM2 object `RMST.comp4`
+RMSTdiffSE <- (RMST.comp4$unadjusted.result[1,1] - RMST.comp4$unadjusted.result[1,2])/
+             qnorm(p = 0.975, mean = 0, sd = 1)
+round(RMSTdiffSE, digits = 4)  # Display rounded to 4 decimal places
+```
