@@ -72,6 +72,19 @@ jobs:
         run: |
           quarto render
 
+      # TEMPORARY (remove before merge): the lockfile refresh invalidates most of
+      # the freeze cache, so this run regenerates it. Upload it so it can be
+      # committed, which returns build times to ~12 min instead of ~65.
+      - name: Upload regenerated freeze cache
+        uses: actions/upload-artifact@v4
+        with:
+          name: freeze-cache
+          path: |
+            _freeze
+            data/quarto_pkg_dependencies.csv
+          retention-days: 5
+          if-no-files-found: error
+
       - name: Deploy preview 🔍
         # Ensure this step only runs if we aren't on a fork, as otherwise it will fail with permissions errors
         if: ${{ github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name }}
