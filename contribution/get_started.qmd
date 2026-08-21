@@ -106,6 +106,32 @@ renv::restore()
 
 These function calls help to record and update the `renv.lock` file with the package and associated dependencies in a reproducible manner.
 
+::: {.callout-warning}
+## Check your `renv::snapshot()` diff before committing
+
+`renv::snapshot()` records your *local* environment, not just the package you added, so it can quietly sweep unrelated changes into the lockfile. Before committing, run `git diff renv.lock requirements.txt` and confirm the only changes are the ones you meant to make. Two in particular catch people out:
+
+-   **`requirements.txt` and the `Python` block of `renv.lock`.** `renv` rewrites both from whichever Python environment is active. If that is not the project's Python 3.12 virtualenv, `requirements.txt` is replaced by whatever your interpreter happens to have installed — on one occasion this cut it from 124 packages down to one. Unless you deliberately intended to change the Python environment, undo those with `git checkout -- requirements.txt` and restore the original `Python` block.
+-   **The recorded R version.** CI installs the R version named in `renv.lock`, and a snapshot sets it to whatever R *you* are running.
+
+Commit only the R package records unless a wider change is the point of your pull request.
+:::
+
+::: {.callout-note}
+## The package repository is pinned to a fixed date
+
+`renv.lock` points at a dated [Posit Package Manager](https://packagemanager.posit.co) snapshot rather than `latest`. This is deliberate: it means every recorded version still has a prebuilt binary available on Linux, macOS and Windows, so nobody needs a working compiler toolchain to run `renv::restore()`. Pointing at `latest` breaks this, because `latest` only ever serves the *current* version of each package, and anything pinned to an older version then has to be built from source.
+
+Two consequences when adding a package:
+
+-   `renv::install("package_name")` installs the version that was current on the snapshot date, not today's version.
+-   A package published to CRAN *after* the snapshot date cannot be installed until the date is moved forward.
+
+Moving the date means re-snapshotting the whole lockfile, which shifts many package versions at once and invalidates most of the Quarto freeze cache. Please raise that as its own pull request rather than folding it into a content change.
+
+Packages that ship with R itself — `mgcv`, `Matrix`, `survival`, `lattice` and friends — are deliberately left out of the lockfile via `ignored.packages` in `renv/settings.json`. Their versions follow your R installation rather than CRAN, so they can never be pinned reliably, and recording them causes `renv::restore()` to fail.
+:::
+
 At this point, it is assumed that your system in RStudio is connected to Git and GitHub, and that the `renv` environment is successfully activated. Now every time you close RStudio and reopen the CAMIS project on your computer, you should see the option:
 
 ```{r}
