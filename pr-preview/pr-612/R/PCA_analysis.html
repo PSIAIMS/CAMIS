@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Principle Component Analysis</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../images/logo.png" rel="icon" type="image/png">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-890df4807d457dbc410f87df85df408d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<link href="../site_libs/htmltools-fill-0.5.9/fill.css" rel="stylesheet">
+<script src="../site_libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+<script src="../site_libs/plotly-binding-4.12.1/plotly.js"></script>
+<script src="../site_libs/typedarray-0.1/typedarray.min.js"></script>
+<script src="../site_libs/jquery-3.5.1/jquery.min.js"></script>
+<link href="../site_libs/crosstalk-1.2.2/css/crosstalk.min.css" rel="stylesheet">
+<script src="../site_libs/crosstalk-1.2.2/js/crosstalk.min.js"></script>
+<link href="../site_libs/plotly-htmlwidgets-css-2.25.2/plotly-htmlwidgets.css" rel="stylesheet">
+<script src="../site_libs/plotly-main-2.25.2/plotly-latest.min.js"></script>
+
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../images/logo.png" alt="" class="navbar-logo light-content">
+    <img src="../images/logo.png" alt="" class="navbar-logo dark-content">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-publications-and-projects" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Publications and Projects</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-publications-and-projects">    
+        <li>
+    <a class="dropdown-item" href="../publication/white_paper.html"><i class="bi bi-file-earmark-word-fill" role="img">
+</i> 
+ <span class="dropdown-text">White Paper</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/conference.html"><i class="bi bi-easel3-fill" role="img">
+</i> 
+ <span class="dropdown-text">Conferences</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/dissertation.html"><i class="bi bi-mortarboard-fill" role="img">
+</i> 
+ <span class="dropdown-text">Academic Projects</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../minutes/index.html"> 
+<span class="menu-text">Meeting Minutes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../blogs/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-help" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Help</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-help">    
+        <li>
+    <a class="dropdown-item" href="https://github.com/PSIAIMS/CAMIS/issues"><i class="bi bi-bug-fill" role="img">
+</i> 
+ <span class="dropdown-text">Report a Bug</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/get_started.html"><i class="bi bi-git" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with Your Environment</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/contribution.html"><i class="bi bi-person-raised-hand" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with CAMIS</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/package_review.html"><i class="bi bi-box-fill" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with a New R Package</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+    <a href="https://github.com/PSIAIMS/CAMIS/" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a>
+  <ul class="collapse">
+  <li><a href="#steps-to-perform-pca-in-r" id="toc-steps-to-perform-pca-in-r" class="nav-link" data-scroll-target="#steps-to-perform-pca-in-r">Steps to Perform PCA in R</a></li>
+  </ul></li>
+  <li><a href="#visualize-pca-results" id="toc-visualize-pca-results" class="nav-link" data-scroll-target="#visualize-pca-results">Visualize PCA Results</a>
+  <ul class="collapse">
+  <li><a href="#scree-plot" id="toc-scree-plot" class="nav-link" data-scroll-target="#scree-plot">Scree Plot</a></li>
+  <li><a href="#biplot" id="toc-biplot" class="nav-link" data-scroll-target="#biplot">Biplot</a></li>
+  </ul></li>
+  <li><a href="#interpretation" id="toc-interpretation" class="nav-link" data-scroll-target="#interpretation">Interpretation</a></li>
+  <li><a href="#visualization-of-pca-in-3d-scatter-plot" id="toc-visualization-of-pca-in-3d-scatter-plot" class="nav-link" data-scroll-target="#visualization-of-pca-in-3d-scatter-plot">Visualization of PCA in 3d Scatter Plot</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Principle Component Analysis</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>Principal Component Analysis (PCA) is a dimensionality reduction technique used to reduce the number of features in a dataset while retaining most of the information.</p>
+<section id="steps-to-perform-pca-in-r" class="level3">
+<h3 class="anchored" data-anchor-id="steps-to-perform-pca-in-r">Steps to Perform PCA in R</h3>
+<ul>
+<li>We will load the <code>iris</code> data.</li>
+<li>Standardize the data and then compute PCA.</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(factoextra)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: ggplot2</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Welcome to factoextra!</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Want to learn more? See two factoextra-related books at https://www.datanovia.com/library/principal-component-methods</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(plotly)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'plotly'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:ggplot2':
+
+    last_plot</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:stats':
+
+    filter</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:graphics':
+
+    layout</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> iris</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>pca_result <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">prcomp</span>(data[, <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>], <span class="at">scale =</span> T)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>pca_result</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Standard deviations (1, .., p=4):
+[1] 1.7083611 0.9560494 0.3830886 0.1439265
+
+Rotation (n x k) = (4 x 4):
+                    PC1         PC2        PC3        PC4
+Sepal.Length  0.5210659 -0.37741762  0.7195664  0.2612863
+Sepal.Width  -0.2693474 -0.92329566 -0.2443818 -0.1235096
+Petal.Length  0.5804131 -0.02449161 -0.1421264 -0.8014492
+Petal.Width   0.5648565 -0.06694199 -0.6342727  0.5235971</code></pre>
+</div>
+</div>
+<p>We print the summary of the PCA result, which includes the standard deviation of each principal component and the proportion of variance explained.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(pca_result)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Importance of components:
+                          PC1    PC2     PC3     PC4
+Standard deviation     1.7084 0.9560 0.38309 0.14393
+Proportion of Variance 0.7296 0.2285 0.03669 0.00518
+Cumulative Proportion  0.7296 0.9581 0.99482 1.00000</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="visualize-pca-results" class="level2">
+<h2 class="anchored" data-anchor-id="visualize-pca-results">Visualize PCA Results</h2>
+<section id="scree-plot" class="level3">
+<h3 class="anchored" data-anchor-id="scree-plot">Scree Plot</h3>
+<p>A scree plot shows the proportion of variance explained by each principal component.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>factoextra<span class="sc">::</span><span class="fu">fviz_eig</span>(pca_result)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="PCA_analysis_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="biplot" class="level3">
+<h3 class="anchored" data-anchor-id="biplot">Biplot</h3>
+<p>A biplot shows the scores of the samples and the loadings of the variables on the first two principal components.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>plt <span class="ot">&lt;-</span> factoextra<span class="sc">::</span><span class="fu">fviz_pca_biplot</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  pca_result,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">geom.ind =</span> <span class="st">"point"</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">pointshape =</span> <span class="dv">21</span>,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">pointsize =</span> <span class="dv">2</span>,</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">fill.ind =</span> iris<span class="sc">$</span>Species,</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">col.var =</span> <span class="st">"black"</span>,</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">repel =</span> <span class="cn">TRUE</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>plt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="PCA_analysis_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="interpretation" class="level2">
+<h2 class="anchored" data-anchor-id="interpretation">Interpretation</h2>
+<ul>
+<li><p>The <strong>Scree Plot</strong> suggests to decide the number of principle components to retain by looking an <em>elbow</em> point where the explained variance starts to level off.</p></li>
+<li><p>The <strong>biplot</strong> visualizes both the samples (points) and the variables (arrows). Points that are close to each other represent samples with similar characteristics, while the direction and length of the arrows indicate the contribution of each variable to the principal components.</p></li>
+</ul>
+</section>
+<section id="visualization-of-pca-in-3d-scatter-plot" class="level2">
+<h2 class="anchored" data-anchor-id="visualization-of-pca-in-3d-scatter-plot">Visualization of PCA in 3d Scatter Plot</h2>
+<p>A 3d scatter plot allows us to see the relationships between three principle components simultaneously and also gives us a better understanding of how much variance is explained by these components.</p>
+<p>It also allows for interactive exploration where we can rotate the plot and view it from a different angles.</p>
+<p>We will plot this using <code>plotly</code> package.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>pca_result2 <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">prcomp</span>(data[, <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>], <span class="at">scale =</span> T, <span class="at">rank. =</span> <span class="dv">3</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>pca_result2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Standard deviations (1, .., p=4):
+[1] 1.7083611 0.9560494 0.3830886 0.1439265
+
+Rotation (n x k) = (4 x 3):
+                    PC1         PC2        PC3
+Sepal.Length  0.5210659 -0.37741762  0.7195664
+Sepal.Width  -0.2693474 -0.92329566 -0.2443818
+Petal.Length  0.5804131 -0.02449161 -0.1421264
+Petal.Width   0.5648565 -0.06694199 -0.6342727</code></pre>
+</div>
+</div>
+<p>Next, we will create a dataframe of the 3 principle components and negate PC2 and PC3 for visual preference to make the plot look more organised and symmetric in 3d space.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>components <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(pca_result2<span class="sc">$</span>x)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>components<span class="sc">$</span>PC2 <span class="ot">&lt;-</span> components<span class="sc">$</span>PC2</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>components<span class="sc">$</span>PC3 <span class="ot">&lt;-</span> components<span class="sc">$</span>PC3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>fig <span class="ot">&lt;-</span> plotly<span class="sc">::</span><span class="fu">plot_ly</span>(</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  components,</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="sc">~</span>PC1,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">y =</span> <span class="sc">~</span>PC2,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">z =</span> <span class="sc">~</span>PC3,</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">color =</span> <span class="sc">~</span> data<span class="sc">$</span>Species,</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">colors =</span> <span class="fu">c</span>(<span class="st">'darkgreen'</span>, <span class="st">'darkblue'</span>, <span class="st">'darkred'</span>)</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_markers</span>(<span class="at">size =</span> <span class="dv">12</span>)</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>fig <span class="ot">&lt;-</span> fig <span class="sc">|&gt;</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">layout</span>(<span class="at">title =</span> <span class="st">"3d Visualization of PCA"</span>, <span class="at">scene =</span> <span class="fu">list</span>(<span class="at">bgcolor =</span> <span class="st">"lightgray"</span>))</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div class="plotly html-widget html-fill-item" id="htmlwidget-33e350f61b8b912fef9f" style="width:100%;height:464px;"></div>
+<script type="application/json" data-for="htmlwidget-33e350f61b8b912fef9f">{"x":{"visdat":{"877f38b43f50":["function () ","plotlyVisDat"]},"cur_data":"877f38b43f50","attrs":{"877f38b43f50":{"x":{},"y":{},"z":{},"color":{},"colors":["darkgreen","darkblue","darkred"],"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter3d","mode":"markers","size":12,"inherit":true}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"title":"3d Visualization of PCA","scene":{"bgcolor":"lightgray","xaxis":{"title":"PC1"},"yaxis":{"title":"PC2"},"zaxis":{"title":"PC3"}},"hovermode":"closest","showlegend":true},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"x":[-2.257141175648119,-2.074013015199621,-2.3563351118061782,-2.2917067858696947,-2.381862704416938,-2.0687006084676929,-2.4358684489631384,-2.2253918887805528,-2.326845329341316,-2.1770349052411122,-2.159076991691411,-2.3183641306818066,-2.211043696511382,-2.6243090161435636,-2.1913992118090229,-2.2546612065689406,-2.2002167647433639,-2.1830361348214438,-1.8922328395553771,-2.3355447606037272,-1.9079312487023743,-2.1996438314933187,-2.7650814226329521,-1.8125971593938728,-2.2197270134750533,-1.9453292965767002,-2.044302768058285,-2.161336496094115,-2.1324196468792991,-2.2576979945994249,-2.1329764658306054,-1.8254792451868598,-2.6062168666231922,-2.4380098316939121,-2.1029298644144374,-2.2004372294198387,-2.0383176527766937,-2.5188933857286986,-2.4215202566939675,-2.1624662482954675,-2.2788408143754473,-1.8519183573960707,-2.545112033261435,-1.9578885746886687,-2.1299235635013813,-2.062833614858032,-2.3767707623614842,-2.3863817132223462,-2.2220026321764972,-2.1964750395657369],"y":[-0.4784238321248997,0.67188268702736031,0.34076642462456969,0.59539986268154399,-0.64467565940053784,-1.4842052973421596,-0.047485118061934124,-0.22240300191944079,1.111603699537917,0.4674475685116754,-1.0402058665204266,-0.13263399898961936,0.72624318301410473,0.95829634715532541,-1.8538465546759562,-2.6773152297366041,-1.4786557287482196,-0.48720613057249074,-1.4003275666972368,-1.1240835971653478,-0.40749057637302349,-0.92103587079814875,-0.45681330064998515,-0.085272854283545793,-0.13679617543507433,0.62352970519123729,-0.24135499096310783,-0.52538942181253812,-0.31217200484926216,0.33660424817911472,0.50285607545475275,-0.42228038897123554,-1.7875872722536914,-2.1435467959850483,0.45866527006408436,0.2054192241555953,-0.65934923013302738,-0.59031516341379375,0.90116106687161102,-0.26798119945859372,-0.44024054088485276,2.3296107445884031,0.47750101724202898,-0.47074961267308085,-1.1384154642068789,0.70867858611892265,-1.1166886908662419,0.38495723001523802,-0.99462766898127297,-0.0091855849561647985],"z":[0.12727962370642401,0.23382551672596777,-0.044053900170170954,-0.09098529710138846,-0.015685647296915892,-0.02687824979962062,-0.33435029650976517,0.088399351885749003,-0.14459246541111268,0.25291826754793073,0.26778400087288634,-0.093446190938266546,0.23014024594833876,-0.18019242300371979,0.47132202519164845,-0.03042468374134389,0.0053262506425466507,0.044067685627315611,0.37309337699630141,-0.13218762592303618,0.41988593709161287,-0.15933150185554135,-0.33106998228169626,-0.034373441569319839,-0.11759956626989197,0.30462047536162062,-0.086075649383009614,0.20612570745261941,0.27024489470976454,-0.068207275501796491,0.074757995501543398,0.26956431115447976,-0.047070727347892367,0.082392024107147868,0.1697063294688225,0.22468885151058107,0.48291958424391329,-0.019370918074544222,-0.19260940244717425,0.17529656074248548,-0.034778398118879006,0.20355230335667734,-0.30474552674038113,-0.30856758768782971,-0.24760406444431182,0.063716369790122129,-0.057026812954469638,-0.13900223413745003,0.18088679201614902,0.15251853914289429],"type":"scatter3d","mode":"markers","name":"setosa","marker":{"color":"rgba(0,100,0,1)","size":[55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55],"sizemode":"area","line":{"color":"rgba(0,100,0,1)"}},"textfont":{"color":"rgba(0,100,0,1)","size":55},"error_y":{"color":"rgba(0,100,0,1)","width":55},"error_x":{"color":"rgba(0,100,0,1)","width":55},"line":{"color":"rgba(0,100,0,1)","width":55},"frame":null},{"x":[1.0981024376140973,0.72889555739242273,1.2368358043772563,0.4061225105823163,1.0718837900813611,0.38738954547840782,0.74403714758811379,-0.48569561657438115,0.92480346062936281,0.011388037749881277,-0.10982834481652506,0.43922201432770863,0.56023147881145319,0.71715933809952692,-0.033243334910671697,0.87248428723582083,0.3490822100792042,0.15827979549153048,1.2210031592595887,0.16436725377766631,0.73521959465377262,0.47469691207416165,1.2300572911691441,0.63074514472991072,0.70031506245243857,0.87135453503446858,1.2523137488477787,1.3538695324130863,0.66258066030328111,-0.040124191123327518,0.13035846250739683,0.023374382611804068,0.24073179900704525,1.0575517121109299,0.22323092910903317,0.42770625971128745,1.0452264452692492,1.0410437907386729,0.069355972150183021,0.28253073401484868,0.27814596118011076,0.62248441074687522,0.33540672635969676,-0.36097408780556184,0.28762267607030212,0.091055610877511878,0.22695653998792081,0.57446378148226707,-0.4461723002680219,0.25587338920273672],"y":[-0.86009103319553459,-0.59262936211123696,-0.61423989358615161,1.7485461967118665,0.20772514746028911,0.59130271681718127,-0.77043827213143479,1.8462439975141622,-0.032118477998472811,1.030565783771056,2.6452111149372031,0.063083851659565732,1.7588321291736639,0.18560281910121684,0.43753741887790848,-0.50736423931782926,0.1956562678315705,0.78945100802953139,1.6168272811149778,1.2982599385867988,-0.39524744620369928,0.41592688740299383,0.93020944053751253,0.41499744081118994,0.063200093525288076,-0.24995601696388486,0.076998068993450866,-0.3302054627367213,0.22517350248974879,1.055183583274385,1.5570555530892276,1.5672252436853036,0.77466119543131928,0.63172690078082894,0.2868126629098765,-0.84275892003179642,-0.52030871421087532,1.3783710478047015,0.21877043332069254,1.3248861470822846,1.1162888521211447,-0.024839813565089162,0.98510382809762531,2.0124958247898004,0.85287311561657975,0.18058714208064519,0.38363486844784511,0.15435648860359441,1.5386374556189295,0.59685228541112123],"z":[0.68230039282705313,0.093807451828607849,0.55215705781672797,0.023024633148332505,0.39692578416121621,-0.12377688542391957,-0.14847200747492462,-0.24843299212757358,0.59417880702956605,-0.53710005497685787,0.046634215094492851,-0.20438909283024395,0.76321455381594483,0.06842969955623189,-0.19428203043238398,0.5018302037350717,-0.4892340947320804,0.30102870025891254,0.48069365558116767,0.17226071898062076,-0.61446778202402685,0.26406757555573623,0.36718217755592691,0.29092163786105207,0.44453776464771838,0.47100105702493789,0.72472709858945128,0.25995570098109905,-0.085577197158529475,0.31850630421203024,0.14948269738102946,0.2407457605706797,0.15070707432177943,-0.10495976160768218,-0.66302851244555339,-0.44912944597065474,0.39446489032433779,0.68599780356005957,-0.29060571813169639,-0.089111491144874308,-0.094172115654536537,0.020412762520170311,0.19872401135784099,-0.10546772112423358,-0.13045265680242826,-0.12854769630639251,-0.15569157223889757,0.27074334693424468,-0.18976519930818697,-0.091572384981752311],"type":"scatter3d","mode":"markers","name":"versicolor","marker":{"color":"rgba(0,0,139,1)","size":[55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55],"sizemode":"area","line":{"color":"rgba(0,0,139,1)"}},"textfont":{"color":"rgba(0,0,139,1)","size":55},"error_y":{"color":"rgba(0,0,139,1)","width":55},"error_x":{"color":"rgba(0,0,139,1)","width":55},"line":{"color":"rgba(0,0,139,1)","width":55},"frame":null},{"x":[1.83841002292412,1.1540155536207835,2.197903609280389,1.4353421339966586,1.8615757681276321,2.7426850851882416,0.36579224975562341,2.29475181232994,1.999986327209772,2.252232161507608,1.3596206364243901,1.5973274746691335,1.8776105315494609,1.2559076914609231,1.4627448694704253,1.5847681965571652,1.4665184876141786,2.4182276992990506,3.299641477668366,1.259547073634006,2.0309125552582645,0.97471534705571827,2.8879765004830378,1.3287806370817019,1.6950553043510097,1.9478013897868995,1.1711800692439649,1.0175416912603292,1.7823787852455035,1.8574250065631817,2.4278203037875992,2.2972317814091188,1.8564838260721788,1.1104277044557782,1.1984583545709877,2.7894256119820886,1.5709929375380398,1.3417969588453593,0.92173701170632572,1.8458612446818954,2.0080831643295842,1.8954342091284919,1.1540155536207835,2.0337449929110143,1.99147546765771,1.8642578555109721,1.5593564935447621,1.5160914520607756,1.3682041780884442,0.95744848842799335],"y":[-0.86751505609005897,0.69653640051636223,-0.56013397602006265,0.046830700896181396,-0.29405969708425006,-0.7977367087552234,1.5562891777844143,-0.41866301953474494,0.70906322570176172,-1.9145963005352953,-0.69044340477925503,0.42029243098447305,-0.41784981480866329,1.1583797413859913,0.44079488346361695,-0.67398688687984509,-0.25476832684843098,-2.5481247954087789,-0.017721580375850646,1.7010467154508591,-0.90742744316955071,0.56985525662925751,-0.41225995036568858,0.48020249556515743,-1.0105364760108526,-1.0044127199945099,0.31533806043800539,-0.064131183800908279,0.18673563282904601,-0.56041328917277589,-0.2584187064097283,-2.6175544171464482,0.17795333438145497,0.29194458179617055,0.80860636420922383,-0.85394254244713375,-1.0650132138633188,-0.42102015412406896,-0.017165594113270292,-0.67387064501412275,-0.61183592957555955,-0.68727306546384981,0.69653640051636223,-0.86462402992736731,-1.0456656698012166,-0.38567403771923747,0.89369285459866343,-0.26817074729815804,-1.0078779335796049,0.024250426980427713],"z":[-1.0020440766239436,-0.52838999355848093,0.2022366580967358,-0.1630837610416043,-0.39430740801225117,0.58036482660662736,-0.98359812215443743,0.64953045175197122,0.39267507275067293,-0.3962245084636643,-0.28366178037344847,-0.023108990639143193,-0.026250468031307105,-0.57831189109057735,-1.000517746100626,-0.63629705368859368,-0.037306280364192125,0.12745447510088731,0.70095703255993558,0.26664361231498473,-0.23401550984707692,-0.8253621612765828,0.85455897272513792,0.0054102390253949698,-0.29745411354893725,0.41858243178704957,-0.1295039068674029,-0.33658836512788887,-0.26975430427558877,0.71324468245955686,0.72538603489728737,0.49182614430420335,-0.35296624235469731,0.18287574089503342,0.16417376000116557,0.54109378485785686,-0.9426957002492713,-0.18027155136753206,-0.41543444887408354,0.012629803789368553,-0.42690267838251372,-0.12964069703722264,-0.52838999355848093,-0.33701496892489785,-0.63030186586537085,-0.25541817771463476,0.026283300128951623,-0.17957678119078346,-0.93027872080581575,-0.52648503306244543],"type":"scatter3d","mode":"markers","name":"virginica","marker":{"color":"rgba(139,0,0,1)","size":[55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55,55],"sizemode":"area","line":{"color":"rgba(139,0,0,1)"}},"textfont":{"color":"rgba(139,0,0,1)","size":55},"error_y":{"color":"rgba(139,0,0,1)","width":55},"error_x":{"color":"rgba(139,0,0,1)","width":55},"line":{"color":"rgba(139,0,0,1)","width":55},"frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/psiaims\.github\.io\/CAMIS\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
