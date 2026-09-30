@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Restricted Mean Survival Time (RMST) in R</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../images/logo.png" rel="icon" type="image/png">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-890df4807d457dbc410f87df85df408d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../images/logo.png" alt="" class="navbar-logo light-content">
+    <img src="../images/logo.png" alt="" class="navbar-logo dark-content">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-publications-and-projects" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Publications and Projects</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-publications-and-projects">    
+        <li>
+    <a class="dropdown-item" href="../publication/white_paper.html"><i class="bi bi-file-earmark-word-fill" role="img">
+</i> 
+ <span class="dropdown-text">White Paper</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/conference.html"><i class="bi bi-easel3-fill" role="img">
+</i> 
+ <span class="dropdown-text">Conferences</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../publication/dissertation.html"><i class="bi bi-mortarboard-fill" role="img">
+</i> 
+ <span class="dropdown-text">Academic Projects</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../minutes/index.html"> 
+<span class="menu-text">Meeting Minutes</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../blogs/index.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-help" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Help</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-help">    
+        <li>
+    <a class="dropdown-item" href="https://github.com/PSIAIMS/CAMIS/issues"><i class="bi bi-bug-fill" role="img">
+</i> 
+ <span class="dropdown-text">Report a Bug</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/get_started.html"><i class="bi bi-git" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with Your Environment</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/contribution.html"><i class="bi bi-person-raised-hand" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with CAMIS</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../contribution/package_review.html"><i class="bi bi-box-fill" role="img">
+</i> 
+ <span class="dropdown-text">Get Started with a New R Package</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+    <a href="https://github.com/PSIAIMS/CAMIS/" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#r-packages-used" id="toc-r-packages-used" class="nav-link active" data-scroll-target="#r-packages-used">R packages used</a></li>
+  <li><a href="#common-mistakes-in-rmst-analyses-in-r" id="toc-common-mistakes-in-rmst-analyses-in-r" class="nav-link" data-scroll-target="#common-mistakes-in-rmst-analyses-in-r">Common mistakes in RMST analyses in R</a></li>
+  <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data used</a></li>
+  <li><a href="#view-the-data---kaplan-meier-curves" id="toc-view-the-data---kaplan-meier-curves" class="nav-link" data-scroll-target="#view-the-data---kaplan-meier-curves">View the data - Kaplan-Meier curves</a></li>
+  <li><a href="#setting-tau" id="toc-setting-tau" class="nav-link" data-scroll-target="#setting-tau">Setting tau</a></li>
+  <li><a href="#method-1-inverse-probability-censoring-weighting-ipcw-estimation-survrm2" id="toc-method-1-inverse-probability-censoring-weighting-ipcw-estimation-survrm2" class="nav-link" data-scroll-target="#method-1-inverse-probability-censoring-weighting-ipcw-estimation-survrm2">Method 1: Inverse probability censoring weighting (IPCW) estimation (<code>survRM2</code>)</a></li>
+  <li><a href="#method-2-pseudo-value-estimation-survival-geepack" id="toc-method-2-pseudo-value-estimation-survival-geepack" class="nav-link" data-scroll-target="#method-2-pseudo-value-estimation-survival-geepack">Method 2: Pseudo-value estimation (<code>survival</code> + <code>geepack</code>)</a></li>
+  <li><a href="#method-3-area-under-the-curve-method-survrm2" id="toc-method-3-area-under-the-curve-method-survrm2" class="nav-link" data-scroll-target="#method-3-area-under-the-curve-method-survrm2">Method 3: Area under the curve method (<code>survRM2</code>)</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Restricted Mean Survival Time (RMST) in R</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">30 September, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Under the situation where your time to event outcome has non-proportional hazards over time, the commonly used Cox proportional hazards regression analysis and the log-rank test can be invalid - especially when the survival curves cross. One alternative is to analyse the restricted mean survival time (RMST), which is the average time until an event of interest occurs within a defined period.</p>
+<p>The RMST also has a very intuitive interpretation in clinical contexts. However, the time frame over which to calculate the average needs to be chosen carefully. It runs from zero until a selected endpoint time called <strong>tau</strong>. If the data is not mature enough, the result may be unreliable. In addition, one could accuse analysts of selecting a tau which returns the ‘most desirable’ result!</p>
+<p>In R, there are three main ways to analyse the RMST. For analyses which include covariates, the inverse probability censoring weighting (IPCW) approach or the pseudo-value approach may be used, as described in Methods 1 and 2 below. Alternatively, the area under the curve (AUC) approach in Method 3 is suitable for unadjusted analyses without covariates.</p>
+<section id="r-packages-used" class="level2">
+<h2 class="anchored" data-anchor-id="r-packages-used">R packages used</h2>
+<p>R has many packages for performing and plotting survival analyses - <a href="https://cran.r-project.org/web/views/Survival.html">a list can be found on CRAN</a>. The packages used here for RMST analyses are <code>survRM2</code> (<a href="https://cran.r-project.org/web/packages/survRM2/refman/survRM2.html">manual</a>) and <code>survival</code> (<a href="https://cran.r-project.org/web/packages/survival/refman/survival.html">manual</a>) with <code>geepack</code> (<a href="https://cran.r-project.org/web/packages/geepack/refman/geepack.html">manual</a>).</p>
+</section>
+<section id="common-mistakes-in-rmst-analyses-in-r" class="level2">
+<h2 class="anchored" data-anchor-id="common-mistakes-in-rmst-analyses-in-r">Common mistakes in RMST analyses in R</h2>
+<p><strong>Issue 1:</strong> Packages have their own ways to represent the event indicator, groups and covariates, so it is important to be aware of how these should be passed from the data. In the <code>survival</code> package, for example, event indicator information can be coded numerically (<code>0</code> for censored, <code>1</code> for event; alternatively, <code>1</code> for censored, <code>2</code> for event), logically (<code>FALSE</code> for censored, <code>TRUE</code> for event) or as a factor (level 1 for censored, level 2 for event). Always perform counts of events and censored observations to ensure the coding is the correct way around.</p>
+<p><strong>Issue 2:</strong> The selection of tau in any RMST analysis is critical, as it defines the period over which the average event time is calculated. Typically, tau is based on the minimum time of the last observed event among treatment groups. If you don’t supply a tau when using the <code>survRM2</code> package, it will provide one for you, which could actually correspond to a <em>censored</em> observation. If events no longer occur in at least one of the groups, then you may not be looking at a time frame of interest. Therefore, it is better practice to determine a suitable tau yourself and explicitly include this in your R code.</p>
+</section>
+<section id="data-used" class="level2">
+<h2 class="anchored" data-anchor-id="data-used">Data used</h2>
+<p>We will use the <a href="https://raw.githubusercontent.com/PSIAIMS/CAMIS/refs/heads/main/data/lung_cancer.csv">lung_cancer.csv</a> dataset. Only the variables listed below will be used. We’ll also add a column <code>id</code> to index individual observations (subjects), and we’ll set the reference levels for the variables <code>sex</code> and <code>trt01p</code>.</p>
+<ul>
+<li><p><code>time</code> - Time (days) to event</p></li>
+<li><p><code>status</code> - 1= censored, 2 = event</p></li>
+<li><p><code>age</code> - Age (years) of subject</p></li>
+<li><p><code>sex</code> - 1 = male, 2 = female</p></li>
+<li><p><code>trt01p</code> - Active, Placebo</p></li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Import the data into R using URL</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>adcibc <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="at">file =</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>          <span class="st">"https://raw.githubusercontent.com/PSIAIMS/CAMIS/refs/heads/main/data/lung_cancer.csv"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Alternatively, import from a download (not run)</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># adcibc &lt;- read.csv(file.choose()) # Locate lung_cancer.csv download</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># View the first few rows</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(adcibc)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  inst time status age sex ph.ecog ph.karno pat.karno meal.cal wt.loss trt01p
+1    3  306      2  74   1       1       90       100     1175      NA Active
+2    3  455      2  68   1       0       90        90     1225      15 Active
+3    3 1010      1  56   1       0       90        90       NA      15 Active
+4    5  210      2  57   1       1       90        60     1150      11 Active
+5    1  883      2  60   1       0      100        90       NA       0 Active
+6   12 1022      1  74   1       1       50        80      513       0 Active
+  trt01pn dose_mg dose_id wt_cat wt_catn cnsr
+1       1      10       1   &lt;NA&gt;      NA    0
+2       1      10       1   loss       0    0
+3       1      10       1   loss       0    1
+4       1      10       1   loss       0    0
+5       1      10       1   gain       1    0
+6       1      10       1   gain       1    1</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Add column to index observations</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>adcibc<span class="sc">$</span>id <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(adcibc)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Set reference level of trt01p to Placebo</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>adcibc<span class="sc">$</span>trt01p <span class="ot">&lt;-</span> <span class="fu">relevel</span>(<span class="fu">factor</span>(adcibc<span class="sc">$</span>trt01p), <span class="at">ref =</span> <span class="st">"Placebo"</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Set reference level of sex to 2 (for female)</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>adcibc<span class="sc">$</span>sex <span class="ot">&lt;-</span> <span class="fu">relevel</span>(<span class="fu">factor</span>(adcibc<span class="sc">$</span>sex), <span class="at">ref =</span> <span class="st">"2"</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Display counts of observations by status</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="fu">by</span>(<span class="at">data =</span> adcibc<span class="sc">$</span>time, <span class="at">INDICES =</span> adcibc<span class="sc">$</span>status, <span class="at">FUN =</span> length)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>adcibc$status: 1
+[1] 63
+------------------------------------------------------------ 
+adcibc$status: 2
+[1] 165</code></pre>
+</div>
+</div>
+<p>Looking at the counts involving <code>status</code>, there are 63 censored observations under <code>1</code> and 165 events under <code>2</code>.</p>
+</section>
+<section id="view-the-data---kaplan-meier-curves" class="level2">
+<h2 class="anchored" data-anchor-id="view-the-data---kaplan-meier-curves">View the data - Kaplan-Meier curves</h2>
+<p>It is good practice to first view the shape of the Kaplan-Meier curves. There are several options to do this in R. A straightforward approach is to use the <code>survival</code> package to compute and plot the survival probabilities.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Obtain survival probabilities for each of the two treatments</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>kmfit1 <span class="ot">&lt;-</span> survival<span class="sc">::</span><span class="fu">survfit</span>(<span class="at">formula =</span> <span class="fu">Surv</span>(<span class="at">time =</span> time, <span class="at">event =</span> status) <span class="sc">~</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>                              <span class="fu">strata</span>(trt01p), <span class="at">data =</span> adcibc)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>          </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the two Kaplan-Meier curves</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(kmfit1, <span class="at">col =</span> <span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">3</span>), <span class="at">xlab =</span> <span class="st">"Days"</span>, <span class="at">ylab =</span> <span class="st">"Survival Probability"</span>, <span class="at">lty =</span> <span class="dv">1</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">"topright"</span>, <span class="fu">c</span>(<span class="st">"Placebo"</span>, <span class="st">"Active"</span>), <span class="at">lty =</span> <span class="dv">1</span>, <span class="at">col =</span> <span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">3</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="RMST_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>As can be seen from the plot, the treatment curves cross at approximately 300 days, where the Placebo treatment’s survival probability drops below that of the Active treatment. This highlights why it is important to pre-specify the approach to selecting tau. If we selected the period 0 to 6 months (0 to about 180 days) vs.&nbsp;0 to 18 months (0 to about 550 days), we’d get very different results for the treatment comparison.</p>
+</section>
+<section id="setting-tau" class="level2">
+<h2 class="anchored" data-anchor-id="setting-tau">Setting tau</h2>
+<p>The code below calculates <code>tau</code> as the minimum time of the last observed event among the two treatments.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get the last observed event time (status = 2) for each treatment</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>max_times <span class="ot">&lt;-</span> <span class="fu">aggregate</span>(time <span class="sc">~</span> trt01p, <span class="at">FUN =</span> max, <span class="at">data =</span> adcibc[adcibc<span class="sc">$</span>status <span class="sc">==</span> <span class="dv">2</span>,])</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># View the results</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(max_times)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   trt01p time
+1 Placebo  350
+2  Active  883</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Select the lowest of the max_times</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>tau <span class="ot">&lt;-</span> <span class="fu">min</span>(max_times<span class="sc">$</span>time)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># View tau</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(tau)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 350</code></pre>
+</div>
+</div>
+<p>The <code>tau</code> will limit the time frame over which the area under the curve (AUC) is calculated. As we want to define <code>tau</code> in terms of observed <em>events</em>, we select only those observations where <code>status</code> is <code>2</code>. This avoids including a period of time where events no longer occur in at least one of the treatment groups.</p>
+</section>
+<section id="method-1-inverse-probability-censoring-weighting-ipcw-estimation-survrm2" class="level2">
+<h2 class="anchored" data-anchor-id="method-1-inverse-probability-censoring-weighting-ipcw-estimation-survrm2">Method 1: Inverse probability censoring weighting (IPCW) estimation (<code>survRM2</code>)</h2>
+<p>The <code>rmst2()</code> function in the <code>survRM2</code> package compares the RMST between two groups. When covariates are also included, estimation is performed using an inverse probability censoring weighting (IPCW) approach based on the framework of Tian, Zhao &amp; Wei (<a href="http://doi.org/10.1093/biostatistics/kxt050">2014</a>). Event times are modelled as a function of the covariates with weights derived from the Kaplan-Meier estimate of the censoring distribution of each group. Weights adjust for right-censoring by giving greater weight to observed events, yielding consistent estimation across groups (Calkins, Canan, Moore, Lesko &amp; Lau, <a href="https://doi.org/10.1186/s12874-018-0484-z">2018</a>).</p>
+<p>Internally, <code>rmst2()</code> fits three IPCW-weighted regression models with sandwich variance estimators corresponding to: the RMST difference, the RMST ratio, and the ratio of the restricted mean time lost (RMTL).</p>
+<p>As for passing your data to the function, <code>rmst2()</code> has some very specific requirements! Six arguments are accepted: <code>time</code>, <code>status</code>, <code>arm</code>, <code>covariates</code>,<code>tau</code> and <code>alpha</code>. The first four correspond to the input data and, as outlined below, the data usually needs to be prepared.</p>
+<ul>
+<li><p><code>time</code> needs to be a numeric vector.</p></li>
+<li><p><code>status</code>, i.e., the event indicator, must be a numeric vector with <code>0</code> for censored observations and <code>1</code> for events.</p></li>
+<li><p><code>arm</code>, i.e., the grouping/stratification variable, must be a numeric vector containing <code>0</code> and <code>1</code> values. We’ll use <code>trt01p</code> here, and code <code>"Placebo"</code> as <code>0</code> and <code>"Active"</code> as <code>1</code>.</p></li>
+<li><p><code>covariates</code> must be stored in a matrix or data frame containing only numeric values. For <code>sex</code>, we’ll assign <code>0</code> to <code>2</code> (female) and <code>1</code> to <code>1</code> (male). For <code>age</code>, this is just the raw values (age in years).</p></li>
+</ul>
+<p>The following steps prepare the data as described above.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a vector of survival times</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>surv.times <span class="ot">&lt;-</span> adcibc<span class="sc">$</span>time</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a vector of 0s and 1s for 'status' (2 = event, 1 = censored)</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>event.indicator <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="at">test =</span> adcibc<span class="sc">$</span>status <span class="sc">==</span> <span class="dv">2</span>, <span class="at">yes =</span> <span class="dv">1</span>, <span class="at">no =</span> <span class="dv">0</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a vector of 0s and 1s for 'trt01p'</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>trt <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="at">test =</span> adcibc<span class="sc">$</span>trt01p <span class="sc">==</span> <span class="st">"Active"</span>, <span class="at">yes =</span> <span class="dv">1</span>, <span class="at">no =</span> <span class="dv">0</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a vector of 0s and 1s for 'sex' (1 = male, 2 = female) and combine with age</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>covs <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="at">sexM =</span> <span class="fu">ifelse</span>(<span class="at">test =</span> adcibc<span class="sc">$</span>sex <span class="sc">==</span> <span class="st">"1"</span>, <span class="at">yes =</span> <span class="dv">1</span>, <span class="at">no =</span> <span class="dv">0</span>),</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>              <span class="at">age =</span> adcibc<span class="sc">$</span>age)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>With <code>tau</code> set and the input data ready, let’s perform the RMST comparison of treatments while adjusting for the covariates of <code>sex</code> and <code>age</code>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform the between-group comparison adjusting for covariates</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>RMST.comp1 <span class="ot">&lt;-</span> survRM2<span class="sc">::</span><span class="fu">rmst2</span>(<span class="at">time =</span> surv.times, <span class="at">status =</span> event.indicator, <span class="at">arm =</span> trt,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>                             <span class="at">covariates =</span> covs, <span class="at">tau =</span> tau, <span class="at">alpha =</span> <span class="fl">0.05</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="co"># View output</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(RMST.comp1, <span class="at">digits =</span> <span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+The truncation time: tau = 350  was specified. 
+
+Summary of between-group contrast (adjusted for the covariates) 
+                        Est. lower .95 upper .95      p
+RMST (arm=1)-(arm=0) -9.8835  -39.0192   19.2521 0.5061
+RMST (arm=1)/(arm=0)  0.9640    0.8613    1.0789 0.5234
+RMTL (arm=1)/(arm=0)  1.1300    0.8147    1.5674 0.4641
+
+
+Model summary (difference of RMST) 
+              coef se(coef)       z      p lower .95 upper .95
+intercept 380.8065  48.9428  7.7806 0.0000  284.8804  476.7327
+arm        -9.8835  14.8654 -0.6649 0.5061  -39.0192   19.2521
+sexM      -54.2552  15.5813 -3.4821 0.0005  -84.7940  -23.7163
+age        -1.3874   0.7904 -1.7553 0.0792   -2.9366    0.1618
+
+
+Model summary (ratio of RMST) 
+             coef se(coef)       z      p exp(coef) lower .95 upper .95
+intercept  6.0191   0.1888 31.8783 0.0000  411.2220  284.0245  595.3835
+arm       -0.0367   0.0575 -0.6381 0.5234    0.9640    0.8613    1.0789
+sexM      -0.2085   0.0605 -3.4463 0.0006    0.8118    0.7210    0.9140
+age       -0.0054   0.0031 -1.7348 0.0828    0.9946    0.9886    1.0007
+
+
+Model summary (ratio of time-lost) 
+            coef se(coef)      z      p exp(coef) lower .95 upper .95
+intercept 3.0771   0.5736 5.3643 0.0000   21.6954    7.0484   66.7795
+arm       0.1222   0.1669 0.7322 0.4641    1.1300    0.8147    1.5674
+sexM      0.6396   0.2068 3.0930 0.0020    1.8957    1.2640    2.8430
+age       0.0151   0.0086 1.7578 0.0788    1.0152    0.9983    1.0325</code></pre>
+</div>
+</div>
+<p>The first block of the output presents the RMST difference, the RMST ratio and the RMTL ratio relating to <code>arm</code> (the grouping variable) from the three models. The next three blocks provide model summaries.</p>
+<p>Usually, the first block is of most interest. The estimated RMST difference between the Active (<code>arm=1</code>) and Placebo (<code>arm=0</code>) treatments is -9.88 days (95% CI: -39.02, 19.25; <em>p</em> = 0.5061). The summary for the corresponding model is located under <code>Model summary (difference of RMST)</code>.</p>
+<p>Additionally, the RMST difference is expressed as the odds ratio Active/Placebo, whose estimate is 0.9640 (95% CI: 0.8613, 1.0789; <em>p</em> = 0.5234). The summary of this model (performed with a log link) is provided under <code>Model summary (ratio of RMST)</code>.</p>
+<p>Finally, the odds ratio (Active/Placebo) for the RMTL is provided, with the model summary (on the log scale) given under <code>Model summary (ratio of time-lost)</code>.</p>
+<p>Overall, it cannot be concluded that there is a difference in the RMST between the Active and Placebo treatments, which is also quite apparent simply by looking over the Kaplan-Meier plot from 0 to 350 days.</p>
+</section>
+<section id="method-2-pseudo-value-estimation-survival-geepack" class="level2">
+<h2 class="anchored" data-anchor-id="method-2-pseudo-value-estimation-survival-geepack">Method 2: Pseudo-value estimation (<code>survival</code> + <code>geepack</code>)</h2>
+<p>The pseudo-observations method (Andersen, Hansen &amp; Klein, <a href="https://doi.org/10.1007/s10985-004-4771-0">2004</a>) can be performed in R by generating pseudo values from a Kaplan-Meier fit and then by submitting these to regression modelling within a general estimating equations (GEE) framework.</p>
+<p>We start by using the <code>survival</code> package to create a Kaplan-Meier fit stored in <code>kmfit2</code>. This is different from <code>kmfit1</code> created earlier where we included a <code>strata()</code> variable to compute separate Kaplan-Meier curves for each treatment. Here we pool observations on the assumption that the treatments exhibit similar censoring distributions; we’ll still include treatment (<code>trt01p</code>) as a covariate in the pseudo-value regression models.</p>
+<p>The <code>pseudo()</code> function generates pseudo values based on <code>kmfit2</code> as well as <code>tau</code> passed in the <code>times</code> argument. The pseudo values can be inserted directly into the data as a new column called <code>rmst</code>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Obtain survival probabilities for the data</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>kmfit2 <span class="ot">&lt;-</span> survival<span class="sc">::</span><span class="fu">survfit</span>(<span class="at">formula =</span> <span class="fu">Surv</span>(<span class="at">time =</span> time, <span class="at">event =</span> status) <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>                            <span class="at">id =</span> id, <span class="at">data =</span> adcibc)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Insert into the data a column of RMST pseudo values</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>adcibc<span class="sc">$</span>rmst <span class="ot">&lt;-</span> survival<span class="sc">::</span><span class="fu">pseudo</span>(<span class="at">fit =</span> kmfit2, <span class="at">times =</span> tau, <span class="at">type =</span> <span class="st">"rmst"</span>,</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>                                <span class="at">data.frame =</span> <span class="cn">TRUE</span>)<span class="sc">$</span>pseudo</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>To model the additive effects of <code>trt01p</code>, <code>sex</code> and <code>age</code> on the RMST (the pseudo values), a linear regression model with robust (sandwich) standard errors can be fitted using <code>geeglm()</code>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># RMST difference using identity link</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>RMST.comp2 <span class="ot">&lt;-</span> geepack<span class="sc">::</span><span class="fu">geeglm</span>(rmst <span class="sc">~</span> trt01p <span class="sc">+</span> sex <span class="sc">+</span> age, <span class="at">id =</span> id,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>                              <span class="at">corstr =</span> <span class="st">"independence"</span>, <span class="at">family =</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>                              <span class="fu">gaussian</span>(<span class="at">link =</span> <span class="st">"identity"</span>), <span class="at">data =</span> adcibc)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Model summary</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(RMST.comp2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+geepack::geeglm(formula = rmst ~ trt01p + sex + age, family = gaussian(link = "identity"), 
+    data = adcibc, id = id, corstr = "independence")
+
+ Coefficients:
+             Estimate  Std.err   Wald Pr(&gt;|W|)    
+(Intercept)  374.8824  47.2944 62.831 2.22e-15 ***
+trt01pActive -18.4175  14.2202  1.677 0.195264    
+sex1         -48.1725  14.1970 11.514 0.000691 ***
+age           -1.2208   0.7665  2.537 0.111213    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Correlation structure = independence 
+Estimated Scale Parameters:
+
+            Estimate Std.err
+(Intercept)    11637   811.1
+Number of clusters:   228  Maximum cluster size: 1 </code></pre>
+</div>
+</div>
+<p>To model the RMST ratio instead, the previous step can be repeated by using the log link.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># RMST ratio using the log link</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>RMST.comp3 <span class="ot">&lt;-</span> geepack<span class="sc">::</span><span class="fu">geeglm</span>(rmst <span class="sc">~</span> trt01p <span class="sc">+</span> sex <span class="sc">+</span> age, <span class="at">id =</span> id,</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>                              <span class="at">corstr =</span> <span class="st">"independence"</span>, <span class="at">family =</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>                              <span class="fu">gaussian</span>(<span class="at">link =</span> <span class="st">"log"</span>), <span class="at">data =</span> adcibc)</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Model summary</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(RMST.comp3)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+geepack::geeglm(formula = rmst ~ trt01p + sex + age, family = gaussian(link = "log"), 
+    data = adcibc, id = id, corstr = "independence")
+
+ Coefficients:
+             Estimate  Std.err    Wald Pr(&gt;|W|)    
+(Intercept)   5.96235  0.17116 1213.43  &lt; 2e-16 ***
+trt01pActive -0.07002  0.05264    1.77  0.18349    
+sex1         -0.18220  0.05408   11.35  0.00076 ***
+age          -0.00419  0.00284    2.18  0.14006    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Correlation structure = independence 
+Estimated Scale Parameters:
+
+            Estimate Std.err
+(Intercept)    11659     814
+Number of clusters:   228  Maximum cluster size: 1 </code></pre>
+</div>
+</div>
+<p>As can be seen from the model summary outputs, the conclusions to be drawn are similar to those from using the IPCW method, though the estimates themselves are not identical.</p>
+</section>
+<section id="method-3-area-under-the-curve-method-survrm2" class="level2">
+<h2 class="anchored" data-anchor-id="method-3-area-under-the-curve-method-survrm2">Method 3: Area under the curve method (<code>survRM2</code>)</h2>
+<p>Often all that is needed is the between-group RMST difference without adjusting for covariates. This is straightforward in <code>survRM2</code>, which, in the absence of covariates, uses a non-parametric method to compare the areas under two Kaplan-Meier curves.</p>
+<p>To invoke the AUC method in the <code>rmst2()</code> call, don’t include the <code>covariates</code> argument or set it to <code>NULL</code>:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform the between-group RMST comparison</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>RMST.comp4 <span class="ot">&lt;-</span> survRM2<span class="sc">::</span><span class="fu">rmst2</span>(<span class="at">time =</span> surv.times, <span class="at">status =</span> event.indicator, <span class="at">arm =</span> trt,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>                             <span class="at">covariates =</span> <span class="cn">NULL</span>, <span class="at">tau =</span> tau, <span class="at">alpha =</span> <span class="fl">0.05</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>                        </span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="co"># View output</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(RMST.comp4, <span class="at">digits =</span> <span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+The truncation time: tau = 350  was specified. 
+
+Restricted Mean Survival Time (RMST) by arm 
+             Est.    se lower .95 upper .95
+RMST (arm=1)  248  9.23       230       266
+RMST (arm=0)  273 11.99       249       296
+
+
+Restricted Mean Time Lost (RMTL) by arm 
+             Est.    se lower .95 upper .95
+RMTL (arm=1)  102  9.23      83.7       120
+RMTL (arm=0)   77 11.99      53.6       101
+
+
+Between-group contrast 
+                        Est. lower .95 upper .95      p
+RMST (arm=1)-(arm=0) -24.736   -54.397      4.92 0.1021
+RMST (arm=1)/(arm=0)   0.909     0.812      1.02 0.0989
+RMTL (arm=1)/(arm=0)   1.321     0.928      1.88 0.1222</code></pre>
+</div>
+</div>
+<p>Whenever the AUC method is used, the estimated RMST and RMTL of each group is presented in the first block. The third block reports the estimated RMST difference between the Active (<code>arm=1</code>) and Placebo (<code>arm=0</code>) treatments, which is -24.74 days (95% CI: -52.40, 4.92; <em>p</em> = 0.1021).</p>
+<p><code>survRM2</code> also has the <code>plot()</code> function to visualise the areas under the Kaplan-Meier curves.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Display the AUC for the Kaplan-Meier curves up until the selected tau</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="at">x =</span> RMST.comp4, <span class="at">xlab =</span> <span class="st">"Time (Days)"</span>, <span class="at">ylab =</span> <span class="st">"Survival Probability"</span>,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">400</span>), <span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="RMST_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The AUC is shaded pink, corresponding to the RMST, while the area above the curve, shaded orange, corresponds to the RMTL. Recall that <code>arm=1</code> is the Active treatment and <code>arm=0</code> is the Placebo treatment. As can be seen, the AUCs don’t differ substantially from 0 to 350 days.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ol type="1">
+<li><p>Allignol A., Latouche A. CRAN Task View: Survival Analysis, 2025. <a href="https://cran.r-project.org/web/views/Survival.html">URL</a>.</p></li>
+<li><p>Uno H., Tian L., Horiguchi M., Cronin A., Battioui C., Bell J. survRM2: Comparing Restricted Mean Survival Time, 2022, Version 1.0-4. <a href="https://cran.r-project.org/package=survRM2">URL</a>.</p></li>
+<li><p>Therneau T.M., Lumley T., Atkinson E. Crowson C. survival: Survival Analysis, 2026, Version 3.8-6. <a href="https://CRAN.R-project.org/package=survival">URL</a>.</p></li>
+<li><p>Højsgaard S., Halekoh U., Yan J., Ekstrøm C.T. geepack: Generalized Estimating Equation Package, 2025, Version 1.3.13. <a href="https://CRAN.R-project.org/package=geepack">URL</a>.</p></li>
+<li><p>Tian L., Zhao L., Wei L.J. Predicting the restricted mean event time with the subject’s baseline covariates in survival analysis. Biostatistics, 2014, 15, 222-233. <a href="http://doi.org/10.1093/biostatistics/kxt050" class="uri">http://doi.org/10.1093/biostatistics/kxt050</a>.</p></li>
+<li><p>Calkins K.L., Canan C.E., Moore R.D., Lesko C.R., Lau B. An application of restricted mean survival time in a competing risks setting: comparing time to ART initiation by injection drug use. BMC Med Res Methodol., 2018, 18, 27. <a href="https://doi.org/10.1186/s12874-018-0484-z" class="uri">https://doi.org/10.1186/s12874-018-0484-z</a>.</p></li>
+<li><p>Andersen P.K., Hansen M.G., Klein, J.P. Regression analysis of restricted mean survival time based on pseudo-observations. Lifetime Data Anal., 2004, 10, 335-350 (2004). <a href="https://doi.org/10.1007/s10985-004-4771-0" class="uri">https://doi.org/10.1007/s10985-004-4771-0</a>.</p></li>
+</ol>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/psiaims\.github\.io\/CAMIS\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
