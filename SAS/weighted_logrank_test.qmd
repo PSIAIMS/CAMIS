@@ -10,28 +10,27 @@ jupyter: false
 
 In clinical studies with time-to-event outcomes, it is commonly assumed that the hazard functions of two groups are proportional. The standard log-rank test is widely used to test the equivalence of survival functions. It assumes no relationship between the censoring indicator and the forecast, such that dropouts or individuals who are not fully observed are perceived to be the same in risks (sensitivity to proportional risk); the events are also weighted equally regardless of time of occurrence ( early/ later). However, several scenarios can lead to non-proportional hazards (NPH). For example, a delayed treatment effect may be observed in the treatment arm, which can lead to a departure from proportionality of the survival curves. Log-rank test loses power under the non-proportional hazard assumption. Thus, there are many tests available in the literature that can handle such scenarios. Most commonly used tests are as follows:
 
--   Weighted log-rank test.
--   Restricted Mean Survival Time (RMST).
--   Milestone survival.
--   Max-Combo test.
--   Modestly Weighted log-rank test.
+- Weighted log-rank test.
+- Restricted Mean Survival Time (RMST).
+- Milestone survival.
+- Max-Combo test.
+- Modestly Weighted log-rank test.
 
 This particular document focuses mainly on the weighted log-rank test, Max-combo test and Modestly Weighted log-rank.
 
 # Data.
 
-\
 Data source: <https://stats.idre.ucla.edu/sas/seminars/sas-survival/>
 
-The data include 500 subjects from the Worcester WHAS WHAS Study. This study examined several factors, such as age, gender and BMI, that may influence survival time after an WHAS. Follow-up time for all participants begins at the time of hospital admission after an WHAS and ends with death or loss to follow-up (censoring). The variables used here are:
+The data include 500 subjects from the Worcester WHAS Study. This study examined several factors, such as age, gender and BMI, that may influence survival time after an WHAS. Follow-up time for all participants begins at the time of hospital admission after an WHAS and ends with death or loss to follow-up (censoring). The variables used here are:
 
--   lenfol: length of follow-up, terminated either by death or censoring - time variable
+- lenfol: length of follow-up, terminated either by death or censoring - time variable
 
--   fstat: loss to followup = 0, death = 1 - censoring variable
+- fstat: loss to followup = 0, death = 1 - censoring variable
 
--   afb: atrial fibrillation, no = 0, 1 = yes - Covariate
+- afb: atrial fibrillation, no = 0, 1 = yes - Covariate
 
--   gender: males = 0, females = 1 - stratification factor
+- gender: males = 0, females = 1 - stratification factor
 
 **Kaplan-Meier Survival Curve.**
 
@@ -320,10 +319,10 @@ knitr::include_graphics("../images/weighted_log_rank/stratifed MaxC test stat.pn
 
 To change the choice of weight, modify the `weight =` list in the macro to any desired ($\rho,\gamma$) pairs. The macro supports combined multiple weights `weights = %str(0,0 1,0 0,1 1,1)` by default. These correspond to the Fleming–Harrington class $G(\rho,\gamma)$, where:
 
--   $G(0,0)$: standard log-rank test (equal weighting over time)
--   $G(1,0)$: emphasises early differences
--   $G(0,1)$: emphasises late differences
--   $G(1,1)$: emphasises middle-time differences
+- $G(0,0)$: standard log-rank test (equal weighting over time)
+- $G(1,0)$: emphasises early differences
+- $G(0,1)$: emphasises late differences
+- $G(1,1)$: emphasises middle-time differences
 
 ```{sas}
 %combo_wlr(
@@ -344,7 +343,24 @@ To change the choice of weight, modify the `weight =` list in the macro to any d
 knitr::include_graphics("../images/weighted_log_rank/weight choice.png")
 ```
 
-# 3. Modestly Weighted Log-rank test.
+# 3. Summary Results for Weighted Log-rank.
+
+Here are the results using SAS statistical methods with the data from the Worcester WHAS study.
+
+| Test | Function | Chi-square | P-Value |
+|---------------|---------------------------|---------------|---------------|
+| **Standard Log-Rank** | `PROC LIFETEST / TEST=LOGRANK` | 7.7911 | 0.0053 |
+| **Peto - Peto** | `PROC LIFETEST / TEST=PETO` | 6.7602 | 0.0093 |
+| **Modified Peto-Peto** | `PROC LIFETEST / TEST=MODPETO` | 6.7611 | 0.0093 |
+| **Tarone-Ware** | `PROC LIFETEST / TEST=TARONEWARE` | 6.6664 | 0.0098 |
+| **Gehan- Breslow / Wilcoxon** | `PROC LIFETEST / TEST=WILCOXON` | 5.5370 | 0.0186 |
+| **Fleming-Harrington (0.5, 0.5)** | `PROC LIFETEST / TEST=FH(0.5, 0.5)` | 8.6661 | 0.0032 |
+| **Fleming-Harrington (1, 1)** | `PROC LIFETEST / TEST=FH(1, 1)` | 8.2442 | 0.0041 |
+| **Fleming-Harrington (0, 1)** | `PROC LIFETEST / TEST=FH(0, 1)` | 8.0896 | 0.0045 |
+| **Fleming-Harrington (0.5, 2)** | `PROC LIFETEST / TEST=FH(0.5, 2)` | 7.1724 | 0.0074 |
+| **Fleming-Harrington (1, 0)** | `PROC LIFETEST / TEST=FH(1, 0)` | 6.7309 | 0.0095 |
+
+# 4. Modestly Weighted Log-rank test.
 
 This test is suitable for a delayed effect scenario since it gives more weight to later event times; regardless, weighting is controlled, such that the worse effect of treatment is not rewarded at an early time point. However, in a scenario where there is an early treatment effect which diminishes over time, modestly weighted Log-Rank losses sizeable power compared to the log-rank test. To the knowledge of CAMIS contributors, there is no direct implementation of this test in `PROC LIFETEST` for SAS.
 
