@@ -8,13 +8,139 @@ title: "R vs SAS ANCOVA"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# ANCOVA Comparison
+# Summary
+
+## Goal
+
+The goal of this comparison is to evaluate whether ANCOVA produces equivalent results in R and SAS using the same dataset and model specification. Results from the R `stats::lm() function`, the `sasLM::GLM()` function, and SAS `PROC GLM` are compared for sums of squares and least-squares means.
+
+## Scope
+
+::::::: columns
+:::: {.column width="45%"}
+::: {.callout-note appearance="minimal" collapse="false"}
+## Methodologies
+
+- Analysis of covariance (ANCOVA)
+
+- Type I sums of squares
+
+- Type III sums of squares
+
+- Least-squares means
+:::
+::::
+
+:::: {.column width="55%"}
+::: {.callout-note appearance="minimal" collapse="false"}
+## Technical implementations
+
+- SAS: `PROC GLM`
+- R: `stats::lm()`
+- R: `sasLM::GLM()` with `EMEANS=TRUE`
+:::
+::::
+:::::::
+
+# Prerequisites
+
+## R packages
+
+```{r}
+#| output: false 
+#| message: false 
+library(stats)   # lm()
+library(sasLM)   # GLM()
+```
+
+## Data
+
+The same dataset is used for the R and SAS analyses.
+
+R:
+
+```{r}
+df_sas <- tibble( 
+  drug = factor(c( "A", "A", "A", "A", "A", "A", "A", "A", "A", "A", 
+                   "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", 
+                   "F", "F", "F", "F", "F", "F", "F", "F", "F", "F" 
+                   )), 
+  pre = c( 
+    11, 8, 5, 14, 19, 6, 10, 6, 11, 3, 
+    6, 6, 7, 8, 18, 8, 19, 8, 5, 15, 
+    16, 13, 11, 9, 21, 16, 12, 12, 7, 12 
+    ), 
+  post = c( 6, 0, 2, 8, 11, 4, 13, 1, 8, 0, 
+            0, 2, 3, 1, 18, 4, 14, 9, 1, 9, 
+            13, 10, 18, 5, 23, 12, 5, 16, 1, 20 
+            ) 
+  )
+```
+
+SAS:
+
+``` sas
+data df_sas;
+    input drug $ pre post;
+    datalines;
+A 11 6
+A 8 0
+A 5 2
+A 14 8
+A 19 11
+A 6 4
+A 10 13
+A 6 1
+A 11 8
+A 3 0
+D 6 0
+D 6 2
+D 7 3
+D 8 1
+D 18 18
+D 8 4
+D 19 14
+D 8 9
+D 5 1
+D 15 9
+F 16 13
+F 13 10
+F 11 18
+F 9 5
+F 21 23
+F 16 12
+F 12 5
+F 12 16
+F 7 1
+F 12 20
+;
+run;
+```
+
+The ANCOVA model includes drug as the categorical treatment variable and pre as the continuous covariate.
+
+The general ANCOVA model is:
+
+$$ \text{post} = \text{drug} + \text{pre} $$
+
+where:
+
+- **post** is the response variable
+
+- **drug** is the treatment variable
+
+- **pre** is the continuous covariate.
+
+## ANCOVA Comparison
 
 The following table shows the types of One Sample t-test analysis, the capabilities of each language, and whether or not the results from each language match.
 
 | Analysis | Supported in R | Supported in SAS | Results Match | Notes |
-|--------------|--------------|--------------|--------------|-----------------|
+|----|----|----|----|----|
 | ANCOVA using general linear model and lsmeans | [Yes](../R/ancova.html) | [Yes](../SAS/ancova.html) | [Yes](#comp) | `GLM()` function from **sasLM** with `EMEANS=TRUE` is the easiest to use and matches SAS |
+| Type I Sum of Squares | [Yes](#comp) | [Yes](#comp) | [Yes](#comp) | Sequential sums of squares |
+| Type II Sum of Squares | [Yes](#comp) | [Yes](#comp) | [Yes](#comp) | `sasLM::GLM()` provides SAS-style output |
+| Type III Sum of Squares | [Yes](#comp) | [Yes](#comp) | [Yes](#comp) | `sasLM::GLM()` with `EMEANS=TRUE` matches SAS `LSMEANS` |
 
 ## Comparison Results {#comp}
 
