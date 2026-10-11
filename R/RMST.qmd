@@ -1,0 +1,239 @@
+---
+title: "Restricted Mean Survival Time (RMST) in R"
+format: html
+date: last-modified
+date-format: D MMMM, YYYY
+---
+
+Under the situation where your time to event outcome has non-proportional hazards over time, the commonly used Cox proportional hazards regression analysis and the log-rank test can be invalid - especially when the survival curves cross. One alternative is to analyse the restricted mean survival time (RMST), which is the average time until an event of interest occurs within a defined period.
+
+The RMST also has a very intuitive interpretation in clinical contexts. However, the time frame over which to calculate the average needs to be chosen carefully. It runs from zero until a selected endpoint time called **tau**. If the data is not mature enough, the result may be unreliable. In addition, one could accuse analysts of selecting a tau which returns the 'most desirable' result!
+
+In R, there are three main ways to analyse the RMST. For analyses which include covariates, the inverse probability censoring weighting (IPCW) approach or the pseudo-value approach may be used, as described in Methods 1 and 2 below. Alternatively, the area under the curve (AUC) approach in Method 3 is suitable for unadjusted analyses without covariates.
+
+## R packages used
+
+R has many packages for performing and plotting survival analyses - [a list can be found on CRAN](https://cran.r-project.org/web/views/Survival.html). The packages used here for RMST analyses are `survRM2` ([manual](https://cran.r-project.org/web/packages/survRM2/refman/survRM2.html)) and `survival` ([manual](https://cran.r-project.org/web/packages/survival/refman/survival.html)) with `geepack` ([manual](https://cran.r-project.org/web/packages/geepack/refman/geepack.html)).
+
+## Common mistakes in RMST analyses in R
+
+**Issue 1:** Packages have their own ways to represent the event indicator, groups and covariates, so it is important to be aware of how these should be passed from the data. In the `survival` package, for example, event indicator information can be coded numerically (`0` for censored, `1` for event; alternatively, `1` for censored, `2` for event), logically (`FALSE` for censored, `TRUE` for event) or as a factor (level 1 for censored, level 2 for event). Always perform counts of events and censored observations to ensure the coding is the correct way around.
+
+**Issue 2:** The selection of tau in any RMST analysis is critical, as it defines the period over which the average event time is calculated. Typically, tau is based on the minimum time of the last observed event among treatment groups. If you don't supply a tau when using the `survRM2` package, it will provide one for you, which could actually correspond to a *censored* observation. If events no longer occur in at least one of the groups, then you may not be looking at a time frame of interest. Therefore, it is better practice to determine a suitable tau yourself and explicitly include this in your R code.
+
+## Data used
+
+We will use the [lung_cancer.csv](https://raw.githubusercontent.com/PSIAIMS/CAMIS/refs/heads/main/data/lung_cancer.csv) dataset. Only the variables listed below will be used. We'll also add a column `id` to index individual observations (subjects), and we'll set the reference levels for the variables `sex` and `trt01p`.
+
+-   `time` - Time (days) to event
+
+-   `status` - 1= censored, 2 = event
+
+-   `age` - Age (years) of subject
+
+-   `sex` - 1 = male, 2 = female
+
+-   `trt01p` - Active, Placebo
+
+``` {r}
+# Import the data into R using URL
+adcibc <- read.csv(file =
+          "https://raw.githubusercontent.com/PSIAIMS/CAMIS/refs/heads/main/data/lung_cancer.csv")
+
+# Alternatively, import from a download (not run)
+# adcibc <- read.csv(file.choose()) # Locate lung_cancer.csv download
+
+# View the first few rows
+head(adcibc)
+
+# Add column to index observations
+adcibc$id <- 1:nrow(adcibc)
+
+# Set reference level of trt01p to Placebo
+adcibc$trt01p <- relevel(factor(adcibc$trt01p), ref = "Placebo")
+
+# Set reference level of sex to 2 (for female)
+adcibc$sex <- relevel(factor(adcibc$sex), ref = "2")
+
+# Display counts of observations by status
+by(data = adcibc$time, INDICES = adcibc$status, FUN = length)
+```
+
+Looking at the counts involving `status`, there are 63 censored observations under `1` and 165 events under `2`.
+
+## View the data - Kaplan-Meier curves
+
+It is good practice to first view the shape of the Kaplan-Meier curves. There are several options to do this in R. A straightforward approach is to use the `survival` package to compute and plot the survival probabilities.
+
+``` {r}
+# Obtain survival probabilities for each of the two treatments
+kmfit1 <- survival::survfit(formula = Surv(time = time, event = status) ~
+                              strata(trt01p), data = adcibc)
+          
+# Plot the two Kaplan-Meier curves
+plot(kmfit1, col = c(2,3), xlab = "Days", ylab = "Survival Probability", lty = 1)
+legend("topright", c("Placebo", "Active"), lty = 1, col = c(2,3))
+```
+
+As can be seen from the plot, the treatment curves cross at approximately 300 days, where the Placebo treatment's survival probability drops below that of the Active treatment. This highlights why it is important to pre-specify the approach to selecting tau. If we selected the period 0 to 6 months (0 to about 180 days) vs. 0 to 18 months (0 to about 550 days), we'd get very different results for the treatment comparison.
+
+## Setting tau
+
+The code below calculates `tau` as the minimum time of the last observed event among the two treatments.
+
+``` {r}
+# Get the last observed event time (status = 2) for each treatment
+max_times <- aggregate(time ~ trt01p, FUN = max, data = adcibc[adcibc$status == 2,])
+
+# View the results
+print(max_times)
+
+# Select the lowest of the max_times
+tau <- min(max_times$time)
+
+# View tau
+print(tau)
+```
+
+The `tau` will limit the time frame over which the area under the curve (AUC) is calculated. As we want to define `tau` in terms of observed *events*, we select only those observations where `status` is `2`. This avoids including a period of time where events no longer occur in at least one of the treatment groups.
+
+## Method 1: Inverse probability censoring weighting (IPCW) estimation (`survRM2`)
+
+The `rmst2()` function in the `survRM2` package compares the RMST between two groups. When covariates are also included, estimation is performed using an inverse probability censoring weighting (IPCW) approach based on the framework of Tian, Zhao & Wei ([2014](http://doi.org/10.1093/biostatistics/kxt050)). Event times are modelled as a function of the covariates with weights derived from the Kaplan-Meier estimate of the censoring distribution of each group. Weights adjust for right-censoring by giving greater weight to observed events, yielding consistent estimation across groups (Calkins, Canan, Moore, Lesko & Lau, [2018](https://doi.org/10.1186/s12874-018-0484-z)).
+
+Internally, `rmst2()` fits three IPCW-weighted regression models with sandwich variance estimators corresponding to: the RMST difference, the RMST ratio, and the ratio of the restricted mean time lost (RMTL).
+
+As for passing your data to the function, `rmst2()` has some very specific requirements! Six arguments are accepted: `time`, `status`, `arm`, `covariates`,`tau` and `alpha`. The first four correspond to the input data and, as outlined below, the data usually needs to be prepared.
+
+-   `time` needs to be a numeric vector.
+
+-   `status`, i.e., the event indicator, must be a numeric vector with `0` for censored observations and `1` for events.
+
+-   `arm`, i.e., the grouping/stratification variable, must be a numeric vector containing `0` and `1` values. We'll use `trt01p` here, and code `"Placebo"` as `0` and `"Active"` as `1`.
+
+-   `covariates` must be stored in a matrix or data frame containing only numeric values. For `sex`, we'll assign `0` to `2` (female) and `1` to `1` (male). For `age`, this is just the raw values (age in years).
+
+The following steps prepare the data as described above.
+
+``` {r}
+# Create a vector of survival times
+surv.times <- adcibc$time
+
+# Create a vector of 0s and 1s for 'status' (2 = event, 1 = censored)
+event.indicator <- ifelse(test = adcibc$status == 2, yes = 1, no = 0)
+
+# Create a vector of 0s and 1s for 'trt01p'
+trt <- ifelse(test = adcibc$trt01p == "Active", yes = 1, no = 0)
+
+# Create a vector of 0s and 1s for 'sex' (1 = male, 2 = female) and combine with age
+covs <- cbind(sexM = ifelse(test = adcibc$sex == "1", yes = 1, no = 0),
+              age = adcibc$age)
+```
+
+With `tau` set and the input data ready, let's perform the RMST comparison of treatments while adjusting for the covariates of `sex` and `age`.
+
+``` {r}
+# Perform the between-group comparison adjusting for covariates
+RMST.comp1 <- survRM2::rmst2(time = surv.times, status = event.indicator, arm = trt,
+                             covariates = covs, tau = tau, alpha = 0.05)
+
+# View output
+print(RMST.comp1, digits = 4)
+```
+
+The first block of the output presents the RMST difference, the RMST ratio and the RMTL ratio relating to `arm` (the grouping variable) from the three models. The next three blocks provide model summaries.
+
+Usually, the first block is of most interest. The estimated RMST difference between the Active (`arm=1`) and Placebo (`arm=0`) treatments is -9.88 days (95% CI: -39.02, 19.25; *p* = 0.5061). The summary for the corresponding model is located under `Model summary (difference of RMST)`.
+
+Additionally, the RMST difference is expressed as the odds ratio Active/Placebo, whose estimate is 0.9640 (95% CI: 0.8613, 1.0789; *p* = 0.5234). The summary of this model (performed with a log link) is provided under `Model summary (ratio of RMST)`.
+
+Finally, the odds ratio (Active/Placebo) for the RMTL is provided, with the model summary (on the log scale) given under `Model summary (ratio of time-lost)`.
+
+Overall, it cannot be concluded that there is a difference in the RMST between the Active and Placebo treatments, which is also quite apparent simply by looking over the Kaplan-Meier plot from 0 to 350 days.
+
+## Method 2: Pseudo-value estimation (`survival` + `geepack`)
+
+The pseudo-observations method (Andersen, Hansen & Klein, [2004](https://doi.org/10.1007/s10985-004-4771-0)) can be performed in R by generating pseudo values from a Kaplan-Meier fit and then by submitting these to regression modelling within a general estimating equations (GEE) framework.
+
+We start by using the `survival` package to create a Kaplan-Meier fit stored in `kmfit2`. This is different from `kmfit1` created earlier where we included a `strata()` variable to compute separate Kaplan-Meier curves for each treatment. Here we pool observations on the assumption that the treatments exhibit similar censoring distributions; we'll still include treatment (`trt01p`) as a covariate in the pseudo-value regression models.
+
+The `pseudo()` function generates pseudo values based on `kmfit2` as well as `tau` passed in the `times` argument. The pseudo values can be inserted directly into the data as a new column called `rmst`.
+
+``` {r}
+# Obtain survival probabilities for the data
+kmfit2 <- survival::survfit(formula = Surv(time = time, event = status) ~ 1,
+                            id = id, data = adcibc)
+
+# Insert into the data a column of RMST pseudo values
+adcibc$rmst <- survival::pseudo(fit = kmfit2, times = tau, type = "rmst",
+                                data.frame = TRUE)$pseudo
+```
+
+To model the additive effects of `trt01p`, `sex` and `age` on the RMST (the pseudo values), a linear regression model with robust (sandwich) standard errors can be fitted using `geeglm()`.
+
+``` {r}
+# RMST difference using identity link
+RMST.comp2 <- geepack::geeglm(rmst ~ trt01p + sex + age, id = id,
+                              corstr = "independence", family =
+                              gaussian(link = "identity"), data = adcibc)
+
+# Model summary
+summary(RMST.comp2)
+```
+
+To model the RMST ratio instead, the previous step can be repeated by using the log link.
+
+``` {r}
+# RMST ratio using the log link
+RMST.comp3 <- geepack::geeglm(rmst ~ trt01p + sex + age, id = id,
+                              corstr = "independence", family =
+                              gaussian(link = "log"), data = adcibc)
+
+# Model summary
+summary(RMST.comp3)
+```
+
+As can be seen from the model summary outputs, the conclusions to be drawn are similar to those from using the IPCW method, though the estimates themselves are not identical.
+
+## Method 3: Area under the curve method (`survRM2`)
+
+Often all that is needed is the between-group RMST difference without adjusting for covariates. This is straightforward in `survRM2`, which, in the absence of covariates, uses a non-parametric method to compare the areas under two Kaplan-Meier curves.
+
+To invoke the AUC method in the `rmst2()` call, don't include the `covariates` argument or set it to `NULL`:
+
+``` {r}
+# Perform the between-group RMST comparison
+RMST.comp4 <- survRM2::rmst2(time = surv.times, status = event.indicator, arm = trt,
+                             covariates = NULL, tau = tau, alpha = 0.05)
+                        
+# View output
+print(RMST.comp4, digits = 4)
+```
+
+Whenever the AUC method is used, the estimated RMST and RMTL of each group is presented in the first block. The third block reports the estimated RMST difference between the Active (`arm=1`) and Placebo (`arm=0`) treatments, which is -24.74 days (95% CI: -52.40, 4.92; *p* = 0.1021).
+
+`survRM2` also has the `plot()` function to visualise the areas under the Kaplan-Meier curves.
+
+``` {r}
+# Display the AUC for the Kaplan-Meier curves up until the selected tau
+plot(x = RMST.comp4, xlab = "Time (Days)", ylab = "Survival Probability",
+     xlim = c(0, 400), ylim = c(0, 1))
+```
+
+The AUC is shaded pink, corresponding to the RMST, while the area above the curve, shaded orange, corresponds to the RMTL. Recall that `arm=1` is the Active treatment and `arm=0` is the Placebo treatment. As can be seen, the AUCs don't differ substantially from 0 to 350 days.
+
+## References
+
+1.  Allignol A., Latouche A. CRAN Task View: Survival Analysis, 2025. [URL](https://cran.r-project.org/web/views/Survival.html).
+
+2.  Uno H., Tian L., Horiguchi M., Cronin A., Battioui C., Bell J. survRM2: Comparing Restricted Mean Survival Time, 2022, Version 1.0-4. [URL](https://cran.r-project.org/package=survRM2).
+
+3.  Therneau T.M., Lumley T., Atkinson E. Crowson C. survival: Survival Analysis, 2026, Version 3.8-6. [URL](https://CRAN.R-project.org/package=survival).
+
+4.  Højsgaard S., Halekoh U., Yan J., Ekstrøm C.T. geepack: Generalized Estimating Equation Package, 2025, Version 1.3.13. [URL](https://CRAN.R-project.org/package=geepack).
+
+5.  Tian L., Zhao L., Wei L.J. Predicting the restricted mean event time with the subject's baseline covariates in survival analysis. Biostatistics, 2014, 15, 222-233. <http://doi.org/10.1093/biostatistics/kxt050>.
+
+6.  Calkins K.L., Canan C.E., Moore R.D., Lesko C.R., Lau B. An application of restricted mean survival time in a competing risks setting: comparing time to ART initiation by injection drug use. BMC Med Res Methodol., 2018, 18, 27. <https://doi.org/10.1186/s12874-018-0484-z>.
+
+7.  Andersen P.K., Hansen M.G., Klein, J.P. Regression analysis of restricted mean survival time based on pseudo-observations. Lifetime Data Anal., 2004, 10, 335-350 (2004). <https://doi.org/10.1007/s10985-004-4771-0>.

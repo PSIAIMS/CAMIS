@@ -6,7 +6,10 @@ name: Render and Publish
 
 jobs:
   build-deploy:
-    runs-on: ubuntu-latest
+    # Pinned deliberately: setup-renv keys its package cache on the OS string,
+    # so a floating ubuntu-latest silently invalidates every cache when GitHub
+    # migrates the image (this is what broke CI in July 2026).
+    runs-on: ubuntu-24.04
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
@@ -23,10 +26,23 @@ jobs:
           cache: 'pip' # caching pip dependencies
       - run: pip install -r requirements.txt
 
-      - name: Install libcurl
+      - name: Install system dependencies
+        # Derived from Posit Package Manager's sysreqs API for the packages in
+        # renv.lock on ubuntu-24.04. Regenerate with:
+        #   https://packagemanager.posit.co/__api__/repos/cran/sysreqs?all=false&distribution=ubuntu&release=24.04&pkgname=<pkg>&...
+        # We install binaries, so these are needed as runtime shared libraries.
         run: |
           sudo apt-get update
-          sudo apt-get install -y libcurl4-openssl-dev libudunits2-dev gdal-bin libgdal-dev libglu1-mesa libxi-dev
+          sudo apt-get install -y \
+            libcurl4-openssl-dev libssl-dev libxml2-dev libicu-dev zlib1g-dev \
+            libglpk-dev \
+            libudunits2-dev gdal-bin libgdal-dev libgeos-dev libproj-dev \
+            libsqlite3-dev libabsl-dev \
+            libcairo2-dev libfontconfig1-dev libfreetype6-dev libfribidi-dev \
+            libharfbuzz-dev \
+            libjpeg-dev libpng-dev libtiff-dev libwebp-dev \
+            libnode-dev libuv1-dev libx11-dev \
+            libglu1-mesa libxi-dev
       - name: Put pandoc in PATH
         run: |
           mkdir -p ~/.local/bin
