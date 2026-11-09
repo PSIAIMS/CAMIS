@@ -275,7 +275,7 @@ window.Quarto = {
 </header>
 
 
-<p>The accelerated failure time model is a parametric survival analysis technique used to model the relationship between the time to event of interest (e.g., time to failure) and a set of predictor variables. It assumes that the covariates have a multiplicative effect on the time to the event. In other words, the time to event is accelerated or decelerated by a factor that depends on the values of the covariates.This differs from the Cox proportional hazards model, which assumes that covariates have a multiplicative effect on the hazard rate, not the time to the event.</p>
+<p>The accelerated failure time model is a parametric survival analysis technique used to model the relationship between the time to event of interest (e.g., time to failure) and a set of predictor variables. It assumes that the covariates have a multiplicative effect on the time to the event. In other words, the time to event is accelerated or decelerated by a factor that depends on the values of the covariates. This differs from the Cox proportional hazards model, which assumes that covariates have a multiplicative effect on the hazard rate, not the time to the event.</p>
 <section id="mathematical-expression" class="level2">
 <h2 class="anchored" data-anchor-id="mathematical-expression">Mathematical Expression</h2>
 <p>Mathematically, the AFT model can be expressed as:</p>
@@ -298,7 +298,7 @@ window.Quarto = {
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit an AFT model using lognormal distribution</span></span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>model_aft <span class="ot">&lt;-</span> survival<span class="sc">::</span><span class="fu">survreg</span>(</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  survival<span class="sc">::</span><span class="fu">Surv</span>(time, status) <span class="sc">~</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  survival<span class="sc">::</span><span class="fu">Surv</span>(time, status) <span class="sc">~</span> age <span class="sc">+</span> <span class="fu">as.factor</span>(sex) <span class="sc">+</span> ph.ecog,</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> lung,</span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">dist =</span> <span class="st">"lognormal"</span></span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>)</span>
@@ -308,13 +308,13 @@ window.Quarto = {
 <pre><code>
 Call:
 survival::survreg(formula = survival::Surv(time, status) ~ age + 
-    sex + ph.ecog, data = lung, dist = "lognormal")
-               Value Std. Error     z       p
-(Intercept)  6.49479    0.58276 11.14 &lt; 2e-16
-age         -0.01918    0.00833 -2.30 0.02126
-sex          0.52195    0.15278  3.42 0.00063
-ph.ecog     -0.35557    0.10331 -3.44 0.00058
-Log(scale)   0.02823    0.05596  0.50 0.61391
+    as.factor(sex) + ph.ecog, data = lung, dist = "lognormal")
+                   Value Std. Error     z       p
+(Intercept)      7.01674    0.53313 13.16 &lt; 2e-16
+age             -0.01918    0.00833 -2.30 0.02126
+as.factor(sex)2  0.52195    0.15278  3.42 0.00063
+ph.ecog         -0.35557    0.10331 -3.44 0.00058
+Log(scale)       0.02823    0.05596  0.50 0.61391
 
 Scale= 1.03 
 
@@ -334,15 +334,15 @@ n=227 (1 observation deleted due to missingness)</code></pre>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>acceleration_factor <span class="ot">&lt;-</span> <span class="fu">exp</span>(<span class="fu">coef</span>(model_aft))</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>acceleration_factor</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>(Intercept)         age         sex     ph.ecog 
-661.6830913   0.9810009   1.6853157   0.7007762 </code></pre>
+<pre><code>    (Intercept)             age as.factor(sex)2         ph.ecog 
+   1115.1448728       0.9810009       1.6853157       0.7007762 </code></pre>
 </div>
 </div>
 </section>
 <section id="interpretation" class="level2">
 <h2 class="anchored" data-anchor-id="interpretation">Interpretation</h2>
 <ul>
-<li>For age,acceleration factor <span class="math inline">\(&lt; 1\)</span> indicates that for each one-unit increase in age, the survival time is slowed down by a factor of 0.98 (or a 2% decreasein survival time).</li>
+<li>For age, acceleration factor <span class="math inline">\(&lt; 1\)</span> indicates that for each one-unit increase in age, the survival time is slowed down by a factor of 0.98 (or a 2% decrease in survival time).</li>
 <li>For sex, acceleration factor <span class="math inline">\(&gt; 1\)</span> indicates that males have 68% accelerated survival time.</li>
 <li>An acceleration factor of ph.ecog <span class="math inline">\(&lt; 1\)</span> suggests a 30% decelerated survival time associated with ph.ecog.</li>
 </ul>
@@ -356,30 +356,33 @@ n=227 (1 observation deleted due to missingness)</code></pre>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(ggplot2)</span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>})</span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit the AFT model on the lung dataset</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>aft_model <span class="ot">&lt;-</span> survival<span class="sc">::</span><span class="fu">survreg</span>(</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  survival<span class="sc">::</span><span class="fu">Surv</span>(time, status) <span class="sc">~</span> age <span class="sc">+</span> sex <span class="sc">+</span> ph.ecog,</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> lung,</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">dist =</span> <span class="st">"lognormal"</span></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a new data frame with predicted survival times</span></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">time =</span> lung<span class="sc">$</span>time,</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">age =</span> lung<span class="sc">$</span>age,</span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">sex =</span> lung<span class="sc">$</span>sex,</span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">ph.ecog =</span> lung<span class="sc">$</span>ph.ecog,</span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">status =</span> lung<span class="sc">$</span>status</span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>surv_times <span class="ot">&lt;-</span> <span class="fu">predict</span>(aft_model, <span class="at">newdata =</span> df)</span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the survival curves based on the AFT model</span></span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>survminer<span class="sc">::</span><span class="fu">ggsurvplot</span>(</span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>  survival<span class="sc">::</span><span class="fu">survfit</span>(survival<span class="sc">::</span><span class="fu">Surv</span>(surv_times, status) <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> df),</span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df,</span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>  <span class="at">xlab =</span> <span class="st">"Time"</span>,</span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>  <span class="at">ylab =</span> <span class="st">"Survival Probability"</span></span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit the AFT model on the lung dataset</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>aft_model <span class="ot">&lt;-</span> survival<span class="sc">::</span><span class="fu">survreg</span>(</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  survival<span class="sc">::</span><span class="fu">Surv</span>(time, status) <span class="sc">~</span> age <span class="sc">+</span> <span class="fu">as.factor</span>(sex) <span class="sc">+</span> ph.ecog,</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> lung,</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">dist =</span> <span class="st">"lognormal"</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a new data frame with predicted survival times</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">time =</span> lung<span class="sc">$</span>time,</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">age =</span> lung<span class="sc">$</span>age,</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">sex =</span> <span class="fu">as.factor</span>(lung<span class="sc">$</span>sex),</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">ph.ecog =</span> lung<span class="sc">$</span>ph.ecog,</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">status =</span> lung<span class="sc">$</span>status</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>surv_times <span class="ot">&lt;-</span> <span class="fu">predict</span>(aft_model, <span class="at">newdata =</span> df)</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the survival curves based on the AFT model</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>survminer<span class="sc">::</span><span class="fu">ggsurvplot</span>(</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>  survival<span class="sc">::</span><span class="fu">survfit</span>(survival<span class="sc">::</span><span class="fu">Surv</span>(surv_times, status) <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> df),</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df,</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>  <span class="at">xlab =</span> <span class="st">"Time"</span>,</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>  <span class="at">ylab =</span> <span class="st">"Survival Probability"</span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -395,7 +398,7 @@ n=227 (1 observation deleted due to missingness)</code></pre>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit an AFT model using weibull distribution</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>model_aft_wb <span class="ot">&lt;-</span> survival<span class="sc">::</span><span class="fu">survreg</span>(</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  survival<span class="sc">::</span><span class="fu">Surv</span>(futime, fustat) <span class="sc">~</span> age <span class="sc">+</span> resid.ds <span class="sc">+</span> rx,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  survival<span class="sc">::</span><span class="fu">Surv</span>(futime, fustat) <span class="sc">~</span> age <span class="sc">+</span> <span class="fu">as.factor</span>(resid.ds) <span class="sc">+</span> <span class="fu">as.factor</span>(rx),</span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> ovarian,</span>
 <span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">dist =</span> <span class="st">"weibull"</span></span>
 <span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>)</span>
@@ -405,13 +408,14 @@ n=227 (1 observation deleted due to missingness)</code></pre>
 <pre><code>
 Call:
 survival::survreg(formula = survival::Surv(futime, fustat) ~ 
-    age + resid.ds + rx, data = ovarian, dist = "weibull")
-              Value Std. Error     z      p
-(Intercept) 10.5634     1.3810  7.65  2e-14
-age         -0.0661     0.0190 -3.48 0.0005
-resid.ds    -0.5002     0.3799 -1.32 0.1879
-rx           0.5152     0.3236  1.59 0.1114
-Log(scale)  -0.6577     0.2384 -2.76 0.0058
+    age + as.factor(resid.ds) + as.factor(rx), data = ovarian, 
+    dist = "weibull")
+                       Value Std. Error     z      p
+(Intercept)          10.5783     1.1844  8.93 &lt;2e-16
+age                  -0.0661     0.0190 -3.48 0.0005
+as.factor(resid.ds)2 -0.5002     0.3799 -1.32 0.1879
+as.factor(rx)2        0.5152     0.3236  1.59 0.1114
+Log(scale)           -0.6577     0.2384 -2.76 0.0058
 
 Scale= 0.518 
 
@@ -430,17 +434,19 @@ n= 26 </code></pre>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>acceleration_factor_wb <span class="ot">&lt;-</span> <span class="fu">exp</span>(<span class="fu">coef</span>(model_aft_wb))</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>acceleration_factor_wb</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code> (Intercept)          age     resid.ds           rx 
-3.869157e+04 9.360366e-01 6.063911e-01 1.673914e+00 </code></pre>
+<pre><code>         (Intercept)                  age as.factor(resid.ds)2 
+        3.927374e+04         9.360366e-01         6.063911e-01 
+      as.factor(rx)2 
+        1.673914e+00 </code></pre>
 </div>
 </div>
 </section>
 <section id="interpretation-1" class="level2">
 <h2 class="anchored" data-anchor-id="interpretation-1">Interpretation</h2>
 <ul>
-<li><p>For age, an acceleration factor of 0.93 indicates that for each one-unit increase in age, the survival time is decelerated by a factor of 0.93(or a 7% decrease in the survival time)</p></li>
+<li><p>For age, an acceleration factor of 0.93 indicates that for each one-unit increase in age, the survival time is decelerated by a factor of 0.93 (or a 7% decrease in the survival time)</p></li>
 <li><p>For residual disease status, an acceleration factor of 0.60 suggests that a decrease in residual disease status is associated with a 40% decelerated survival time.</p></li>
-<li><p>an acceleration factor of 1.67 suggests a 67% accelerated survival time for patients receiving a different type of radiation therapy (rx = 2) compared to the reference group (rx = 1).</p></li>
+<li><p>An acceleration factor of 1.67 suggests a 67% increase of survival (or deceleration of the event) time for patients receiving a different type of radiation therapy (rx = 2) compared to the reference group (rx = 1).</p></li>
 </ul>
 </section>
 <section id="survival-curve-plotting-on-ovarian-dataset" class="level2">
@@ -448,38 +454,143 @@ n= 26 </code></pre>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit the AFT model (weibull distribution) on your data</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>model_aft <span class="ot">&lt;-</span> survival<span class="sc">::</span><span class="fu">survreg</span>(</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  survival<span class="sc">::</span><span class="fu">Surv</span>(futime, fustat) <span class="sc">~</span> age <span class="sc">+</span> resid.ds <span class="sc">+</span> rx,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  survival<span class="sc">::</span><span class="fu">Surv</span>(futime, fustat) <span class="sc">~</span> age <span class="sc">+</span> <span class="fu">as.factor</span>(resid.ds) <span class="sc">+</span> <span class="fu">as.factor</span>(rx),</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> ovarian,</span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">dist =</span> <span class="st">"weibull"</span></span>
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Create survival curves for different levels of predictor variables</span></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>plot_data <span class="ot">&lt;-</span> <span class="fu">with</span>(</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  ovarian,</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">age =</span> <span class="fu">seq</span>(<span class="fu">min</span>(age), <span class="fu">max</span>(age), <span class="at">length.out =</span> <span class="dv">100</span>),</span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">resid.ds =</span> <span class="fu">mean</span>(resid.ds),</span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">rx =</span> <span class="fu">mean</span>(rx)</span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Predict survival times based on the AFT model</span></span>
-<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>plot_data<span class="sc">$</span>survival <span class="ot">&lt;-</span> <span class="fu">predict</span>(model_aft, <span class="at">newdata =</span> plot_data)</span>
-<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the survival curves</span></span>
-<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(</span>
-<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>  plot_data,</span>
-<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">aes</span>(<span class="at">x =</span> age, <span class="at">y =</span> survival, <span class="at">color =</span> <span class="fu">factor</span>(rx), <span class="at">linetype =</span> <span class="fu">factor</span>(rx))</span>
-<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>) <span class="sc">+</span></span>
-<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
-<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Age"</span>,</span>
-<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Survival Probability"</span>,</span>
-<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"Radiation Therapy"</span>,</span>
-<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">linetype =</span> <span class="st">"Radiation Therapy"</span></span>
-<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_linetype_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"solid"</span>, <span class="st">"dashed"</span>, <span class="st">"dotted"</span>)) <span class="sc">+</span></span>
-<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"blue"</span>, <span class="st">"red"</span>, <span class="st">"green"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>plot_data <span class="ot">&lt;-</span> <span class="fu">with</span>(</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  ovarian,</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">age =</span> <span class="fu">seq</span>(<span class="fu">min</span>(age), <span class="fu">max</span>(age), <span class="at">length.out =</span> <span class="dv">100</span>),</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">resid.ds =</span> <span class="fu">c</span>(<span class="st">"1"</span>, <span class="st">"2"</span>),</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">rx =</span> <span class="fu">c</span>(<span class="st">"1"</span>, <span class="st">"2"</span>)</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>plot_data</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         age resid.ds rx
+1   38.89320        1  1
+2   39.25291        2  2
+3   39.61261        1  1
+4   39.97232        2  2
+5   40.33202        1  1
+6   40.69173        2  2
+7   41.05144        1  1
+8   41.41114        2  2
+9   41.77085        1  1
+10  42.13055        2  2
+11  42.49026        1  1
+12  42.84997        2  2
+13  43.20967        1  1
+14  43.56938        2  2
+15  43.92908        1  1
+16  44.28879        2  2
+17  44.64850        1  1
+18  45.00820        2  2
+19  45.36791        1  1
+20  45.72762        2  2
+21  46.08732        1  1
+22  46.44703        2  2
+23  46.80673        1  1
+24  47.16644        2  2
+25  47.52615        1  1
+26  47.88585        2  2
+27  48.24556        1  1
+28  48.60526        2  2
+29  48.96497        1  1
+30  49.32468        2  2
+31  49.68438        1  1
+32  50.04409        2  2
+33  50.40379        1  1
+34  50.76350        2  2
+35  51.12321        1  1
+36  51.48291        2  2
+37  51.84262        1  1
+38  52.20232        2  2
+39  52.56203        1  1
+40  52.92174        2  2
+41  53.28144        1  1
+42  53.64115        2  2
+43  54.00085        1  1
+44  54.36056        2  2
+45  54.72027        1  1
+46  55.07997        2  2
+47  55.43968        1  1
+48  55.79938        2  2
+49  56.15909        1  1
+50  56.51880        2  2
+51  56.87850        1  1
+52  57.23821        2  2
+53  57.59792        1  1
+54  57.95762        2  2
+55  58.31733        1  1
+56  58.67703        2  2
+57  59.03674        1  1
+58  59.39645        2  2
+59  59.75615        1  1
+60  60.11586        2  2
+61  60.47556        1  1
+62  60.83527        2  2
+63  61.19498        1  1
+64  61.55468        2  2
+65  61.91439        1  1
+66  62.27409        2  2
+67  62.63380        1  1
+68  62.99351        2  2
+69  63.35321        1  1
+70  63.71292        2  2
+71  64.07262        1  1
+72  64.43233        2  2
+73  64.79204        1  1
+74  65.15174        2  2
+75  65.51145        1  1
+76  65.87115        2  2
+77  66.23086        1  1
+78  66.59057        2  2
+79  66.95027        1  1
+80  67.30998        2  2
+81  67.66968        1  1
+82  68.02939        2  2
+83  68.38910        1  1
+84  68.74880        2  2
+85  69.10851        1  1
+86  69.46822        2  2
+87  69.82792        1  1
+88  70.18763        2  2
+89  70.54733        1  1
+90  70.90704        2  2
+91  71.26675        1  1
+92  71.62645        2  2
+93  71.98616        1  1
+94  72.34586        2  2
+95  72.70557        1  1
+96  73.06528        2  2
+97  73.42498        1  1
+98  73.78469        2  2
+99  74.14439        1  1
+100 74.50410        2  2</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Predict survival times based on the AFT model</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>plot_data<span class="sc">$</span>survival <span class="ot">&lt;-</span> <span class="fu">predict</span>(model_aft, <span class="at">newdata =</span> plot_data)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the survival curves</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  plot_data,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">aes</span>(<span class="at">x =</span> age, <span class="at">y =</span> survival, <span class="at">color =</span> <span class="fu">factor</span>(rx), <span class="at">linetype =</span> <span class="fu">factor</span>(rx))</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>) <span class="sc">+</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Age"</span>,</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Survival Probability"</span>,</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"Radiation Therapy"</span>,</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">linetype =</span> <span class="st">"Radiation Therapy"</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_linetype_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"solid"</span>, <span class="st">"dashed"</span>, <span class="st">"dotted"</span>)) <span class="sc">+</span></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"blue"</span>, <span class="st">"red"</span>, <span class="st">"green"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
