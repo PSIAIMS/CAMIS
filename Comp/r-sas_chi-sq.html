@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>R/SAS Chi-Squared and Fisher’s Exact Comparision</title>
+<title>R/SAS Chi-Squared and Fisher’s Exact Comparison</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -240,9 +240,34 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#chi-squared-test" id="toc-chi-squared-test" class="nav-link active" data-scroll-target="#chi-squared-test">Chi-Squared Test</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link active" data-scroll-target="#summary">Summary</a>
+  <ul class="collapse">
+  <li><a href="#goal" id="toc-goal" class="nav-link" data-scroll-target="#goal">Goal</a></li>
+  <li><a href="#scope" id="toc-scope" class="nav-link" data-scroll-target="#scope">Scope</a></li>
+  </ul></li>
+  <li><a href="#prerequisites" id="toc-prerequisites" class="nav-link" data-scroll-target="#prerequisites">Prerequisites</a>
+  <ul class="collapse">
+  <li><a href="#r-packages" id="toc-r-packages" class="nav-link" data-scroll-target="#r-packages">R packages</a></li>
+  </ul></li>
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a>
+  <ul class="collapse">
+  <li><a href="#lung-cancer-data" id="toc-lung-cancer-data" class="nav-link" data-scroll-target="#lung-cancer-data">Lung Cancer Data</a></li>
+  </ul></li>
+  <li><a href="#chi-square-test-comparison" id="toc-chi-square-test-comparison" class="nav-link" data-scroll-target="#chi-square-test-comparison">Chi-Square Test Comparison</a>
+  <ul class="collapse">
+  <li><a href="#comparison-results" id="toc-comparison-results" class="nav-link" data-scroll-target="#comparison-results">Comparison Results</a>
+  <ul class="collapse">
+  <li><a href="#pearson" id="toc-pearson" class="nav-link" data-scroll-target="#pearson">Pearson’s Chi-Square Test</a></li>
+  <li><a href="#yates" id="toc-yates" class="nav-link" data-scroll-target="#yates">Yates’ Continuity-Adjusted Chi-Square Test</a></li>
+  <li><a href="#egon-pearson" id="toc-egon-pearson" class="nav-link" data-scroll-target="#egon-pearson">Egon Pearson ‘N-1’ Chi-Squared Test</a></li>
+  <li><a href="#fisher" id="toc-fisher" class="nav-link" data-scroll-target="#fisher">Fisher’s Exact Test</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#summary-and-recommendation" id="toc-summary-and-recommendation" class="nav-link" data-scroll-target="#summary-and-recommendation">Summary and Recommendation</a></li>
+  <li><a href="#chi-squared-test" id="toc-chi-squared-test" class="nav-link" data-scroll-target="#chi-squared-test">Chi-Squared Test</a></li>
   <li><a href="#egon-pearson-n-1-chi-squared-test" id="toc-egon-pearson-n-1-chi-squared-test" class="nav-link" data-scroll-target="#egon-pearson-n-1-chi-squared-test">Egon Pearson ‘N-1’ Chi-Squared Test</a></li>
   <li><a href="#fishers-exact-test" id="toc-fishers-exact-test" class="nav-link" data-scroll-target="#fishers-exact-test">Fisher’s Exact Test</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 </nav>
     </div>
@@ -251,7 +276,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">R/SAS Chi-Squared and Fisher’s Exact Comparision</h1>
+<h1 class="title">R/SAS Chi-Squared and Fisher’s Exact Comparison</h1>
 </div>
 
 
@@ -268,6 +293,445 @@ window.Quarto = {
 </header>
 
 
+<section id="summary" class="level1">
+<h1>Summary</h1>
+<section id="goal" class="level2">
+<h2 class="anchored" data-anchor-id="goal">Goal</h2>
+<p>The goal of this comparison is to evaluate whether chi-square tests and Fisher’s exact tests produce equivalent results in R and SAS using the same data.</p>
+<p>The comparison uses the <code>survival::lung</code> dataset to examine the association between sex and patient status. The same 2 × 2 contingency table is analyzed in R using <code>stats::chisq.test()</code> and <code>stats::fisher.test()</code> and in SAS using <code>PROC FREQ</code>.</p>
+<p>Pearson’s chi-square statistic, the continuity-adjusted chi-square statistic, degrees of freedom, p-values, Fisher’s exact test p-values, and odds ratio estimates are compared directly.</p>
+</section>
+<section id="scope" class="level2">
+<h2 class="anchored" data-anchor-id="scope">Scope</h2>
+<div class="columns">
+<div class="column" style="width:45%;">
+<div class="callout callout-style-simple callout-note no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="true" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Methodologies
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse show">
+<div class="callout-body-container callout-body">
+<ul>
+<li>Pearson’s chi-square test of independence</li>
+<li>Yates’ continuity-adjusted chi-square test</li>
+<li>Fisher’s exact test for a 2 × 2 contingency table</li>
+</ul>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:55%;">
+<div class="callout callout-style-simple callout-note no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="true" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Technical implementations
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse show">
+<div class="callout-body-container callout-body">
+<p><strong>R:</strong> <code>stats::chisq.test()</code> and <code>stats::fisher.test()</code></p>
+<p><strong>SAS:</strong> <code>PROC FREQ</code> with the <code>CHISQ</code> option and <code>EXACT FISHER</code></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="prerequisites" class="level1">
+<h1>Prerequisites</h1>
+<section id="r-packages" class="level2">
+<h2 class="anchored" data-anchor-id="r-packages">R packages</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survival)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="data" class="level1">
+<h1>Data</h1>
+<section id="lung-cancer-data" class="level2">
+<h2 class="anchored" data-anchor-id="lung-cancer-data">Lung Cancer Data</h2>
+<p>The <code>lung</code> dataset from the R <code>survival</code> package contains observations from the North Central Cancer Treatment Group’s study of patients with advanced lung cancer. For this comparison, sex and patient status are used to create a contingency table.</p>
+<p>The <code>status</code> variable is coded as 1 for censored observations and 2 for deaths. The <code>sex</code> variable is coded as 1 for males and 2 for females.</p>
+<p>The comparison uses the same four cell counts in both R and SAS. The SAS dataset below contains the aggregated frequencies from the R contingency table, so that both programs analyze identical data.</p>
+<p>R:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(lung, <span class="at">package =</span> <span class="st">"survival"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in data(lung, package = "survival"): data set 'lung' not found</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>lung_compare <span class="ot">&lt;-</span> lung <span class="sc">|&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">transmute</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">Sex =</span> <span class="fu">factor</span>(</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>      sex,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>),</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Male"</span>, <span class="st">"Female"</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">Status =</span> <span class="fu">factor</span>(</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>      status,</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>),</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Censored"</span>, <span class="st">"Dead"</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the 2 x 2 contingency table</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>lung_table <span class="ot">&lt;-</span> <span class="fu">table</span>(</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">Sex =</span> lung_compare<span class="sc">$</span>Sex,</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">Status =</span> lung_compare<span class="sc">$</span>Status</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>lung_table</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        Status
+Sex      Censored Dead
+  Male         26  112
+  Female       37   53</code></pre>
+</div>
+</div>
+<p>Check that the table contains the expected number of observations:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(lung_table)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 228</code></pre>
+</div>
+</div>
+<p>SAS:</p>
+<p>The following SAS data step uses the same four cell frequencies as the R contingency table.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> lung_compare;</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">length</span> Sex $<span class="fl">6</span> Status $<span class="fl">8</span>;</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">input</span> Sex $ Status $ Count;</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">datalines;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="ot">Male   Censored 26</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="ot">Male   Dead     112</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="ot">Female Censored 37</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="ot">Female Dead     53</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>;</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="kw">proc freq</span> <span class="bu">data</span><span class="op">=</span>lung_compare;</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    <span class="bu">tables</span> Sex<span class="op">*</span>Status <span class="op">/</span> chisq expected;</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    <span class="bu">weight</span> Count;</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    <span class="bu">exact</span> fisher;</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The <code>WEIGHT Count</code> statement tells SAS that each row represents the specified number of observations. The resulting contingency table contains the same cell counts as the R table.</p>
+</section>
+</section>
+<section id="chi-square-test-comparison" class="level1">
+<h1>Chi-Square Test Comparison</h1>
+<p>The following table summarizes the tests supported by both programs and the results being compared.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Analysis</th>
+<th>Supported in R</th>
+<th>Supported in SAS</th>
+<th>Results Match</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Pearson’s chi-square test</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes, when the same statistic is compared</td>
+<td>R: <code>chisq.test(..., correct = FALSE)</code>; SAS: Pearson Chi-Square</td>
+</tr>
+<tr class="even">
+<td>Yates’ continuity-adjusted chi-square test</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes, when the same correction is compared</td>
+<td>R: <code>chisq.test(..., correct = TRUE)</code>; SAS: Continuity Adj. Chi-Square</td>
+</tr>
+<tr class="odd">
+<td>Fisher’s exact test</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes, for the two-sided p-value with matching settings</td>
+<td>R: <code>fisher.test()</code>; SAS: <code>EXACT FISHER</code></td>
+</tr>
+<tr class="even">
+<td>Fisher’s exact odds ratio estimate</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Not necessarily</td>
+<td>The odds ratio estimates can use different methods</td>
+</tr>
+</tbody>
+</table>
+<section id="comparison-results" class="level2">
+<h2 class="anchored" data-anchor-id="comparison-results">Comparison Results</h2>
+<section id="pearson" class="level3">
+<h3 class="anchored" data-anchor-id="pearson">Pearson’s Chi-Square Test</h3>
+<p>In R, set <code>correct = FALSE</code> to calculate Pearson’s chi-square statistic without Yates’ continuity correction.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>pearson_r <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">chisq.test</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  lung_table,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">correct =</span> <span class="cn">FALSE</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>pearson_r</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Pearson's Chi-squared test
+
+data:  lung_table
+X-squared = 13.511, df = 1, p-value = 0.0002371</code></pre>
+</div>
+</div>
+<p>The corresponding SAS result is the <strong>Pearson Chi-Square</strong> row in the <code>PROC FREQ</code> output.</p>
+<p>For this dataset, the expected Pearson results are:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Statistic</th>
+<th style="text-align: right;">R: <code>chisq.test(correct = FALSE)</code></th>
+<th style="text-align: right;">SAS: Pearson Chi-Square</th>
+<th>Match</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Chi-square statistic</td>
+<td style="text-align: right;">13.5112</td>
+<td style="text-align: right;">13.5112</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>Degrees of freedom</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>P-value</td>
+<td style="text-align: right;">0.0002371</td>
+<td style="text-align: right;">0.0002371</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p>The results agree because both programs calculate Pearson’s chi-square statistic from the same observed and expected frequencies.</p>
+</section>
+<section id="yates" class="level3">
+<h3 class="anchored" data-anchor-id="yates">Yates’ Continuity-Adjusted Chi-Square Test</h3>
+<p>For a 2 × 2 contingency table, R applies Yates’ continuity correction by default. This correction can be explicitly requested using <code>correct = TRUE</code>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>yates_r <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">chisq.test</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  lung_table,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">correct =</span> <span class="cn">TRUE</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>yates_r</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Pearson's Chi-squared test with Yates' continuity correction
+
+data:  lung_table
+X-squared = 12.42, df = 1, p-value = 0.0004247</code></pre>
+</div>
+</div>
+<p>In SAS, the corresponding result is the <strong>Continuity Adj. Chi-Square</strong> row in the <code>PROC FREQ</code> output.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Statistic</th>
+<th style="text-align: right;">R: <code>chisq.test(correct = TRUE)</code></th>
+<th style="text-align: right;">SAS: Continuity Adj. Chi-Square</th>
+<th>Match</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Chi-square statistic</td>
+<td style="text-align: right;">12.420</td>
+<td style="text-align: right;">12.420</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>Degrees of freedom</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>P-value</td>
+<td style="text-align: right;">0.0004247</td>
+<td style="text-align: right;">0.0004247</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p>The results agree when the same continuity correction is applied. Comparing R’s default result against SAS’s Pearson result would instead compare two different test statistics.</p>
+</section>
+<section id="egon-pearson" class="level3">
+<h3 class="anchored" data-anchor-id="egon-pearson">Egon Pearson ‘N-1’ Chi-Squared Test</h3>
+<p>The Egon Pearson ‘N-1’ corrected chi-square test adjusts the Pearson chi-square statistic by multiplying it by ((N-1)/N), where (N) is the total sample size. This method is relevant for a 2 × 2 contingency table.</p>
+<p>In R, the statistic and p-value can be calculated from the same contingency table:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fu">sum</span>(lung_table)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>pearson_stat <span class="ot">&lt;-</span> <span class="fu">unname</span>(</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  stats<span class="sc">::</span><span class="fu">chisq.test</span>(lung_table, <span class="at">correct =</span> <span class="cn">FALSE</span>)<span class="sc">$</span>statistic</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>egon_stat <span class="ot">&lt;-</span> ((n <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">/</span> n) <span class="sc">*</span> pearson_stat</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>egon_p <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">pchisq</span>(</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  egon_stat,</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">df =</span> <span class="dv">1</span>,</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">lower.tail =</span> <span class="cn">FALSE</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>egon_results <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">Method =</span> <span class="st">"Egon Pearson N-1"</span>,</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">N =</span> n,</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">Chi_Square =</span> egon_stat,</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">DF =</span> <span class="dv">1</span>,</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">P_Value =</span> egon_p</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>egon_results</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            Method   N Chi_Square DF      P_Value
+1 Egon Pearson N-1 228   13.45192  1 0.0002447562</code></pre>
+</div>
+</div>
+<p>The comparison with SAS is summarized below.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Statistic</th>
+<th style="text-align: right;">R: Egon Pearson N-1</th>
+<th>SAS: <code>PROC FREQ</code></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Sample size (N)</td>
+<td style="text-align: right;">228</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td>Chi-square statistic</td>
+<td style="text-align: right;">13.45192</td>
+<td>Not directly provided</td>
+</tr>
+<tr class="odd">
+<td>Degrees of freedom</td>
+<td style="text-align: right;">1</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td>P-value</td>
+<td style="text-align: right;">0.00024475621</td>
+<td>Not directly provided</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Note:</strong> SAS <code>PROC FREQ</code> does not directly report the Egon Pearson N-1 corrected statistic. The <code>%SCORECI</code> macro can provide the corresponding method; see the <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_2indep_prop.html">CAMIS confidence interval page</a> for details. The R calculation above applies the N-1 correction to the Pearson statistic for this 2 × 2 table.</p>
+</section>
+<section id="fisher" class="level3">
+<h3 class="anchored" data-anchor-id="fisher">Fisher’s Exact Test</h3>
+<p>Fisher’s exact test is an alternative for evaluating association in a contingency table. Unlike Pearson’s chi-square test, it calculates an exact p-value conditional on the observed margins.</p>
+<p>In R:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>fisher_r <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">fisher.test</span>(lung_table)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>fisher_r</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Fisher's Exact Test for Count Data
+
+data:  lung_table
+p-value = 0.0004349
+alternative hypothesis: true odds ratio is not equal to 1
+95 percent confidence interval:
+ 0.1745852 0.6314080
+sample estimates:
+odds ratio 
+ 0.3342709 </code></pre>
+</div>
+</div>
+<p>In SAS, the <code>EXACT FISHER</code> statement requests Fisher’s exact test:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">proc freq</span> <span class="bu">data</span><span class="op">=</span>lung_compare;</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">tables</span> Sex<span class="op">*</span>Status;</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">weight</span> Count;</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">exact</span> fisher;</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>For the two-sided Fisher’s exact test, the comparison is:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Statistic</th>
+<th>R: <code>fisher.test()</code></th>
+<th>SAS: <code>EXACT FISHER</code></th>
+<th>Match</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Two-sided p-value</td>
+<td>0.0004349</td>
+<td>0.0004</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>Odds ratio estimate</td>
+<td>0.3342709</td>
+<td>3.007257</td>
+<td>No because the SAS output for odds ratio is reported in the reverse direction with a different estimator.</td>
+</tr>
+</tbody>
+</table>
+<p>The two-sided Fisher’s exact test p-values agree between R and SAS to the displayed precision. The odds ratio estimates differ because R’s fisher.test() reports a conditional maximum-likelihood estimate, whereas SAS reports the sample odds ratio calculated from the cross-product ratio. The estimates are also expressed in opposite directions because the reference categories are reversed. The reciprocal of the SAS odds ratio (1 / 3.007257 ≈ 0.332529) is close to, but not identical to, R’s estimate (0.3342709). Therefore, the estimates do not match exactly even after accounting for their direction, because the estimation methods differ.</p>
+</section>
+</section>
+</section>
+<section id="summary-and-recommendation" class="level1">
+<h1>Summary and Recommendation</h1>
+</section>
 <section id="chi-squared-test" class="level1">
 <h1>Chi-Squared Test</h1>
 <p>Chi-Squared test is a hypothesis test for independent contingency tables, dependent on rows and column totals. The test assumes:</p>
@@ -277,17 +741,15 @@ window.Quarto = {
 <li><p>data should be categorical</p></li>
 </ul>
 <p>The Chi-Squared statistic is found by:</p>
-<p><span class="math display">\[
-\chi^2=\frac{\sum(O-E)^2}{E}
-\]</span></p>
+<p><span class="math display">\[\chi^2=\frac{\sum(O-E)^2}{E}\]</span></p>
 <p>Where O is the observed and E is the expected.<br>
 For an r x c table (where r is the number of rows and c the number of columns), the Chi-squared distribution’s degrees of freedom is (r-1)*(c-1). The resultant statistic with correct degrees of freedom follows this distribution when its expected values are aligned with the assumptions of the test, under the null hypothesis. The resultant p value informs the magnitude of disagreement with the null hypothesis and not the magnitude of association</p>
 <p>For this example we will use data about cough symptoms and history of bronchitis.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>bronch <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">26</span>, <span class="dv">247</span>, <span class="dv">44</span>, <span class="dv">1002</span>), <span class="at">ncol =</span> <span class="dv">2</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">row.names</span>(bronch) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"cough"</span>, <span class="st">"no cough"</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(bronch) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"bronchitis"</span>, <span class="st">"no bronchitis"</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>bronch</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>bronch <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">26</span>, <span class="dv">247</span>, <span class="dv">44</span>, <span class="dv">1002</span>), <span class="at">ncol =</span> <span class="dv">2</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">row.names</span>(bronch) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"cough"</span>, <span class="st">"no cough"</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(bronch) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"bronchitis"</span>, <span class="st">"no bronchitis"</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>bronch</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>         bronchitis no bronchitis
 cough            26            44
@@ -296,7 +758,7 @@ no cough        247          1002</code></pre>
 </div>
 <p>To a chi-squared test in R you will use the following code.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>stats<span class="sc">::</span><span class="fu">chisq.test</span>(bronch)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>stats<span class="sc">::</span><span class="fu">chisq.test</span>(bronch)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Pearson's Chi-squared test with Yates' continuity correction
@@ -306,12 +768,12 @@ X-squared = 11.145, df = 1, p-value = 0.0008424</code></pre>
 </div>
 </div>
 <p>To run a chi-squared test in SAS you used the following code.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">proc freq</span> <span class="bu">data</span><span class="op">=</span>proj1.bronchitis;</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">tables</span> Cough<span class="op">*</span>Bronchitis <span class="op">/</span> chisq;</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">proc freq</span> <span class="bu">data</span><span class="op">=</span>proj1.bronchitis;</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="bu">tables</span> Cough<span class="op">*</span>Bronchitis <span class="op">/</span> chisq;</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The result in the “Chi-Square” section of the results table in SAS will not match R, in this case it is 12.1804 with a p-value of 0.0005. This is because by default R does a Yates continuity adjustment for 2x2 tables. To change this set <code>correct</code> to false.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>stats<span class="sc">::</span><span class="fu">chisq.test</span>(bronch, <span class="at">correct =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>stats<span class="sc">::</span><span class="fu">chisq.test</span>(bronch, <span class="at">correct =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Pearson's Chi-squared test
@@ -328,7 +790,13 @@ X-squared = 12.18, df = 1, p-value = 0.0004829</code></pre>
 </section>
 <section id="fishers-exact-test" class="level1">
 <h1>Fisher’s Exact Test</h1>
+<p>The two-sided Fisher’s exact test p-values agree to the displayed precision. The odds ratio estimates differ because SAS reports the sample cross-product odds ratio in the reverse direction from R’s conditional maximum-likelihood estimate. Taking the reciprocal of the SAS sample odds ratio gives approximately 0.332529, which is close to, but not identical to, R’s estimate of 0.3342709. The exact confidence limits, when reversed, also agree closely with R’s reported confidence interval.</p>
+<p>The odds ratio estimates are not directly comparable without accounting for their direction and estimation method.</p>
 <p>Comparison between the Fisher’s Exact Test in both R and SAS shows that the two software match on the p-value and confidence intervals. The odd ratio does not match. The reason the odds ratio does not match is because R uses an “exact” odds ratio based on the hypergeomtric distribution, while SAS uses a standard AD/BC odds ratio. Note that R always uses an “exact” Fisher test. Therefore, when trying to match SAS, you must use the “exact” statement on the PROC FREQ.</p>
+</section>
+<section id="references" class="level1">
+<h1>References</h1>
+<p>Data source: Loprinzi CL. Laurie JA. Wieand HS. Krook JE. Novotny PJ. Kugler JW. Bartel J. Law M. Bateman M. Klatt NE. et al.&nbsp;Prospective evaluation of prognostic variables from patient-completed questionnaires. North Central Cancer Treatment Group. Journal of Clinical Oncology. 12(3):601-7, 1994.</p>
 
 
 </section>
