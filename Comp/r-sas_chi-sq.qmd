@@ -1,22 +1,277 @@
 ---
-title: "R/SAS Chi-Squared and Fisher's Exact Comparision"
+title: "R/SAS Chi-Squared and Fisher's Exact Comparison"
 ---
+
+```{r setup}
+#| include: false
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Summary
+
+## Goal
+
+The goal of this comparison is to evaluate whether chi-square tests and Fisher's exact tests produce equivalent results in R and SAS using the same data.
+
+The comparison uses the `survival::lung` dataset to examine the association between sex and patient status. The same 2 × 2 contingency table is analyzed in R using `stats::chisq.test()` and `stats::fisher.test()` and in SAS using `PROC FREQ`.
+
+Pearson's chi-square statistic, the continuity-adjusted chi-square statistic, degrees of freedom, p-values, Fisher's exact test p-values, and odds ratio estimates are compared directly.
+
+## Scope
+
+::::::: columns
+:::: {.column width="45%"}
+::: {.callout-note appearance="minimal" collapse="false"}
+## Methodologies
+
+- Pearson's chi-square test of independence
+- Yates' continuity-adjusted chi-square test
+- Fisher's exact test for a 2 × 2 contingency table
+:::
+::::
+
+:::: {.column width="55%"}
+::: {.callout-note appearance="minimal" collapse="false"}
+## Technical implementations
+
+**R:** `stats::chisq.test()` and `stats::fisher.test()`
+
+**SAS:** `PROC FREQ` with the `CHISQ` option and `EXACT FISHER`
+:::
+::::
+:::::::
+
+# Prerequisites
+
+## R packages
+
+```{r load-packages}
+#| output: false
+#| message: false
+
+library(survival)
+library(dplyr)
+```
+
+# Data
+
+## Lung Cancer Data
+
+The `lung` dataset from the R `survival` package contains observations from the North Central Cancer Treatment Group's study of patients with advanced lung cancer. For this comparison, sex and patient status are used to create a contingency table.
+
+The `status` variable is coded as 1 for censored observations and 2 for deaths. The `sex` variable is coded as 1 for males and 2 for females.
+
+The comparison uses the same four cell counts in both R and SAS. The SAS dataset below contains the aggregated frequencies from the R contingency table, so that both programs analyze identical data.
+
+R:
+
+```{r}
+data(lung, package = "survival")
+
+lung_compare <- lung |>
+  dplyr::transmute(
+    Sex = factor(
+      sex,
+      levels = c(1, 2),
+      labels = c("Male", "Female")
+    ),
+    Status = factor(
+      status,
+      levels = c(1, 2),
+      labels = c("Censored", "Dead")
+    )
+  )
+
+# Create the 2 x 2 contingency table
+lung_table <- table(
+  Sex = lung_compare$Sex,
+  Status = lung_compare$Status
+)
+
+lung_table
+```
+
+Check that the table contains the expected number of observations:
+
+```{r}
+sum(lung_table)
+```
+
+SAS:
+
+The following SAS data step uses the same four cell frequencies as the R contingency table.
+
+``` sas
+data lung_compare;
+    length Sex $6 Status $8;
+    input Sex $ Status $ Count;
+    datalines;
+Male   Censored 26
+Male   Dead     112
+Female Censored 37
+Female Dead     53
+;
+run;
+
+proc freq data=lung_compare;
+    tables Sex*Status / chisq expected;
+    weight Count;
+    exact fisher;
+run;
+```
+
+The `WEIGHT Count` statement tells SAS that each row represents the specified number of observations. The resulting contingency table contains the same cell counts as the R table.
+
+# Chi-Square Test Comparison
+
+The following table summarizes the tests supported by both programs and the results being compared.
+
+| Analysis | Supported in R | Supported in SAS | Results Match | Notes |
+|---------------|---------------|---------------|---------------|---------------|
+| Pearson's chi-square test | Yes | Yes | Yes, when the same statistic is compared | R: `chisq.test(..., correct = FALSE)`; SAS: Pearson Chi-Square |
+| Yates' continuity-adjusted chi-square test | Yes | Yes | Yes, when the same correction is compared | R: `chisq.test(..., correct = TRUE)`; SAS: Continuity Adj. Chi-Square |
+| Fisher's exact test | Yes | Yes | Yes, for the two-sided p-value with matching settings | R: `fisher.test()`; SAS: `EXACT FISHER` |
+| Fisher's exact odds ratio estimate | Yes | Yes | Not necessarily | The odds ratio estimates can use different methods |
+
+## Comparison Results
+
+### Pearson's Chi-Square Test {#pearson}
+
+In R, set `correct = FALSE` to calculate Pearson's chi-square statistic without Yates' continuity correction.
+
+```{r}
+pearson_r <- stats::chisq.test(
+  lung_table,
+  correct = FALSE
+)
+
+pearson_r
+```
+
+The corresponding SAS result is the **Pearson Chi-Square** row in the `PROC FREQ` output.
+
+For this dataset, the expected Pearson results are:
+
+| Statistic | R: `chisq.test(correct = FALSE)` | SAS: Pearson Chi-Square | Match |
+|------------------|-----------------:|-----------------:|------------------|
+| Chi-square statistic | 13.5112 | 13.5112 | Yes |
+| Degrees of freedom | 1 | 1 | Yes |
+| P-value | 0.0002371 | 0.0002371 | Yes |
+
+The results agree because both programs calculate Pearson's chi-square statistic from the same observed and expected frequencies.
+
+### Yates' Continuity-Adjusted Chi-Square Test {#yates}
+
+For a 2 × 2 contingency table, R applies Yates' continuity correction by default. This correction can be explicitly requested using `correct = TRUE`.
+
+```{r}
+yates_r <- stats::chisq.test(
+  lung_table,
+  correct = TRUE
+)
+
+yates_r
+```
+
+In SAS, the corresponding result is the **Continuity Adj. Chi-Square** row in the `PROC FREQ` output.
+
+| Statistic | R: `chisq.test(correct = TRUE)` | SAS: Continuity Adj. Chi-Square | Match |
+|------------------|-----------------:|-----------------:|------------------|
+| Chi-square statistic | 12.420 | 12.420 | Yes |
+| Degrees of freedom | 1 | 1 | Yes |
+| P-value | 0.0004247 | 0.0004247 | Yes |
+
+The results agree when the same continuity correction is applied. Comparing R's default result against SAS's Pearson result would instead compare two different test statistics.
+
+### Egon Pearson 'N-1' Chi-Squared Test {#egon-pearson}
+
+The Egon Pearson 'N-1' corrected chi-square test adjusts the Pearson chi-square statistic by multiplying it by \((N-1)/N\), where \(N\) is the total sample size. This method is relevant for a 2 × 2 contingency table.
+
+In R, the statistic and p-value can be calculated from the same contingency table:
+
+```{r}
+n <- sum(lung_table)
+
+pearson_stat <- unname(
+  stats::chisq.test(lung_table, correct = FALSE)$statistic
+)
+
+egon_stat <- ((n - 1) / n) * pearson_stat
+
+egon_p <- stats::pchisq(
+  egon_stat,
+  df = 1,
+  lower.tail = FALSE
+)
+
+egon_results <- data.frame(
+  Method = "Egon Pearson N-1",
+  N = n,
+  Chi_Square = egon_stat,
+  DF = 1,
+  P_Value = egon_p
+)
+
+egon_results
+```
+
+The comparison with SAS is summarized below.
+
+| Statistic | R: Egon Pearson N-1 | SAS: `PROC FREQ` |
+|------------------------|-----------------------:|------------------------|
+| Sample size (N) | `r n` | — |
+| Chi-square statistic | `r round(egon_stat, 5)` | Not directly provided |
+| Degrees of freedom | 1 | — |
+| P-value | `r format.pval(egon_p, digits = 8)` | Not directly provided |
+
+**Note:** SAS `PROC FREQ` does not directly report the Egon Pearson N-1 corrected statistic. The `%SCORECI` macro can provide the corresponding method; see the [CAMIS confidence interval page](https://psiaims.github.io/CAMIS/SAS/ci_for_2indep_prop.html) for details. The R calculation above applies the N-1 correction to the Pearson statistic for this 2 × 2 table.
+
+### Fisher's Exact Test {#fisher}
+
+Fisher's exact test is an alternative for evaluating association in a contingency table. Unlike Pearson's chi-square test, it calculates an exact p-value conditional on the observed margins.
+
+In R:
+
+```{r}
+fisher_r <- stats::fisher.test(lung_table)
+
+fisher_r
+```
+
+In SAS, the `EXACT FISHER` statement requests Fisher's exact test:
+
+``` sas
+proc freq data=lung_compare;
+    tables Sex*Status;
+    weight Count;
+    exact fisher;
+run;
+```
+
+For the two-sided Fisher's exact test, the comparison is:
+
+| Statistic | R: `fisher.test()` | SAS: `EXACT FISHER` | Match |
+|------------------|------------------|------------------|------------------|
+| Two-sided p-value | 0.0004349 | 0.0004 | Yes |
+| Odds ratio estimate | 0.3342709 | 3.007257 | No because the SAS output for odds ratio is reported in the reverse direction with a different estimator. |
+
+The two-sided Fisher's exact test p-values agree between R and SAS to the displayed precision. The odds ratio estimates differ because R's fisher.test() reports a conditional maximum-likelihood estimate, whereas SAS reports the sample odds ratio calculated from the cross-product ratio. The estimates are also expressed in opposite directions because the reference categories are reversed. The reciprocal of the SAS odds ratio (1 / 3.007257 ≈ 0.332529) is close to, but not identical to, R's estimate (0.3342709). Therefore, the estimates do not match exactly even after accounting for their direction, because the estimation methods differ.
+
+# Summary and Recommendation
 
 # Chi-Squared Test
 
 Chi-Squared test is a hypothesis test for independent contingency tables, dependent on rows and column totals. The test assumes:
 
--   observations are independent of each other
+- observations are independent of each other
 
--   all values are 1 or more and at least 80% of the cells are greater than 5.
+- all values are 1 or more and at least 80% of the cells are greater than 5.
 
--   data should be categorical
+- data should be categorical
 
 The Chi-Squared statistic is found by:
 
-$$
-\chi^2=\frac{\sum(O-E)^2}{E}
-$$
+$$\chi^2=\frac{\sum(O-E)^2}{E}$$
 
 Where O is the observed and E is the expected.\
 For an r x c table (where r is the number of rows and c the number of columns), the Chi-squared distribution's degrees of freedom is (r-1)\*(c-1). The resultant statistic with correct degrees of freedom follows this distribution when its expected values are aligned with the assumptions of the test, under the null hypothesis. The resultant p value informs the magnitude of disagreement with the null hypothesis and not the magnitude of association
@@ -38,7 +293,7 @@ stats::chisq.test(bronch)
 
 To run a chi-squared test in SAS you used the following code.
 
-```sas
+``` sas
 proc freq data=proj1.bronchitis;
 tables Cough*Bronchitis / chisq;
 run;
@@ -58,4 +313,12 @@ The 'N-1' corrected $\chi^2$ test for association in a 2x2 table (for matching a
 
 # Fisher's Exact Test
 
+The two-sided Fisher's exact test p-values agree to the displayed precision. The odds ratio estimates differ because SAS reports the sample cross-product odds ratio in the reverse direction from R's conditional maximum-likelihood estimate. Taking the reciprocal of the SAS sample odds ratio gives approximately 0.332529, which is close to, but not identical to, R's estimate of 0.3342709. The exact confidence limits, when reversed, also agree closely with R's reported confidence interval.
+
+The odds ratio estimates are not directly comparable without accounting for their direction and estimation method.
+
 Comparison between the Fisher's Exact Test in both R and SAS shows that the two software match on the p-value and confidence intervals. The odd ratio does not match. The reason the odds ratio does not match is because R uses an "exact" odds ratio based on the hypergeomtric distribution, while SAS uses a standard AD/BC odds ratio. Note that R always uses an "exact" Fisher test. Therefore, when trying to match SAS, you must use the "exact" statement on the PROC FREQ.
+
+# References
+
+Data source: Loprinzi CL. Laurie JA. Wieand HS. Krook JE. Novotny PJ. Kugler JW. Bartel J. Law M. Bateman M. Klatt NE. et al. Prospective evaluation of prognostic variables from patient-completed questionnaires. North Central Cancer Treatment Group. Journal of Clinical Oncology. 12(3):601-7, 1994.
