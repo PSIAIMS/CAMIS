@@ -1,0 +1,190 @@
+---
+title: "PS weighting with R"
+---
+
+## About this article
+
+Propensity score weighting aims to improve covariate balance across treatment groups and reduce confounding bias. The probability of receiving treatment, given the observed covariates, is estimated and used to calculate weights for subsequent analyses.
+
+This article provides a basic introduction to working with propensity score (PS) weighting in R using the [`cobalt`](https://cran.r-project.org/package=cobalt) and [`WeightIt`](https://cran.r-project.org/package=WeightIt) packages. The examples use the same `ps_data.csv` dataset as the CAMIS article [Propensity Score Weighting: R vs SAS](https://psiaims.github.io/CAMIS/Comp/r-sas_psweight.html#dataset).
+
+## Propensity score weighting with `cobalt` and `WeightIt` 
+
+A PS weighting analysis workflow involves a few steps:
+
+1.  Check for covariate imbalance,
+2.  Estimate propensity scores and weights,
+3.  Assess balance after weighting,
+4.  Estimate the treatment effect and uncertainty.
+
+In this example, `cobalt` is used to assess balance, and `WeightIt` is used to obtain propensity score weights and to perform a weighted regression analysis.
+
+There are several common estimands used in PS weighting. We first focus on the **average treatment effect (ATE)**, which targets the treatment effect in the full population. Under ATE weighting, each treatment group's covariate distribution is weighted to more closely resemble that of the study population.
+
+### Example data
+
+First, load the required R packages and import `ps_data.csv`.
+
+```{r}
+#| message: false
+#| warning: false
+library(cobalt)
+library(WeightIt)
+
+data <- read.csv("https://raw.githubusercontent.com/PSIAIMS/CAMIS/refs/heads/main/data/ps_data.csv")
+```
+
+Inspect the imported dataset.
+
+```{r}
+str(data)
+```
+
+Convert the character variables to factors.
+
+```{r}
+vars <- c("trtp", "sex", "bmi_cat")
+data[vars] <- lapply(data[vars], factor)
+```
+
+As the dataset has no outcome variable, we simulate the variable `response` to indicate whether a favorable clinical response was present (`1`) or absent (`0`).
+
+```{r}
+lp <- with(data,
+          0.6 * (trtp == "trt") + -0.02 * age + 0.001 * weight +
+         -0.3 * (sex == "M") + -0.2 * (bmi_cat == "underweight") +
+         -0.15 * (bmi_cat == "overweight")
+      )
+
+pr_response <- plogis(lp)
+
+set.seed(1234)
+data$response <- rbinom(n = nrow(data), size = 1, prob = pr_response)
+```
+
+### Check for covariate imbalance
+
+Using the ATE estimand, the covariate balance between the treatment groups can be assessed as follows.
+
+```{r}
+bal.tab(trtp ~ age + sex + weight + bmi_cat, estimand = "ATE", data = data)
+```
+
+The displayed mean differences are useful because large values suggest covariate imbalance. By default, these are standardized mean differences  for continuous covariates and raw differences in proportions for binary covariates. The distribution of observations across the levels of `trtp` (`control`, `trt`) is also shown.
+
+### Estimate propensity scores and weights
+
+We now estimate the propensity scores and weights using logistic regression. In the `weightit()` call below, note that:
+
+1.  `method = "glm"` and `link = "logit"` specify a logistic regression propensity score model on treatment assignment,
+2.  `estimand = "ATE"` targets the average treatment effect (ATE) in the study population,
+3.  `stabilize = TRUE` multiplies the weights by a stabilization factor which can improve performance.
+
+```{r}
+#| results: hold
+
+w1 <- weightit(
+  trtp ~ age + sex + weight + bmi_cat,
+  data = data,
+  method = "glm",
+  link = "logit",
+  estimand = "ATE",
+  stabilize = TRUE,
+  )
+
+print(w1)
+summary(w1)
+```
+
+The output also displays the most extreme weights, which should be inspected because very large weights may indicate poor overlap between the treatment groups and may lead to unstable estimates.
+
+### Assess balance after weighting
+
+We then check whether PS weighting improves the covariate balance.
+
+```{r}
+bal.tab(w1, un = TRUE)
+```
+
+Mean differences before and after weighting are displayed in the `Diff.Un` and `Diff.Adj` columns, respectively. These differences should generally move closer to zero after weighting.
+
+A "Love" plot is also helpful for visualizing covariate balance before (`Unadjusted`) and after (`Adjusted`) weighting.
+
+```{r}
+#| message: false
+#| warning: false
+love.plot(w1, stats = "mean.diffs", abs = TRUE, stars = "raw") +
+  ggplot2::labs(caption = "* Absolute Raw Mean Differences")
+```
+
+### Estimate the treatment effect and uncertainty
+
+To examine the effect of treatment on the binary outcome `response`, we use the PS weights in a weighted logistic regression. With `glm_weightit()`, we can use the `weightit` object `w1` directly in the regression model to account for the weights and their uncertainty.
+
+```{r}
+glm1 <- glm_weightit(
+    response ~ trtp,
+    data = data,
+    family = binomial(link = "logit"),
+    weightit = w1
+)
+
+summary(glm1)
+```
+
+For comparison, we fit a standard logistic regression model without any weights.
+
+```{r}
+glm0 <- glm(
+  response ~ trtp,
+  data = data,
+  family = binomial(link = "logit")
+)
+
+summary(glm0)
+```
+
+Comparing the models `glm1` and `glm0` shows how adjustment for covariate imbalance can change the estimated treatment effect.
+
+## Other PS weighting options
+
+Another common option for PS weighting is to consider the **average treatment effect in the treated (ATT)**, which targets the treatment effect in the treated population. With the ATT estimand, the control group is weighted so that its covariate distribution more closely matches that of the treated group.
+
+We now repeat the above analysis using the ATT estimand. The `weightit()` call also includes `focal = "trt"` to make clear which is the treated group.
+
+```{r}
+#| results: hold
+
+# Check for covariate imbalance
+bal.tab(trtp ~ age + sex + weight + bmi_cat, estimand = "ATT", data = data)
+
+# Estimate propensity scores and weights
+w2 <- weightit(
+  trtp ~ age + sex + weight + bmi_cat,
+  data = data,
+  method = "glm",
+  link = "logit",
+  estimand = "ATT",
+  focal = "trt"
+)
+
+print(w2)
+summary(w2)
+
+# Assess balance after weighting
+bal.tab(w2, un = TRUE)
+
+# Estimate the treatment effect and uncertainty
+glm2 <- glm_weightit(
+    response ~ trtp,
+    data = data,
+    family = binomial(link = "logit"),
+    weightit = w2
+)
+
+summary(glm2)
+```
+
+## Summary
+
+This article illustrated a basic workflow for propensity score weighting in R using `cobalt` and `WeightIt`.  There are many further options in these packages. For more details, see the documentation and vignettes for [`cobalt`](https://cran.r-project.org/package=cobalt) and [`WeightIt`](https://cran.r-project.org/package=WeightIt).
