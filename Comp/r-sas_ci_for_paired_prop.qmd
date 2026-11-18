@@ -8,9 +8,186 @@ See the [summary page](../method_summary/ci_for_prop_intro.html) for general int
 
 For more technical derivation of methods for comparisons of paired proportions, see the corresponding [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_paired_prop.html).
 
-Since SAS/STAT procedures do not include the direct facility to analyse paired proportions (beyond the McNemar test produced by PROC FREQ), a table of comparison for SAS vs R is omitted here. The Asymptotic Score methods for RD and RR may be obtained in SAS using the `%PAIRBINCI` macro, which produces results matching the `scorepairci()` function from {ratesci}. A workaround exists to produce the Wald normal approximation interval for paired RD using pairs as strata, but the performance of this interval is generally poor. Other methods for RD and RR would need to be manually programmed in SAS.
+Since SAS/STAT procedures do not provide direct confidence intervals for paired proportions, the `%PAIRBINCI` macro can be used to calculate asymptotic score confidence intervals for paired risk differences (RD) and relative risks (RR). These methods can be compared directly with the corresponding methods in the R `ratesci` package. SAS PROC FREQ provides McNemar's test for paired data, but not these confidence intervals. The `%PAIRBINCI` macro produces results matching the `scorepairci()` function from {ratesci}. A workaround exists to produce the Wald normal approximation interval for paired RD using pairs as strata, but the performance of this interval is generally poor. Other methods for RD and RR would need to be manually programmed in SAS.
 
 Methods for analysis of conditional (subject-specific) Odds Ratio from paired data are also available in R {ratesci} and {contingencytables}. These could be derived in SAS by transforming a selected method for the single proportion as described [here](https://psiaims.github.io/CAMIS/SAS/ci_for_paired_prop.html).
+
+## Data
+
+The following artificial dataset is used for the R and SAS examples. Each subject receives both Active and Placebo treatment, and the binary outcome is classified as either a response (Yes) or no response (No).
+
+|             | Placebo: Yes | Placebo: No | Total |
+|:------------|-------------:|------------:|------:|
+| Active: Yes |           20 |          15 |    35 |
+| Active: No  |            6 |           5 |    11 |
+| Total       |           26 |          20 |    46 |
+
+The four cells represent:
+
+- `r = 20`: Both treatments resulted in a response.
+- `s = 15`: Active resulted in a response, but Placebo did not.
+- `t = 6`: Placebo resulted in a response, but Active did not.
+- `u = 5`: Neither treatment resulted in a response.
+
+## General Comparison Table
+
+The following table provides an overview of the availability of paired-proportion confidence interval methods in R and SAS.
+
+| Analysis | Supported in R | Supported in SAS | Results Match | Notes |
+|:--------------|:--------------|:--------------|:--------------|:--------------|
+| Paired Risk Difference | Yes | Yes | Yes, selected methods | SAS `%PAIRBINCI` macro provides asymptotic score methods |
+| Paired Relative Risk | Yes | Yes | Yes, selected methods | SAS `%PAIRBINCI` macro provides asymptotic score methods |
+| Conditional Odds Ratio | Yes | Indirectly | Not directly compared | SAS intervals can be derived by transforming single-proportion intervals |
+
+SAS PROC FREQ provides McNemar's test for paired data but does not directly provide all corresponding paired-proportion confidence intervals.
+
+## Matching Implementations: R and SAS {.unnumbered}
+
+### Scenario 1: Paired Risk Difference
+
+The paired risk difference (RD) is the difference between the proportions of subjects responding to Active and Placebo treatment.
+
+#### R Code Example
+
+The `ratesci` package provides the `rdpairci()` function to calculate confidence intervals for the paired risk difference.
+
+```{r}
+x <- c(20, 15, 6, 5)
+
+ratesci::rdpairci(
+  x = x,
+  level = 0.95,
+  precis = 6
+)
+```
+
+#### SAS Code Example
+
+SAS does not provide a direct PROC FREQ option for calculating asymptotic score confidence intervals for paired risk differences. The `%PAIRBINCI` macro provides these methods.
+
+``` sas
+/* Tango */
+%pairbinci(a=20, b=15, c=6, d=5,
+           contrast=RD, skew=FALSE, bcf=FALSE);
+
+/* SCASu */
+%pairbinci(a=20, b=15, c=6, d=5,
+           contrast=RD, skew=TRUE, bcf=FALSE);
+
+/* SCAS */
+%pairbinci(a=20, b=15, c=6, d=5,
+           contrast=RD, skew=TRUE, bcf=TRUE);
+```
+
+#### Results Comparison
+
+| Method | R Lower 95% CI | R Upper 95% CI | SAS Lower 95% CI | SAS Upper 95% CI | Match |
+|:-----------|-----------:|-----------:|-----------:|-----------:|:-----------|
+| Tango Score | 0.000419 | 0.377185 | 0.000419 | 0.377185 | Yes |
+| SCASu | 0.000423 | 0.380312 | 0.000423 | 0.380312 | Yes |
+| SCAS | -0.001869 | 0.382194 | -0.001869 | 0.382194 | Yes |
+
+### Scenario 2: Paired Relative Risk
+
+The paired relative risk (RR) is calculated as the ratio of the proportion of subjects responding to Active treatment to the proportion responding to Placebo treatment.
+
+#### R Code Example
+
+The `ratesci` package provides the `rrpairci()` function to calculate confidence intervals for the paired relative risk.
+
+```{r}
+ratesci::rrpairci(
+  x = x,
+  level = 0.95,
+  precis = 6
+)
+```
+
+#### SAS Code Example
+
+The `%PAIRBINCI` macro also provides asymptotic score methods for the paired relative risk.
+
+``` sas
+/* Tang */
+%pairbinci(a=20, b=15, c=6, d=5,
+           contrast=RR, skew=FALSE, bcf=FALSE);
+
+/* SCASu */
+%pairbinci(a=20, b=15, c=6, d=5,
+           contrast=RR, skew=TRUE, bcf=FALSE);
+
+/* SCAS */
+%pairbinci(a=20, b=15, c=6, d=5,
+           contrast=RR, skew=TRUE, bcf=TRUE);
+```
+
+#### Results Comparison
+
+| Method | R Lower 95% CI | R Upper 95% CI | SAS Lower 95% CI | SAS Upper 95% CI | Match |
+|:-----------|-----------:|-----------:|-----------:|-----------:|:-----------|
+| Tang Score (AS(Tang)) | 1.000639 | 1.859820 | 1.000639 | 1.859820 | Yes |
+| SCASu | 1.000640 | 1.867063 | 1.000640 | 1.867063 | Yes |
+| SCAS | 0.997176 | 1.874279 | 0.997176 | 1.874279 | Yes |
+
+### Scenario 3: Conditional Odds Ratio
+
+The conditional odds ratio (OR) for paired data is calculated using the discordant pairs:
+
+$$OR = \frac{s}{t} = \frac{15}{6} = 2.5$$
+
+#### R Code Example
+
+The `ratesci` package provides the `orpairci()` function to calculate confidence intervals for the conditional odds ratio.
+
+```{r}
+ratesci::orpairci(
+  x = x,
+  level = 0.95,
+  precis = 6
+)
+```
+
+The `contingencytables` package also provides methods for calculating confidence intervals for paired odds ratios.
+
+#### SAS Implementation
+
+SAS does not provide a direct paired odds ratio confidence interval through PROC FREQ or the `%PAIRBINCI` macro.
+
+However, a conditional odds ratio confidence interval can be derived by calculating a confidence interval for the single proportion:
+
+$$p = \frac{s}{s+t}$$
+
+The resulting confidence limits can then be transformed to the odds ratio scale:
+
+$$OR_{\text{lower}} = \frac{L}{1-L}$$
+
+$$OR_{\text{upper}} = \frac{U}{1-U}$$
+
+where (L) and (U) are the lower and upper confidence limits for the single proportion.
+
+See the [SAS paired proportions page](https://psiaims.github.io/CAMIS/SAS/ci_for_paired_prop.html) for additional details.
+
+## Summary and Recommendation
+
+The `ratesci` package in R and the `%PAIRBINCI` macro in SAS provide matching asymptotic score confidence intervals for paired risk differences and relative risks.
+
+For conditional odds ratios, R provides direct functionality through `ratesci`, whereas SAS requires transforming a confidence interval for a single proportion.
+
+SAS PROC FREQ can additionally produce McNemar's test, but this does not provide the corresponding confidence interval.
+
+The numerical comparisons demonstrate agreement between selected implementations for the example dataset. However, conclusions about the relative performance of different confidence interval methods cannot be drawn from a single example.
+
+## Additional References
+
+**R Documentation:**
+
+- [`ratesci` package](https://cran.r-project.org/web/packages/ratesci/)
+- [`contingencytables` package](https://cran.r-project.org/web/packages/contingencytables/)
+
+**SAS Documentation:**
+
+- [PROC FREQ](https://documentation.sas.com/doc/en/statug/15.2/statug_freq_toc.htm)
+- [`%PAIRBINCI` SAS macro](https://github.com/petelaud/ratesci-sas)
 
 ```{=html}
 <!--#
@@ -18,16 +195,16 @@ Note to previous contributor:
 
 The text below is removed, because the logic is flawed. Generally, reliable conclusions can't be drawn regarding the difference between methods from looking at a single example interval. Having said that, in this example the difference between the exact and approximate methods has the potential to result in a different study conclusion (the more conservative exact interval includes the value 0).
 
-Calculating the Normal approximation and Wilson methods by hand and comparing it to the Exact method gave similar results for the 1 example demonstrated indicating as long as the proportion of responders is not close to 0 or 1, then the faster computation of the approximation methods may be easier to implement than the exact method and produce similar results. Hence {ExactCIdiff} is not recommended for most scenarios.
+Calculating the Normal approximation and Wilson methods by hand and comparing it to the Exact method gave similar results for the 1 example demonstrated indicating as long as the proportion of responders is not close to 0 or 1, then the faster computation of the approximation methods may be easier to implement than the exact method and produce similar results. Hence {ExactCIdiff} is not recommended for most scenarios. The original table is retained below for reference.
 
 +-------------+----------------------------------------------------------------------------------------------+--------------+--------------+
 | Method Name | Calculated Using matched pair example from R & SAS pages                                     | Lower 95% CI | Upper 95% CI |
 +=============+==============================================================================================+==============+==============+
 | Exact       | R                                                                                            | -0.00339     | 0.38065      |
 +-------------+----------------------------------------------------------------------------------------------+--------------+--------------+
-| Normal      | by hand using equation from [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html) | 0.00911      | 0.38289      |
+| Normal      | by hand using equation from SAS page                                                        | 0.00911      | 0.38289      |
 +-------------+----------------------------------------------------------------------------------------------+--------------+--------------+
-| MOVER       | by hand using equation from [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html) | 0.00032      | 0.36739      |
+| MOVER       | by hand using equation from SAS page                                                        | 0.00032      | 0.36739      |
 +-------------+----------------------------------------------------------------------------------------------+--------------+--------------+
 -->
 ```
