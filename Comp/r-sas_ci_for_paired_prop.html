@@ -26,6 +26,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -47,7 +82,7 @@ ul.task-list li input[type="checkbox"] {
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-9c98f21c26e62cbdfc45883b480c3e02.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-3308228c8dd8758377d43ff240d5d65d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -76,6 +111,35 @@ ul.task-list li input[type="checkbox"] {
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -176,7 +240,19 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a>
+  <ul class="collapse">
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
+  <li><a href="#general-comparison-table" id="toc-general-comparison-table" class="nav-link" data-scroll-target="#general-comparison-table">General Comparison Table</a></li>
+  <li><a href="#matching-implementations-r-and-sas" id="toc-matching-implementations-r-and-sas" class="nav-link" data-scroll-target="#matching-implementations-r-and-sas">Matching Implementations: R and SAS</a>
+  <ul class="collapse">
+  <li><a href="#scenario-1-paired-risk-difference" id="toc-scenario-1-paired-risk-difference" class="nav-link" data-scroll-target="#scenario-1-paired-risk-difference">Scenario 1: Paired Risk Difference</a></li>
+  <li><a href="#scenario-2-paired-relative-risk" id="toc-scenario-2-paired-relative-risk" class="nav-link" data-scroll-target="#scenario-2-paired-relative-risk">Scenario 2: Paired Relative Risk</a></li>
+  <li><a href="#scenario-3-conditional-odds-ratio" id="toc-scenario-3-conditional-odds-ratio" class="nav-link" data-scroll-target="#scenario-3-conditional-odds-ratio">Scenario 3: Conditional Odds Ratio</a></li>
+  </ul></li>
+  <li><a href="#summary-and-recommendation" id="toc-summary-and-recommendation" class="nav-link" data-scroll-target="#summary-and-recommendation">Summary and Recommendation</a></li>
+  <li><a href="#additional-references" id="toc-additional-references" class="nav-link" data-scroll-target="#additional-references">Additional References</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -206,27 +282,389 @@ ul.task-list li input[type="checkbox"] {
 <h1>Introduction</h1>
 <p>See the <a href="../method_summary/ci_for_prop_intro.html">summary page</a> for general introductory information on confidence intervals for proportions, including the principles underlying the most common methods.</p>
 <p>For more technical derivation of methods for comparisons of paired proportions, see the corresponding <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_paired_prop.html">SAS page</a>.</p>
-<p>Since SAS/STAT procedures do not include the direct facility to analyse paired proportions (beyond the McNemar test produced by PROC FREQ), a table of comparison for SAS vs R is omitted here. The Asymptotic Score methods for RD and RR may be obtained in SAS using the <code>%PAIRBINCI</code> macro, which produces results matching the <code>scorepairci()</code> function from {ratesci}. A workaround exists to produce the Wald normal approximation interval for paired RD using pairs as strata, but the performance of this interval is generally poor. Other methods for RD and RR would need to be manually programmed in SAS.</p>
+<p>Since SAS/STAT procedures do not provide direct confidence intervals for paired proportions, the <code>%PAIRBINCI</code> macro can be used to calculate asymptotic score confidence intervals for paired risk differences (RD) and relative risks (RR). These methods can be compared directly with the corresponding methods in the R <code>ratesci</code> package. SAS PROC FREQ provides McNemar’s test for paired data, but not these confidence intervals. The <code>%PAIRBINCI</code> macro produces results matching the <code>scorepairci()</code> function from {ratesci}. A workaround exists to produce the Wald normal approximation interval for paired RD using pairs as strata, but the performance of this interval is generally poor. Other methods for RD and RR would need to be manually programmed in SAS.</p>
 <p>Methods for analysis of conditional (subject-specific) Odds Ratio from paired data are also available in R {ratesci} and {contingencytables}. These could be derived in SAS by transforming a selected method for the single proportion as described <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_paired_prop.html">here</a>.</p>
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<p>The following artificial dataset is used for the R and SAS examples. Each subject receives both Active and Placebo treatment, and the binary outcome is classified as either a response (Yes) or no response (No).</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;"></th>
+<th style="text-align: right;">Placebo: Yes</th>
+<th style="text-align: right;">Placebo: No</th>
+<th style="text-align: right;">Total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Active: Yes</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">35</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Active: No</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">11</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Total</td>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">46</td>
+</tr>
+</tbody>
+</table>
+<p>The four cells represent:</p>
+<ul>
+<li><span class="math inline">\(r = 20\)</span>: Both treatments resulted in a response.</li>
+<li><span class="math inline">\(s = 15\)</span>: Active resulted in a response, but Placebo did not.</li>
+<li><span class="math inline">\(t = 6\)</span>: Placebo resulted in a response, but Active did not.</li>
+<li><span class="math inline">\(u = 5\)</span>: Neither treatment resulted in a response.</li>
+</ul>
+</section>
+<section id="general-comparison-table" class="level2">
+<h2 class="anchored" data-anchor-id="general-comparison-table">General Comparison Table</h2>
+<p>The following table provides an overview of the availability of paired-proportion confidence interval methods in R and SAS.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Analysis</th>
+<th style="text-align: left;">Supported in R</th>
+<th style="text-align: left;">Supported in SAS</th>
+<th style="text-align: left;">Results Match</th>
+<th style="text-align: left;">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Paired Risk Difference</td>
+<td style="text-align: left;">Yes</td>
+<td style="text-align: left;">Yes</td>
+<td style="text-align: left;">Yes, selected methods</td>
+<td style="text-align: left;">SAS <code>%PAIRBINCI</code> macro provides asymptotic score methods</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Paired Relative Risk</td>
+<td style="text-align: left;">Yes</td>
+<td style="text-align: left;">Yes</td>
+<td style="text-align: left;">Yes, selected methods</td>
+<td style="text-align: left;">SAS <code>%PAIRBINCI</code> macro provides asymptotic score methods</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Conditional Odds Ratio</td>
+<td style="text-align: left;">Yes</td>
+<td style="text-align: left;">Indirectly</td>
+<td style="text-align: left;">Not directly compared</td>
+<td style="text-align: left;">SAS intervals can be derived by transforming single-proportion intervals</td>
+</tr>
+</tbody>
+</table>
+<p>SAS PROC FREQ provides McNemar’s test for paired data but does not directly provide all corresponding paired-proportion confidence intervals.</p>
+</section>
+<section id="matching-implementations-r-and-sas" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="matching-implementations-r-and-sas">Matching Implementations: R and SAS</h2>
+<section id="scenario-1-paired-risk-difference" class="level3">
+<h3 class="anchored" data-anchor-id="scenario-1-paired-risk-difference">Scenario 1: Paired Risk Difference</h3>
+<p>The paired risk difference (RD) is the difference between the proportions of subjects responding to Active and Placebo treatment.</p>
+<section id="r-code-example" class="level4">
+<h4 class="anchored" data-anchor-id="r-code-example">R Code Example</h4>
+<p>The <code>ratesci</code> package provides the <code>rdpairci()</code> function to calculate confidence intervals for the paired risk difference.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">20</span>, <span class="dv">15</span>, <span class="dv">6</span>, <span class="dv">5</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>ratesci<span class="sc">::</span><span class="fu">rdpairci</span>(</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> x,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">level =</span> <span class="fl">0.95</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">precis =</span> <span class="dv">6</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+         Test_2
+Test_1    Success Failure
+  Success      20      15
+  Failure       6       5
+
+$estimates
+                 lower      est    upper
+SCAS         -0.001869 0.195652 0.382194
+SCASu         0.000423 0.195652 0.380312
+Tango score   0.000419 0.195652 0.377185
+MOVER-NW      0.002602 0.195652 0.369943
+MOVER-NJ      0.003161 0.195652 0.373479
+Wald          0.008764 0.195652 0.382541
+Agresti-Min   0.003470 0.195652 0.371530
+Bonett-Price -0.001006 0.195652 0.376006
+
+$call
+level    cc 
+ 0.95  0.00 </code></pre>
+</div>
+</div>
+</section>
+<section id="sas-code-example" class="level4">
+<h4 class="anchored" data-anchor-id="sas-code-example">SAS Code Example</h4>
+<p>SAS does not provide a direct PROC FREQ option for calculating asymptotic score confidence intervals for paired risk differences. The <code>%PAIRBINCI</code> macro provides these methods.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">/* Tango */</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">%pairbinci</span>(a<span class="op">=</span><span class="fl">20</span>, b<span class="op">=</span><span class="fl">15</span>, c<span class="op">=</span><span class="fl">6</span>, d<span class="op">=</span><span class="fl">5</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>           contrast<span class="op">=</span>RD, skew<span class="op">=</span>FALSE, bcf<span class="op">=</span>FALSE);</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">/* SCASu */</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="ex">%pairbinci</span>(a<span class="op">=</span><span class="fl">20</span>, b<span class="op">=</span><span class="fl">15</span>, c<span class="op">=</span><span class="fl">6</span>, d<span class="op">=</span><span class="fl">5</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>           contrast<span class="op">=</span>RD, skew<span class="op">=</span>TRUE, bcf<span class="op">=</span>FALSE);</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co">/* SCAS */</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="ex">%pairbinci</span>(a<span class="op">=</span><span class="fl">20</span>, b<span class="op">=</span><span class="fl">15</span>, c<span class="op">=</span><span class="fl">6</span>, d<span class="op">=</span><span class="fl">5</span>,</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>           contrast<span class="op">=</span>RD, skew<span class="op">=</span>TRUE, bcf<span class="op">=</span>TRUE);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="results-comparison" class="level4">
+<h4 class="anchored" data-anchor-id="results-comparison">Results Comparison</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Method</th>
+<th style="text-align: right;">R Lower 95% CI</th>
+<th style="text-align: right;">R Upper 95% CI</th>
+<th style="text-align: right;">SAS Lower 95% CI</th>
+<th style="text-align: right;">SAS Upper 95% CI</th>
+<th style="text-align: left;">Match</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Tango Score</td>
+<td style="text-align: right;">0.000419</td>
+<td style="text-align: right;">0.377185</td>
+<td style="text-align: right;">0.000419</td>
+<td style="text-align: right;">0.377185</td>
+<td style="text-align: left;">Yes</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SCASu</td>
+<td style="text-align: right;">0.000423</td>
+<td style="text-align: right;">0.380312</td>
+<td style="text-align: right;">0.000423</td>
+<td style="text-align: right;">0.380312</td>
+<td style="text-align: left;">Yes</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">SCAS</td>
+<td style="text-align: right;">-0.001869</td>
+<td style="text-align: right;">0.382194</td>
+<td style="text-align: right;">-0.001869</td>
+<td style="text-align: right;">0.382194</td>
+<td style="text-align: left;">Yes</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="scenario-2-paired-relative-risk" class="level3">
+<h3 class="anchored" data-anchor-id="scenario-2-paired-relative-risk">Scenario 2: Paired Relative Risk</h3>
+<p>The paired relative risk (RR) is calculated as the ratio of the proportion of subjects responding to Active treatment to the proportion responding to Placebo treatment.</p>
+<section id="r-code-example-1" class="level4">
+<h4 class="anchored" data-anchor-id="r-code-example-1">R Code Example</h4>
+<p>The <code>ratesci</code> package provides the <code>rrpairci()</code> function to calculate confidence intervals for the paired relative risk.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>ratesci<span class="sc">::</span><span class="fu">rrpairci</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> x,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">level =</span> <span class="fl">0.95</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">precis =</span> <span class="dv">6</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+         Test_2
+Test_1    Success Failure
+  Success      20      15
+  Failure       6       5
+
+$estimates
+                  lower      est    upper
+SCAS           0.997176 1.346154 1.874279
+SCASu          1.000640 1.346154 1.867063
+Tang score     1.000639 1.346154 1.859820
+MOVER-W        1.007274 1.346154 1.839574
+MOVER-NW       1.003963 1.346154 1.844430
+MOVER-NJ       1.004783 1.346154 1.851871
+Wald           0.999512 1.346154 1.813015
+Bonett-Price   0.995753 1.346154 1.819859
+Bonett-Price-J 0.998712 1.346154 1.824452
+
+$call
+level    cc 
+ 0.95  0.00 </code></pre>
+</div>
+</div>
+</section>
+<section id="sas-code-example-1" class="level4">
+<h4 class="anchored" data-anchor-id="sas-code-example-1">SAS Code Example</h4>
+<p>The <code>%PAIRBINCI</code> macro also provides asymptotic score methods for the paired relative risk.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">/* Tang */</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">%pairbinci</span>(a<span class="op">=</span><span class="fl">20</span>, b<span class="op">=</span><span class="fl">15</span>, c<span class="op">=</span><span class="fl">6</span>, d<span class="op">=</span><span class="fl">5</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>           contrast<span class="op">=</span>RR, skew<span class="op">=</span>FALSE, bcf<span class="op">=</span>FALSE);</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co">/* SCASu */</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="ex">%pairbinci</span>(a<span class="op">=</span><span class="fl">20</span>, b<span class="op">=</span><span class="fl">15</span>, c<span class="op">=</span><span class="fl">6</span>, d<span class="op">=</span><span class="fl">5</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>           contrast<span class="op">=</span>RR, skew<span class="op">=</span>TRUE, bcf<span class="op">=</span>FALSE);</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co">/* SCAS */</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="ex">%pairbinci</span>(a<span class="op">=</span><span class="fl">20</span>, b<span class="op">=</span><span class="fl">15</span>, c<span class="op">=</span><span class="fl">6</span>, d<span class="op">=</span><span class="fl">5</span>,</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>           contrast<span class="op">=</span>RR, skew<span class="op">=</span>TRUE, bcf<span class="op">=</span>TRUE);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="results-comparison-1" class="level4">
+<h4 class="anchored" data-anchor-id="results-comparison-1">Results Comparison</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Method</th>
+<th style="text-align: right;">R Lower 95% CI</th>
+<th style="text-align: right;">R Upper 95% CI</th>
+<th style="text-align: right;">SAS Lower 95% CI</th>
+<th style="text-align: right;">SAS Upper 95% CI</th>
+<th style="text-align: left;">Match</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Tang Score (AS(Tang))</td>
+<td style="text-align: right;">1.000639</td>
+<td style="text-align: right;">1.859820</td>
+<td style="text-align: right;">1.000639</td>
+<td style="text-align: right;">1.859820</td>
+<td style="text-align: left;">Yes</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SCASu</td>
+<td style="text-align: right;">1.000640</td>
+<td style="text-align: right;">1.867063</td>
+<td style="text-align: right;">1.000640</td>
+<td style="text-align: right;">1.867063</td>
+<td style="text-align: left;">Yes</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">SCAS</td>
+<td style="text-align: right;">0.997176</td>
+<td style="text-align: right;">1.874279</td>
+<td style="text-align: right;">0.997176</td>
+<td style="text-align: right;">1.874279</td>
+<td style="text-align: left;">Yes</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="scenario-3-conditional-odds-ratio" class="level3">
+<h3 class="anchored" data-anchor-id="scenario-3-conditional-odds-ratio">Scenario 3: Conditional Odds Ratio</h3>
+<p>The conditional odds ratio (OR) for paired data is calculated using the discordant pairs:</p>
+<p><span class="math display">\[OR = \frac{s}{t} = \frac{15}{6} = 2.5\]</span></p>
+<section id="r-code-example-2" class="level4">
+<h4 class="anchored" data-anchor-id="r-code-example-2">R Code Example</h4>
+<p>The <code>ratesci</code> package provides the <code>orpairci()</code> function to calculate confidence intervals for the conditional odds ratio.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ratesci<span class="sc">::</span><span class="fu">orpairci</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> x,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">level =</span> <span class="fl">0.95</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">precis =</span> <span class="dv">6</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+         Test_2
+Test_1    Success Failure
+  Success      20      15
+  Failure       6       5
+
+$estimates
+                        lower est    upper
+Transformed SCASp    0.991976 2.5 6.949069
+Transformed midp     0.990736 2.5 7.012904
+Transformed Wilson   1.001746 2.5 6.239105
+Transformed Jeffreys 1.012098 2.5 6.748258
+Wald                 0.969997 2.5 6.443316
+
+$call
+level    cc 
+ 0.95  0.00 </code></pre>
+</div>
+</div>
+<p>The <code>contingencytables</code> package also provides methods for calculating confidence intervals for paired odds ratios.</p>
+</section>
+<section id="sas-implementation" class="level4">
+<h4 class="anchored" data-anchor-id="sas-implementation">SAS Implementation</h4>
+<p>SAS does not provide a direct paired odds ratio confidence interval through PROC FREQ or the <code>%PAIRBINCI</code> macro.</p>
+<p>However, a conditional odds ratio confidence interval can be derived by calculating a confidence interval for the single proportion:</p>
+<p><span class="math display">\[p = \frac{s}{s+t}\]</span></p>
+<p>The resulting confidence limits can then be transformed to the odds ratio scale:</p>
+<p><span class="math display">\[OR_{\text{lower}} = \frac{L}{1-L}\]</span></p>
+<p><span class="math display">\[OR_{\text{upper}} = \frac{U}{1-U}\]</span></p>
+<p>where (L) and (U) are the lower and upper confidence limits for the single proportion.</p>
+<p>See the <a href="https://psiaims.github.io/CAMIS/SAS/ci_for_paired_prop.html">SAS paired proportions page</a> for additional details.</p>
+</section>
+</section>
+</section>
+<section id="summary-and-recommendation" class="level2">
+<h2 class="anchored" data-anchor-id="summary-and-recommendation">Summary and Recommendation</h2>
+<p>The <code>ratesci</code> package in R and the <code>%PAIRBINCI</code> macro in SAS provide matching asymptotic score confidence intervals for paired risk differences and relative risks.</p>
+<p>For conditional odds ratios, R provides direct functionality through <code>ratesci</code>, whereas SAS requires transforming a confidence interval for a single proportion.</p>
+<p>SAS PROC FREQ can additionally produce McNemar’s test, but this does not provide the corresponding confidence interval.</p>
+<p>The numerical comparisons demonstrate agreement between selected implementations for the example dataset. However, conclusions about the relative performance of different confidence interval methods cannot be drawn from a single example.</p>
+</section>
+<section id="additional-references" class="level2">
+<h2 class="anchored" data-anchor-id="additional-references">Additional References</h2>
+<p><strong>R Documentation:</strong></p>
+<ul>
+<li><a href="https://cran.r-project.org/web/packages/ratesci/"><code>ratesci</code> package</a></li>
+<li><a href="https://cran.r-project.org/web/packages/contingencytables/"><code>contingencytables</code> package</a></li>
+</ul>
+<p><strong>SAS Documentation:</strong></p>
+<ul>
+<li><a href="https://documentation.sas.com/doc/en/statug/15.2/statug_freq_toc.htm">PROC FREQ</a></li>
+<li><a href="https://github.com/petelaud/ratesci-sas"><code>%PAIRBINCI</code> SAS macro</a></li>
+</ul>
 <!--#
 Note to previous contributor:
 
 The text below is removed, because the logic is flawed. Generally, reliable conclusions can't be drawn regarding the difference between methods from looking at a single example interval. Having said that, in this example the difference between the exact and approximate methods has the potential to result in a different study conclusion (the more conservative exact interval includes the value 0).
 
-Calculating the Normal approximation and Wilson methods by hand and comparing it to the Exact method gave similar results for the 1 example demonstrated indicating as long as the proportion of responders is not close to 0 or 1, then the faster computation of the approximation methods may be easier to implement than the exact method and produce similar results. Hence {ExactCIdiff} is not recommended for most scenarios.
+Calculating the Normal approximation and Wilson methods by hand and comparing it to the Exact method gave similar results for the 1 example demonstrated indicating as long as the proportion of responders is not close to 0 or 1, then the faster computation of the approximation methods may be easier to implement than the exact method and produce similar results. Hence {ExactCIdiff} is not recommended for most scenarios. The original table is retained below for reference.
 
 +-------------+----------------------------------------------------------------------------------------------+--------------+--------------+
 | Method Name | Calculated Using matched pair example from R & SAS pages                                     | Lower 95% CI | Upper 95% CI |
 +=============+==============================================================================================+==============+==============+
 | Exact       | R                                                                                            | -0.00339     | 0.38065      |
 +-------------+----------------------------------------------------------------------------------------------+--------------+--------------+
-| Normal      | by hand using equation from [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html) | 0.00911      | 0.38289      |
+| Normal      | by hand using equation from SAS page                                                        | 0.00911      | 0.38289      |
 +-------------+----------------------------------------------------------------------------------------------+--------------+--------------+
-| MOVER       | by hand using equation from [SAS page](https://psiaims.github.io/CAMIS/SAS/ci_for_prop.html) | 0.00032      | 0.36739      |
+| MOVER       | by hand using equation from SAS page                                                        | 0.00032      | 0.36739      |
 +-------------+----------------------------------------------------------------------------------------------+--------------+--------------+
 -->
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
