@@ -211,7 +211,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#mixed-models" id="toc-mixed-models" class="nav-link active" data-scroll-target="#mixed-models">Mixed Models</a></li>
+  <li><a href="#mixed-models" id="toc-mixed-models" class="nav-link active" data-scroll-target="#mixed-models">Mixed Models</a>
+  <ul class="collapse">
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#data-used" id="toc-data-used" class="nav-link" data-scroll-target="#data-used">Data Used</a></li>
+  <li><a href="#fitting-the-mmrm-in-sas" id="toc-fitting-the-mmrm-in-sas" class="nav-link" data-scroll-target="#fitting-the-mmrm-in-sas">Fitting the MMRM in SAS</a>
+  <ul class="collapse">
+  <li><a href="#class-statement" id="toc-class-statement" class="nav-link" data-scroll-target="#class-statement">CLASS Statement</a></li>
+  <li><a href="#model-statement" id="toc-model-statement" class="nav-link" data-scroll-target="#model-statement">MODEL Statement</a></li>
+  <li><a href="#repeated-statement" id="toc-repeated-statement" class="nav-link" data-scroll-target="#repeated-statement">REPEATED Statement</a></li>
+  <li><a href="#lsmeans-statement" id="toc-lsmeans-statement" class="nav-link" data-scroll-target="#lsmeans-statement">LSMEANS Statement</a></li>
+  <li><a href="#lsmestimate-statement" id="toc-lsmestimate-statement" class="nav-link" data-scroll-target="#lsmestimate-statement">LSMESTIMATE Statement</a></li>
+  <li><a href="#ods-output-statement" id="toc-ods-output-statement" class="nav-link" data-scroll-target="#ods-output-statement">ODS OUTPUT Statement</a></li>
+  </ul></li>
+  <li><a href="#sas-results" id="toc-sas-results" class="nav-link" data-scroll-target="#sas-results">SAS Results</a>
+  <ul class="collapse">
+  <li><a href="#model-information-and-fit-statistics" id="toc-model-information-and-fit-statistics" class="nav-link" data-scroll-target="#model-information-and-fit-statistics">Model Information and Fit Statistics</a></li>
+  <li><a href="#covariance-parameter-estimates" id="toc-covariance-parameter-estimates" class="nav-link" data-scroll-target="#covariance-parameter-estimates">Covariance Parameter Estimates</a></li>
+  <li><a href="#least-squares-means" id="toc-least-squares-means" class="nav-link" data-scroll-target="#least-squares-means">Least Squares Means</a></li>
+  <li><a href="#tests-of-treatment-effects-at-each-visit" id="toc-tests-of-treatment-effects-at-each-visit" class="nav-link" data-scroll-target="#tests-of-treatment-effects-at-each-visit">Tests of Treatment Effects at Each Visit</a></li>
+  <li><a href="#differences-of-least-squares-means" id="toc-differences-of-least-squares-means" class="nav-link" data-scroll-target="#differences-of-least-squares-means">Differences of Least Squares Means</a></li>
+  <li><a href="#custom-lsmestimate-results" id="toc-custom-lsmestimate-results" class="nav-link" data-scroll-target="#custom-lsmestimate-results">Custom LSMESTIMATE Results</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -239,19 +262,246 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="mixed-models" class="level1">
 <h1>Mixed Models</h1>
-<section id="fitting-the-mmrm-in-sas" class="level4">
-<h4 class="anchored" data-anchor-id="fitting-the-mmrm-in-sas">Fitting the MMRM in SAS</h4>
-<p>In SAS the following code was used (assessments at <code>avisitn=0</code> should also be removed from the response variable):</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">proc mixed</span> <span class="bu">data</span><span class="op">=</span>adlbh;</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">where</span> base <span class="op">ne</span> . <span class="op">and</span> avisitn <span class="op">not</span> <span class="op">in</span> (., <span class="fl">99</span>);</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">class</span> usubjid trtpn(ref<span class="op">=</span><span class="st">"0"</span>) avisitn;</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">by</span> paramcd param;</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">model</span> chg<span class="op">=</span>base trtpn avisitn  trtpn<span class="op">*</span>avisitn <span class="op">/</span> solution cl alpha<span class="op">=</span><span class="fl">0.05</span> ddfm<span class="op">=</span>KR;</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">repeated</span> avisitn<span class="op">/</span>subject<span class="op">=</span>usubjid type<span class="op">=</span><span class="va">&amp;covar</span>;</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">lsmeans</span> trtpn <span class="op">*</span> avisitn <span class="op">/</span> diff cl slice<span class="op">=</span>avisitn;</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">lsmeans</span> trtpn <span class="op">/</span> diff cl;</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>where the macro variable <code>covar</code> could be <code>UN</code>, <code>CS</code> or <code>AR(1)</code>. The results were stored in .csv files that were post-processed in R and compared with the results from R.</p>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>A Mixed Model for Repeated Measures (MMRM) is widely applied in clinical trials for longitudinal outcomes. It handles within subject correlation across repeated readings for the same participant and still includes incomplete outcome data under the model assumptions.</p>
+<p>In SAS, <code>PROC MIXED</code> is used to fit MMRM, with the <code>MODEL</code> statement specifying the fixed effects. Repeated measurements are specified through the <code>REPEATED</code> statement for within-subject covariance structure. The covariance structure defines the correlation between measurements within a subject. Common covariance structures include unstructured (UN), compound symmetry (CS), and autoregressive order 1 (AR(1)). The Kenward-Roger method can be used to estimate denominator degrees of freedom for statistical inference.</p>
+</section>
+<section id="data-used" class="level2">
+<h2 class="anchored" data-anchor-id="data-used">Data Used</h2>
+<p>The <code>fev_data</code> dataset is included in the R <code>mmrm</code> package. It contains repeated FEV1 measurements across visits, together with subject identifiers, treatment assignments, and demographic information.</p>
+<p>The variables used in this analysis include:</p>
+<ul>
+<li><code>USUBJID</code>: Subject identifier.</li>
+<li><code>FEV1</code>: Forced expiratory volume in one second.</li>
+<li><code>ARMCD</code>: Treatment group.</li>
+<li><code>AVISIT</code>: Analysis visit.</li>
+<li><code>RACE</code>: Race.</li>
+<li><code>SEX</code>: Sex.</li>
+</ul>
+<p>The dataset contains 200 subjects and 800 observations. A total of 537 observations were included in the analysis after applying the model requirements.</p>
+<p>The <code>fev_data</code> dataset is available in the R <a href="https://cran.r-project.org/package=mmrm"><code>mmrm</code> package</a>.</p>
+</section>
+<section id="fitting-the-mmrm-in-sas" class="level2">
+<h2 class="anchored" data-anchor-id="fitting-the-mmrm-in-sas">Fitting the MMRM in SAS</h2>
+<p>The following example fits an MMRM using an unstructured covariance matrix and the Kenward-Roger method for denominator degrees of freedom.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">proc mixed</span> <span class="bu">data</span><span class="op">=</span>fev_data;</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>         </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="bu">class</span> ARMCD(ref<span class="op">=</span><span class="st">'PBO'</span>) AVISIT RACE SEX USUBJID;</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="bu">model</span> FEV1 <span class="op">=</span> RACE SEX ARMCD ARMCD<span class="op">*</span>AVISIT <span class="op">/</span> ddfm<span class="op">=</span>KR;</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="bu">repeated</span> AVISIT <span class="op">/</span> subject<span class="op">=</span>USUBJID type<span class="op">=</span>UN r rcorr;</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="bu">lsmeans</span> ARMCD<span class="op">*</span>AVISIT <span class="op">/</span> cl alpha<span class="op">=</span><span class="fl">0.05</span> diff slice<span class="op">=</span>AVISIT;</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="bu">lsmeans</span> ARMCD <span class="op">/</span> cl alpha<span class="op">=</span><span class="fl">0.05</span> diff;</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="bu">lsmestimate</span> ARMCD<span class="op">*</span>AVISIT [<span class="fl">1</span>,<span class="fl">1</span> <span class="fl">4</span>] [<span class="op">-</span><span class="fl">1</span>,<span class="fl">2</span> <span class="fl">4</span>] <span class="op">/</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    cl upper alpha<span class="op">=</span><span class="fl">0.025</span> testvalue<span class="op">=</span><span class="fl">2</span>;</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="bu">ods</span> output lsmeans<span class="op">=</span>lsm</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>           diffs<span class="op">=</span>diff</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>           LSMEstimates<span class="op">=</span>est;</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="kw">run;</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="class-statement" class="level3">
+<h3 class="anchored" data-anchor-id="class-statement">CLASS Statement</h3>
+<p>The <code>CLASS</code> statement identifies the categorical variables included in the model.</p>
+<p><code>ARMCD(ref='PBO')</code> specifies placebo as the reference treatment group.</p>
+</section>
+<section id="model-statement" class="level3">
+<h3 class="anchored" data-anchor-id="model-statement">MODEL Statement</h3>
+<p>The <code>MODEL</code> statement specifies the dependent variable and fixed effects.</p>
+<p>In this example:</p>
+<ul>
+<li><code>FEV1</code> is the dependent variable.</li>
+<li><code>RACE</code> and <code>SEX</code> are demographic covariates.</li>
+<li><code>ARMCD</code> represents treatment group.</li>
+<li><code>AVISIT</code> represents analysis visit.</li>
+<li><code>ARMCD*AVISIT</code> represents the treatment-by-visit interaction.</li>
+</ul>
+<p>The <code>DDFM=KR</code> option requests the Kenward-Roger method for calculating denominator degrees of freedom. This method adjusts the degrees of freedom used for statistical inference in mixed models.</p>
+</section>
+<section id="repeated-statement" class="level3">
+<h3 class="anchored" data-anchor-id="repeated-statement">REPEATED Statement</h3>
+<p>The REPEATED statement specifies the repeated measurements within each subject and the covariance structure used to model their correlation.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>repeated AVISIT <span class="op">/</span> subject<span class="op">=</span>USUBJID type<span class="op">=</span>UN r rcorr;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>AVISIT</code> identifies the repeated measurement occasions.</li>
+<li><code>SUBJECT=USUBJID</code> identifies the subject within which measurements are correlated.</li>
+<li><code>TYPE=UN</code> specifies an unstructured covariance matrix.</li>
+<li><code>R</code> requests the estimated covariance matrix.</li>
+<li><code>RCORR</code> requests the estimated correlation matrix.</li>
+</ul>
+<p>An unstructured covariance matrix estimates a separate variance for each visit and a separate covariance for each pair of visits. It does not impose a particular pattern on the correlations between repeated measurements.</p>
+<p>Other covariance structures can also be specified, including compound symmetry <code>(TYPE=CS)</code> and first-order autoregressive <code>(TYPE=AR(1))</code>.</p>
+</section>
+<section id="lsmeans-statement" class="level3">
+<h3 class="anchored" data-anchor-id="lsmeans-statement">LSMEANS Statement</h3>
+<p>The LSMEANS statement calculates least squares means (<code>LS-means</code>), which are model-adjusted means for the specified effects.</p>
+<p>The following statement estimates the <code>LS-means</code> for each treatment group at each visit:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>lsmeans ARMCD<span class="op">*</span>AVISIT <span class="op">/</span> cl alpha<span class="op">=</span><span class="fl">0.05</span> diff slice<span class="op">=</span>AVISIT;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The options are:</p>
+<ul>
+<li><code>CL</code> requests confidence limits for the LS-means and their differences.</li>
+<li><code>ALPHA=0.05</code> specifies a 95% confidence level.</li>
+<li><code>DIFF</code> requests pairwise differences between LS-means.</li>
+<li><code>SLICE=AVISIT</code> requests tests of the treatment effect separately at each visit.</li>
+</ul>
+<p>The <code>SLICE=AVISIT</code> option is particularly useful when the model includes a treatment-by-visit interaction. It evaluates the treatment effect within each visit rather than treating the interaction as a single overall comparison.</p>
+<p>The following statement calculates the overall treatment LS-means:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>lsmeans ARMCD <span class="op">/</span> cl alpha<span class="op">=</span><span class="fl">0.05</span> diff;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>This requests the LS-means for each treatment group across visits and the difference between the treatment groups.</p>
+</section>
+<section id="lsmestimate-statement" class="level3">
+<h3 class="anchored" data-anchor-id="lsmestimate-statement">LSMESTIMATE Statement</h3>
+<p>The LSMESTIMATE statement specifies a custom linear contrast of the LS-means. It can be used to test a treatment difference against a specified hypothesized value.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>lsmestimate ARMCD<span class="op">*</span>AVISIT [<span class="fl">1</span>,<span class="fl">1</span> <span class="fl">4</span>] [<span class="op">-</span><span class="fl">1</span>,<span class="fl">2</span> <span class="fl">4</span>] <span class="op">/</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    cl upper alpha<span class="op">=</span><span class="fl">0.025</span> testvalue<span class="op">=</span><span class="fl">2</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>In this example, the contrast compares the treatment groups at visit 4 and tests whether the treatment difference exceeds a superiority margin of 2.</p>
+<p>The options are:</p>
+<ul>
+<li><code>CL</code> requests confidence limits.</li>
+<li><code>UPPER</code> requests a one-sided upper confidence limit.</li>
+<li><code>ALPHA=0.025</code> specifies the significance level.</li>
+<li><code>TESTVALUE=2</code> specifies the hypothesized treatment difference.</li>
+</ul>
+</section>
+<section id="ods-output-statement" class="level3">
+<h3 class="anchored" data-anchor-id="ods-output-statement">ODS OUTPUT Statement</h3>
+<p>The <code>ODS OUTPUT</code> statement saves selected PROC MIXED output tables as SAS datasets for further analysis or reporting.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode sas code-with-copy"><code class="sourceCode sassyntaxhighlighting"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">ods</span> output lsmeans<span class="op">=</span>lsm</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>           diffs<span class="op">=</span>diff</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>           LSMEstimates<span class="op">=</span>est;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The output datasets are:</p>
+<ul>
+<li><code>LSM</code>: Contains the least squares means.</li>
+<li><code>DIFF</code>: Contains the differences between least squares means.</li>
+<li><code>EST</code>: Contains the custom LSMESTIMATE results.</li>
+</ul>
+<p>These datasets can be used for additional processing, reporting, or exporting results.</p>
+</section>
+</section>
+<section id="sas-results" class="level2">
+<h2 class="anchored" data-anchor-id="sas-results">SAS Results</h2>
+<section id="model-information-and-fit-statistics" class="level3">
+<h3 class="anchored" data-anchor-id="model-information-and-fit-statistics">Model Information and Fit Statistics</h3>
+<p>The model was fitted using restricted maximum likelihood (REML), an unstructured covariance matrix, and the Kenward-Roger method for denominator degrees of freedom.</p>
+</section>
+<section id="covariance-parameter-estimates" class="level3">
+<h3 class="anchored" data-anchor-id="covariance-parameter-estimates">Covariance Parameter Estimates</h3>
+<p>The covariance parameter estimates show the estimated variance and covariance components for the unstructured covariance matrix.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-mmrm-covariance" class="quarto-float quarto-figure quarto-figure-center anchored" width="136">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-mmrm-covariance-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="../images/mmrm/mmrm_covariance.png" id="fig-mmrm-covariance" class="img-fluid figure-img" width="136">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-mmrm-covariance-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="least-squares-means" class="level3">
+<h3 class="anchored" data-anchor-id="least-squares-means">Least Squares Means</h3>
+<p>The LS-means table displays the adjusted mean FEV1 for each treatment group at each visit, together with standard errors and 95% confidence intervals.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-mmrm-lsmeans" class="quarto-float quarto-figure quarto-figure-center anchored" width="414">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-mmrm-lsmeans-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="../images/mmrm/mmrm_lsmeans.png" id="fig-mmrm-lsmeans" class="img-fluid figure-img" width="414">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-mmrm-lsmeans-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The overall treatment LS-means are also calculated using the <code>LSMEANS ARMCD</code> statement.</p>
+</section>
+<section id="tests-of-treatment-effects-at-each-visit" class="level3">
+<h3 class="anchored" data-anchor-id="tests-of-treatment-effects-at-each-visit">Tests of Treatment Effects at Each Visit</h3>
+<p>The <code>SLICE=AVISIT</code> option produces tests of the treatment effect separately at each visit. The resulting table reports the F-statistic and p-value for each visit.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-mmrm-slice-tests" class="quarto-float quarto-figure quarto-figure-center anchored" width="251">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-mmrm-slice-tests-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="../images/mmrm/mmrm_slice_tests.png" id="fig-mmrm-slice-tests" class="img-fluid figure-img" width="251">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-mmrm-slice-tests-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="differences-of-least-squares-means" class="level3">
+<h3 class="anchored" data-anchor-id="differences-of-least-squares-means">Differences of Least Squares Means</h3>
+<p>The differences table reports pairwise comparisons of the LS-means, including estimated differences, standard errors, degrees of freedom, t-statistics, p-values, and confidence intervals.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-mmrm-differences" class="quarto-float quarto-figure quarto-figure-center anchored" width="501">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-mmrm-differences-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="../images/mmrm/mmrm_differences1.png" id="fig-mmrm-differences" class="img-fluid figure-img" width="501">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-mmrm-differences-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-mmrm-differences2" class="quarto-float quarto-figure quarto-figure-center anchored" width="500">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-mmrm-differences2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="../images/mmrm/mmrm_differences2.png" id="fig-mmrm-differences2" class="img-fluid figure-img" width="500">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-mmrm-differences2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="custom-lsmestimate-results" class="level3">
+<h3 class="anchored" data-anchor-id="custom-lsmestimate-results">Custom LSMESTIMATE Results</h3>
+<p>The custom contrast estimates the treatment difference at visit 4 and tests it against the specified superiority margin of 2.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-mmrm-lsestimate" class="quarto-float quarto-figure quarto-figure-center anchored" width="472">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-mmrm-lsestimate-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="../images/mmrm/mmrm_lsmestimate.png" id="fig-mmrm-lsestimate" class="img-fluid figure-img" width="472">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-mmrm-lsestimate-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>For this example, the estimated contrast is 4.3985, with a one-sided p-value of 0.0795. Since this p-value is greater than the specified significance level of 0.025, the result does not demonstrate statistically significant superiority over the margin of 2.</p>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li><a href="https://cran.r-project.org/web/packages/mmrm/">mmrm R package</a> — source of the fev_data example dataset.</li>
+<li><a href="https://documentation.sas.com/doc/en/pgmsascdc/v_081/statug/statug_mixed_overview.htm">SAS PROC MIXED Documentation</a>.</li>
+</ul>
 
 
 </section>
